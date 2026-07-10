@@ -1,0 +1,12 @@
+{
+  "name": "sefi-core",
+  "version": "0.1.0",
+  "description": "Loop-engineered multi-agent team with file-based persistent memory and hard token budgets.",
+  "author": { "name": "John Earl F. Alquiza", "url": "https://sefi-automates.vercel.app" },
+  "homepage": "https://sefi-automates.vercel.app",
+  "repository": "https://github.com/xsefirosus/sefi-agents",
+  "license": "MIT",
+  "keywords": ["agents", "skills", "loops", "memory", "budget"],
+  "skills": ["./skills/"],
+  "commands": ["./commands/"]
+}
