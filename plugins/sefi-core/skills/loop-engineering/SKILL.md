@@ -27,7 +27,7 @@ agentic-signals: goal_intake, refusal_gate, verification, loop_discipline, close
 ## Stop condition = a grep-countable artifact, not a self-declaration
 The product-manager's numbered-checkbox plan is "done" only when every box is checked -- counted
 by grep, never the generator declaring "I'm done." (AutoGPT's `finish`-tool self-completion
-is the anti-pattern; Sefi-OS's 184-green-tests-half-unwired build is the first-party proof
+is the anti-pattern; a predecessor's 184-green-tests-half-unwired build is the first-party proof
 that self-declared done lies.)
 
 ## Deterministic tripwires (zero LLM cost)
@@ -40,7 +40,7 @@ that self-declared done lies.)
 - Git-reconciliation trust: a `state/*.md` claim that disagrees with git loses to git.
 - Cycle-count preservation: a resumed loop reads its counter from disk, never resets it.
 
-## Four Sefi-OS-earned rules (each observed live)
+## Four predecessor-earned rules (each observed live)
 - Consume-before-act: when acting on a human decision or any once-only trigger, write the
   consumed marker FIRST -- `status: consumed` in the item's frontmatter (or rename
   `*.consumed.md`) and commit -- before the action. Never check-then-act with I/O in the

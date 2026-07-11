@@ -33,7 +33,7 @@ If you add the codegraph connector (see `OPTIONAL-TOOLS.md`), cite its defensibl
 ~58% fewer tool calls, with file reads dropping to roughly zero across repo sizes. Treat any
 blanket token-percentage as noisy and scale-dependent.
 
-## Why these specific guards exist (one-line Sefi-OS evidence each)
+## Why these specific guards exist (one-line predecessor evidence each)
 - Per-dispatch cap: a single self-batching dispatch hit **1.36M tokens** before any daily cap
   would have noticed.
 - Code-enforced batching (<= 3 children per call): prompt-instructed batching was ignored,
@@ -42,5 +42,5 @@ blanket token-percentage as noisy and scale-dependent.
   time, just not at position 0.
 - Tool verification before granting: a broken `browser` tool burned an entire **50-iteration**
   budget retrying the identical failing call.
-- The whole stack is load-bearing on a free model: Sefi-OS's free-model dispatch ran **~45%**
+- The whole stack is load-bearing on a free model: the predecessor's free-model dispatch ran **~45%**
   success; the gates and human checkpoints are what made it viable.

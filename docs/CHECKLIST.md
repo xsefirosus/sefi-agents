@@ -26,7 +26,7 @@ the human-checkpoint line.
 - One permanent human checkpoint that never gets optimized away.
 
 ## Sampled-review / audit skeleton
-Method migrated from the Sefi-OS audit that caught what three rounds of self-reported "done"
+Method migrated from the predecessor's audit that caught what three rounds of self-reported "done"
 missed.
 - Verify claims against artifacts: no prior status claim -- including check-mark markers in
   docs and plans, and "tests pass" lines -- is trusted without opening the file or re-running

@@ -11,7 +11,7 @@ Anything below the qa-engineer's confidence bar lands in `inbox/` for a human. E
 deploy, or destructive step traces to an explicit human approval recorded in `inbox/`.
 
 ## Why (first-party precedent)
-Sefi-OS removed its own 5-cycle autonomous execute-review-retry loop in favor of a human
+A predecessor system removed its own 5-cycle autonomous execute-review-retry loop in favor of a human
 decision on every non-approval (IMPLEMENTATION_PLAN_V2, Ground Rule 4: "every round is a
 deliberate human choice, not an autonomous retry budget"). An autonomous retry budget
 hides a bad call inside more automation; a human checkpoint shortens the distance from

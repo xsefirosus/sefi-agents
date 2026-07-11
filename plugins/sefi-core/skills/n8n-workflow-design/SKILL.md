@@ -25,7 +25,7 @@ All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, n
 Trigger(s) -> nodes (in order) -> external calls -> error paths -> observability ->
 cost-per-run. The solutions-architect fills this shape into `state/automation-<slug>.md`.
 
-## Two Sefi-OS-earned rules
+## Two predecessor-earned rules
 - Model-authored notification text is sent plain, never through a Markdown or HTML parse
   mode. Arbitrary model text containing `_` or `*` silently kills a parsed send and drops
   the message entirely (observed live on a completion alert).

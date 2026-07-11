@@ -25,7 +25,7 @@ Review qa-engineer REJECTs, gate failures, and the knowledge-manager's
 `## Possible contradiction` flags. Read `state/metrics.md` as the scorecard -- worst
 success rate first.
 
-## Four additional guards (Sefi-OS Loop-3 lessons)
+## Four additional guards (predecessor Loop-3 lessons)
 - Bounded change: an improvement edits at most ~3 sentences per file per retro run
   (checkable: sentence-level set difference between old and new <= 3). Anything larger
   becomes a proposal in `inbox/`, not an edit.

@@ -39,12 +39,13 @@ to praise; you are here to find what fails against this slice's plan stop condit
    change would not fail a test or visibly break the flow you exercised, it is not
    integrated -- REJECT as unwired. A test that re-implements the feature inside its own
    body instead of exercising the real entry point proves nothing and is itself a
-   finding. (First-party evidence: Sefi-OS reported 184 green tests while half its new
-   modules had zero call sites in the running system.)
+   finding. (First-party evidence: a predecessor system reported 184 green tests while
+   half its new modules had zero call sites in the running system.)
 4. Confirm claimed artifacts exist at their designated paths before judging content.
    An agent with no pinned absolute output path writes to its accidental working
    directory, and a reviewer reading the designated folder approves an empty one
-   (observed live in Sefi-OS: a dispatched task wrote to the user's home directory).
+   (observed live in a predecessor system: a dispatched task wrote to the user's home
+   directory).
 5. Evidence-pair rule: every verification claim must cite a specific artifact plus a
    before/after comparison (test output before vs after, a state/DOM diff, a screenshot
    pair, an API response) -- never "I believe this works." A fix you cannot re-verify
@@ -52,7 +53,8 @@ to praise; you are here to find what fails against this slice's plan stop condit
    caught by re-execution triggers an immediate revert.
 6. Every fix you PASS must leave a regression test that asserts the specific failure mode
    traced during the fix (not a weak "it renders / doesn't throw" assertion). The
-   strongest form, used on every fix Sefi-OS shipped: temporarily re-break the fix and
+   strongest form, used on every shipped fix in a predecessor system: temporarily
+   re-break the fix and
    watch the new test fail, then restore it.
 7. Hunt edge cases the author skipped: empty input, boundary values, concurrency,
    error paths, partial failures. Judge behavior against the plan's Done Criteria, not

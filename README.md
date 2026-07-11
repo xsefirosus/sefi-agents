@@ -28,7 +28,7 @@ calls broken work done; **tokens blow out** because nothing bounds a runaway loo
 **every session starts amnesiac** because state lives in a context window that evaporates.
 
 We know because we shipped all three failures first. sefi-agents is the rebuild of the
-author's previous agent system (Sefi-OS, a Python/FastAPI build), after an independent
+author's previous agent system (a Python/FastAPI build), after an independent
 audit of it -- and instead of hiding the post-mortem, this repo ships it as
 [docs/ANTIPATTERNS.md](docs/ANTIPATTERNS.md), with every failure mapped to the mechanism
 here that prevents it.

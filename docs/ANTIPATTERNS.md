@@ -47,9 +47,9 @@ the tree.
 - mem0's April-2026 change demoted silent auto-overwrite of memories from default to opt-in
   -- independent evidence that memory maintenance must be append-only or flag-for-review.
 
-## First-party evidence (Earl's own Sefi-OS build; one row per live failure)
+## First-party evidence (Earl's own predecessor build; one row per live failure)
 
-| Sefi-OS failure (live) | Fixed here by |
+| Predecessor failure (live) | Fixed here by |
 |---|---|
 | 184 green tests, half the modules unwired (integration gap) | qa-engineer protocol item 3 (wired / delete-the-line) + `validate-no-orphans.sh` |
 | a test re-implementing the feature in its own body | qa-engineer protocol item 3 |
