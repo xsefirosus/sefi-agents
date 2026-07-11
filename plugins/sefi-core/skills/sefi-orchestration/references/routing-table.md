@@ -21,6 +21,7 @@ loop is one appended row, never a new code branch.
 | pipeline / release / worktree ops | devops-engineer | -- | -- |
 | inbox item / issue intake | support-engineer | -- | consume-before-act |
 | "write docs / changelog / guide" | technical-writer | override: `agent` | -- |
+| UI audit / redesign / study a design reference | ui-ux-designer | override: `agent` | never pixel-clone in study |
 
 The trigger source is itself routing and security context: a non-interactive or scheduled
 trigger sets `skip_clarification` / `non_interactive` (scheduled runs drop clarification).

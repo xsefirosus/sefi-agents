@@ -9,7 +9,7 @@ agent file under `agents/`. Every agent additionally follows the anti-hallucinat
 | `engineering-manager.md` | sonnet | sefi-orchestration | routes and dispatches; never edits files | mid |
 | `research-analyst.md` | haiku | memory-protocol | read-only; digest contract | cheap |
 | `product-manager.md` | sonnet | loop-engineering | fixed heading skeleton; grep-countable steps | mid |
-| `ui-ux-designer.md` | sonnet | frontend-design | direction-first spec; reviews design fidelity | mid |
+| `ui-ux-designer.md` | sonnet | frontend-design | four verbs (build/audit/redesign/study); direction-first; never pixel-clones | mid |
 | `software-engineer.md` | sonnet | loop-engineering, backend-design, frontend-design | gate.sh before done; minimization ladder; vertical slices | mid |
 | `qa-engineer.md` | opus | strategy-gate (rigor) | adversarial; executes to verify | high |
 | `security-engineer.md` | opus | security-review | trust-boundary gate; read-only findings | high |
