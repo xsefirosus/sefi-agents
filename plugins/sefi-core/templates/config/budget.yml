@@ -1,0 +1,6 @@
+per_run_usd_cap: 0.50
+daily_usd_cap: 2.00
+per_dispatch_usd_cap: 0.15   # one subagent dispatch; catches a runaway dispatch long before the daily cap notices (Sefi-OS: one self-batching dispatch hit 1.36M tokens)
+max_retries: 2
+max_parallel_worktrees: 3
+per_agent_return_tokens: 150

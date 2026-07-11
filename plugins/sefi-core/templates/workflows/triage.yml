@@ -1,0 +1,38 @@
+# TEMPLATE -- GitHub Actions workflow copied by /sefi:init to .github/workflows/triage.yml.
+# Fill in your headless agent CLI and secrets before enabling. This is a scaffold, not a
+# ready-to-run pipeline.
+name: sefi-morning-triage
+
+on:
+  schedule:
+    - cron: "0 6 * * *"   # daily 06:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run headless triage (choose one CLI for your harness)
+        env:
+          AGENT_API_KEY: ${{ secrets.AGENT_API_KEY }}
+        run: |
+          # TEMPLATE: pick the CLI for your harness and pipe the /sefi:triage prompt via stdin.
+          #   claude   --print --dangerously-skip-permissions --add-dir "$PWD"
+          #   opencode run
+          #   codex    exec
+          echo "TEMPLATE: invoke your headless agent here to run /sefi:triage"
+
+      - name: Enforce budget caps
+        run: bash plugins/sefi-core/scripts/budget-check.sh --scope daily --spent 0
+
+      - name: Commit state and open PR (never auto-merge)
+        run: |
+          # TEMPLATE: commit state/ changes and open a PR; a human merges. Never auto-merge.
+          echo "TEMPLATE: git add state/ && git commit && open PR (never merge)"

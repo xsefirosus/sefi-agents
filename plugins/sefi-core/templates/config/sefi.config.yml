@@ -1,0 +1,10 @@
+improvement:
+  enabled: true        # set false when a host runtime owns learning
+memory:
+  vault_dir: memory
+  inject_char_cap: 1500
+  prune_trace_after_days: 30
+loops:
+  never_auto_merge: true
+terse_mode:
+  enabled: false       # off by default; prose compression nets negative on short replies
