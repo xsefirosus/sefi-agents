@@ -1,0 +1,24 @@
+# Repository CI: runs the sefi-core validator suite on every push and PR.
+# The suite needs bash, git, coreutils, and ripgrep (installed below).
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
+      - name: Run validator suite
+        run: bash plugins/sefi-core/scripts/ci/run-all.sh
