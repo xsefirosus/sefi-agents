@@ -1,6 +1,6 @@
 ---
 name: technical-writing
-description: Use when writing or revising user-facing prose: READMEs, changelogs, guides, adapter docs, or release notes. Audience-first structure with a quickstart before theory, every claim verified against the repo, and no invented benchmarks or features.
+description: Use when writing or revising user-facing prose -- READMEs, changelogs, guides, adapter docs, or release notes. Audience-first structure with a quickstart before theory, every claim verified against the repo, and no invented benchmarks or features.
 managed-by: sefi-agents
 ---
 

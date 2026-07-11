@@ -1,6 +1,6 @@
 ---
 name: backend-design
-description: Use when designing or building anything below the API seam: endpoints, data models, migrations, background jobs, or service boundaries. Contract-first API design with trust-boundary validation, idempotent mutations, reversible migrations, and an explicit error taxonomy.
+description: Use when designing or building anything below the API seam -- endpoints, data models, migrations, background jobs, or service boundaries. Contract-first API design with trust-boundary validation, idempotent mutations, reversible migrations, and an explicit error taxonomy.
 managed-by: sefi-agents
 ---
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # validate-agents.sh -- each agent frontmatter has name/description/tools/model/managed-by;
-# model in {haiku,sonnet,opus}; description <= 2 sentences; body carries the
+# model in {haiku,sonnet,opus}; description <= 2 sentences; description contains no ": "
+# (colon+space breaks YAML plain-scalar parsing -- use " -- " instead); body carries the
 # anti-hallucination pointer line (the canonical rule lives in skills/anti-hallucination).
 set -uo pipefail
 
@@ -35,6 +36,11 @@ for f in "$DIR"/*.md; do
   sentences="$(printf '%s' "$desc" | grep -oE '[.!?]' | wc -l | tr -d ' ')"
   if [ "${sentences:-0}" -gt 2 ]; then
     echo "ERROR: $rel - description has $sentences sentences (max 2)"; errors=$((errors + 1))
+  fi
+
+  if printf '%s' "$desc" | grep -qE ': '; then
+    echo "ERROR: $rel - description contains ': ' (colon+space), which breaks YAML plain-scalar parsing; use ' -- ' instead"
+    errors=$((errors + 1))
   fi
 
   grep -q 'anti-hallucination' "$f" \

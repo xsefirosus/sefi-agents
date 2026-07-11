@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # validate-skills.sh -- each SKILL.md non-empty; frontmatter has name + description;
-# description is single-line (no YAML block scalar); body <= 300 lines; body carries the
-# anti-hallucination pointer line (the canonical rule lives in skills/anti-hallucination).
+# description is single-line (no YAML block scalar) and contains no ": " (colon+space
+# breaks YAML plain-scalar parsing -- use " -- " instead); body <= 300 lines; body
+# carries the anti-hallucination pointer line (the canonical rule lives in
+# skills/anti-hallucination).
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
@@ -23,6 +25,12 @@ while IFS= read -r f; do
 
   if printf '%s\n' "$fm" | grep -qE '^description:[[:space:]]*\|'; then
     echo "ERROR: $rel - description uses a YAML block scalar (must be single-line)"
+    errors=$((errors + 1))
+  fi
+
+  desc="$(printf '%s\n' "$fm" | sed -n 's/^description:[[:space:]]*//p' | head -1)"
+  if printf '%s' "$desc" | grep -qE ': '; then
+    echo "ERROR: $rel - description contains ': ' (colon+space), which breaks YAML plain-scalar parsing; use ' -- ' instead"
     errors=$((errors + 1))
   fi
 

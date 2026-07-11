@@ -1,6 +1,6 @@
 ---
 name: anti-hallucination
-description: Use when producing any factual output: paths, APIs, numbers, citations, config keys, or claims about code behavior. The canonical no-invention rule every agent points to; unknown lookups become UNKNOWN, unrun executions become PENDING, and every claim traces to a source.
+description: Use when producing any factual output -- paths, APIs, numbers, citations, config keys, or claims about code behavior. The canonical no-invention rule every agent points to; unknown lookups become UNKNOWN, unrun executions become PENDING, and every claim traces to a source.
 managed-by: sefi-agents
 ---
 

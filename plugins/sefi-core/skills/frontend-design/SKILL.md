@@ -1,6 +1,6 @@
 ---
 name: frontend-design
-description: Use when designing, building, auditing, or redesigning any user interface, or studying a design reference. The anti-AI-slop craft skill: one committed aesthetic direction from a named lane catalog, typography-first hierarchy, a spacing system, tokens, designed states, and non-negotiable accessibility.
+description: Use when designing, building, auditing, or redesigning any user interface, or studying a design reference. The anti-AI-slop craft skill -- one committed aesthetic direction from a named lane catalog, typography-first hierarchy, a spacing system, tokens, designed states, and non-negotiable accessibility.
 managed-by: sefi-agents
 ---
 

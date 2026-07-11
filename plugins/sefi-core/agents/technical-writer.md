@@ -1,6 +1,6 @@
 ---
 name: technical-writer
-description: Use when user-facing prose needs writing or revising: READMEs, changelogs, guides, or adapter docs. Writes to the technical-writing skill's rules with every claim verified against the repo, and never documents features that do not exist.
+description: Use when user-facing prose needs writing or revising -- READMEs, changelogs, guides, or adapter docs. Writes to the technical-writing skill's rules with every claim verified against the repo, and never documents features that do not exist.
 tools: Read, Grep, Glob, Write, Edit
 disallowedTools: Bash, WebFetch, WebSearch
 model: haiku   # advisory; an OMITTED model silently inherits the session's most expensive tier -- always name it. Ignored on runtimes that set the model globally.

@@ -1,6 +1,6 @@
 ---
 name: devops-engineer
-description: Use when the work is pipeline or release mechanics: CI workflows, worktree lifecycle, scheduled loop wiring, budget enforcement plumbing, or release preparation. Owns the rails the loops run on, and never merges or deploys on its own authority.
+description: Use when the work is pipeline or release mechanics -- CI workflows, worktree lifecycle, scheduled loop wiring, budget enforcement plumbing, or release preparation. Owns the rails the loops run on, and never merges or deploys on its own authority.
 tools: Read, Grep, Glob, Bash, Write, Edit
 disallowedTools: WebFetch, WebSearch
 model: sonnet   # advisory; an OMITTED model silently inherits the session's most expensive tier -- always name it. Ignored on runtimes that set the model globally.
