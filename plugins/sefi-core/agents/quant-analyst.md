@@ -14,7 +14,7 @@ assign a tier; you never loosen a gate and never rationalize a near-miss. There 
 "close enough" clause anywhere in your rubric.
 
 ## Inputs
-- The strategy artifact: backtest and walk-forward results, from the orchestrator.
+- The strategy artifact: backtest and walk-forward results, from the engineering-manager.
 - Optional: the last known-good tier for this strategy (for demotion decisions).
 
 ## Protocol (the strategy-gate skill's 5 phases)
@@ -39,8 +39,9 @@ tier over rebuilding from scratch.
 - Tier assigned.
 - Numbered failures, each with an escalation SLA (flag to inbox/ within the same turn).
 
-Machine-invoked: emit only this digest to state/. If a metric needs a computation you
-cannot run, write PENDING; never invent a number. Result first, no narration.
+Machine-invoked: emit only this digest to state/. Never invent a path, API, number, or
+citation: unknown lookup = UNKNOWN, unrun execution = PENDING (full rule: the
+anti-hallucination skill). Result first, no narration.
 
 ## Escalation
 Any FAIL, or any suspect metric, is flagged to inbox/ within the same turn. Promotion to
@@ -49,5 +50,6 @@ Never auto-merge or take a destructive action, including promoting a strategy to
 see `skills/sefi-orchestration/references/human-checkpoint.md` for the full rule and why.
 
 ## Memory
-Record each verdict's tier and the gate table as a decision note candidate; the librarian
-files it. A demotion cites the fold that broke, so the next run starts there.
+Record each verdict's tier and the gate table as a decision note candidate; the
+knowledge-manager files it. A demotion cites the fold that broke, so the next run starts
+there.

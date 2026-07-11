@@ -1,6 +1,6 @@
 ---
 name: retro-improve
-description: Use when running the self-improvement retro over evaluator rejects, gate failures, and metrics to propose bounded edits. Single-writer, append-only-safe self-improvement that edits only managed-by sefi-agents files and stops when improvement is disabled.
+description: Use when running the self-improvement retro over qa-engineer rejects, gate failures, and metrics to propose bounded edits. Single-writer, append-only-safe self-improvement that edits only managed-by sefi-agents files and stops when improvement is disabled.
 managed-by: sefi-agents
 ---
 
@@ -10,6 +10,7 @@ Two learning loops writing the same file produce conflicting edits. One writer p
 set. This skill is that single writer for `managed-by: sefi-agents` files.
 
 User instructions always override this skill.
+All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never guess.
 
 agentic-signals: goal_intake, refusal_gate, verification, loop_discipline, close_out
 
@@ -20,8 +21,9 @@ false in `sefi.config.yml`, output the proposed diff to `state/retro-<date>.md` 
 Never edit host-runtime memory, user config, or other plugins.
 
 ## Inputs (the scorecard)
-Review evaluator REJECTs, gate failures, and the librarian's `## Possible contradiction`
-flags. Read `state/metrics.md` as the scorecard -- worst success rate first.
+Review qa-engineer REJECTs, gate failures, and the knowledge-manager's
+`## Possible contradiction` flags. Read `state/metrics.md` as the scorecard -- worst
+success rate first.
 
 ## Four additional guards (Sefi-OS Loop-3 lessons)
 - Bounded change: an improvement edits at most ~3 sentences per file per retro run

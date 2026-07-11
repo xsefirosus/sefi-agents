@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # validate-token-budget.sh -- repo bloat linter. Fail if any description > 60 words; any
 # agent file > 150 lines; any SKILL.md > 300 lines; templates/memory/index.md > 60 lines;
-# or total agents/ word count > 4500.
+# or total agents/ word count > agent_count x 640 (the original cap was 4500 for 7 agents,
+# ~643 words per agent; the per-agent budget scales with the roster).
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
@@ -24,18 +25,21 @@ check_desc() {
   fi
 }
 
-# Agent files: <= 150 lines each; total words <= 4500; descriptions <= 60 words.
+# Agent files: <= 150 lines each; total words <= count x 640; descriptions <= 60 words.
 agent_words=0
+agent_count=0
 for f in "$CORE"/agents/*.md; do
   [ -e "$f" ] || continue
+  agent_count=$((agent_count + 1))
   rel="plugins/sefi-core/agents/$(basename "$f")"
   lines="$(wc -l < "$f")"
   [ "$lines" -gt 150 ] && { echo "ERROR: $rel - $lines lines (max 150)"; errors=$((errors + 1)); }
   w="$(wc -w < "$f")"; agent_words=$((agent_words + w))
   check_desc "$f" "$rel"
 done
-if [ "$agent_words" -gt 4500 ]; then
-  echo "ERROR: plugins/sefi-core/agents - total $agent_words words (max 4500)"; errors=$((errors + 1))
+agent_cap=$((agent_count * 640))
+if [ "$agent_words" -gt "$agent_cap" ]; then
+  echo "ERROR: plugins/sefi-core/agents - total $agent_words words (max $agent_cap for $agent_count agents)"; errors=$((errors + 1))
 fi
 
 # SKILL.md: <= 300 lines each; descriptions <= 60 words.

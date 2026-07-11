@@ -6,8 +6,8 @@ Run this before shipping a loop and when auditing a finished one.
 1. Trigger / Scheduling -- cloud cron or local interval.
 2. Discovery -- the skill that finds the work and the inputs it reads.
 3. Handoff -- one worktree per finding, with the branch naming and max parallel.
-4. Verification -- generator plus a separate evaluator, judged against an executed stop
-   condition.
+4. Verification -- generator plus a separate judge (the qa-engineer), judged against an
+   executed stop condition.
 5. Persistence -- the committed `state/*.md` with a 5-field resume block and the metrics row.
 6. Human checkpoint -- the one thing that is never automated.
 

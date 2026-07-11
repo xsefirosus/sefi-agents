@@ -8,9 +8,10 @@ the tree.
 ### 1. Nodding (self-grading)
 - Symptom: the agent that wrote the code also judges it, and praises itself "done" while the
   work is broken.
-- Fix: generator/evaluator separation. A separate adversarial evaluator, with different
-  instructions and a different model where the runtime allows, decides PASS/REJECT against
-  executed evidence. A same-agent "guardrail retry" is not a substitute.
+- Fix: generator/evaluator separation. A separate adversarial judge (the qa-engineer),
+  with different instructions and a different model where the runtime allows, decides
+  PASS/REJECT against executed evidence. A same-agent "guardrail retry" is not a
+  substitute.
 
 ### 2. Amnesiac (no memory)
 - Symptom: each run re-derives context from scratch and loses prior decisions.
@@ -24,7 +25,7 @@ the tree.
 
 ### 4. Blind (unverified claims)
 - Symptom: unwired code ships because no one executed it; a report's "tests pass" is trusted.
-- Fix: the evaluator executes to verify (the wired / delete-the-line test) and
+- Fix: the qa-engineer executes to verify (the wired / delete-the-line test) and
   `validate-no-orphans.sh` flags fully-written-but-unwired artifacts.
 
 ### 5. Tangled (drift and duplication)
@@ -36,8 +37,9 @@ the tree.
 ## The over-build trap
 - Symptom: writing more code than the task needs -- a new helper where reuse would do, a
   framework where one line would do.
-- Fix: the implementer climbs the code-minimization ladder before writing and stops at the
-  first rung that holds. Token discipline starts with building less, not phrasing tighter.
+- Fix: the software-engineer climbs the code-minimization ladder before writing and stops
+  at the first rung that holds. Token discipline starts with building less, not phrasing
+  tighter.
 
 ## External evidence for the generator/evaluator mandate
 - AutoGPT's reflection step has the *same* LLM generate, critique, and refine its own output
@@ -49,8 +51,8 @@ the tree.
 
 | Sefi-OS failure (live) | Fixed here by |
 |---|---|
-| 184 green tests, half the modules unwired (integration gap) | evaluator item 3 (wired / delete-the-line) + `validate-no-orphans.sh` |
-| a test re-implementing the feature in its own body | evaluator item 3 |
+| 184 green tests, half the modules unwired (integration gap) | qa-engineer protocol item 3 (wired / delete-the-line) + `validate-no-orphans.sh` |
+| a test re-implementing the feature in its own body | qa-engineer protocol item 3 |
 | self-graded "done" false three audits running | generator/evaluator separation; never self-certify |
 | improvement loop inert for days (metrics vs edit-target keyspace mismatch) | retro-improve single-keyspace + edit-what-runtime-loads; `state/metrics.md` keyed by file path |
 | 8 invented states, diverged schemas (spec drift on a cheap model) | `scripts/ci/` conformance suite |

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # validate-skills.sh -- each SKILL.md non-empty; frontmatter has name + description;
-# description is single-line (no YAML block scalar); body <= 300 lines.
+# description is single-line (no YAML block scalar); body <= 300 lines; body carries the
+# anti-hallucination pointer line (the canonical rule lives in skills/anti-hallucination).
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
@@ -29,6 +30,9 @@ while IFS= read -r f; do
   if [ "$lines" -gt 300 ]; then
     echo "ERROR: $rel - body $lines lines (max 300)"; errors=$((errors + 1))
   fi
+
+  grep -q 'anti-hallucination' "$f" \
+    || { echo "ERROR: $rel - missing anti-hallucination pointer line"; errors=$((errors + 1)); }
 done < <(find "$DIR" -name 'SKILL.md')
 
 if [ "$count" -eq 0 ]; then echo "ERROR: no SKILL.md found in $DIR"; exit 1; fi

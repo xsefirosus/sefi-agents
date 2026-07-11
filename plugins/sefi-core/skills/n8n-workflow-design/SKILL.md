@@ -6,10 +6,11 @@ managed-by: sefi-agents
 
 # n8n Workflow Design
 
-Signature skill. This body is the Rule block the automation-architect's output contract
+Signature skill. This body is the Rule block the solutions-architect's output contract
 checks; deep node patterns live in `references/node-patterns.md`, read on demand.
 
 User instructions always override this skill.
+All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never guess.
 
 ## Rule block (every workflow spec must cover)
 1. Trigger inventory: every entry point (webhook, schedule, manual, event) named.
@@ -22,7 +23,7 @@ User instructions always override this skill.
 
 ## Standard spec output format
 Trigger(s) -> nodes (in order) -> external calls -> error paths -> observability ->
-cost-per-run. The automation-architect fills this shape into `state/automation-<slug>.md`.
+cost-per-run. The solutions-architect fills this shape into `state/automation-<slug>.md`.
 
 ## Two Sefi-OS-earned rules
 - Model-authored notification text is sent plain, never through a Markdown or HTML parse

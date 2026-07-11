@@ -18,7 +18,7 @@ hermes config set provider.api_key  "$OPENCODE_ZEN_API_KEY"
 Precedent: Sefi-OS already ran Hermes on an OpenCode Zen free model (`mimo-v2.5-free`,
 `hermes_config.yaml` / ADR-002), so this pairing is proven, not speculative.
 
-## 2. Caveats (the caps and evaluator are load-bearing here, not garnish)
+## 2. Caveats (the caps and the qa-engineer are load-bearing here, not garnish)
 - Free-window models may train on submitted data -- never run client or proprietary code
   through them.
 - Rate limits make the budget caps and `max_retries` mandatory, not optional.

@@ -16,12 +16,12 @@ skill: <skill that finds the work>   inputs read: <CI/issues/commits/state>
 ## Handoff
 one worktree per finding: <branch naming>   max parallel: <from budget.yml>
 ## Verification
-generator: implementer   evaluator: evaluator (different model where possible)
-stop condition: the plan's numbered-checkbox list is fully checked AND the evaluator PASSes
-against ## Done Criteria (executed, judged separately from the generator)
+generator: software-engineer   evaluator: qa-engineer (different model where possible)
+stop condition: the plan's numbered-checkbox list is fully checked AND the qa-engineer
+PASSes against ## Done Criteria (executed, judged separately from the generator)
 ## Persistence
 state file: state/<name>.md (committed, carries the 5-field resume block)
-metrics: append one row per evaluator verdict to state/metrics.md (target-path keyed)
+metrics: append one row per qa-engineer verdict to state/metrics.md (target-path keyed)
 outputs: PRs + inbox/ for uncertainty
 ## Budget (from config/budget.yml)
 per-run cap: $<x>   daily cap: $<y>   max retries: <n>
@@ -35,8 +35,8 @@ than advises: `agentic-signals: goal_intake, refusal_gate, verification, loop_di
 ## The five moves in repo terms
 - Discovery: a skill reads CI / issues / commits / state and judges actionability.
 - Handoff: one git worktree per finding (procedure below).
-- Verification: the evaluator plus an executed stop condition, judged separately from the
-  generator.
+- Verification: the qa-engineer plus an executed stop condition, judged separately from
+  the generator.
 - Persistence: `state/*.md` committed, carrying the cross-iteration notes bridge.
 - Scheduling: cloud cron or a local interval.
 
@@ -59,7 +59,7 @@ than advises: `agentic-signals: goal_intake, refusal_gate, verification, loop_di
 ## Resume and Execution Handoff
 1. selected plan/loop file path
 2. last completed phase or step
-3. gate/evaluator status (passed / rejected+reason / pending)
+3. gate/qa-engineer status (passed / rejected+reason / pending)
 4. supporting context files loaded
 5. next step for a fresh agent picking up mid-run
 ```

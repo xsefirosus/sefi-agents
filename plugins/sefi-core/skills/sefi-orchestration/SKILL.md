@@ -10,20 +10,28 @@ The routing brain, loaded every turn. Keep this body a thin router; per-agent de
 harness map, and the routing table live in `references/` and are read on demand.
 
 User instructions always override this skill.
+All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never guess.
 
 ## Roster (summary; full detail in `references/roster.md`)
 | Agent | Use for | Cost |
 |---|---|---|
-| researcher | gather web/repo/doc context as a digest | haiku |
-| planner | turn a goal into a checkable plan file | sonnet |
-| implementer | build one plan slice in a worktree | sonnet |
-| evaluator | adversarial PASS/REJECT against evidence | opus |
-| librarian | vault distill / promote / router / contradiction | haiku |
-| automation-architect | n8n / Make / GHL / RAG / Vapi specs | sonnet |
+| engineering-manager | route, dispatch, enforce contracts and budgets | sonnet |
+| research-analyst | gather web/repo/doc context as a digest | haiku |
+| product-manager | turn a goal into a checkable plan file | sonnet |
+| ui-ux-designer | design spec (direction, tokens, a11y) before UI work | sonnet |
+| software-engineer | build one full-stack plan slice in a worktree | sonnet |
+| qa-engineer | adversarial PASS/REJECT against evidence | opus |
+| security-engineer | security gate on diffs at trust boundaries | opus |
+| devops-engineer | CI/CD, worktrees, scheduling, budget plumbing | sonnet |
+| support-engineer | inbox/issue intake, triage, consume-before-act | haiku |
+| knowledge-manager | vault distill / promote / router / contradiction | haiku |
+| technical-writer | user-facing docs, changelogs, guides | haiku |
+| solutions-architect | n8n / Make / GHL / RAG / Vapi specs | sonnet |
 | quant-analyst | trading-strategy gate and tier | sonnet |
 
 Read `references/roster.md` for each agent's skills, gates, and cost tier; do not inline
-it here. When `agents/` exceeds ~10-12 files, add a file-name prefix and domain subfolders.
+it here. At 13 files the roster sits just past the ~10-12 flat-folder boundary: it stays
+flat, and the NEXT addition introduces a file-name prefix and domain subfolders.
 
 ## Dispatch (one dispatcher, table-driven)
 The precedence-ordered trigger-to-agent map is `references/routing-table.md`. Resolve the

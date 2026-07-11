@@ -7,7 +7,7 @@ merge, deploy, or destructive action links here in one line and never restates i
 Loops open PRs; they never merge. A loop, agent, or automation never auto-merges, never
 force-pushes, never deploys to production, and never takes an irreversible or destructive
 action (drop-table, delete-worktree of unmerged work, mass-delete) on its own authority.
-Anything below the evaluator's confidence bar lands in `inbox/` for a human. Every merge,
+Anything below the qa-engineer's confidence bar lands in `inbox/` for a human. Every merge,
 deploy, or destructive step traces to an explicit human approval recorded in `inbox/`.
 
 ## Why (first-party precedent)

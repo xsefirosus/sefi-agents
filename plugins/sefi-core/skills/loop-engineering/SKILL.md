@@ -10,6 +10,7 @@ A loop discovers work, hands it off, verifies it, persists state, and reschedule
 Every loop implements all five moves. This skill maps them to repo mechanics.
 
 User instructions always override this skill.
+All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never guess.
 
 agentic-signals: goal_intake, refusal_gate, verification, loop_discipline, close_out
 
@@ -17,14 +18,14 @@ agentic-signals: goal_intake, refusal_gate, verification, loop_discipline, close
 - Discovery: a skill invoked by the automation reads CI / issues / commits / state and
   judges actionability.
 - Handoff: one git worktree per finding, per the worktree procedure in `docs/LOOPS.md`.
-- Verification: the evaluator plus an executed stop condition, judged separately from the
-  generator.
+- Verification: the qa-engineer plus an executed stop condition, judged separately from
+  the generator.
 - Persistence: `state/*.md` committed, carrying a cross-iteration notes bridge (what the
   next iteration must know).
 - Scheduling: cloud cron or a local interval.
 
 ## Stop condition = a grep-countable artifact, not a self-declaration
-The planner's numbered-checkbox plan is "done" only when every box is checked -- counted
+The product-manager's numbered-checkbox plan is "done" only when every box is checked -- counted
 by grep, never the generator declaring "I'm done." (AutoGPT's `finish`-tool self-completion
 is the anti-pattern; Sefi-OS's 184-green-tests-half-unwired build is the first-party proof
 that self-declared done lies.)
@@ -32,8 +33,8 @@ that self-declared done lies.)
 ## Deterministic tripwires (zero LLM cost)
 - Repetition detector: same tool + same args twice in a row -> force a stronger model or
   escalate.
-- The evaluator's instability score (+1 per revert / unrelated-file fix / repeated failed
-  action; stop at > 3).
+- The qa-engineer's instability score (+1 per revert / unrelated-file fix / repeated
+  failed action; stop at > 3).
 
 ## Hard rules
 - Git-reconciliation trust: a `state/*.md` claim that disagrees with git loses to git.
@@ -49,7 +50,7 @@ that self-declared done lies.)
   CLI's plain-text "session limit" -- not JSON, not an exit code) repeats until the window
   resets. Detect it, don't retry, write the resume block, park the item in `inbox/` with
   reason `harness-limit`, and stop cleanly.
-- Metrics append (the persistence move): after every evaluator verdict, append one row to
+- Metrics append (the persistence move): after every qa-engineer verdict, append one row to
   `state/metrics.md` (`| date | target-path | loop | verdict | retries | note |`).
   Append-only, keyed by the plugin-relative FILE PATH of the agent/skill -- the same path
   the retro loop edits, so there is one keyspace by construction.

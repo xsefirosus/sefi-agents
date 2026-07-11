@@ -10,6 +10,7 @@ Signature skill. This body is the Rule block; the gate math and worked examples 
 `references/gate-math.md`, read on demand.
 
 User instructions always override this skill.
+All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never guess.
 
 agentic-signals: goal_intake, refusal_gate, verification, loop_discipline, close_out
 

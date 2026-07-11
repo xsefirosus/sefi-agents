@@ -11,6 +11,7 @@ The Obsidian-style vault is human-readable knowledge (`memory/`); machine bookke
 `aliases`, `cssclasses`); every other key below is custom-but-queryable.
 
 User instructions always override this skill.
+All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never guess.
 
 ## Note frontmatter
 
@@ -46,7 +47,7 @@ managed-by: sefi-agents
 ```
 
 Use a `> [!warning] Superseded` callout on superseded decisions, and `%%...%%` comments
-for machine-only markers (invisible in reading view, still greppable by the librarian).
+for machine-only markers (invisible in reading view, greppable by the knowledge-manager).
 
 ## READ (router-based, never bulk-load)
 1. Frontmatter-only scan first: `rg` the leading frontmatter across `memory/**`.
@@ -68,7 +69,7 @@ Use `rg` for anything else. Never open a file > 100 KB without a stated need.
 `<!-- /GENERATED:router -->`, produced by `scripts/gen-router.sh` from each note's
 `keywords` / `related` / `description`. Never hand-edit inside the markers.
 
-## PROMOTION (the librarian's job)
+## PROMOTION (the knowledge-manager's job)
 - `tier: trace` -> `policy` when an observation recurs across >=2 sessions; -> `fact` when
   cross-task validated.
 - `scope: session` -> `project` / `user` when a daily fact proves durable.

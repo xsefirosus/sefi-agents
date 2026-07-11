@@ -15,8 +15,8 @@ off.
   `--spent` fallback keeps the zero-dependency install intact.
 
 ## The token-discipline stack (lever order -- biggest first)
-1. Code and scope minimization -- the implementer climbs the minimization ladder and builds
-   less. This is the biggest lever; everything below is smaller.
+1. Code and scope minimization -- the software-engineer climbs the minimization ladder and
+   builds less. This is the biggest lever; everything below is smaller.
 2. Subagent digests -- research burns tokens in a subagent's window; only a bounded digest
    returns.
 3. Progressive disclosure -- skills load name + description until invoked; deep material

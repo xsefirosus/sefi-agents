@@ -7,10 +7,11 @@ managed-by: sefi-agents
 # Terse Mode (optional, off by default)
 
 Output-compression for chat-facing narration only. It compresses phrasing, not scope --
-the minimization ladder in the implementer is the real token lever. Enable only when
+the minimization ladder in the software-engineer is the real token lever. Enable only when
 `terse_mode.enabled: true` in `sefi.config.yml`.
 
 User instructions always override this skill.
+All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never guess.
 
 ## Drop-list (safe to cut)
 Articles and filler, pleasantries, hedging, tool-narration ("Now I'll run..."), and

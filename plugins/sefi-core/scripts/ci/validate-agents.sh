@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # validate-agents.sh -- each agent frontmatter has name/description/tools/model/managed-by;
-# model in {haiku,sonnet,opus}; description <= 2 sentences.
+# model in {haiku,sonnet,opus}; description <= 2 sentences; body carries the
+# anti-hallucination pointer line (the canonical rule lives in skills/anti-hallucination).
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
@@ -35,6 +36,9 @@ for f in "$DIR"/*.md; do
   if [ "${sentences:-0}" -gt 2 ]; then
     echo "ERROR: $rel - description has $sentences sentences (max 2)"; errors=$((errors + 1))
   fi
+
+  grep -q 'anti-hallucination' "$f" \
+    || { echo "ERROR: $rel - missing anti-hallucination pointer line"; errors=$((errors + 1)); }
 done
 
 if [ "$count" -eq 0 ]; then echo "ERROR: no agent files found in $DIR"; exit 1; fi
