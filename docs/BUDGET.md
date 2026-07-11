@@ -1,0 +1,46 @@
+# BUDGET
+
+How spend is bounded, and the token-discipline stack in the order the levers actually pay
+off.
+
+## Enforcement
+- `config/budget.yml` declares the caps: per-run, daily, per-dispatch, max-retries,
+  max-parallel-worktrees, and per-agent return tokens. `validate-budget.sh` fails if any is
+  missing or unbounded.
+- `scripts/budget-check.sh` reads those caps and exits nonzero when one is exceeded. The
+  retry count comes from the loop's `state/*.md` cycle counter and is never reset on resume.
+- Real-spend upgrade (optional): when `ccusage` is on PATH, `budget-check.sh` and
+  `/sefi:status` read each agent CLI's own local ledger offline (`--offline`, no network
+  mid-loop; `--by-agent` for per-adapter spend). ccusage is never required -- the
+  `--spent` fallback keeps the zero-dependency install intact.
+
+## The token-discipline stack (lever order -- biggest first)
+1. Code and scope minimization -- the implementer climbs the minimization ladder and builds
+   less. This is the biggest lever; everything below is smaller.
+2. Subagent digests -- research burns tokens in a subagent's window; only a bounded digest
+   returns.
+3. Progressive disclosure -- skills load name + description until invoked; deep material
+   lives in `references/` read on demand.
+4. Router-based memory reads -- frontmatter scan, then index, then at most 2 notes; never
+   bulk-load.
+5. Output compression -- gate/test output is failure-focused and tee'd to a log, not parked
+   in context.
+6. Terse-mode -- optional, off by default, and last: it compresses phrasing only and nets
+   negative on short replies.
+
+## Optional connector note
+If you add the codegraph connector (see `OPTIONAL-TOOLS.md`), cite its defensible metric:
+~58% fewer tool calls, with file reads dropping to roughly zero across repo sizes. Treat any
+blanket token-percentage as noisy and scale-dependent.
+
+## Why these specific guards exist (one-line Sefi-OS evidence each)
+- Per-dispatch cap: a single self-batching dispatch hit **1.36M tokens** before any daily cap
+  would have noticed.
+- Code-enforced batching (<= 3 children per call): prompt-instructed batching was ignored,
+  which is how that 1.36M-token run happened and re-ran completed tasks.
+- The parse ladder: three calls burned **~324K tokens** on JSON that was present the whole
+  time, just not at position 0.
+- Tool verification before granting: a broken `browser` tool burned an entire **50-iteration**
+  budget retrying the identical failing call.
+- The whole stack is load-bearing on a free model: Sefi-OS's free-model dispatch ran **~45%**
+  success; the gates and human checkpoints are what made it viable.
