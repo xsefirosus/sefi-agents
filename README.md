@@ -1,14 +1,23 @@
-# sefi-agents
+<!--
+  Logo goes here once provided. Save the file to docs/assets/logo.png (or .svg) and
+  replace this comment with:
+  <p align="center"><img src="docs/assets/logo.png" alt="sefi-agents" width="200"></p>
+-->
 
-[![ci](https://github.com/xsefirosus/sefi-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/xsefirosus/sefi-agents/actions/workflows/ci.yml)
-[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![runtime deps: zero](https://img.shields.io/badge/runtime%20deps-zero-brightgreen.svg)](#faq)
-[![runs on](https://img.shields.io/badge/runs%20on-Claude%20Code%20%7C%20Hermes%20%7C%20OpenCode%20%7C%20Codex-555.svg)](#works-with-your-harness)
+<h1 align="center">sefi-agents</h1>
+<p align="center"><strong>A software company in a plugin.</strong></p>
 
-**A software company in a plugin.** Thirteen markdown-defined agents -- product manager,
-full-stack engineer, QA, security, DevOps, design, and more -- that plan, build, judge,
-and remember as a team, with hard budget caps and a human holding the merge button.
-Plain markdown plus POSIX shell. Nothing to install, nothing phoning home.
+<p align="center">
+<a href="https://github.com/xsefirosus/sefi-agents/actions/workflows/ci.yml"><img src="https://github.com/xsefirosus/sefi-agents/actions/workflows/ci.yml/badge.svg" alt="ci"></a>
+<a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="license: MIT"></a>
+<a href="#faq"><img src="https://img.shields.io/badge/runtime%20deps-zero-brightgreen.svg" alt="runtime deps: zero"></a>
+<a href="#works-with-your-harness"><img src="https://img.shields.io/badge/runs%20on-Claude%20Code%20%7C%20Hermes%20%7C%20OpenCode%20%7C%20Codex-555.svg" alt="runs on"></a>
+</p>
+
+Thirteen markdown-defined agents -- product manager, full-stack engineer, QA, security,
+DevOps, design, and more -- that plan, build, judge, and remember as a team, with hard
+budget caps and a human holding the merge button. Plain markdown plus POSIX shell.
+Nothing to install, nothing phoning home.
 
 ```
 /plugin marketplace add xsefirosus/sefi-agents
@@ -20,6 +29,13 @@ Or hand the setup to any coding agent:
 
 > Help me set up sefi-agents by following
 > https://raw.githubusercontent.com/xsefirosus/sefi-agents/main/Install.md
+
+**Contents:** [Why this exists](#why-this-exists) -- [The receipts](#the-receipts-real-numbers-first-party)
+-- [How it compares](#how-it-compares) -- [The team](#the-team-13-agents) --
+[The skills](#the-skills-12) -- [The loops](#the-loops-2-shipped-template-for-more) --
+[Memory](#memory-that-survives-the-session) -- [Harness support](#works-with-your-harness) --
+[Safety rails](#safety-rails-all-of-them-in-one-place) -- [Proof](#proof) -- [FAQ](#faq) --
+[Contributing](#contributing) -- [License](#license)
 
 ## Why this exists
 
@@ -125,6 +141,18 @@ The always-loaded router stays thin; craft lives in skills that load on demand:
 - **terse-mode** -- optional output compression, off by default.
 
 ## The loops (2 shipped, template for more)
+
+Every loop is the same five-move cycle -- a loop spec that skips one doesn't ship; CI
+rejects it:
+
+```mermaid
+flowchart LR
+    A[Discovery] --> B[Handoff]
+    B --> C[Verification]
+    C --> D[Persistence]
+    D --> E[Scheduling]
+    E -.->|next cycle| A
+```
 
 - **morning-triage** -- daily: support-engineer discovers (failed CI, new issues),
   software-engineer drafts in isolated worktrees, qa-engineer judges, PRs open for you.
