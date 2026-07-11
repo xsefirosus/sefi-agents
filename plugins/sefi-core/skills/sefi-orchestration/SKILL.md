@@ -18,7 +18,7 @@ All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, n
 | engineering-manager | route, dispatch, enforce contracts and budgets | sonnet |
 | research-analyst | gather web/repo/doc context as a digest | haiku |
 | product-manager | turn a goal into a checkable plan file | sonnet |
-| ui-ux-designer | design spec (direction, tokens, a11y) before UI work | sonnet |
+| ui-ux-designer | build, audit, redesign, or study a UI, direction-first | sonnet |
 | software-engineer | build one full-stack plan slice in a worktree | sonnet |
 | qa-engineer | adversarial PASS/REJECT against evidence | opus |
 | security-engineer | security gate on diffs at trust boundaries | opus |

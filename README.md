@@ -81,7 +81,7 @@ model tier, an output contract, and an escalation path.
 | engineering-manager | routes work, enforces contracts and budgets, never codes | sonnet |
 | research-analyst | web/repo/doc context, returned as a bounded digest | haiku |
 | product-manager | goal -> checkable plan with grep-countable steps | sonnet |
-| ui-ux-designer | design spec first: direction, tokens, accessibility | sonnet |
+| ui-ux-designer | build, audit, redesign, or study a UI, direction-first | sonnet |
 | software-engineer | full-stack vertical slices in isolated worktrees | sonnet |
 | qa-engineer | adversarial PASS/REJECT against executed evidence | opus |
 | security-engineer | trust-boundary review: secrets, injection, deps | opus |
@@ -104,8 +104,9 @@ The always-loaded router stays thin; craft lives in skills that load on demand:
 - **anti-hallucination** -- the canonical no-invention rule: UNKNOWN and PENDING instead
   of plausible guesses; every claim traces to a file, a command, or a named source.
   CI rejects any agent or skill missing its pointer to this rule.
-- **frontend-design** -- anti-slop UI: one committed aesthetic direction, typography-first,
-  a spacing system, WCAG AA as a gate. Includes the slop-tells checklist.
+- **frontend-design** -- anti-slop UI across build/audit/redesign/study: one committed
+  direction from a named lane catalog, typography-first, WCAG AA as a gate, plus
+  illustrative domain heuristics and a two-tier slop-tells checklist.
 - **backend-design** -- contract-first APIs, trust-boundary validation, idempotent
   mutations, reversible migrations, an explicit error taxonomy.
 - **security-review** -- the six-surface gate: secrets, injection, unsafe constructs,
