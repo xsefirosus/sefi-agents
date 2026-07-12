@@ -7,4 +7,5 @@ memory:
 loops:
   never_auto_merge: true
 terse_mode:
-  enabled: false       # off by default; prose compression nets negative on short replies
+  enabled: true        # on by user preference; costs ~1-1.5k tokens/turn to load, nets
+                       # negative on short replies -- see skills/terse-mode/SKILL.md

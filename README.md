@@ -138,7 +138,7 @@ The always-loaded router stays thin; craft lives in skills that load on demand:
   CoV <= 0.25) with a promotion ladder.
 - **n8n-workflow-design** -- client automation specs with idempotency, retries, webhook
   security, and cost-per-run.
-- **terse-mode** -- optional output compression, off by default.
+- **terse-mode** -- output compression for narration, config-gated (ships enabled).
 
 ## The loops (2 shipped, template for more)
 

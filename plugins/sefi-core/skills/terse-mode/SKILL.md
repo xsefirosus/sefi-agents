@@ -1,10 +1,10 @@
 ---
 name: terse-mode
-description: Use when the user has enabled terse mode and a chat reply exceeds roughly 1.5-2k output tokens. Optional off-by-default narration compression with an explicit drop-list and never-touch-list; it compresses phrasing, never scope, and never touches code, paths, or safety warnings.
+description: Use when terse_mode.enabled is true in sefi.config.yml and a chat reply exceeds roughly 1.5-2k output tokens. Narration compression with an explicit drop-list and never-touch-list; it compresses phrasing, never scope, and never touches code, paths, or safety warnings.
 managed-by: sefi-agents
 ---
 
-# Terse Mode (optional, off by default)
+# Terse Mode (gated by config, ships enabled)
 
 Output-compression for chat-facing narration only. It compresses phrasing, not scope --
 the minimization ladder in the software-engineer is the real token lever. Enable only when

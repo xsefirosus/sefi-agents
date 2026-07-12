@@ -25,8 +25,8 @@ off.
    bulk-load.
 5. Output compression -- gate/test output is failure-focused and tee'd to a log, not parked
    in context.
-6. Terse-mode -- optional, off by default, and last: it compresses phrasing only and nets
-   negative on short replies.
+6. Terse-mode -- config-gated and last: it compresses phrasing only and nets negative on
+   short replies.
 
 ## Optional connector note
 If you add the codegraph connector (see `OPTIONAL-TOOLS.md`), cite its defensible metric:
