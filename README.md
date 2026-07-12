@@ -176,7 +176,7 @@ grep it, diff it in PRs. No database, no service, no vendor.
 | Claude Code | plugin install (above) | full hook + subagent support |
 | Hermes Agent | [adapters/HERMES.md](adapters/HERMES.md) | free-model mode, live-verified gateway facts |
 | OpenCode | [adapters/OPENCODE.md](adapters/OPENCODE.md) | headless `opencode run` for CI loops |
-| Codex | [adapters/CODEX.md](adapters/CODEX.md) | set `multi_agent = true` for subagents |
+| Codex | [adapters/CODEX.md](adapters/CODEX.md) | plugin marketplace install; `multi_agent` enabled by default |
 
 ## Safety rails (all of them, in one place)
 

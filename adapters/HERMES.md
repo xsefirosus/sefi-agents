@@ -71,13 +71,14 @@ skill (all 12). After the loop it derives success from `hermes skills list` rath
 than from the per-call exit code, because hermes exits 0 even on a BLOCKED scanner
 verdict.
 
-Two skills are force-installed with `--force` because hermes's community-skill scanner
-flags their *content* on substring match: `sefi-orchestration` (its references name
+Two skills are attempted with `--force` because hermes's community-skill scanner can
+flag their *content* on substring match: `sefi-orchestration` (its references name
 subagent dispatch / hooks / shell) and `security-review` (its checklist names
-dangerous patterns to warn against them). We authored both; the scanner's verdict is a
-known false positive. The other 10 stay on the default no-override path. If a future
-hermes version flags additional skills, prefer `--force` per named skill over blanket
-overrides.
+dangerous patterns to warn against them). On this Hermes version, `--force` does not
+override a `DANGEROUS` verdict. The script still attempts all 12 skills, verifies the
+real installed set with `hermes skills list`, reports any missing names, and exits 1
+when the verified count is incomplete. The other 10 stay on the default no-override
+path.
 
 Agents are NOT installed this way -- Hermes has no discrete "install agent" concept.
 The roster maps to Hermes subagent delegation via `delegate_task(...)` (see row 3 of

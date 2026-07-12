@@ -5,13 +5,14 @@
 # "install agent" concept; the roster maps to Hermes subagent delegation instead
 # (delegate_task), documented separately in adapters/HERMES.md.
 #
-# Two skills (sefi-orchestration, security-review) are force-installed with
-# --force. Hermes's community-skill scanner flags their *content* as DANGEROUS
-# on substring match: sefi-orchestration's references name shell/hooks/subagent
+# Two skills (sefi-orchestration, security-review) are attempted with --force.
+# Hermes's community-skill scanner can flag their *content* as DANGEROUS on
+# substring match: sefi-orchestration's references name shell/hooks/subagent
 # dispatch; security-review's checklist names dangerous patterns (eval/exec,
 # curl-to-shell, unpinned installs) precisely in order to warn against them.
-# We are the actual authors and vouch for both. The other 10 stay on the
-# default no-override path.
+# On Hermes versions where --force cannot override DANGEROUS, those attempts
+# fail but the script must still verify the actual installed state. The other 10
+# stay on the default no-override path.
 #
 # The post-loop pass derives success from `hermes skills list` rather than the
 # per-call exit code: hermes exits 0 even on a BLOCKED verdict, so trusting the
@@ -37,17 +38,31 @@ in_force() {
   return 1
 }
 
+attempt_fail=0
 for name in $SKILLS; do
   echo "=== installing $name ===" >&2
   if in_force "$name"; then
-    hermes skills install "$REPO/$BASE_PATH/$name" --yes --force
+    if hermes skills install "$REPO/$BASE_PATH/$name" --yes --force; then
+      :
+    else
+      echo "FAILED: $name (will verify installed state after all attempts)" >&2
+      attempt_fail=$((attempt_fail + 1))
+    fi
   else
-    hermes skills install "$REPO/$BASE_PATH/$name" --yes
+    if hermes skills install "$REPO/$BASE_PATH/$name" --yes; then
+      :
+    else
+      echo "FAILED: $name (will verify installed state after all attempts)" >&2
+      attempt_fail=$((attempt_fail + 1))
+    fi
   fi
 done
 
 echo >&2
 echo "=== verifying via hermes skills list ===" >&2
+if [ "$attempt_fail" -ne 0 ]; then
+  echo "install-hermes.sh: $attempt_fail install call(s) failed; verifying installed state anyway." >&2
+fi
 
 # hermes skills list is a unicode-bordered table. The data lines start with
 # U+2502 (vertical box char) + space; the next U+2502 + space ends the name
