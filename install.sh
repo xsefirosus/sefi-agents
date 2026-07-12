@@ -69,9 +69,21 @@ link_one() {
 }
 
 rc=0
-for sub in agents skills commands; do
-  link_one "$sub" || rc=1
-done
+if [ "$TARGET" = "opencode" ]; then
+  # OpenCode's `tools` field is a strictly-typed object (not a string), and the
+  # agent files in this repo use a comma-separated string. A raw copy or symlink
+  # fails OpenCode's schema validation. Route the opencode target through the
+  # dedicated converter (agents transformed; skills + commands plain-copied).
+  # install-opencode.sh accepts --force and applies it; --copy is a no-op there
+  # (opencode install is always a real copy, never a symlink).
+  opencode_args=()
+  [ "$FORCE" -eq 1 ] && opencode_args+=(--force)
+  bash "$CORE/scripts/install-opencode.sh" "${opencode_args[@]}" || rc=1
+else
+  for sub in agents skills commands; do
+    link_one "$sub" || rc=1
+  done
+fi
 
 if [ "$rc" -ne 0 ]; then
   echo "install.sh: completed with errors (see above)" >&2
