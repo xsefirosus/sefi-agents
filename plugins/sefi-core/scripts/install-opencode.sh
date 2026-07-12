@@ -41,18 +41,53 @@ if command -v cygpath >/dev/null 2>&1; then
   DEST="$(cygpath -u "$DEST")"
 fi
 
+mkdir -p "$DEST"
+
+# Refuse a no-force install before writing anything. Checking every target up front
+# avoids a partial install when only some agent, skill, or command names conflict.
+conflicts=0
+preflight_target() {
+  # preflight_target <dest-path>
+  local target="$1"
+  if [ -e "$target" ] || [ -L "$target" ]; then
+    echo "install-opencode.sh: refusing to overwrite $target (use --force)" >&2
+    conflicts=$((conflicts + 1))
+  fi
+}
+
+if [ "$FORCE" -ne 1 ]; then
+  for src in "$AGENTS_SRC"/*.md; do
+    [ -f "$src" ] || continue
+    preflight_target "$DEST/agents/$(basename "$src")"
+  done
+  for src_dir in "$SKILLS_SRC" "$COMMANDS_SRC"; do
+    for entry in "$src_dir"/*; do
+      [ -e "$entry" ] || continue
+      if [ "$src_dir" = "$SKILLS_SRC" ]; then
+        preflight_target "$DEST/skills/$(basename "$entry")"
+      else
+        preflight_target "$DEST/commands/$(basename "$entry")"
+      fi
+    done
+  done
+  if [ "$conflicts" -ne 0 ]; then
+    echo "install-opencode.sh: refusing install because $conflicts destination(s) already exist" >&2
+    exit 1
+  fi
+fi
+
 mkdir -p "$DEST/agents" "$DEST/skills" "$DEST/commands"
 
 # Per-file check: refuse to overwrite unless --force was passed.
 check_target() {
   # check_target <dest-path>
   local target="$1"
-  if [ -e "$target" ]; then
+  if [ -e "$target" ] || [ -L "$target" ]; then
     if [ "$FORCE" -ne 1 ]; then
       echo "install-opencode.sh: refusing to overwrite $target (use --force)" >&2
       return 1
     fi
-    rm -f "$target"
+    rm -rf "$target"
   fi
   return 0
 }
