@@ -57,3 +57,36 @@ Every constraint below was discovered by hitting it.
 | Output dir | every task names its absolute output dir plus one example joined path -- else dispatches write to the home directory |
 | Toolsets | `terminal` / `file` / `database` / `docker` dispatch cleanly; grant `browser` only after verifying it works |
 | Parsing | every reply through the parse ladder (see sefi-orchestration); log the raw head/tail on failure |
+
+## 8. One-command skill install
+
+Hermes has no bulk-install verb, so a single `cp` won't do. From the repo root:
+
+```sh
+bash plugins/sefi-core/scripts/install-hermes.sh
+```
+
+The script loops the real `hermes skills install <owner>/<repo>/<path>` command once per
+skill (all 12). After the loop it derives success from `hermes skills list` rather
+than from the per-call exit code, because hermes exits 0 even on a BLOCKED scanner
+verdict.
+
+Two skills are force-installed with `--force` because hermes's community-skill scanner
+flags their *content* on substring match: `sefi-orchestration` (its references name
+subagent dispatch / hooks / shell) and `security-review` (its checklist names
+dangerous patterns to warn against them). We authored both; the scanner's verdict is a
+known false positive. The other 10 stay on the default no-override path. If a future
+hermes version flags additional skills, prefer `--force` per named skill over blanket
+overrides.
+
+Agents are NOT installed this way -- Hermes has no discrete "install agent" concept.
+The roster maps to Hermes subagent delegation via `delegate_task(...)` (see row 3 of
+section 7 above).
+
+## Troubleshooting
+
+- `hermes doctor --fix` ("Diagnose issues with Hermes Agent setup", with an
+  auto-remediate flag) -- run this first for any install/config problem.
+- `hermes hooks doctor` ("Check each configured hook: exec bit, allowlist, mtime
+  drift, JSON validity, and synthetic run timing") -- run this specifically for the
+  memory-injection hook (SessionStart).
