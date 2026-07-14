@@ -20,7 +20,7 @@ generator: software-engineer   evaluator: qa-engineer (different model where pos
 stop condition: the plan's numbered-checkbox list is fully checked AND the qa-engineer
 PASSes against ## Done Criteria (executed, judged separately from the generator)
 ## Persistence
-state file: state/<name>.md (committed, carries the 5-field resume block)
+state file: state/<name>.md (committed, carries the 6-field resume block)
 metrics: append one row per qa-engineer verdict to state/metrics.md (target-path keyed)
 outputs: PRs + inbox/ for uncertainty
 ## Budget (from config/budget.yml)
@@ -77,9 +77,17 @@ matching the provenance gate already in place (only remove a worktree under
 3. gate/qa-engineer status (passed / rejected+reason / pending)
 4. supporting context files loaded
 5. next step for a fresh agent picking up mid-run
+6. acting_on: <branch-or-PR-id this loop is currently working, or none>
 ```
 On resume, cross-check these claims against git (trust git) and recover the cycle counter
 from disk (never reset it).
+
+## Multi-loop coordination
+Before opening a worktree, grep every other `state/*.md` for a matching `acting_on:`
+value; if found, skip this finding and log why instead of proceeding -- another loop is
+already on it. Record what this loop is currently acting on as field 6 of its own resume
+block above. This is a real gap once a second loop exists: two loops fixing the same
+target minutes apart wastes tokens with nothing to show for it.
 
 ## Inbox-item response contract
 Every item a loop routes to `inbox/` states the three actions a human can take: **confirm**

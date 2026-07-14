@@ -10,14 +10,14 @@ cloud: cron `0 7 * * 1` (Mondays) via a workflow file   |   local: weekly interv
 skill: retro-improve (discovery move)   inputs read: qa-engineer REJECTs, gate failures, and knowledge-manager `## Possible contradiction` flags from `state/`, plus `state/metrics.md` (worst success rate first).
 
 ## Handoff
-one worktree per improvement target: branch `retro/<slug>` under `.worktrees/`   max parallel: 1 (self-improvement is single-writer). Each dispatched task names its absolute worktree output path.
+one worktree per improvement target: branch `retro/<slug>` under `.worktrees/`   max parallel: 1 (self-improvement is single-writer). Each dispatched task names its absolute worktree output path. Before opening it, grep other `state/*.md` for a matching `acting_on`; skip and log if already claimed.
 
 ## Verification
 generator: retro-improve (proposes bounded edits)   evaluator: qa-engineer (different model where possible)
 stop condition: the proposed edit is <= 3 sentences per file AND lands in a `managed-by: sefi-agents` file the runtime loads; otherwise it becomes an `inbox/` proposal, judged separately from the generator.
 
 ## Persistence
-state file: `state/retro-<date>.md` (committed; carries the 5-field resume block and the SKIP reason when nothing changed)
+state file: `state/retro-<date>.md` (committed; carries the 6-field resume block and the SKIP reason when nothing changed)
 metrics: read `state/metrics.md` as the scorecard; append the retro outcome row
 outputs: applied skill edits if `improvement.enabled: true`, else a proposal in `state/retro-<date>.md`; new skills go to `inbox/`
 
