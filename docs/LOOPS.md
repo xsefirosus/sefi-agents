@@ -28,6 +28,14 @@ metrics: append one row per qa-engineer verdict to state/metrics.md (target-path
 outputs: PRs + inbox/ for uncertainty
 ## Budget (from config/budget.yml)
 per-run cap: $<x>   daily cap: $<y>   max retries: <n>
+## Cost Profile (optional; sizes the Budget above from evidence, not a guess)
+| Scenario | Est. tokens | Notes |
+|---|---|---|
+| no-op (nothing actionable found) | <n or UNKNOWN> | |
+| report only (finding surfaced, no fix attempted) | <n or UNKNOWN> | |
+| full fix attempt | <n or UNKNOWN> | |
+Fill from `state/metrics.md` history once the loop has run; mark UNKNOWN, not a guess,
+before then.
 ## Human checkpoint
 <what is never automated -- e.g., "PRs are opened, never merged">
 ```

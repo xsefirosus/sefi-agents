@@ -24,6 +24,13 @@ outputs: PRs + `inbox/` for uncertainty
 ## Budget (from config/budget.yml)
 per-run cap: $0.50   daily cap: $2.00   max retries: 2
 
+## Cost Profile
+| Scenario | Est. tokens | Notes |
+|---|---|---|
+| no-op | UNKNOWN | no run history yet; fill from state/metrics.md after the first week |
+| report only | UNKNOWN | |
+| full fix attempt | UNKNOWN | |
+
 ## Human checkpoint
 PRs are opened, never merged. Anything below the qa-engineer's confidence bar goes to `inbox/`.
 See `skills/sefi-orchestration/references/human-checkpoint.md` for the full rule and why.
