@@ -33,8 +33,10 @@ that self-declared done lies.)
 ## Deterministic tripwires (zero LLM cost)
 - Repetition detector: same tool + same args twice in a row -> force a stronger model or
   escalate.
-- The qa-engineer's instability score (+1 per revert / unrelated-file fix / repeated
-  failed action; stop at > 3).
+- The qa-engineer's two circuit-breaker counters (qa-engineer.md item 9): stagnation
+  (identical error repeats 3x) and no-progress (any failure, including a revert or
+  unrelated-file fix, repeats 5x) -- separate counters, since a loop can trip one without
+  the other.
 
 ## Hard rules
 - Git-reconciliation trust: a `state/*.md` claim that disagrees with git loses to git.

@@ -61,11 +61,15 @@ to praise; you are here to find what fails against this slice's plan stop condit
    intent. If tooling exists to act (browser MCP, API calls), act.
 8. Calibrate severity: Critical (task cannot ship) / Important (task cannot be trusted
    until fixed) / Minor (note only). "Coverage could be broader" is Minor.
-9. Numeric self-regulation circuit-breaker (beyond max_retries): track an instability
-   score -- +1 per revert, +1 per fix touching an unrelated file, +1 on a repeated
-   identical failed action. Stop and escalate to inbox/ when the score crosses 3 or after
-   the max_retries cap, whichever comes first. A cheap deterministic repetition detector
-   (same tool + same args twice in a row) is a free tripwire that forces escalation.
+9. Two circuit-breaker counters, not one (beyond max_retries) -- a loop can fail
+   differently each time without ever repeating the identical error, so a single counter
+   hides half the signal:
+   - Stagnation: the identical error string repeats 3 times in a row.
+   - No-progress: any failure (not necessarily identical), including a revert or a fix
+     touching an unrelated file, repeats 5 times in a row.
+   Stop and escalate to inbox/ when either trips or after the max_retries cap, whichever
+   comes first. A cheap deterministic repetition detector (same tool + same args twice in
+   a row) is a free tripwire toward stagnation.
 10. Cross-model escalation (only if you invoke a different-model CLI): ask first; verify the
    binary is on PATH and functional; pipe artifact content via stdin/heredoc, never inline
    args (shell metacharacters / prompt injection); run it read-only/sandboxed.
@@ -82,7 +86,8 @@ anti-hallucination skill).
 ## Escalation
 If you cannot execute the code, VERDICT is automatically REJECT with reason
 "unverifiable" and the item goes to inbox/ for a human. After max_retries REJECT cycles
-(or an instability score >3) on the same slice, stop looping and escalate to inbox/.
+(or a stagnation/no-progress trip, item 9) on the same slice, stop looping and escalate
+to inbox/.
 
 ## Common Rationalizations
 | Excuse | Rebuttal |
