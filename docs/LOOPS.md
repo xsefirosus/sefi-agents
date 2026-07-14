@@ -1,5 +1,8 @@
 # LOOPS
 
+See `docs/LOOP-FAILURE-MODES.md` for the runtime incident catalog (distinct from
+`docs/ANTIPATTERNS.md`'s build/authoring mistakes).
+
 A loop discovers work, hands it off, verifies it, persists state, and reschedules itself.
 Every loop implements all five moves. This doc is the loop-spec template, the worktree
 procedure, the resume block, and the inbox contract.
