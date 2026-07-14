@@ -89,5 +89,11 @@ Documented (40-59), L2 Wired (60-79), L3 Proven (80-100). Advisory only -- it ne
 nonzero and never blocks a build or a merge. No score, at any level, authorizes skipping
 the human checkpoint; see `skills/sefi-orchestration/references/human-checkpoint.md`.
 
+## State-sync drift check
+`scripts/check-state-sync.sh` flags a `loops/*.loop.md` whose named state file is
+missing, not yet created (normal before the first run), or missing its resume block --
+run it after editing a loop spec and again before scheduling it. Advisory only, matching
+this repo's report-don't-act convention for broad scans.
+
 ## Growth rule
 Widen discovery before parallelism. More findings surfaced beats more workers racing.
