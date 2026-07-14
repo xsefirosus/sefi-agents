@@ -12,6 +12,7 @@ ARGS=""
 validators="
 validate-agents.sh
 validate-skills.sh
+validate-doc-counts.sh
 validate-loops.sh
 validate-budget.sh
 validate-no-personal-paths.sh
