@@ -31,6 +31,11 @@ describes the package layout.
   judges executed evidence.
 - Anti-hallucination is structural: UNKNOWN/PENDING instead of plausible guesses, one
   canonical rule every agent and skill points to.
+- Signature/Craft/Gate skills open with a `## Rule block`: a short, quotable checklist
+  an agent's output contract can check, with deep material in `references/`, read on
+  demand. This is sefi-agents' adaptation of the rules-vs-skills split (rules = what,
+  skills = how) -- kept inside one file, not a parallel `rules/` tree, since Claude Code
+  plugins cannot ship a top-level `rules/` directory.
 - Single writer per artifact set; memory maintenance is append-only.
 - Loops open PRs, never merge; the canonical rule is
   `skills/sefi-orchestration/references/human-checkpoint.md`.

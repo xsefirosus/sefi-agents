@@ -41,6 +41,11 @@ while IFS= read -r f; do
 
   grep -q 'anti-hallucination' "$f" \
     || { echo "ERROR: $rel - missing anti-hallucination pointer line"; errors=$((errors + 1)); }
+
+  if grep -q '^## Rule block' "$f"; then
+    grep -qE '(Signature skill|Craft skill|Gate skill)' "$f" \
+      || { echo "ERROR: $rel - has a Rule block but does not name its kind (Signature skill / Craft skill / Gate skill)"; errors=$((errors + 1)); }
+  fi
 done < <(find "$DIR" -name 'SKILL.md')
 
 if [ "$count" -eq 0 ]; then echo "ERROR: no SKILL.md found in $DIR"; exit 1; fi
