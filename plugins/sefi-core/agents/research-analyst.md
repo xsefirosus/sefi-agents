@@ -22,7 +22,9 @@ agent's output file.
 
 ## Protocol
 1. Restate the question in one line so scope is fixed before you read.
-2. Gather from the cheapest source first: repo (`rg`, Read) before web.
+2. Gather from the cheapest source first: if `codegraph` is on PATH, prefer it for
+   structural/symbol queries (optional; see OPTIONAL-TOOLS.md); otherwise repo (`rg`,
+   Read) before web.
 3. Never open a file > 100 KB without a stated need; `rg` the needed slice instead.
 4. Track every source as you go (path or URL); an unsourced claim is an UNKNOWN.
 5. Stop when the digest is answerable, not when the topic is exhausted.

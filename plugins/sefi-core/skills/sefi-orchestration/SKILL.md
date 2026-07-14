@@ -65,6 +65,8 @@ with chat ("Here's the summary: ...").
 - The orchestrator never edits files; unfinished work is written to `state/`, never
   carried in context.
 - Never open a file > 100 KB without a stated need; `rg` the needed slice instead.
+- Genuinely trivial tasks: use judgment instead of applying full rigor mechanically --
+  the one legitimate exception, and it never licenses skipping or relaxing a gate.
 
 ## References
 - `references/roster.md` -- full per-agent detail (skills, gates, cost).
