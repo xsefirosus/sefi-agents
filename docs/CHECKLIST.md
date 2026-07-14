@@ -8,7 +8,7 @@ Run this before shipping a loop and when auditing a finished one.
 3. Handoff -- one worktree per finding, with the branch naming and max parallel.
 4. Verification -- generator plus a separate judge (the qa-engineer), judged against an
    executed stop condition.
-5. Persistence -- the committed `state/*.md` with a 5-field resume block and the metrics row.
+5. Persistence -- the committed `state/*.md` with a 6-field resume block and the metrics row.
 6. Human checkpoint -- the one thing that is never automated.
 
 A loop missing any element does not ship. `validate-loops.sh` enforces the five moves and

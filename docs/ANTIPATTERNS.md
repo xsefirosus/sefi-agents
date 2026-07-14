@@ -16,7 +16,7 @@ the tree.
 ### 2. Amnesiac (no memory)
 - Symptom: each run re-derives context from scratch and loses prior decisions.
 - Fix: the file-based memory vault (`memory-protocol`) plus committed `state/*.md` with a
-  5-field resume block, so a cold restart recovers where it left off.
+  6-field resume block, so a cold restart recovers where it left off.
 
 ### 3. Manual (no loop)
 - Symptom: work that should discover-and-repeat is driven by hand every time.
