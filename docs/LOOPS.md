@@ -54,6 +54,21 @@ than advises: `agentic-signals: goal_intake, refusal_gate, verification, loop_di
   Order: merge -> `cd` main root -> `git worktree remove` -> `git worktree prune` -> delete
   branch. Cleanup runs only on merge-and-delete or discard.
 
+## Worktree status and sweep
+Track each open worktree in `state/worktrees.md`, a plain markdown table:
+`| path | branch | pattern | status | created |`, status one of
+`active | rejected | escalated | merged`. Update the row's status the moment a worktree
+is rejected or escalated -- never leave it silent. List stale candidates with:
+```sh
+awk -F'|' '$5 ~ /rejected|escalated/ {print $3, $6}' state/worktrees.md
+```
+which prints the branch and creation date of every rejected/escalated row; a human (or
+the devops-engineer) confirms age from that date before running the existing cleanup
+order above (merge -> `cd` main root -> `git worktree remove` -> `git worktree prune` ->
+delete branch) on each. This never runs automatically -- it is a report, not an action,
+matching the provenance gate already in place (only remove a worktree under
+`.worktrees/` or `worktrees/`).
+
 ## State-file resume block (every `state/<name>.md`)
 ```
 ## Resume and Execution Handoff
