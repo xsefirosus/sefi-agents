@@ -80,5 +80,14 @@ never check-then-act with I/O in the gap. A runner that finds the marker already
 - Local interval: no secrets to manage, immediate, but only runs while the machine is on.
   Best for interactive or on-demand loops.
 
+## Loop readiness score (advisory, not a gate)
+`scripts/loop-readiness.sh` prints a 0-100 score per `loops/*.loop.md` in the current
+project: 20 points each for the five moves present, the five agentic-signals present, a
+human-checkpoint line, a budget section with real (non-placeholder) values, and at least
+one `state/metrics.md` row proving the loop has actually run. Levels: L0 Draft (<40), L1
+Documented (40-59), L2 Wired (60-79), L3 Proven (80-100). Advisory only -- it never exits
+nonzero and never blocks a build or a merge. No score, at any level, authorizes skipping
+the human checkpoint; see `skills/sefi-orchestration/references/human-checkpoint.md`.
+
 ## Growth rule
 Widen discovery before parallelism. More findings surfaced beats more workers racing.
