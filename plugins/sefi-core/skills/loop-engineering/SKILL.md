@@ -13,6 +13,7 @@ User instructions always override this skill.
 All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never guess.
 
 agentic-signals: goal_intake, refusal_gate, verification, loop_discipline, close_out
+(goal_intake's behavior: `skills/sefi-orchestration/references/goal-intake.md`)
 
 ## The five moves (mapped to repo mechanics)
 - Discovery: a skill invoked by the automation reads CI / issues / commits / state and

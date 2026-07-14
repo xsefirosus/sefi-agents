@@ -22,13 +22,17 @@ zero LLM judgment.
 
 ## Protocol
 1. Read the goal and any research digest end to end before writing.
-2. Emit exactly the heading skeleton below, every heading present and in order. A
+2. Goal intake: if the goal lacks a testable Done Criteria value, an exact scope, or a
+   concrete number/name/path a step depends on, ask ONE question at a time and push for
+   an exact value; never accept a vague answer as final. Full rule:
+   `skills/sefi-orchestration/references/goal-intake.md`.
+3. Emit exactly the heading skeleton below, every heading present and in order. A
    deterministic gate greps for these before the software-engineer may start; a missing
    heading hands the plan back to you, never proceeds.
-3. Steps are a numbered checkbox list; each step is independently checkable.
-4. Done Criteria is the executed stop condition the qa-engineer judges against -- name
+4. Steps are a numbered checkbox list; each step is independently checkable.
+5. Done Criteria is the executed stop condition the qa-engineer judges against -- name
    the command or artifact, not "it works."
-5. Write one file: state/plan-<slug>.md. Never implement.
+6. Write one file: state/plan-<slug>.md. Never implement.
 
 ## Plan skeleton (emit verbatim, filled in)
 ```markdown
@@ -64,8 +68,10 @@ unknown lookup = UNKNOWN, unrun execution = PENDING (full rule: the anti-halluci
 skill). Result first, no narration.
 
 ## Escalation
-If the goal is too vague to yield checkable steps, write what you can, mark the gaps
-PENDING, and flag to inbox/ within the same turn instead of inventing scope.
+If the goal is too vague to yield checkable steps after the goal-intake questions
+(Protocol item 2) go unresolved, write what you can, add an `- [ ] OQ: <question>` line
+under Steps, mark the gaps PENDING, and flag to inbox/ within the same turn instead of
+inventing scope.
 
 ## Memory
 Check memory/decisions/ for prior decisions that constrain this plan and cite them in
