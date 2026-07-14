@@ -24,6 +24,13 @@ outputs: applied skill edits if `improvement.enabled: true`, else a proposal in 
 ## Budget (from config/budget.yml)
 per-run cap: $0.50   daily cap: $2.00   max retries: 2
 
+## Cost Profile
+| Scenario | Est. tokens | Notes |
+|---|---|---|
+| no-op | UNKNOWN | no run history yet; fill from state/metrics.md after the first week |
+| report only | UNKNOWN | |
+| full fix attempt | UNKNOWN | |
+
 ## Human checkpoint
 New skills require inbox approval; no skill is created autonomously, and no host-runtime file is edited.
 See `skills/sefi-orchestration/references/human-checkpoint.md` for the full rule and why.
