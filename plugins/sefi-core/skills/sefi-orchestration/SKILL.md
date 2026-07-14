@@ -74,5 +74,6 @@ with chat ("Here's the summary: ...").
 - `references/harness-actions.md` -- the narrow harness action/tool/hook map.
 - `references/human-checkpoint.md` -- the canonical never-auto-merge rule.
 - `references/anti-patterns.md` -- authoring anti-patterns.
+- `references/goal-intake.md` -- the canonical goal_intake behavior.
 
 Self-test: every merge/deploy in a loop turn traces to an explicit human approval.
