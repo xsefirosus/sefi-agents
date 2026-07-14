@@ -1,8 +1,4 @@
-<!--
-  Logo goes here once provided. Save the file to docs/assets/logo.png (or .svg) and
-  replace this comment with:
-  <p align="center"><img src="docs/assets/logo.png" alt="sefi-agents" width="200"></p>
--->
+<p align="center"><img src="docs/assets/logo.png" alt="Sefi Automates" width="200"></p>
 
 <h1 align="center">sefi-agents</h1>
 <p align="center"><strong>A software company in a plugin.</strong></p>
@@ -174,7 +170,7 @@ grep it, diff it in PRs. No database, no service, no vendor.
 | Harness | How | Notes |
 |---|---|---|
 | Claude Code | plugin install (above) | full hook + subagent support |
-| Hermes Agent | [adapters/HERMES.md](adapters/HERMES.md) | free-model mode, live-verified gateway facts |
+| Hermes Agent | [adapters/HERMES.md](adapters/HERMES.md) | one-command skill install (`install-hermes.sh`); 10 of 12 install automatically, 2 print a verified manual fix inline -- see FAQ |
 | OpenCode | [adapters/OPENCODE.md](adapters/OPENCODE.md) | headless `opencode run` for CI loops |
 | Codex | [adapters/CODEX.md](adapters/CODEX.md) | plugin marketplace install; `multi_agent` enabled by default |
 
@@ -201,8 +197,8 @@ validate-loops: OK (2 loop spec(s) validated)
 validate-budget: OK (all caps present and bounded)
 validate-no-personal-paths: OK (no personal paths in shipped files)
 validate-no-orphans: OK (references, templates, agents all wired)
-check-unicode-safety: OK (85 files scanned, ASCII-clean)
-validate-token-budget: OK (all within token budgets; agents total 6761 words)
+check-unicode-safety: OK (89 files scanned, ASCII-clean)
+validate-token-budget: OK (all within token budgets; agents total 6961 words)
 CI: all validators passed
 ```
 
@@ -230,6 +226,16 @@ stated once, linked everywhere, and CI checks every loop names its human checkpo
 **What happens when the model does not know something?** It says so: unknown lookups
 come back as UNKNOWN and uncomputed values as PENDING -- never a plausible guess. That
 rule is a skill, and CI fails any agent or skill that drops its pointer to it.
+
+**Why didn't all the skills install automatically on Hermes?** Hermes runs its own
+community-skill security scanner, and two skills -- `sefi-orchestration` and
+`security-review` -- trip it as false positives: their content *names* dangerous
+patterns (subagent dispatch, eval/exec, unpinned downloads) specifically to guard
+against them, and the scanner can't yet tell "warns about" from "does."
+`install-hermes.sh` still installs the other 10 automatically, and the moment it
+detects either of the two missing, it prints the exact fix inline: a direct copy that
+bypasses the scanner entirely, verified to work and shown as `Source=local, enabled` in
+`hermes skills list` afterward. See [adapters/HERMES.md](adapters/HERMES.md) section 8.
 
 **Do I need Obsidian?** No. The vault is plain markdown; Obsidian just makes it nicer.
 
