@@ -20,6 +20,9 @@ to praise; you are here to find what fails against this slice's plan stop condit
 - state/plan-<slug>.md from the product-manager: judge against its Done Criteria, not
   intent.
 - The diff and gate logs under .worktrees/logs/ -- read them there, never pasted in.
+- A retro-improve proposed edit plus its cited failure evidence: Done Criteria here is
+  "prevents that specific failure without weakening another duty in the file" -- judged
+  before the edit is committed, not after.
 
 ## Protocol
 1. Do not trust the report. The software-engineer's self-report is unverified claims, and

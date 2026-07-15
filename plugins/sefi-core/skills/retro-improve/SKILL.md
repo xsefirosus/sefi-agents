@@ -44,6 +44,14 @@ success rate first.
 - Edit what the runtime loads: before editing, confirm the target file is actually
   reachable by the harness (listed in `references/roster.md` or a loaded skill directory).
   Improving an unwired copy changes nothing.
+- Verify before applying (not after): hand the proposed edit to the qa-engineer BEFORE
+  it is committed, together with the specific failure evidence it targets (the REJECT,
+  gate failure, or contradiction row from the scorecard). The qa-engineer judges two
+  things: does this edit plausibly prevent that specific failure, and does a re-read of
+  the whole file confirm no other stated duty was weakened or removed. A REJECT on
+  either makes the edit an `inbox/` proposal, never a commit -- the retro loop cannot
+  self-certify its own edit as effective, the same way the software-engineer cannot
+  self-certify a slice.
 
 ## Commit message format
 Every applied edit's commit message states the metric that motivated it and the
@@ -60,4 +68,5 @@ yet -- never a vague "improved X" with no cited evidence.
 | "I'll add a new skill to fix this." | New skills need a human-approved inbox/ entry first. |
 
 Self-test: every edit landed in a managed-by sefi-agents file the runtime actually loads,
-and changed <= 3 sentences.
+changed <= 3 sentences, and passed the qa-engineer's pre-commit effectiveness check
+against its cited failure evidence.
