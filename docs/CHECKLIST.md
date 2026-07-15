@@ -25,6 +25,17 @@ the human-checkpoint line.
 - Caps in `config/budget.yml` set before the first unattended run, never after.
 - One permanent human checkpoint that never gets optimized away.
 
+## Plan Structure Validation (metagpt-batch2 pattern)
+
+Every plan file (`state/plan-<slug>.md`) must contain these sections:
+- `## Objective` -- the goal being decomposed
+- `## Steps` -- numbered checklist (1. 2. 3. ...)
+- `## Files Touched` -- which files the implementer will modify
+- `## Risks` -- known obstacles or unknowns
+- `## Done Criteria` -- specific, testable outcomes (not "code looks good")
+
+This is machine-checkable via: `grep -c '^## ' plan-<slug>.md` should equal 5.
+
 ## Sampled-review / audit skeleton
 Method migrated from the predecessor's audit that caught what three rounds of self-reported "done"
 missed.

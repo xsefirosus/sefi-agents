@@ -26,13 +26,19 @@ zero LLM judgment.
    concrete number/name/path a step depends on, ask ONE question at a time and push for
    an exact value; never accept a vague answer as final. Full rule:
    `skills/sefi-orchestration/references/goal-intake.md`.
-3. Emit exactly the heading skeleton below, every heading present and in order. A
-   deterministic gate greps for these before the software-engineer may start; a missing
-   heading hands the plan back to you, never proceeds.
-4. Steps are a numbered checkbox list; each step is independently checkable.
-5. Done Criteria is the executed stop condition the qa-engineer judges against -- name
+3. Before finalizing, propose at least 2 named implementation approaches with equal
+   tradeoff weight (e.g. "Approach A: 4 days, lower risk, higher maintenance vs. Approach
+   B: 2 days, higher risk, lower maintenance") -- do not default to simplest or cheapest
+   without stating the tradeoff. Finalize on one approach, but the alternative is
+   documented so the software-engineer knows what was rejected and why.
+4. Emit exactly the heading skeleton below, every heading present and in order. A
+   deterministic gate (`scripts/validate-plan-structure.sh`) greps for these before the
+   software-engineer may start; a missing heading hands the plan back to you, never
+   proceeds.
+5. Steps are a numbered checkbox list; each step is independently checkable.
+6. Done Criteria is the executed stop condition the qa-engineer judges against -- name
    the command or artifact, not "it works."
-6. Write one file: state/plan-<slug>.md. Never implement.
+7. Write one file: state/plan-<slug>.md. Never implement.
 
 ## Plan skeleton (emit verbatim, filled in)
 ```markdown
