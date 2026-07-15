@@ -14,7 +14,7 @@ one worktree per improvement target: branch `retro/<slug>` under `.worktrees/`  
 
 ## Verification
 generator: retro-improve (proposes bounded edits)   evaluator: qa-engineer (different model where possible)
-stop condition: the proposed edit is <= 3 sentences per file AND lands in a `managed-by: sefi-agents` file the runtime loads; otherwise it becomes an `inbox/` proposal, judged separately from the generator.
+stop condition: the proposed edit is <= 3 sentences per file, lands in a `managed-by: sefi-agents` file the runtime loads, AND the qa-engineer PASSes it against the specific failure evidence it targets (does it prevent that failure without regressing another duty in the file); failing any of these, it becomes an `inbox/` proposal, judged separately from the generator.
 
 ## Persistence
 state file: `state/retro-<date>.md` (committed; carries the 6-field resume block and the SKIP reason when nothing changed)
