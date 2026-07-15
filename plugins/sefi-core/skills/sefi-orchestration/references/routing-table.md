@@ -5,6 +5,12 @@ highest-to-lowest: per-message override -> per-project config (`sefi.config.yml`
 global default -> hardcoded fallback. Agent identity travels as a field. A new trigger or
 loop is one appended row, never a new code branch.
 
+Trigger column semantics: entries are semantic-intent descriptions, not literal substrings
+or regexes -- a `/` separates independent aliases for the same row's intent, and a
+paraphrase that clearly matches that intent (e.g. "check if it's solid before I merge"
+matching the review/judge row) routes the same as an exact phrase. When intent is
+genuinely ambiguous between two rows, that's a goal_intake case: ask, don't guess.
+
 | Trigger | Default agent | Precedence-override fields | Special context flags |
 |---|---|---|---|
 | "research X" / needs context | research-analyst | override: `agent` | -- |
