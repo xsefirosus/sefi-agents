@@ -59,7 +59,10 @@ Use `rg` for anything else. Never open a file > 100 KB without a stated need.
 
 ## WRITE (privacy-filtered, append-only)
 1. Run the privacy filter first: strip secrets, API keys, and `<private>...</private>`
-   blocks before anything is persisted.
+   blocks before anything is persisted. Watch specifically for provider-key prefixes
+   (e.g. `sk-`, `ghp_`/`ghu_`, `xoxb-`/`xapp-`, `AKIA...`), `-----BEGIN...PRIVATE KEY-----`
+   blocks, and generic `password=`/`secret=`/`token=` assignments -- name-only, never the
+   value, same as any other credential this skill already treats as unsafe to persist.
 2. Append a structured entry to the daily note: `## HH:MM -- <topic>`, 3 lines max, plus
    `[[links]]`. Default `tier: trace` / `scope: session`.
 3. Decisions get the schema above. When a write is also a handoff, set `handoff-to:`.

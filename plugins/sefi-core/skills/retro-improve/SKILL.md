@@ -28,7 +28,12 @@ success rate first.
 ## Four additional guards (predecessor Loop-3 lessons)
 - Bounded change: an improvement edits at most ~3 sentences per file per retro run
   (checkable: sentence-level set difference between old and new <= 3). Anything larger
-  becomes a proposal in `inbox/`, not an edit.
+  becomes a proposal in `inbox/`, not an edit. This is a fixed, absolute cap, not a
+  percentage of the target file's size -- a percentage-growth cap still admits a large
+  diff on an already-large file; a fixed sentence cap doesn't, and greps identically
+  regardless of file size (a second, independent self-improvement system, NousResearch's
+  hermes-agent-self-evolution, uses a 20%-of-baseline growth cap instead and gets the
+  weaker guarantee).
 - SKIP is a conclusion, not a shortcut: when the metrics show nothing worth changing, log
   `SKIP` with a stated, data-backed reason (e.g. "12/13 PASS over 4 weeks, no failure
   pattern") to `state/retro-<date>.md`. The history is complete either way.
@@ -39,6 +44,12 @@ success rate first.
 - Edit what the runtime loads: before editing, confirm the target file is actually
   reachable by the harness (listed in `references/roster.md` or a loaded skill directory).
   Improving an unwired copy changes nothing.
+
+## Commit message format
+Every applied edit's commit message states the metric that motivated it and the
+before/after values from `state/metrics.md` (e.g. "qa-engineer PASS rate 6/10 -> target:
+address recurring REJECT reason"), or `UNKNOWN` if no measured before/after value exists
+yet -- never a vague "improved X" with no cited evidence.
 
 ## Common Rationalizations
 | Excuse | Rebuttal |
