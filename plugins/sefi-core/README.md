@@ -36,10 +36,41 @@ describes the package layout.
   demand. This is sefi-agents' adaptation of the rules-vs-skills split (rules = what,
   skills = how) -- kept inside one file, not a parallel `rules/` tree, since Claude Code
   plugins cannot ship a top-level `rules/` directory.
+- Tier gating: lighter agents (haiku-tier research-analyst, support-engineer) omit deep
+  methodology sections; heavier agents (sonnet/opus-tier software-engineer, qa-engineer)
+  include full behavioral rules and decision protocols. This keeps lightweight tasks
+  token-efficient while ensuring complex decisions carry their full guard rails.
+- Failure-mode justification in rules: when authoring a new principle or agent discipline,
+  include a one-sentence link to the observed LLM failure it prevents (e.g., "This rule
+  prevents unchecked assumptions" or "This gate prevents incomplete verification"). The
+  "why" helps future maintainers understand scope and supports rule evolution.
 - Single writer per artifact set; memory maintenance is append-only.
 - Loops open PRs, never merge; the canonical rule is
   `skills/sefi-orchestration/references/human-checkpoint.md`.
 - Zero runtime dependencies: markdown plus POSIX shell (git / rg / coreutils).
+
+## Reference material extraction (supporting file threshold)
+When writing a skill, decide whether reference material should live inline or in
+`references/`: under 50 lines, keep it inline in the SKILL.md body (short lists,
+examples, small decision tables belong where they're read); 50-100 lines is a judgment
+call weighed against the skill's total line count (target <300 -- extract if adding it
+would push the skill over 250 lines, inline is fine if the skill is still around 150);
+over 100 lines always extract to `references/` and link it with "See
+`references/<name>.md` for detail." This keeps skills scannable while preserving deep
+material for readers who need it.
+
+## Self-Test: How to Know This Is Working
+Observable outcomes indicating these design rules are being followed:
+- Plans specify verifiable done criteria and success measures before implementation
+  starts.
+- Diffs are minimal and every changed line traces to a concrete requirement or bug fix.
+- Ambiguities surface early (goal-intake questions) rather than guessed at and
+  implemented.
+- PRs ship clean, focused changes without unrelated refactorings or speculative
+  improvements.
+- The qa-engineer rejects work lacking execution evidence; no "looks correct" approvals.
+- Free-model dispatch succeeds more often because constraints are enforced in code, not
+  promised in prompts.
 
 ## Validate before a PR
 ```sh
