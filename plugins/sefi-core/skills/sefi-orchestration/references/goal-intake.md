@@ -13,6 +13,10 @@ escalate instead of guessing: write `- [ ] OQ: <question>` and mark the item
 `needs-human`, with an `Open questions: <N> (needs-human)` line in the output. Never
 proceed on an assumption in place of an answer.
 
+There is no separate "too vague to even ask" threshold: extreme vagueness is not a reason
+to skip straight to `needs-human`. Always ask the one question first; only an unanswered
+question within the turn escalates.
+
 ## Why (external precedent)
 cobusgreyling/loop-engineering's `SKILL.md.loop-intake` template independently arrived at
 the same three rules (one question at a time, push for exact values, escalate rather than
