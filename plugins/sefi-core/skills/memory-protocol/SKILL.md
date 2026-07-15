@@ -73,6 +73,10 @@ Use `rg` for anything else. Never open a file > 100 KB without a stated need.
 `keywords` / `related` / `description`. Never hand-edit inside the markers.
 
 ## PROMOTION (the knowledge-manager's job)
+- Promotion is a write: re-run the WRITE privacy filter (step 1 above) on the content
+  being copied or rewritten forward, even if the note being promoted was hand-edited by a
+  human and never passed through an agent's filtered write -- the filter is scoped to
+  what gets persisted, not to who authored the original text.
 - `tier: trace` -> `policy` when an observation recurs across >=2 sessions; -> `fact` when
   cross-task validated.
 - `scope: session` -> `project` / `user` when a daily fact proves durable.

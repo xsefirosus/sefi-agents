@@ -95,10 +95,15 @@ from disk (never reset it).
 
 ## Multi-loop coordination
 Before opening a worktree, grep every other `state/*.md` for a matching `acting_on:`
-value; if found, skip this finding and log why instead of proceeding -- another loop is
-already on it. Record what this loop is currently acting on as field 6 of its own resume
-block above. This is a real gap once a second loop exists: two loops fixing the same
-target minutes apart wastes tokens with nothing to show for it.
+value **or an overlapping `target-path`**; if found, skip this finding and log why instead
+of proceeding -- another loop is already on it. Record what this loop is currently acting
+on as field 6 of its own resume block above. `acting_on` alone can miss a collision: each
+loop prefixes its own branch slug (`retro/<slug>` vs. `triage/<slug>`), so two loops fixing
+the same file under different slugs never string-match. Cross-check `target-path` too --
+the same plugin-relative-path keyspace `state/metrics.md` already keys on -- since a file
+path collision is real regardless of branch naming. This is a real gap once a second loop
+exists: two loops fixing the same target minutes apart wastes tokens with nothing to show
+for it.
 
 ## Inbox-item response contract
 Every item a loop routes to `inbox/` states the three actions a human can take: **confirm**

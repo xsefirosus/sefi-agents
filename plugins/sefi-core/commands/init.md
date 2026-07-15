@@ -37,3 +37,8 @@ the project root, never overwriting existing files, and report what was skipped.
 ## Guardrails
 Never overwrite an existing file. Never open secret-bearing files. This command is
 idempotent: a second run copies only what is missing.
+`memory.vault_dir` in `config/sefi.config.yml` must stay the default relative `memory` path
+scoped to this project. If a user asks to point it at an absolute or shared path (e.g. to
+reuse one vault across multiple client repos), warn explicitly that this merges the two
+projects' notes -- contradictions, promotions, and router links will cross-contaminate --
+and require an explicit confirmation before proceeding.
