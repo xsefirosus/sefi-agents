@@ -50,6 +50,8 @@ Not recommended for v1 -- include only if you have measured evidence a finer-gra
 cap is needed.
 
 ## Why these specific guards exist (one-line predecessor evidence each)
+See `docs/METRICS-PROVENANCE.md` for which of these numbers are predecessor-cited vs.
+first-party, and what would promote each one.
 - Per-dispatch cap: a single self-batching dispatch hit **1.36M tokens** before any daily cap
   would have noticed.
 - Code-enforced batching (<= 3 children per call): prompt-instructed batching was ignored,

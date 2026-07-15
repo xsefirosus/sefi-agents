@@ -7,7 +7,7 @@ agentic-signals: goal_intake, refusal_gate, verification, loop_discipline, close
 cloud: cron `0 7 * * 1` (Mondays) via a workflow file   |   local: weekly interval invoking the headless agent
 
 ## Discovery
-skill: retro-improve (discovery move)   inputs read: qa-engineer REJECTs, gate failures, and knowledge-manager `## Possible contradiction` flags from `state/`, plus `state/metrics.md` (worst success rate first).
+skill: retro-improve (discovery move)   inputs read: qa-engineer REJECTs, gate failures, and knowledge-manager `## Possible contradiction` flags from `state/`, plus `state/metrics.md` (worst success rate first). Also consult `docs/METRICS-PROVENANCE.md`: if accumulated metrics now satisfy a promotion condition, propose that doc update too (subject to the same effectiveness gate).
 
 ## Handoff
 one worktree per improvement target: branch `retro/<slug>` under `.worktrees/`   max parallel: 1 (self-improvement is single-writer). Each dispatched task names its absolute worktree output path. Before opening it, grep other `state/*.md` for a matching `acting_on`; skip and log if already claimed.
