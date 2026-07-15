@@ -26,3 +26,14 @@ now, and the NEXT addition introduces a consistent file-name prefix (e.g. `build
 `quality-*`) or domain subfolders under `agents/`. Keep this table the one source of truth
 the router reads; a new agent is one appended row plus its file. The retro loop confirms an
 improvement target is reachable by checking it is listed here.
+
+## Scaling: roster.json sidecar pattern (future, at 20+ agents)
+As the roster grows well past this table's comfortable size, consider adopting a
+machine-readable `roster.json` sidecar read on-demand instead of hand-maintaining this
+markdown table. The sidecar keeps sefi-orchestration/SKILL.md's always-loaded body flat
+while a script queries agents/skills programmatically. Schema (one entry per agent):
+`name`, `description`, `model`, `tools` (array), `skills` (array of skill names),
+`agentic_signals` (boolean for each of goal_intake / refusal_gate / verification /
+loop_discipline / close_out). Trigger adoption when: (a) this table exceeds ~30 rows, or
+(b) a script needs to programmatically query agents/skills by name/tag. Until then, the
+hand-maintained table above is sufficient and more readable.
