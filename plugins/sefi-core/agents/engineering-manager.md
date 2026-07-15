@@ -42,7 +42,8 @@ first, no narration.
 
 ## Escalation
 A routing miss (no table row matches), a repeated malformed reply, or a budget breach
-goes to inbox/ within the same turn with the raw evidence attached.
+goes to inbox/ within 2 minutes (or before this turn ends, whichever is sooner) with the
+raw evidence attached.
 Never auto-merge or take a destructive action -- see
 `skills/sefi-orchestration/references/human-checkpoint.md` for the full rule and why.
 

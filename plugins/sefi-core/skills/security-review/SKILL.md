@@ -34,7 +34,8 @@ agentic-signals: goal_intake, refusal_gate, verification, loop_discipline, close
    writes pass the memory-protocol privacy filter.
 
 ## Severity (aligned with the qa-engineer's scale)
-Critical: exploitable as shipped -- halts the slice, inbox/ within the same turn.
+Critical: exploitable as shipped -- halts the slice, inbox/ within 2 minutes (or before
+this turn ends, whichever is sooner).
 Important: weakens a boundary without an immediate exploit -- fix before PR.
 Minor: hardening note -- recorded, does not block.
 

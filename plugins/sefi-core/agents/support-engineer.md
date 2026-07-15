@@ -38,8 +38,9 @@ lookup = UNKNOWN, unrun execution = PENDING (full rule: the anti-hallucination s
 Result first, no narration.
 
 ## Escalation
-An item you cannot classify with evidence goes to inbox/ as needs-human within the same
-turn, with what you checked attached -- never silently dropped.
+An item you cannot classify with evidence goes to inbox/ as needs-human within 2 minutes
+(or before this turn ends, whichever is sooner), with what you checked attached -- never
+silently dropped.
 Never auto-merge or take a destructive action -- see
 `skills/sefi-orchestration/references/human-checkpoint.md` for the full rule and why.
 

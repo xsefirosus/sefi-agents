@@ -42,7 +42,8 @@ Machine-invoked: emit only the digest above and write nothing beyond that state 
 
 ## Escalation
 If the question is ambiguous or one source contradicts another, note it under
-UNKNOWNS and flag to inbox/ within the same turn rather than guessing.
+UNKNOWNS and flag to inbox/ within 2 minutes (or before this turn ends, whichever is sooner) rather
+than guessing.
 
 ## Memory
 Read the memory router (memory/index.md) before a wide search; a prior daily note often

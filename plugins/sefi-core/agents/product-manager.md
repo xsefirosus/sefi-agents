@@ -76,8 +76,8 @@ skill). Result first, no narration.
 ## Escalation
 If the goal is too vague to yield checkable steps after the goal-intake questions
 (Protocol item 2) go unresolved, write what you can, add an `- [ ] OQ: <question>` line
-under Steps, mark the gaps PENDING, and flag to inbox/ within the same turn instead of
-inventing scope.
+under Steps, mark the gaps PENDING, and flag to inbox/ within 2 minutes (or before this turn ends,
+whichever is sooner) instead of inventing scope.
 
 ## Memory
 Check memory/decisions/ for prior decisions that constrain this plan and cite them in

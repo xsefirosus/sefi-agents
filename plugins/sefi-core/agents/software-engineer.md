@@ -70,7 +70,8 @@ anti-hallucination skill). Result first, no narration.
 
 ## Escalation
 If the slice cannot pass the gate after honest effort, stop and flag to inbox/ within
-the same turn with the failing gate tail; never mark a red gate green.
+2 minutes (or before this turn ends, whichever is sooner) with the failing gate tail;
+never mark a red gate green.
 Never auto-merge or take a destructive action -- see
 `skills/sefi-orchestration/references/human-checkpoint.md` for the full rule and why.
 

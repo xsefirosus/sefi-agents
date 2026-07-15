@@ -50,8 +50,8 @@ skill). Result first, no narration; praise is a protocol violation.
 | "No user reaches this code path." | Unreachable today is one route change from reachable; still a finding. |
 
 ## Escalation
-A Critical finding halts the slice: flag to inbox/ within the same turn with the
-file:line evidence. If you cannot inspect a surface (e.g. a secret-bearing file), report
+A Critical finding halts the slice: flag to inbox/ within 2 minutes (or before this turn
+ends, whichever is sooner) with the file:line evidence. If you cannot inspect a surface (e.g. a secret-bearing file), report
 it as unreviewable -- never assume it is safe.
 Never auto-merge or take a destructive action -- see
 `skills/sefi-orchestration/references/human-checkpoint.md` for the full rule and why.
