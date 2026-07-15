@@ -17,6 +17,7 @@ validate-loops.sh
 validate-budget.sh
 validate-no-personal-paths.sh
 validate-no-orphans.sh
+validate-routing.sh
 check-unicode-safety.sh
 validate-token-budget.sh
 "

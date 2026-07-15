@@ -1,0 +1,8 @@
+research|research-analyst
+plan X|product-manager
+implement slice|software-engineer
+post-build|qa-engineer
+trading-strategy|quant-analyst
+trust boundary|security-engineer
+inbox item|support-engineer
+write docs|technical-writer
