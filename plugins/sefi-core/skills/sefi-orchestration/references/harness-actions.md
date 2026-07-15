@@ -26,11 +26,35 @@ state that explicitly rather than pretending parallelism exists.
 | Write | Write | write_file |
 
 ## Hook-event map
-| Event | Claude Code | OpenCode |
-|---|---|---|
-| Before a tool runs | PreToolUse | tool.execute.before |
-| Session goes idle | Stop | session.idle |
-| Session starts | SessionStart | session.created |
+| Event | Claude Code | OpenCode | Hermes | Codex |
+|---|---|---|---|---|
+| Before a tool runs | PreToolUse | tool.execute.before | UNKNOWN | UNKNOWN |
+| After a tool runs | PostToolUse | UNKNOWN | UNKNOWN | UNKNOWN |
+| Session goes idle | Stop | session.idle | UNKNOWN | UNKNOWN |
+| Session starts | SessionStart | session.created | UNKNOWN | UNKNOWN |
+
+UNKNOWN cells are not yet documented in that harness's own adapter file
+(`adapters/HERMES.md`, `adapters/CODEX.md`) -- fill in only once confirmed there, never
+by porting another harness's event name as a guess.
+
+## Reserved fields per harness (do not reuse for custom semantics)
+Every harness reserves certain field/parameter names for its own protocol. Collisions
+silently fail (the harness coerces to its default value) -- detect them by reading the
+harness's logs or gateway responses, not by testing. Never reuse these names for custom
+semantics in dispatch payloads or agent frontmatter.
+
+| Reserved field | Harness | Meaning | Do not reuse for |
+|---|---|---|---|
+| `role` | Hermes | agent hierarchy ("orchestrator" / "leaf") | specialist type or job role (use `specialist_role` instead) |
+| `tasks` | Hermes | dispatch payload array | anything else (only valid key for batch dispatch) |
+| `background` | Hermes | async execution flag | anything else |
+| `model` | Claude Code, OpenCode, Codex | model name / tier override | application-level model selection |
+| `tools` | Claude Code, OpenCode, Codex | agent tool whitelist (frontmatter) | anything else (reserved for harness-level tool allowlist) |
+| `disallowedTools` | Claude Code, OpenCode, Codex | agent tool blacklist (frontmatter) | anything else (reserved for harness-level safety gate) |
+
+If a dispatch fails silently or a tool is unexpectedly unavailable, check this table first.
+OpenCode's and Codex's own reserved-field sets beyond `model`/`tools` are UNKNOWN --
+confirm against their adapter docs before assuming more overlap than the table states.
 
 ## Headless invocation (how a loop or CI job calls each harness non-interactively)
 - Claude Code (live-verified): `claude --print --dangerously-skip-permissions --add-dir
