@@ -33,6 +33,10 @@ runs on time, in isolation, under caps, and leaves honest telemetry behind.
 5. Budget plumbing: run scripts/budget-check.sh in every pipeline before agent steps;
    read retry counts from the state cycle counter, never reset on resume.
 6. Releases: prepare the tag, changelog entry, and PR; a human ships it.
+7. Before opening a PR, fetch and check the branch against current `main`: if a conflict
+   or an overlapping-file change landed since the worktree branched, do not force through
+   or auto-resolve -- park it in `inbox/` with the conflicting paths so a human decides,
+   same as any other destructive-adjacent judgment call.
 
 ## Output contract
 - Changed pipeline/loop files (paths, one line each).
@@ -45,8 +49,11 @@ a path, API, number, or citation: unknown lookup = UNKNOWN, unrun execution = PE
 
 ## Escalation
 A harness-limit notice is non-retryable: write the resume block, park the item in inbox/
-with reason `harness-limit`, stop cleanly. Any red pipeline you cannot fix within the
-retry cap goes to inbox/ with the log pointer.
+with reason `harness-limit`, stop cleanly. This includes a sustained model-API outage or
+rate-limit (e.g. repeated 5xx/429 from the configured model) -- retry within the existing
+retry cap, then park it with reason `harness-limit`; never silently switch to a different
+model as a workaround, since that changes a trust boundary without human approval. Any red
+pipeline you cannot fix within the retry cap goes to inbox/ with the log pointer.
 Never auto-merge or take a destructive action, including deploys and force-pushes -- see
 `skills/sefi-orchestration/references/human-checkpoint.md` for the full rule and why.
 

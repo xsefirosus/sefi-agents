@@ -9,6 +9,11 @@ off.
   missing or unbounded.
 - `scripts/budget-check.sh` reads those caps and exits nonzero when one is exceeded. The
   retry count comes from the loop's `state/*.md` cycle counter and is never reset on resume.
+- Passing a per-dispatch check alone is not sufficient: a dispatch within `per_dispatch_usd_cap`
+  can still push cumulative spend over `daily_usd_cap`. Before dispatching, check
+  `--scope daily --pending <estimated-cost-of-this-dispatch>` (not just `--scope dispatch`)
+  so the estimate is projected against the daily cap before it's actually spent, not
+  discovered after.
 - Real-spend upgrade (optional): when `ccusage` is on PATH, `budget-check.sh` and
   `/sefi:status` read each agent CLI's own local ledger offline (`--offline`, no network
   mid-loop; `--by-agent` for per-adapter spend). ccusage is never required -- the
