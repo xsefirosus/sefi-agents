@@ -16,5 +16,8 @@ once and cost real diagnosis time.
 - Don't simulate tool enforcement with a hook that exits 0. That is enforcement theater;
   rely on the harness's real capability limits where they exist, and a soft contract
   elsewhere.
+- Don't invent new agent frontmatter fields without documenting them. If you need a field
+  beyond `name`/`description`/`tools`/`model`/`keywords`, add it to the schema and update
+  this reference. Undocumented fields will rot.
 
 Self-test: a shared rule appears exactly once; every other mention is a one-line link.
