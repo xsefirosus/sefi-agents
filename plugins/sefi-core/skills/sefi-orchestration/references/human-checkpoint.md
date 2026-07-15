@@ -17,6 +17,13 @@ deliberate human choice, not an autonomous retry budget"). An autonomous retry b
 hides a bad call inside more automation; a human checkpoint shortens the distance from
 mistake to discovery, which is the whole point of the gate.
 
+## Response contract (validated by a second framework)
+The reply shape a human gives at any checkpoint is `docs/LOOPS.md`'s three-way inbox
+contract: confirm / change `<free-text>` / exit. MetaGPT's `AskReview` independently
+arrived at the same three-way shape for its own human-in-loop gate -- external
+corroboration that this is the minimal, sufficient contract for an approval gate,
+not a convention invented here without precedent.
+
 ## Binary self-test
 Every merge / deploy / destructive step in a loop turn traces to an explicit human
 approval. If any does not, the loop is violating this rule.
