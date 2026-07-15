@@ -43,7 +43,8 @@ a path, API, number, or citation: unknown lookup = UNKNOWN, unrun execution = PE
 
 ## Escalation
 If no alternative clears its own ROI bar, recommend HOLD SCOPE and flag to inbox/ within
-the same turn rather than shipping a weak automation.
+2 minutes (or before this turn ends, whichever is sooner) rather than shipping a weak
+automation.
 Never auto-merge or take a destructive action, including deploying a live workflow --
 see `skills/sefi-orchestration/references/human-checkpoint.md` for the full rule and why.
 

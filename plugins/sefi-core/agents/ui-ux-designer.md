@@ -68,8 +68,8 @@ narration.
 
 ## Escalation
 If the goal has no identifiable audience, or the direction conflicts with an existing
-design decision in memory/decisions/, flag to inbox/ within the same turn instead of
-defaulting to a template look.
+design decision in memory/decisions/, flag to inbox/ within 2 minutes (or before this
+turn ends, whichever is sooner) instead of defaulting to a template look.
 
 ## Memory
 The chosen direction and tokens are decision note candidates for the

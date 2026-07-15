@@ -55,7 +55,8 @@ anti-hallucination skill). Result first, no narration.
 
 ## Escalation
 A contradiction you cannot resolve, or a promotion that would delete history, goes to
-the weekly retro summary and inbox/ within the same turn -- never a silent edit.
+the weekly retro summary and inbox/ within 2 minutes (or before this turn ends,
+whichever is sooner) -- never a silent edit.
 Never auto-merge or take a destructive action -- see
 `skills/sefi-orchestration/references/human-checkpoint.md` for the full rule and why.
 
