@@ -33,6 +33,22 @@ If you add the codegraph connector (see `OPTIONAL-TOOLS.md`), cite its defensibl
 ~58% fewer tool calls, with file reads dropping to roughly zero across repo sizes. Treat any
 blanket token-percentage as noisy and scale-dependent.
 
+## Optional: per-loop-cycle and per-agent budgets (advanced)
+For deployments running many simultaneous loops (e.g., one per major project), consider
+adding finer-grained caps alongside the per-run and daily limits above:
+- **per-loop-cycle:** budget for one complete loop iteration (discovery -> handoff ->
+  verification -> persistence), independent of per-dispatch. Use when: multiple loops
+  might run in parallel and you want each cycle isolated from the daily budget.
+- **per-agent-dispatch:** budget for a single agent's dispatch (not the
+  `per_dispatch_usd_cap`, which is per subagent call). Use when: you want to cap
+  individual agent costs tighter than the per-run cap.
+
+Implementation: extend `config/budget.yml` with optional `per_loop_cycle_usd_cap` and
+`per_agent_dispatch_usd_cap` fields, checked by `budget-check.sh` before dispatching.
+Both default to UNKNOWN if not set; the per_run and daily caps remain the hard floor.
+Not recommended for v1 -- include only if you have measured evidence a finer-grained
+cap is needed.
+
 ## Why these specific guards exist (one-line predecessor evidence each)
 - Per-dispatch cap: a single self-batching dispatch hit **1.36M tokens** before any daily cap
   would have noticed.
