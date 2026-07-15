@@ -47,6 +47,17 @@ the tree.
 - mem0's April-2026 change demoted silent auto-overwrite of memories from default to opt-in
   -- independent evidence that memory maintenance must be append-only or flag-for-review.
 
+## Auto-merge: a tension surfaced, not a contradiction resolved
+cobusgreyling/loop-engineering's own dogfood workflow auto-merges a narrow allowlist
+(typo/comment fixes, its own STATE.md/loop-run-log.md updates) gated by real CI status --
+a working counter-example to sefi-agents' zero-exception rule (`human-checkpoint.md`).
+But the *same* source repo's `stories/why-we-killed-ci-sweeper.md` documents that
+allowlist's own failure: 11 auto-merged PRs, one of which broke prod config, discipline
+having quietly slipped. The failure story is stronger evidence than the working example --
+a rule that "works until it doesn't," where the failure cost exceeds the convenience
+gained, favors the zero-exception rule sefi-agents already holds. Both are logged here so
+a future revision of this rule cites this evidence rather than re-litigating from zero.
+
 ## First-party evidence (Earl's own predecessor build; one row per live failure)
 
 | Predecessor failure (live) | Fixed here by |
