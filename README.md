@@ -108,6 +108,18 @@ Model tiers are advisory: on runtimes that set the model globally they are ignor
 the whole roster is designed to hold up on a small free model (see the ~45% row above --
 the gates carry the quality, not the model).
 
+### Scaling the roster (future guideline)
+
+At 13 agents, the flat folder and bare names work fine. When the roster grows into the
+high teens: (a) introduce a consistent naming prefix (pick one scheme and stick with
+it so grepping by prefix is fast), and (b) introduce domain subfolders
+(`agents/core/`, `agents/specialized/`) to keep the folder browsable. Document this
+rule before adding the next few agents, not after the folder is already crowded --
+retrofitting naming across many files is tedious. Also maintain the mandatory YAML
+frontmatter schema (`name`, `description`, `model`, `tools`, `keywords`) on every agent
+file so a script can later programmatically generate roster tables or dispatch rules
+without manual sync.
+
 ## The skills (12)
 
 The always-loaded router stays thin; craft lives in skills that load on demand:
@@ -135,6 +147,12 @@ The always-loaded router stays thin; craft lives in skills that load on demand:
 - **n8n-workflow-design** -- client automation specs with idempotency, retries, webhook
   security, and cost-per-run.
 - **terse-mode** -- output compression for narration, config-gated (ships enabled).
+
+**User-invoked vs model-invoked:** Skills are either user-invoked (callable only when you
+type `/skill-name`; Commands are all user-invoked) or model-invoked (callable by agents
+during a loop, or by a user-invoked skill). A user-invoked skill may invoke model-invoked
+skills; never another user-invoked one. This distinction ensures agents can't inadvertently
+chain interactive commands or load conflicting instruction contexts.
 
 ## The loops (2 shipped, template for more)
 
