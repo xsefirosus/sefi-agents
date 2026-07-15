@@ -46,7 +46,21 @@ spend).
 
 ## Persistent-memory upgrades
 The markdown vault is the default. Heavier backends run a background service or pull a heavy
-dependency tree: **agentmemory**, **cognee**, **MemOS**, **mem0**.
+dependency tree.
+
+### cognee
+Pip-installable knowledge-graph memory library (LLM-extracted entities/relationships over
+embedded SQLite+LanceDB+Ladybug by default, Postgres/Neo4j optional) with its own Claude
+Code plugin. Per-document extraction requires LLM API calls, adding token cost on every
+memory write.
+- Consider it only if: the project needs LLM-grounded graph reasoning over ingested
+  documents and accepts a substantial Python dependency chain plus per-write LLM
+  extraction cost.
+
+### agentmemory, MemOS, mem0
+Not yet individually profiled here -- UNKNOWN architecture/cost details for this repo's
+purposes; do not assume a specific footprint until confirmed against each project's own
+docs.
 - Consider any only if: the vault is genuinely outgrown and a persistent service is
   acceptable. Do not cite "SQLite / no external DB" as "lightweight" -- it still adds a
   service to run.
