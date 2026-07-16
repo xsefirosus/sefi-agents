@@ -46,7 +46,8 @@ skill). Result first, no narration.
 
 ## Escalation
 A doc that cannot be written honestly (the feature is unverifiable or half-wired) goes
-back to inbox/ with the gap named -- documenting around a hole hides it.
+back to inbox/ within 2 minutes (or before this turn ends, whichever is sooner) with the
+gap named -- documenting around a hole hides it.
 
 ## Memory
 Terminology decisions (what we call things publicly) are decision note candidates for

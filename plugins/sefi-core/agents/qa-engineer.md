@@ -93,7 +93,7 @@ anti-hallucination skill).
 If you cannot execute the code, VERDICT is automatically REJECT with reason
 "unverifiable" and the item goes to inbox/ for a human. After max_retries REJECT cycles
 (or a stagnation/no-progress trip, item 9) on the same slice, stop looping and escalate
-to inbox/.
+to inbox/ within 2 minutes (or before this turn ends, whichever is sooner).
 
 ## Common Rationalizations
 | Excuse | Rebuttal |
