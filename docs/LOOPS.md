@@ -61,6 +61,12 @@ than advises: `agentic-signals: goal_intake, refusal_gate, verification, loop_di
   `.worktrees/`. Hard gate before creating: `git check-ignore -q .worktrees` -- if not
   ignored, add it to `.gitignore` and commit first. On a sandbox permission error, tell the
   user and work in place.
+- Preflight before building: run `git status --porcelain` on the base you are about to
+  build from. A dirty tree, a conflict-marked file, or partially staged changes are not a
+  base to build on -- escalate to `inbox/` instead. Nothing downstream catches this early:
+  `scripts/gate.sh` exits 0 with "no known toolchain detected" on a markdown or config-only
+  slice, so contaminated work can reach a truthful-looking "gate passed" claim and only be
+  caught later by the qa-engineer.
 - Clean up (provenance-gated): only remove a worktree under `.worktrees/` or `worktrees/`.
   Order: merge -> `cd` main root -> `git worktree remove` -> `git worktree prune` -> delete
   branch. Cleanup runs only on merge-and-delete or discard.
@@ -91,12 +97,23 @@ matching the provenance gate already in place (only remove a worktree under
 6. acting_on: <branch-or-PR-id this loop is currently working, or none>
 ```
 On resume, cross-check these claims against git (trust git) and recover the cycle counter
-from disk (never reset it).
+from disk (never reset it). `acting_on` is such a claim: if it names a branch with no open
+worktree and no open PR, the run that wrote it died -- the claim is stale, and you clear it
+and proceed. Left set, it makes every later run skip that finding forever with "already
+claimed", reported as an expected outcome rather than an error, so the loop's own lock
+blinds it to real work. The `state/worktrees.md` sweep will not catch this: it lists
+`rejected|escalated` rows, never a crashed `active` one.
 
 ## Multi-loop coordination
 Before opening a worktree, grep every other `state/*.md` for a matching `acting_on:`
 value **or an overlapping `target-path`**; if found, skip this finding and log why instead
-of proceeding -- another loop is already on it. Record what this loop is currently acting
+of proceeding -- another loop is already on it. If not found, **write your own `acting_on`
+and commit it BEFORE opening the worktree** -- never grep-then-open with I/O in the gap.
+This is the consume-before-act rule (`skills/loop-engineering/SKILL.md`) applied to the
+claim itself: two loops that both grep before either writes will both find nothing and both
+proceed. Git is the arbiter -- if your push is rejected, another loop claimed it first, so
+skip and log. A grep alone detects a sequential collision and cannot prevent a simultaneous
+one. Record what this loop is currently acting
 on as field 6 of its own resume block above. `acting_on` alone can miss a collision: each
 loop prefixes its own branch slug (`retro/<slug>` vs. `triage/<slug>`), so two loops fixing
 the same file under different slugs never string-match. Cross-check `target-path` too --
