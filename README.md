@@ -60,6 +60,21 @@ number in this README is invented -- that discipline is itself a shipped skill
 | a broken browser tool silently ate a 50-iteration retry budget | tools are probed before a loop may grant them |
 | free-model dispatch succeeded ~45% of the time -- and still delivered | gates and human checkpoints are load-bearing, so a cheap model is enough |
 
+### First-party receipts (this repo, not the predecessor)
+
+The table above is inherited history. These are first-party: found in this exact system's
+own runtime, same day, fixed and CI-gated the same day
+([docs/METRICS-PROVENANCE.md](docs/METRICS-PROVENANCE.md) tracks the predecessor-vs-first-
+party distinction for every number this repo cites):
+
+| What a fresh audit found, live in this repo | What v0.2.1 ships because of it |
+|---|---|
+| 5 config keys declared but never read or named as a rule -- one implied auto-merge was a toggle it never was | `validate-config-wired.sh`, a permanent CI gate; the misleading key deleted, the rest genuinely wired |
+| 6 shipped files pointed at paths that resolve to nothing | `validate-links.sh`, a permanent CI gate closing the one direction the existing orphan-check cannot see |
+| the budget-enforcement gate silently passed with no spend data, confirmed live (no `ccusage` on the build machine) | `budget-check.sh` now fails closed; proven by an executed regression test, not just read |
+
+Full list: [CHANGELOG.md](CHANGELOG.md).
+
 ## How it compares
 
 An honest comparison, no names -- check any framework you are evaluating against these
@@ -183,6 +198,12 @@ decisions with supersede-never-delete semantics, and a generated router injected
 at 1,500 chars) at session start. It is markdown in your repo -- open it in Obsidian,
 grep it, diff it in PRs. No database, no service, no vendor.
 
+This repo dogfoods its own tooling: the `memory/`, `state/`, `loops/`, and `config/`
+folders at this repo's own root are `/sefi:init` run against sefi-agents itself, not part
+of what a fresh install gets. `plugin.json` and `marketplace.json` ship only `agents/`,
+`skills/`, `commands/`, and `hooks/` under `plugins/sefi-core/` -- installing the plugin
+never pulls in this repo's own vault.
+
 ## Works with your harness
 
 | Harness | How | Notes |
@@ -211,17 +232,24 @@ command:
 $ bash plugins/sefi-core/scripts/ci/run-all.sh
 validate-agents: OK (13 agent files validated)
 validate-skills: OK (12 SKILL.md validated)
+validate-doc-counts: OK (agents=13 skills=12 commands=5 loops=2, all prose matches disk)
 validate-loops: OK (2 loop spec(s) validated)
 validate-budget: OK (all caps present and bounded)
+validate-config-wired: OK (11 config keys, all wired)
 validate-no-personal-paths: OK (no personal paths in shipped files)
 validate-no-orphans: OK (references, templates, agents all wired)
-check-unicode-safety: OK (89 files scanned, ASCII-clean)
-validate-token-budget: OK (all within token budgets; agents total 6961 words)
+validate-links: OK (52 files scanned, all repo-path references resolve)
+validate-routing: OK (routing-table agents exist, fixtures resolve, no duplicate triggers)
+validate-adapters: OK (install-hermes.sh skill list matches disk, adapter doc paths resolve)
+check-unicode-safety: OK (100 files scanned, ASCII-clean)
+validate-token-budget: OK (all within token budgets; agents total 7549 words)
+test-scripts: OK (5 passed)
 CI: all validators passed
 ```
 
 That last validator is real: agents have word budgets, skills have line caps, and prose
-that bloats fails the build.
+that bloats fails the build. Exact counts drift as the repo grows -- run the command
+yourself rather than trust this snapshot.
 
 ## FAQ
 

@@ -14,6 +14,15 @@ repo's own anti-hallucination convention.
 | Parse-ladder rescue avoided ~324K tokens (JSON present, not at position 0) | Predecessor | `docs/BUDGET.md` | A logged instance where this system's parse ladder actually recovered a reply the first rung missed, with the token cost of the naive re-ask it avoided |
 | Broken browser tool burned a 50-iteration retry budget | Predecessor | `docs/BUDGET.md` | A logged instance where this system's tool-verification-before-granting step actually caught a broken tool before a loop retried against it |
 | 184 green tests, half the new modules unwired | Predecessor | `docs/ANTIPATTERNS.md` | A qa-engineer wired/delete-the-line finding on this system's own code, with a before/after count of tests vs. actually-reachable modules |
+| 5 config keys declared but never read or named as a rule; 0 after fix | First-party | `README.md`, `CHANGELOG.md` [0.2.1] | N/A -- already first-party, verified live by `validate-config-wired.sh`, a permanent CI gate |
+| 6 shipped files referenced paths that resolved to nothing; 0 after fix | First-party | `README.md`, `CHANGELOG.md` [0.2.1] | N/A -- already first-party, verified live by `validate-links.sh`, a permanent CI gate |
+| Budget-enforcement gate silently passed with no spend data (confirmed live: no `ccusage`/`jq` on the build machine) | First-party | `README.md`, `CHANGELOG.md` [0.2.1] | N/A -- already first-party, proven by an executed regression test in `test-scripts.sh`, not just read |
+
+These three are this ledger's first first-party rows, and arrived by a different path than
+the "Standing check" below: a direct audit found and fixed them same-day, not a
+`weekly-retro` cycle accumulating `state/metrics.md` evidence over time. The distinction
+still holds -- each was measured on this system's own runtime, not inherited from the
+predecessor.
 
 ## Standing check
 
