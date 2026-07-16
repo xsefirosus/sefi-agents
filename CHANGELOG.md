@@ -3,6 +3,58 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [Unreleased] - 2026-07-16
+
+Trust-bug batch: a behavioral audit found 11 cases where the repo stated a guarantee its
+code did not deliver. All 11 closed, each independently reviewed (spec + quality, 0
+Critical/Important), plus a final whole-branch review confirming cross-commit consistency
+(also 0 Critical/Important; Ready to merge: Yes).
+
+### Fixed
+
+- `budget-check.sh` was fail-open: with no `ccusage` and no explicit `--spent`, it silently
+  treated unmeasured spend as zero, so the shipped `triage.yml`'s "Enforce budget caps" step
+  always passed regardless of actual spend. Now exits nonzero when there is no spend
+  source; an explicit `--spent 0` remains a valid claim.
+- `gen-router.sh` sorted all vault notes alphabetically, so `daily/` (trace notes) always
+  preceded `decisions/` (durable notes); since the injection that reads this router
+  truncates after ~16 lines, decisions were being silently evicted. Now emits notes in
+  durability order (decisions -> entities -> projects -> other -> daily last).
+- Six shipped agent/skill files contained references to other files that resolved to
+  nothing (e.g. `ui-ux-designer.md`, `anti-hallucination/SKILL.md`, `retro-improve/SKILL.md`
+  pointing at paths one directory short of the real file). All six fixed.
+- `retro-improve`'s single-writer invariant held only within one project: a shared,
+  user-global install let one project's self-improvement loop silently rewrite an agent
+  file another project also loads. `/sefi:init` now asks whether an install is shared and
+  defaults `improvement.enabled: false` (propose-only, not learning-off) when it is, or
+  when the run is non-interactive.
+- The `acting_on` loop-coordination lock was check-then-act (grep, then open a worktree),
+  so two loops starting near-simultaneously could both find nothing claimed and both
+  proceed. Now the claim is committed before the worktree opens, with git push rejection as
+  the arbiter. Also: a crashed run's stale claim is now documented as clearable on resume,
+  and a `git status --porcelain` preflight now runs before building.
+- Three harness adapters (Hermes, OpenCode, Codex) implied or didn't clarify that
+  `install.sh` never installs hooks -- so SessionStart memory injection only works via the
+  Claude Code plugin path. One adapter's troubleshooting text actively implied a hook
+  existed where none does. All three corrected.
+- Five declared config keys were never read by any script or named as a rule:
+  `memory.vault_dir`, `memory.inject_char_cap` (now both genuinely wired);
+  `memory.prune_trace_after_days` (now a report-only threshold for the knowledge-manager,
+  no auto-deleter); `per_agent_return_tokens` (now named in sefi-orchestration's
+  output-contract rule); `loops.never_auto_merge` (deleted -- its name implied auto-merge
+  was a toggle, contradicting the absolute rule in `human-checkpoint.md`, which is
+  unchanged).
+
+### Added
+
+- `validate-config-wired.sh`: CI gate asserting every declared config key is read by a
+  script or named as a rule, checked over git-tracked files only.
+- `validate-links.sh`: CI gate asserting every repo-path reference in shipped markdown
+  resolves -- the reverse direction of the existing orphan-file check, which can only
+  catch unwired files, never dangling references.
+- `test-scripts.sh`: regression suite for the two behavior-changing fixes above, one
+  assertion per audited failure mode plus the paths that must not regress.
+
 ## [0.2.0] - 2026-07-11
 
 The software-company release: the roster becomes a 13-agent engineering org, five new
