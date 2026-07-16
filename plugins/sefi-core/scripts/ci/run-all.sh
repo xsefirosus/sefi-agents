@@ -15,6 +15,7 @@ validate-skills.sh
 validate-doc-counts.sh
 validate-loops.sh
 validate-budget.sh
+validate-config-wired.sh
 validate-no-personal-paths.sh
 validate-no-orphans.sh
 validate-routing.sh

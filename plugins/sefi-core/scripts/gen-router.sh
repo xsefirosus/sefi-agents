@@ -7,8 +7,20 @@ set -euo pipefail
 CHECK=0
 [ "${1:-}" = "--check" ] && CHECK=1
 
-INDEX="memory/index.md"
-VAULT="memory"
+CONFIG="config/sefi.config.yml"
+
+cfg_get() {
+  # cfg_get <key> <default> -- read a leaf key's scalar from CONFIG. Honors
+  # memory.vault_dir so the router is generated wherever the vault actually lives.
+  local key="$1" default="$2" val=""
+  if [ -f "$CONFIG" ]; then
+    val="$(sed -n "s/^[[:space:]]*$key:[[:space:]]*\([^[:space:]#]*\).*/\1/p" "$CONFIG" | head -1)"
+  fi
+  printf '%s' "${val:-$default}"
+}
+
+VAULT="$(cfg_get vault_dir memory)"
+INDEX="$VAULT/index.md"
 BEGIN="<!-- GENERATED:router -->"
 END="<!-- /GENERATED:router -->"
 
