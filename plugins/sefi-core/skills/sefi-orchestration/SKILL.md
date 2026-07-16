@@ -75,5 +75,8 @@ with chat ("Here's the summary: ...").
 - `references/human-checkpoint.md` -- the canonical never-auto-merge rule.
 - `references/anti-patterns.md` -- authoring anti-patterns.
 - `references/goal-intake.md` -- the canonical goal_intake behavior.
+- `docs/BUDGET.md` -- the token-discipline stack, biggest lever first; terse-mode (output
+  compression) is last and smallest on purpose -- check the bigger levers before reaching
+  for it.
 
 Self-test: every merge/deploy in a loop turn traces to an explicit human approval.
