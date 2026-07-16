@@ -45,7 +45,7 @@ explicit "no findings at the reviewed surfaces" with the surfaces listed. A surf
 could not inspect is reported unreviewable, never assumed safe.
 
 Never auto-merge or take a destructive action -- see
-`sefi-orchestration/references/human-checkpoint.md` for the full rule and why.
+`skills/sefi-orchestration/references/human-checkpoint.md` for the full rule and why.
 See `references/security-checklist.md` for the expanded per-surface checklist.
 
 ## Common Rationalizations

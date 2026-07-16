@@ -28,14 +28,14 @@ builds.
 
 BUILD:
 a. Commit to ONE named direction: a lane from the frontend-design skill's
-   references/direction-lanes.md, or an original one named with the same rigor. The
+   skills/frontend-design/references/direction-lanes.md, or an original one named with the same rigor. The
    default lane is restrained; immersive/maximalist requires the brief to ask.
 b. Pass 1 -- Plan: a token system (4-6 named colors, 2+ typefaces, a layout concept,
    one signature element) as prose, plus an ASCII wireframe.
 c. Pass 2 -- Critique and build: revise anything that reads generic against the
    brief, then spec the full system per the frontend-design Rule block (type scale,
    spacing, color roles with contrast ratios, states, motion, accessibility).
-d. Self-check against references/anti-slop-checklist.md before delivering.
+d. Self-check against skills/frontend-design/references/anti-slop-checklist.md before delivering.
 
 AUDIT:
 a. Locate the governing spec: the build's design stamp names the direction and spec

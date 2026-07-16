@@ -42,7 +42,7 @@ success rate first.
   `managed-by: sefi-agents` file, that is a wiring bug to flag to `inbox/` -- never a
   silent no-op.
 - Edit what the runtime loads: before editing, confirm the target file is actually
-  reachable by the harness (listed in `references/roster.md` or a loaded skill directory).
+  reachable by the harness (listed in `skills/sefi-orchestration/references/roster.md` or a loaded skill directory).
   Improving an unwired copy changes nothing.
 - Verify before applying (not after): hand the proposed edit to the qa-engineer BEFORE
   it is committed, together with the specific failure evidence it targets (the REJECT,
