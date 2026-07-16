@@ -30,7 +30,12 @@ jobs:
           echo "TEMPLATE: invoke your headless agent here to run /sefi:triage"
 
       - name: Enforce budget caps
-        run: bash plugins/sefi-core/scripts/budget-check.sh --scope daily --spent 0
+        run: |
+          # TEMPLATE: --spent 0 asserts this run spent nothing, which is true only while the
+          # step above is still an echo. Replace it with your run's real spend, or install
+          # ccusage on the runner so budget-check reads the CLI's own ledger. Without either,
+          # budget-check now exits nonzero rather than passing a check it never performed.
+          bash plugins/sefi-core/scripts/budget-check.sh --scope daily --spent 0
 
       - name: Commit state and open PR (never auto-merge)
         run: |
