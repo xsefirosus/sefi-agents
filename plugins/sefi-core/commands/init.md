@@ -31,7 +31,15 @@ the project root, never overwriting existing files, and report what was skipped.
    `.worktrees/logs/`.
 5. `.gitignore` policy: `state/` and `inbox/` are committed by default; append them to
    `.gitignore` only if the user asks. `.worktrees/logs/` is always ignored.
-6. Print next steps: open `memory/` in Obsidian; review `config/budget.yml`; try
+6. Shared-install check: ask whether this install serves more than one project. `managed-by:
+   sefi-agents` files (agents, skills) are installed once per user, not per project, so a
+   retro loop in this project edits files every other project also loads. If the answer is
+   yes -- or if this run is non-interactive and cannot ask -- set `improvement.enabled:
+   false` in the copied `config/sefi.config.yml` and tell the user why: the retro loop still
+   runs and still writes its proposed diff to `state/retro-<date>.md`, but a human applies it,
+   so one project cannot silently rewrite another's agents. Leave `true` only when the user
+   confirms this install serves this project alone.
+7. Print next steps: open `memory/` in Obsidian; review `config/budget.yml`; try
    `/sefi:triage`.
 
 ## Guardrails
@@ -42,3 +50,7 @@ scoped to this project. If a user asks to point it at an absolute or shared path
 reuse one vault across multiple client repos), warn explicitly that this merges the two
 projects' notes -- contradictions, promotions, and router links will cross-contaminate --
 and require an explicit confirmation before proceeding.
+`improvement.enabled` defaults to `true` in the template, which auto-applies retro edits to
+the shared, user-global `managed-by: sefi-agents` files. That is safe only for a
+single-project install. When in doubt, prefer `false`: it costs nothing but a human clicking
+apply, and it is the only setting under which a shared install cannot cross-contaminate.

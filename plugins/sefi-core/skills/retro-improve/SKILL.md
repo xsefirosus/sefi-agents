@@ -18,6 +18,11 @@ agentic-signals: goal_intake, refusal_gate, verification, loop_discipline, close
 You may edit only files whose frontmatter contains `managed-by: sefi-agents`. You may not
 create new skills without a human-approved entry in `inbox/`. If `improvement.enabled` is
 false in `sefi.config.yml`, output the proposed diff to `state/retro-<date>.md` and stop.
+`managed-by` files are installed once per user, not per project, so the single-writer
+invariant above holds only within one install: on a shared install, this project's metrics
+would rewrite agents every other project loads, and every local guard here would still pass.
+That is what `improvement.enabled: false` is for, and why `/sefi:init` sets it on any install
+serving more than one project.
 Never edit host-runtime memory, user config, or other plugins.
 
 ## Inputs (the scorecard)
