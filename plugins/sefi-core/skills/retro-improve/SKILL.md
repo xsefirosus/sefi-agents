@@ -28,7 +28,10 @@ Never edit host-runtime memory, user config, or other plugins.
 ## Inputs (the scorecard)
 Review qa-engineer REJECTs, gate failures, and the knowledge-manager's
 `## Possible contradiction` flags. Read `state/metrics.md` as the scorecard -- worst
-success rate first.
+success rate first. A recurring routing-table miss (the engineering-manager escalating "no
+table row matches" more than once for a similar trigger) is an explicit scorecard signal
+too -- the routing table grows by precedent, not by a deterministic matcher, so this is
+where that drift actually gets caught.
 
 ## Four additional guards (predecessor Loop-3 lessons)
 - Bounded change: an improvement edits at most ~3 sentences per file per retro run

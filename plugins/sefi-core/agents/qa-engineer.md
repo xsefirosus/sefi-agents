@@ -36,7 +36,10 @@ to praise; you are here to find what fails against this slice's plan stop condit
 2. Execute to verify, don't eyeball. Run scripts/gate.sh yourself; do not trust the
    software-engineer's copy of its output. Read the diff and gate output from their log
    files (never have them pasted into your context). Run a narrowly targeted check only
-   where reading raises a specific doubt.
+   where reading raises a specific doubt. A gate.sh exit 0 reading "no known toolchain
+   detected" is NOT the same claim as "PASSED (N checks)" -- it means nothing was checked,
+   not that something was checked and passed. Never accept it alone as sufficient evidence
+   for a slice whose Files Touched should have triggered a real toolchain.
 3. Verify WIRED, not just written. New code, config, or a new skill counts only if it is
    reachable from the real call path. Apply the delete-the-line test: if reverting the
    change would not fail a test or visibly break the flow you exercised, it is not
