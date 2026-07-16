@@ -17,6 +17,17 @@ see note).
 | Recent commit activity (7 commits, last 7 days) | noise | all attributable to the just-completed loop-engineering-cobusgreyling-adoption plan, already reflected in the ledger above; no unreviewed change found | -- | -- |
 | Repo-wide TODO/FIXME markers | noise | none found (`grep -rn "TODO\|FIXME"` across shipped files returned no hits) | -- | -- |
 
+## Resolved since this triage
+- Escalation SLA sharpening (row above, Task 13): resolved 2026-07-16, commit `1924fe5`.
+  Human chose the hybrid bound ("within 2 minutes or this turn, whichever is sooner");
+  the 3 agents missing any bound (devops-engineer, qa-engineer, technical-writer) now
+  carry it, matching the 10 that already did. The finding row above is left as-written
+  (this state file is a record of what the triage cycle found, not a live dashboard) --
+  this note is the append-only correction, per the same pattern the memory vault uses for
+  a superseded note: never silently rewrite the original finding.
+- Skill naming convention pass (row above, Task 12): explicitly NOT resolved -- the human
+  chose to leave it exactly as-is. Still needs-human if ever revisited.
+
 ## Correction note (dispatching session, not the support-engineer's own claim)
 The support-engineer dispatch found the two held Polish-tier tasks (Task 12, Task 13 from
 `.superpowers/sdd/progress.md`) but classified them as "already captured decisions, not new
