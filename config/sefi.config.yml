@@ -1,0 +1,14 @@
+improvement:
+  enabled: false        # this is the first live scaffold of this vault against this
+                        # repo's own agents/skills; per init.md's own guardrail ("when in
+                        # doubt, prefer false"), no auto-apply until the mechanism has a
+                        # real track record (docs/METRICS-PROVENANCE.md's own standard).
+                        # Flip to true once weekly-retro has run a few cycles as
+                        # propose-only and a human has reviewed the proposals.
+memory:
+  vault_dir: memory
+  inject_char_cap: 1500
+  prune_trace_after_days: 30
+terse_mode:
+  enabled: true        # on by user preference; costs ~1-1.5k tokens/turn to load, nets
+                       # negative on short replies -- see skills/terse-mode/SKILL.md
