@@ -3,7 +3,7 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
-## [Unreleased] - 2026-07-16
+## [0.2.1] - 2026-07-16
 
 Trust-bug batch: a behavioral audit found 11 cases where the repo stated a guarantee its
 code did not deliver. All 11 closed, each independently reviewed (spec + quality, 0
@@ -44,8 +44,18 @@ Critical/Important), plus a final whole-branch review confirming cross-commit co
   output-contract rule); `loops.never_auto_merge` (deleted -- its name implied auto-merge
   was a toggle, contradicting the absolute rule in `human-checkpoint.md`, which is
   unchanged).
+- `qa-engineer.md` now explicitly distinguishes `gate.sh`'s "no known toolchain detected"
+  pass from a real "PASSED (N checks)" pass -- the former means nothing was checked, not
+  that something was checked and passed, and must never be accepted alone as sufficient
+  evidence for a slice that should have had a real toolchain.
+- Three agents (`devops-engineer`, `qa-engineer`, `technical-writer`) had an Escalation
+  clause with no time bound at all. All 13 agents now use the same explicit bound ("within
+  2 minutes or this turn, whichever is sooner") the other 10 already used.
 
 ### Added
+
+- `retro-improve/SKILL.md` now names a recurring routing-table miss as an explicit
+  scorecard input, alongside qa-engineer REJECTs, gate failures, and contradictions.
 
 - `validate-config-wired.sh`: CI gate asserting every declared config key is read by a
   script or named as a rule, checked over git-tracked files only.
@@ -111,5 +121,6 @@ on Hermes Agent, OpenCode, and Codex).
 - Docs: LOOPS, ANTIPATTERNS, CHECKLIST, BUDGET, OPTIONAL-TOOLS.
 - `install.sh` (human fallback) and `Install.md` (agent-targeted bootstrap).
 
+[0.2.1]: https://github.com/xsefirosus/sefi-agents/releases/tag/v0.2.1
 [0.2.0]: https://github.com/xsefirosus/sefi-agents/releases/tag/v0.2.0
 [0.1.0]: https://github.com/xsefirosus/sefi-agents/releases/tag/v0.1.0
