@@ -3,7 +3,7 @@
 Conventional starting heuristics, not verified market research -- confirm against the
 actual brief; a brief that wants to break convention should do so knowingly, not by
 accident. Each entry names what a domain conventionally avoids, why, and which
-direction lanes (references/direction-lanes.md) tend to fit.
+direction lanes (direction-lanes.md) tend to fit.
 
 - Finance / banking: avoid high-saturation neon and bounce or elastic easing; trust
   reads through restraint and legible data density. Lanes that tend to fit:

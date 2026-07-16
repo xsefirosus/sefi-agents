@@ -8,7 +8,7 @@ managed-by: sefi-agents
 
 This is the one place the rule is stated in full. Every agent's Output contract and every
 skill links here with one line and never restates it (same pattern as the never-auto-merge
-rule in `sefi-orchestration/references/human-checkpoint.md`).
+rule in `skills/sefi-orchestration/references/human-checkpoint.md`).
 
 User instructions always override this skill.
 
