@@ -10,6 +10,10 @@ available path, then stop and report.
 - No destructive action without explicit approval.
 - Never open secret-bearing files, even to verify them. If a variable is missing, name it
   from its `config` placeholder (for example `$AGENT_API_KEY`) -- never read its value.
+- sefi stores no credentials. Keys live in your harness config or your CI secrets, never in
+  this tree, so there is nothing here to cache, stale, or invalidate: rotate at that source
+  and no sefi file needs to change. The one exception is diagnostic, not stored state -- see
+  the parse-ladder note in `skills/sefi-orchestration/SKILL.md`.
 - Stop and report on any failure; do not attempt privileged installs.
 
 ## Success Criteria (know this before you start)

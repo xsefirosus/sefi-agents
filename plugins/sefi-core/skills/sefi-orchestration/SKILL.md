@@ -56,7 +56,11 @@ Accept the payload anywhere in the reply, not only at position 0. Try in order:
 3. first-`{`-to-last-`}` extraction.
 
 On failure, save the raw head and tail (~500 chars each) to `.worktrees/logs/` before
-rejecting, so the failure is diagnosable. Free models routinely prefix structured output
+rejecting, so the failure is diagnosable. That dump is raw and unfiltered by design -- the
+memory-protocol privacy filter guards vault writes, and running it here would strip the very
+bytes the dump exists to show. `.worktrees/logs/` is always gitignored (`/sefi:init` step 5),
+so a dump never reaches the repo; treat it as local diagnostic output that may contain
+whatever the model echoed. Free models routinely prefix structured output
 with chat ("Here's the summary: ...").
 
 ## Discipline

@@ -31,6 +31,13 @@ See section 8 below (`install-hermes.sh`) for the tested, real install path -- i
 Hermes's own `skills install` command per skill, not a raw copy, so installs are scanned,
 tracked, and show up correctly in `hermes skills list`.
 
+`install-hermes.sh` installs skills only. It does not install hooks, and neither does
+`install.sh` (it links `agents/`, `skills/`, and `commands/`). The SessionStart memory
+injection ships only through the Claude Code plugin path, so on Hermes you must wire
+`inject-memory.sh` to a session-start event yourself. Nothing breaks without it: the
+memory-protocol READ ladder (frontmatter scan -> index -> at most 2 notes) is what actually
+retrieves vault content; the injection is an optimization on top of it.
+
 ## 4. Roster
 The roster maps to Hermes subagent delegation. `model:` and `disallowedTools:` are advisory
 on Hermes, so treat the whitelist as a soft contract; the gates are the hard enforcement.
@@ -103,8 +110,9 @@ would run the printed commands.
 - `hermes doctor --fix` ("Diagnose issues with Hermes Agent setup", with an
   auto-remediate flag) -- run this first for any install/config problem.
 - `hermes hooks doctor` ("Check each configured hook: exec bit, allowlist, mtime
-  drift, JSON validity, and synthetic run timing") -- run this specifically for the
-  memory-injection hook (SessionStart).
+  drift, JSON validity, and synthetic run timing") -- useful only once you have wired the
+  memory-injection hook yourself (see section 3). No sefi installer creates it on Hermes, so
+  on a stock install this reports nothing about sefi.
 - **GitHub API rate limit exhausted** -- `install-hermes.sh` makes 12 fetches per run
   (one per skill); Hermes's unauthenticated GitHub API limit is 60 requests/hour, so
   a few re-runs (or other GitHub activity sharing the same limit) can exhaust it. The
@@ -116,3 +124,8 @@ would run the printed commands.
   different source instead of erroring cleanly -- if an installed skill's content looks
   wrong, check `hermes skills list`'s Source column (`skills.sh` is this repo; anything
   else is not) and re-install once the limit resets.
+
+## Credentials
+
+sefi stores no credentials -- rotate at this harness's own config or your CI secrets. See
+`Install.md`'s Operating Rules for the canonical statement.
