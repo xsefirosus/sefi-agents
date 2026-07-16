@@ -34,11 +34,16 @@ you never overwrite an existing note in place and never delete a decision.
    `superseded-by: <path>`; the new note gets `supersedes: <path>`. The old note is
    marked, never deleted or rewritten, so git history stays honest.
 6. Prune only stale links, never a decision or a `tier: fact` note.
+7. Report prune candidates, never delete them: list `memory/daily/` notes older than
+   `memory.prune_trace_after_days` (config/sefi.config.yml, default 30) in the weekly retro
+   summary for a human to action. A report, not an action -- the same convention as the
+   worktree sweep in `docs/LOOPS.md`. An append-only vault has no automated deleter.
 
 ## Output contract
 - Notes distilled or promoted (paths).
 - Router regenerated: yes/no.
 - Contradictions flagged (paths), if any.
+- Prune candidates reported (count), if any.
 
 Machine-invoked: emit only this digest and write nothing beyond the vault and the named
 state file. Interactive: same, plus prose if asked. Never invent a path, API, number, or

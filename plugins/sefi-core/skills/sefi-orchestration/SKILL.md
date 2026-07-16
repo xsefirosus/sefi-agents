@@ -60,7 +60,8 @@ rejecting, so the failure is diagnosable. Free models routinely prefix structure
 with chat ("Here's the summary: ...").
 
 ## Discipline
-- Output-contract enforcement: discard excess beyond a subagent's contract.
+- Output-contract enforcement: discard excess beyond a subagent's contract; a dispatched
+  agent's returned digest stays within `per_agent_return_tokens` (config/budget.yml).
 - Model routing: name every `model:`; an omitted model inherits the most expensive tier.
 - The orchestrator never edits files; unfinished work is written to `state/`, never
   carried in context.

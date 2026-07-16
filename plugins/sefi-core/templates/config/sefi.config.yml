@@ -4,8 +4,6 @@ memory:
   vault_dir: memory
   inject_char_cap: 1500
   prune_trace_after_days: 30
-loops:
-  never_auto_merge: true
 terse_mode:
   enabled: true        # on by user preference; costs ~1-1.5k tokens/turn to load, nets
                        # negative on short replies -- see skills/terse-mode/SKILL.md
