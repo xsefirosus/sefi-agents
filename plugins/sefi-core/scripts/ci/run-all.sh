@@ -22,6 +22,7 @@ validate-routing.sh
 validate-adapters.sh
 check-unicode-safety.sh
 validate-token-budget.sh
+test-scripts.sh
 "
 
 fail=0

@@ -39,8 +39,15 @@ if command -v ccusage >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
   # real local spend from the tool's own ledger (Claude JSONL / Hermes state.db / OpenCode db) - offline
   spent="$(ccusage daily --since "$today" --until "$today" --json --offline \
     | jq '[.. | .totalCost? // empty] | add // 0')"
+elif [ -n "$SPENT_ARG" ]; then
+  spent="$SPENT_ARG"        # fallback: caller-supplied --spent (0 is a valid claim)
 else
-  spent="${SPENT_ARG:-0}"   # fallback: caller-supplied --spent
+  # No spend source: ccusage/jq are absent AND no --spent was supplied. A gate that cannot
+  # measure cannot certify, so it fails rather than passing a check it never performed.
+  # This is the difference between "the caller says zero" and "nobody knows" -- collapsing
+  # the two is what made this check a no-op on a stock CI runner.
+  echo "budget-check: NO SPEND SOURCE scope=$SCOPE cap=$CAP -- ccusage/jq not on PATH and --spent not supplied; the cap cannot be checked. Pass --spent <usd> (0 asserts zero spend) or install ccusage." >&2
+  exit 1
 fi
 
 # Projected total = realized spend + pending (not-yet-spent) estimate for this check.

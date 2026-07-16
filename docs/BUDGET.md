@@ -9,6 +9,11 @@ off.
   missing or unbounded.
 - `scripts/budget-check.sh` reads those caps and exits nonzero when one is exceeded. The
   retry count comes from the loop's `state/*.md` cycle counter and is never reset on resume.
+- It needs a spend source: either `ccusage` on PATH or an explicit `--spent <usd>`. With
+  neither, it exits nonzero rather than passing -- a gate that cannot measure cannot
+  certify. `--spent 0` asserts zero spend and is a valid claim; omitting `--spent` is not
+  the same thing, and collapsing the two is what previously made this check a no-op on a
+  runner without ccusage.
 - Passing a per-dispatch check alone is not sufficient: a dispatch within `per_dispatch_usd_cap`
   can still push cumulative spend over `daily_usd_cap`. Before dispatching, check
   `--scope daily --pending <estimated-cost-of-this-dispatch>` (not just `--scope dispatch`)
