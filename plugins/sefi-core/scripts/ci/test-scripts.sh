@@ -46,5 +46,33 @@ expect_code 1 "--spent 3.00 over the 2.00 daily cap exits nonzero" \
   bash "$CORE/scripts/budget-check.sh" --scope daily --spent 3.00 --config "$BUDGET_TPL"
 
 echo
+echo "=== gen-router.sh (audit gap 5.1: trace notes evicting decisions) ==="
+
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+mkdir -p "$TMP/memory/daily" "$TMP/memory/decisions"
+printf -- '---\ntags: [index]\nmanaged-by: sefi-agents\n---\n# Memory Vault -- Router\n<!-- GENERATED:router -->\n<!-- /GENERATED:router -->\n' > "$TMP/memory/index.md"
+printf -- '---\ntags: [daily]\nkeywords: alpha\n---\n' > "$TMP/memory/daily/2026-01-01.md"
+printf -- '---\ntags: [decision]\nkeywords: zulu\n---\n' > "$TMP/memory/decisions/some-choice.md"
+
+( cd "$TMP" && bash "$CORE/scripts/gen-router.sh" ) >/dev/null 2>&1
+
+dec_line="$(grep -n 'decisions/some-choice' "$TMP/memory/index.md" | head -1 | cut -d: -f1)"
+day_line="$(grep -n 'daily/2026-01-01' "$TMP/memory/index.md" | head -1 | cut -d: -f1)"
+# Alphabetically "daily" sorts before "decisions", so a plain sort puts the trace note
+# first and the injection's ~16-line window drops decisions entirely. Durability order
+# must win over byte order.
+if [ -n "$dec_line" ] && [ -n "$day_line" ] && [ "$dec_line" -lt "$day_line" ]; then
+  ok "decisions/ precedes daily/ in the generated router"
+else
+  bad "decisions/ must precede daily/ (decisions at line ${dec_line:-none}, daily at line ${day_line:-none})"
+fi
+
+# The pre-existing drift check must not regress: a new note makes the router stale.
+printf -- '---\ntags: [daily]\nkeywords: beta\n---\n' > "$TMP/memory/daily/2026-01-02.md"
+expect_code 1 "--check flags drift after a new note is added" \
+  bash -c "cd '$TMP' && bash '$CORE/scripts/gen-router.sh' --check"
+
+echo
 if [ "$fail" -ne 0 ]; then echo "test-scripts: $fail failed, $pass passed"; exit 1; fi
 echo "test-scripts: OK ($pass passed)"
