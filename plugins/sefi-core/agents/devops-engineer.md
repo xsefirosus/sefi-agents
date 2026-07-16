@@ -53,7 +53,8 @@ with reason `harness-limit`, stop cleanly. This includes a sustained model-API o
 rate-limit (e.g. repeated 5xx/429 from the configured model) -- retry within the existing
 retry cap, then park it with reason `harness-limit`; never silently switch to a different
 model as a workaround, since that changes a trust boundary without human approval. Any red
-pipeline you cannot fix within the retry cap goes to inbox/ with the log pointer.
+pipeline you cannot fix within the retry cap goes to inbox/ within 2 minutes (or before
+this turn ends, whichever is sooner) with the log pointer.
 Never auto-merge or take a destructive action, including deploys and force-pushes -- see
 `skills/sefi-orchestration/references/human-checkpoint.md` for the full rule and why.
 
