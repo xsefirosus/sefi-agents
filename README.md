@@ -74,7 +74,7 @@ rows yourself:
 | Memory | a human-readable Obsidian-style vault, in your git repo | opaque state or a hosted service |
 | Autonomy boundary | opens PRs, never merges -- one canonical never-auto-merge rule | often merge- or deploy-capable by default |
 | Hallucination policy | UNKNOWN/PENDING instead of plausible guesses, CI-enforced in every agent and skill | unstated |
-| Self-improvement | bounded (3 sentences/file/run), single-writer, opt-out | unbounded or absent |
+| Self-improvement | bounded (3 sentences/file/run), single-writer, opt-out -- propose-only by default on a shared install | unbounded or absent |
 | Portability | Claude Code, Hermes, OpenCode, Codex | usually locked to its own runner |
 
 The edges, spelled out: the work is judged by an adversary, not its author; the whole
