@@ -41,6 +41,12 @@ The SessionStart memory injection maps to OpenCode's `session.created`; a PreToo
 maps to `tool.execute.before`; a Stop hook maps to `session.idle`. Full table:
 `skills/sefi-orchestration/references/harness-actions.md`.
 
+That is the mapping, not an installer: `install-opencode.sh` copies agents, skills, and
+commands, and no sefi installer creates hooks outside the Claude Code plugin path. To get
+the memory injection here, wire `scripts/inject-memory.sh` to `session.created` yourself.
+Skipping it costs an optimization, not correctness -- the memory-protocol READ ladder still
+retrieves vault content on demand.
+
 ## Troubleshooting
 
 OpenCode does not have a single all-in-one `doctor` command (the way Hermes has
@@ -55,3 +61,8 @@ For an agent that fails to load with `Configuration is invalid`, `opencode debug
 <name>` shows the parse error. If the error points at a `tools: <string>` field, the
 installed copy under `~/.config/opencode/agents/` still has the raw string -- re-run
 `install-opencode.sh --force` to regenerate it.
+
+## Credentials
+
+sefi stores no credentials -- rotate at this harness's own config or your CI secrets. See
+`Install.md`'s Operating Rules for the canonical statement.

@@ -31,6 +31,11 @@ advisory; the gates are the hard line. Installed plugins show up in
 Headless: `codex exec`. Sandbox and approval: `-s/--sandbox` and `-a/--ask-for-approval`
 (unattended loops usually want `--ask-for-approval never` for routine calls).
 
+Hooks: the Codex marketplace path installs hooks with the plugin, but `install.sh` does not
+-- it links `agents/`, `skills/`, and `commands/` only. If you installed by hand, wire
+`scripts/inject-memory.sh` to a session-start event yourself, or accept that the
+memory-protocol READ ladder retrieves vault content without it.
+
 ## 4. Worktrees
 
 Codex may create its own sandbox worktree. The worktree procedure in `docs/LOOPS.md` is
@@ -48,3 +53,8 @@ health).
 - **Agents do not seem to load** -- `codex doctor`'s Configuration section shows
   `config.toml parse: ok` and the installed plugin count; re-run
   `codex plugin add sefi-core@sefi-agents` from a clean shell if the count is wrong.
+
+## Credentials
+
+sefi stores no credentials -- rotate at this harness's own config or your CI secrets. See
+`Install.md`'s Operating Rules for the canonical statement.
