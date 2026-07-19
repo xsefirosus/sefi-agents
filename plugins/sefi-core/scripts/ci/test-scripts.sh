@@ -74,5 +74,29 @@ expect_code 1 "--check flags drift after a new note is added" \
   bash -c "cd '$TMP' && bash '$CORE/scripts/gen-router.sh' --check"
 
 echo
+echo "=== install-opencode.sh (live bug, 2026-07-19: OpenCode hard-fails resolving a Claude Code model alias) ==="
+
+# Live-observed: model: sonnet (a Claude Code tier alias) made OpenCode's own subagent
+# dispatch fail hard with "Model not found: sonnet/" -- OpenCode tries to resolve the
+# value as a real provider/model identifier and does not silently ignore it the way
+# Claude Code treats "sonnet" as a native alias. Every one of this repo's 13 agents
+# carries a model: line, so this broke every subagent dispatch on OpenCode, not one.
+TMP_OC="$(mktemp -d)"
+OPENCODE_HOME="$TMP_OC" bash "$CORE/scripts/install-opencode.sh" >/dev/null 2>&1
+if grep -q '^model:' "$TMP_OC/agents/software-engineer.md" 2>/dev/null; then
+  bad "install-opencode.sh must strip model: (OpenCode cannot resolve a bare Claude Code alias)"
+else
+  ok "install-opencode.sh strips model: from every converted agent"
+fi
+# Everything else must still survive byte-for-byte: pick one field per source line kind.
+if grep -q '^disallowedTools: WebFetch, WebSearch$' "$TMP_OC/agents/software-engineer.md" 2>/dev/null \
+   && grep -q '^  edit: allow$' "$TMP_OC/agents/software-engineer.md" 2>/dev/null; then
+  ok "install-opencode.sh still converts tools/permission and keeps other fields intact"
+else
+  bad "install-opencode.sh regressed the tools/permission conversion or another frontmatter field"
+fi
+rm -rf "$TMP_OC"
+
+echo
 if [ "$fail" -ne 0 ]; then echo "test-scripts: $fail failed, $pass passed"; exit 1; fi
 echo "test-scripts: OK ($pass passed)"

@@ -1,13 +1,13 @@
 {
   "name": "sefi-agents",
   "owner": { "name": "John Earl F. Alquiza", "url": "https://sefi-automates.vercel.app" },
-  "metadata": { "description": "Loop-engineered agent team: orchestration, adversarial evaluation, Obsidian-style memory, token budgets.", "version": "0.2.1" },
+  "metadata": { "description": "Loop-engineered agent team: orchestration, adversarial evaluation, Obsidian-style memory, token budgets.", "version": "0.2.2" },
   "plugins": [
     {
       "name": "sefi-core",
       "source": "./plugins/sefi-core",
       "description": "Core agent roster, skills, loops, memory protocol, and budget guardrails.",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "author": { "name": "John Earl F. Alquiza", "url": "https://sefi-automates.vercel.app" },
       "homepage": "https://sefi-automates.vercel.app",
       "repository": "https://github.com/xsefirosus/sefi-agents",

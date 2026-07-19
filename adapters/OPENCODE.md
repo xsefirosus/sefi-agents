@@ -28,8 +28,11 @@ transformed: OpenCode's `tools` field is a strictly-typed `{name: boolean}` obje
 deprecated in favor of `permission`), so a raw copy of our `tools: Read, Grep, ...`
 string fails schema validation. The script converts each agent's `tools:` /
 `disallowedTools:` pair into the 15-key `permission:` mapping OpenCode expects
-(conversion table lives in the script's comments). Every other frontmatter field and the
-entire body is preserved byte-for-byte.
+(conversion table lives in the script's comments). `model:` is dropped entirely, not
+preserved -- OpenCode tries to resolve a bare Claude Code tier alias (`sonnet`, `haiku`,
+`opus`) as a real provider/model identifier and fails hard rather than ignoring it (see
+Troubleshooting). Every other frontmatter field and the entire body is preserved
+byte-for-byte.
 
 ## 3. Headless (CI loops)
 
@@ -61,6 +64,18 @@ For an agent that fails to load with `Configuration is invalid`, `opencode debug
 <name>` shows the parse error. If the error points at a `tools: <string>` field, the
 installed copy under `~/.config/opencode/agents/` still has the raw string -- re-run
 `install-opencode.sh --force` to regenerate it.
+
+**`Model not found: sonnet/`** (or `haiku/`, `opus/`) on any subagent dispatch --
+live-observed, not hypothetical: the installed agent still carries a raw `model:` line
+from before this was fixed. Pull the latest sefi-agents and re-run
+`install-opencode.sh --force`; the current script drops `model:` entirely so OpenCode
+falls back to the session model configured in section 1, instead of trying to resolve a
+Claude Code-only alias it does not recognize. This affects every agent, not just the one
+that happened to fail first -- all 13 carry a `model:` line. If the orchestrating agent
+silently falls back to a generic, unconstrained dispatch instead of surfacing this error
+to you, treat that as a second problem worth stopping for: it means the task is now
+running with none of the specialized agent's actual guardrails (tool whitelist, output
+contract, gate requirement), not a harmless retry.
 
 ## Credentials
 
