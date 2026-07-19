@@ -17,12 +17,19 @@ repo's own anti-hallucination convention.
 | 5 config keys declared but never read or named as a rule; 0 after fix | First-party | `README.md`, `CHANGELOG.md` [0.2.1] | N/A -- already first-party, verified live by `validate-config-wired.sh`, a permanent CI gate |
 | 6 shipped files referenced paths that resolved to nothing; 0 after fix | First-party | `README.md`, `CHANGELOG.md` [0.2.1] | N/A -- already first-party, verified live by `validate-links.sh`, a permanent CI gate |
 | Budget-enforcement gate silently passed with no spend data (confirmed live: no `ccusage`/`jq` on the build machine) | First-party | `README.md`, `CHANGELOG.md` [0.2.1] | N/A -- already first-party, proven by an executed regression test in `test-scripts.sh`, not just read |
+| Every OpenCode subagent dispatch failed with `Model not found: sonnet/`, live-observed on a real user install (not internal testing) | First-party | `adapters/OPENCODE.md`, `CHANGELOG.md` [0.2.2] | N/A -- already first-party, verified by re-running `install-opencode.sh` against every one of the 13 agents and confirming `model:` is absent; proven by an executed regression test in `test-scripts.sh` |
 
-These three are this ledger's first first-party rows, and arrived by a different path than
-the "Standing check" below: a direct audit found and fixed them same-day, not a
-`weekly-retro` cycle accumulating `state/metrics.md` evidence over time. The distinction
-still holds -- each was measured on this system's own runtime, not inherited from the
-predecessor.
+The first three rows above are this ledger's first first-party rows, and arrived by a
+different path than the "Standing check" below: a direct audit found and fixed them
+same-day, not a `weekly-retro` cycle accumulating `state/metrics.md` evidence over time.
+The distinction still holds -- each was measured on this system's own runtime, not
+inherited from the predecessor.
+
+The fourth row is a different provenance again: this ledger's first finding sourced from
+actual field usage rather than internal audit or testing -- a real user hit it running
+sefi-agents on OpenCode, not a controlled check. Worth naming as its own category: a live
+user report is stronger provenance than an internal test, not weaker, precisely because
+nothing about the failure was staged.
 
 ## Standing check
 

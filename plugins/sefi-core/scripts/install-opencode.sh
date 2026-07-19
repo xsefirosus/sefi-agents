@@ -8,7 +8,19 @@
 # string, and is deprecated in favor of `permission`. A raw agent file fails
 # schema validation. The per-file awk transform below converts our comma-separated
 # `tools:` and `disallowedTools:` lines into the `permission:` mapping that
-# OpenCode expects, leaving every other field and the body byte-for-byte intact.
+# OpenCode expects, leaving every other field and the body byte-for-byte intact --
+# EXCEPT `model:`, which is dropped entirely. Live-observed on a real OpenCode
+# install (2026-07-19): `model: sonnet` (a bare Claude Code tier alias) makes
+# OpenCode's own subagent dispatch fail hard with "Model not found: sonnet/" --
+# OpenCode does not silently ignore an unresolvable per-agent model override the
+# way Claude Code treats "sonnet" as a native alias; it tries to resolve it as a
+# real provider/model identifier and fails when it can't. Every one of this
+# repo's 13 agents carries a `model:` line, so this broke every subagent dispatch
+# on OpenCode, not just one agent. Dropping the field lets OpenCode fall back to
+# whatever model the session is actually configured with (adapters/OPENCODE.md
+# section 1), matching this repo's own stated intent that model tiers are
+# advisory and ignored on runtimes that set the model globally -- which was
+# previously only asserted, not true in practice for OpenCode until this fix.
 #
 # Usage: bash plugins/sefi-core/scripts/install-opencode.sh [--force]
 set -euo pipefail
@@ -140,8 +152,13 @@ transform_agent() {
         for (i = 1; i <= n; i++) { gsub(/^ +| +$/, "", parts[i]); if (parts[i] != "") deny[parts[i]] = 1 }
         print; next
       }
-      # Every other frontmatter line (description, model, keywords, managed-by,
-      # comments, blank lines) is kept verbatim.
+      if (/^model:[[:space:]]*/) {
+        next   # dropped: a bare Claude Code alias (sonnet/haiku/opus) makes the
+               # OpenCode dispatch mechanism fail hard trying to resolve it -- see
+               # the header comment above transform_agent.
+      }
+      # Every other frontmatter line (description, keywords, managed-by, comments,
+      # blank lines) is kept verbatim.
       print; next
     }
 

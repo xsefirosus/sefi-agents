@@ -3,6 +3,35 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.2.2] - 2026-07-19
+
+Hotfix: a real user running sefi-agents on OpenCode for the first time hit a hard failure
+on every single subagent dispatch. First bug this project has had reported from actual
+field usage rather than internal audit or testing.
+
+### Fixed
+
+- `install-opencode.sh` preserved every agent's `model:` line verbatim (e.g.
+  `model: sonnet`) when converting for OpenCode. OpenCode does not treat this as an
+  advisory hint the way Claude Code treats "sonnet" as a native alias -- it tries to
+  resolve the value as a real provider/model identifier and fails hard:
+  `Model not found: sonnet/`. Every one of the 13 agents carries a `model:` line, so this
+  broke every subagent dispatch on OpenCode, not one. `model:` is now dropped entirely
+  during conversion, so OpenCode falls back to the session's actual configured model.
+- Observed alongside the bug, worth naming even though it is not this repo's own defect:
+  when the specialized-agent dispatch failed, the orchestrating model did not stop and
+  surface the error -- it silently fell back to an unconstrained generic subagent with
+  none of the specialized agent's tool whitelist, output contract, or gate requirement.
+  `adapters/OPENCODE.md`'s troubleshooting section now names this as a second problem
+  worth stopping for, separate from the root-cause fix above.
+
+### Added
+
+- A regression test in `test-scripts.sh`: runs `install-opencode.sh` end-to-end against a
+  temp destination and asserts `model:` is absent from the converted output while every
+  other frontmatter field (tools/permission conversion, description, keywords) survives
+  intact.
+
 ## [0.2.1] - 2026-07-16
 
 Trust-bug batch: a behavioral audit found 11 cases where the repo stated a guarantee its
@@ -121,6 +150,7 @@ on Hermes Agent, OpenCode, and Codex).
 - Docs: LOOPS, ANTIPATTERNS, CHECKLIST, BUDGET, OPTIONAL-TOOLS.
 - `install.sh` (human fallback) and `Install.md` (agent-targeted bootstrap).
 
+[0.2.2]: https://github.com/xsefirosus/sefi-agents/releases/tag/v0.2.2
 [0.2.1]: https://github.com/xsefirosus/sefi-agents/releases/tag/v0.2.1
 [0.2.0]: https://github.com/xsefirosus/sefi-agents/releases/tag/v0.2.0
 [0.1.0]: https://github.com/xsefirosus/sefi-agents/releases/tag/v0.1.0
