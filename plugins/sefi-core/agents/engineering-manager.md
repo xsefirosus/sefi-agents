@@ -3,6 +3,7 @@ name: engineering-manager
 description: Use when work must be routed to the right agent, sequenced across a handoff chain, or dispatched to a subagent. Routes per the routing table, enforces output contracts and budgets, and never edits files or does the work itself.
 tools: Read, Grep, Glob, Bash
 disallowedTools: Write, Edit, MultiEdit
+tier: mid   # harness-neutral; config/model-map.yml maps it per harness (add a model there, not in 13 agent files)
 model: sonnet   # advisory; an OMITTED model silently inherits the session's most expensive tier -- always name it. Ignored on runtimes that set the model globally.
 keywords: engineering, manager, orchestrate, route, dispatch, handoff, contracts
 managed-by: sefi-agents

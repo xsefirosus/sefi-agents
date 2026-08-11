@@ -3,6 +3,7 @@ name: knowledge-manager
 description: Use when the memory vault needs maintenance -- distilling daily notes into decisions, regenerating the router, or the weekly contradiction check. Owns the vault, writes append-only, and never silently overwrites or deletes a note.
 tools: Read, Grep, Glob, Bash, Write, Edit
 disallowedTools: MultiEdit
+tier: low   # harness-neutral; config/model-map.yml maps it per harness (add a model there, not in 13 agent files)
 model: haiku   # advisory; an OMITTED model silently inherits the session's most expensive tier -- always name it. Ignored on runtimes that set the model globally.
 keywords: knowledge, memory, vault, router, promotion, contradiction, obsidian
 managed-by: sefi-agents

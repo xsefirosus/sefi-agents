@@ -26,10 +26,12 @@
 set -euo pipefail
 
 FORCE=0
+MODEL_MAP=""
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --force) FORCE=1; shift ;;
-    -h|--help) echo "usage: $0 [--force]"; exit 0 ;;
+    --model-map) MODEL_MAP="${2:-}"; shift 2 ;;
+    -h|--help) echo "usage: $0 [--force] [--model-map <path>]"; exit 0 ;;
     *) echo "install-opencode.sh: unknown arg $1" >&2; exit 2 ;;
   esac
 done
@@ -121,11 +123,18 @@ check_target() {
 #       (c) else: use the fixed fallback table, with engineering-manager
 #           specifically getting task: allow (it is this repo's sole dispatcher
 #           agent -- every other agent's own Role text says it does not delegate).
+agent_model() {
+  # agent_model <src-path> -- resolve this agent's tier to an OpenCode model id via
+  # config/model-map.yml. Empty on failure, which drops the field and restores the old
+  # fall-back-to-session-model behavior rather than emitting a broken value.
+  bash "$HERE/model-for.sh" --agent "$1" opencode ${MODEL_MAP:+--map "$MODEL_MAP"} 2>/dev/null || printf ''
+}
+
 transform_agent() {
   # transform_agent <src-path> <dst-path>
   local src="$1"
   local dst="$2"
-  awk '
+  awk -v MODEL="$(agent_model "$src")" '
     BEGIN { in_fm = -1 }
 
     # First ---: start of frontmatter.
@@ -152,10 +161,17 @@ transform_agent() {
         for (i = 1; i <= n; i++) { gsub(/^ +| +$/, "", parts[i]); if (parts[i] != "") deny[parts[i]] = 1 }
         print; next
       }
+      if (/^tier:[[:space:]]*/) {
+        next   # harness-neutral input, not an OpenCode field; consumed to pick MODEL.
+      }
       if (/^model:[[:space:]]*/) {
-        next   # dropped: a bare Claude Code alias (sonnet/haiku/opus) makes the
-               # OpenCode dispatch mechanism fail hard trying to resolve it -- see
-               # the header comment above transform_agent.
+        # The Claude Code alias is replaced, not dropped. Dropping it (the v0.2.2 fix)
+        # stopped the crash but made every agent inherit ONE session model, which
+        # collapses generator/evaluator separation: the qa-engineer and the
+        # software-engineer it judges ran on the identical model, so the routing
+        # table rule "different model where possible" was never possible here.
+        if (MODEL != "") { print "model: " MODEL }
+        next
       }
       # Every other frontmatter line (description, keywords, managed-by, comments,
       # blank lines) is kept verbatim.

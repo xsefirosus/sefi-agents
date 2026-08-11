@@ -3,6 +3,7 @@ name: devops-engineer
 description: Use when the work is pipeline or release mechanics -- CI workflows, worktree lifecycle, scheduled loop wiring, budget enforcement plumbing, or release preparation. Owns the rails the loops run on, and never merges or deploys on its own authority.
 tools: Read, Grep, Glob, Bash, Write, Edit
 disallowedTools: WebFetch, WebSearch
+tier: mid   # harness-neutral; config/model-map.yml maps it per harness (add a model there, not in 13 agent files)
 model: sonnet   # advisory; an OMITTED model silently inherits the session's most expensive tier -- always name it. Ignored on runtimes that set the model globally.
 keywords: devops, ci, cd, pipeline, worktree, release, cron, budget-ops
 managed-by: sefi-agents

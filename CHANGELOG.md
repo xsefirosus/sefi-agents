@@ -3,6 +3,74 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.2.4] - 2026-08-11
+
+Model tiers become harness-neutral, and the triage loop gets a scheduler it can actually
+run from. Both close gaps found while answering two direct questions rather than by audit.
+
+### Added
+
+- `config/model-map.yml` -- the one place a model identifier is written down. Agents now
+  declare a harness-neutral `tier:` (high / mid / low); the map turns that into a concrete
+  model per harness. Adding a model, renaming one, or supporting a new harness is an edit
+  to one table instead of a pass over 13 agent files. `scripts/model-for.sh` is the single
+  reader, so every installer and validator resolves a tier identically.
+- `scripts/apply-model-map.sh` for harnesses whose install path reads agent files directly
+  with no transform step (Codex via the marketplace). Those installers cannot rewrite
+  anything, so the frontmatter has to be right before it is read.
+- `.github/workflows/triage.yml`, installed at last -- MANUAL TRIGGER ONLY, with the cron
+  line present and commented out. The loop spec had declared `cloud: cron 0 6 * * * via
+  .github/workflows/triage.yml` since the dogfooding scaffold, for a file that was never
+  copied (the `/sefi:init` step is gated on user confirmation, and none was given -- see
+  commit 11346f9, which recorded that correctly). Nothing surfaced the gap afterwards, and
+  it deadlocked the whole feedback apparatus: no scheduler means no cycle, no cycle means
+  no qa-engineer verdict, no verdict means `state/metrics.md` stays empty, an empty
+  scorecard means `retro-improve` can never select a target, and so the flip condition on
+  `improvement.enabled` ("once weekly-retro has run a few cycles") was unreachable by
+  construction. Manual dispatch breaks the deadlock and produces the first real verdicts
+  without committing to unattended spend on a mechanism nobody has watched run.
+- `validate-model-map.sh`: every agent declares a tier in {high,mid,low}; every tier
+  resolves for every harness in the map; and the literal `model:` matches what the map
+  gives for claude-code at that tier. The last check exists because Claude Code reads
+  `agents/*.md` straight out of the plugin with no install step, so its model must be
+  literally correct on disk while every other harness is rewritten at install time -- two
+  fields that can disagree eventually will. It also runs `bash -n` over every shipped
+  script: two live syntax errors during this batch came from an apostrophe inside an awk
+  comment silently closing the shell single-quote around the awk program, which is
+  invisible on reading and instant under `bash -n`.
+- `validate-loops.sh` now checks that a project loop naming a cloud workflow names one that
+  exists -- the exact gap above, so it cannot recur silently.
+
+### Fixed
+
+- `install-opencode.sh` stripped `model:` entirely, and that quietly cost more than it
+  saved. Dropping the field (v0.2.2) was the right call against a hard crash -- OpenCode
+  resolves `model: sonnet` as a real provider id and fails -- but it left every agent
+  inheriting one session model, so the qa-engineer judged the software-engineer on the
+  IDENTICAL model. Generator/evaluator separation, this repo's first design principle,
+  silently degraded to instructions-only, and the routing table's "different model where
+  possible" was never possible there. The installer now writes the mapped OpenCode model
+  instead of deleting the field: the crash stays fixed and the separation comes back.
+- `install-hermes.sh` and the Codex path had no model handling at all. Hermes resolves
+  tiers at dispatch time (it takes its model from the global `provider.model` and treats
+  per-agent `model:` as advisory), so the adapter now documents resolving a tier into the
+  `delegate_task` payload rather than pretending an installer does it.
+
+### Notes on the shipped identifiers
+
+The `claude-code` row is verified -- those are the aliases Claude Code itself accepts. The
+`codex` and `opencode` rows are user-supplied and have NOT been checked against any
+provider's API from this repo, which has no way to check them offline; they are labelled
+as such in the map rather than implied to be confirmed. The `hermes` row uses
+`deepseek-v4-flash-free`, this repo's own documented Hermes model from
+`adapters/HERMES.md`, in preference to a shortened name. A wrong identifier is a one-line
+fix by construction, which is the point of the map.
+
+`validate-model-map.sh` warns, without failing, that `opencode` and `hermes` currently map
+`high` and `mid` to the same model. On a single-model free window that is an honest
+constraint rather than a mistake -- but it does mean the judge and the judged share a
+model there. Pointing `high` at a stronger model is what restores a real adversary.
+
 ## [0.2.3] - 2026-08-11
 
 A full-repo audit, and the batch of fixes it produced. Nine findings, all first-party.

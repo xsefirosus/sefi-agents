@@ -3,6 +3,7 @@ name: software-engineer
 description: Use when an approved plan slice needs to be built. The full-stack generator implements exactly one plan slice in an isolated worktree, runs the gate before declaring done, and never judges its own quality beyond "gate passed."
 tools: Read, Grep, Glob, Bash, Write, Edit, MultiEdit
 disallowedTools: WebFetch, WebSearch
+tier: mid   # harness-neutral; config/model-map.yml maps it per harness (add a model there, not in 13 agent files)
 model: sonnet   # advisory; an OMITTED model silently inherits the session's most expensive tier -- always name it. Ignored on runtimes that set the model globally.
 keywords: software, engineer, full-stack, generator, build, worktree, gate, code
 managed-by: sefi-agents

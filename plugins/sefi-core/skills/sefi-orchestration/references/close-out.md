@@ -2,7 +2,7 @@
 
 `close_out` is one of the five agentic-signals every loop spec declares. Until now it was
 the only one declared everywhere and defined nowhere (`goal_intake` has
-`references/goal-intake.md`; this file is the equivalent). An undefined signal is a label,
+`goal-intake.md` alongside this file; this is the equivalent). An undefined signal is a label,
 not a gate.
 
 close_out is also where the memory vault gets its raw material. Before this file existed

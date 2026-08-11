@@ -23,7 +23,24 @@ tpl_count=0
 proj_count=0
 
 check_loop() {
-  local f="$1" rel="${1#"$ROOT"/}"
+  local f="$1" rel="${1#"$ROOT"/}" scope="${2:-template}"
+
+  # A project loop that names a cloud workflow must name one that EXISTS. This repo
+  # declared `cloud: cron 0 6 * * * via .github/workflows/triage.yml` for a file that was
+  # never installed (the /sefi:init copy step is gated on user confirmation, and none was
+  # given). Nothing surfaced it, and the consequence was a deadlock: no scheduler means no
+  # cycle, no cycle means no qa-engineer verdict, no verdict means state/metrics.md stays
+  # empty, and an empty scorecard means retro-improve can never select a target -- so the
+  # flip condition on improvement.enabled was unreachable by construction. Templates are
+  # exempt: their workflow ships as templates/workflows/ and is copied on init.
+  if [ "$scope" = "project" ]; then
+    local wf
+    wf="$(grep -oE '\.github/workflows/[A-Za-z0-9._-]+\.ya?ml' "$f" | head -1)"
+    if [ -n "$wf" ] && [ ! -f "$ROOT/$wf" ]; then
+      echo "ERROR: $rel - declares a cloud trigger via '$wf', which does not exist (the loop cannot fire on schedule)"
+      errors=$((errors + 1))
+    fi
+  fi
 
   # Move 1: Scheduling (the Trigger section is tagged SCHEDULING).
   grep -qE '^## Trigger|^## .*SCHEDULING' "$f" \
@@ -56,13 +73,13 @@ check_loop() {
 for f in "$TPL_DIR"/*.loop.md; do
   [ -e "$f" ] || continue
   tpl_count=$((tpl_count + 1))
-  check_loop "$f"
+  check_loop "$f" template
 done
 
 for f in "$PROJ_DIR"/*.loop.md; do
   [ -e "$f" ] || continue
   proj_count=$((proj_count + 1))
-  check_loop "$f"
+  check_loop "$f" project
 done
 
 if [ "$tpl_count" -eq 0 ]; then echo "ERROR: no *.loop.md found in $TPL_DIR"; exit 1; fi

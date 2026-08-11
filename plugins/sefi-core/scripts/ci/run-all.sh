@@ -20,6 +20,7 @@ validate-no-personal-paths.sh
 validate-no-orphans.sh
 validate-links.sh
 validate-routing.sh
+validate-model-map.sh
 validate-adapters.sh
 check-unicode-safety.sh
 validate-token-budget.sh

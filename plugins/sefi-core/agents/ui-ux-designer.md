@@ -3,6 +3,7 @@ name: ui-ux-designer
 description: Use when a user interface needs a design spec, an audit against its spec, a redesign that preserves copy and IA, or a study of a reference's design DNA. Works direction-first per the frontend-design skill and never writes application code.
 tools: Read, Grep, Glob, Write
 disallowedTools: Edit, MultiEdit, Bash
+tier: mid   # harness-neutral; config/model-map.yml maps it per harness (add a model there, not in 13 agent files)
 model: sonnet   # advisory; an OMITTED model silently inherits the session's most expensive tier -- always name it. Ignored on runtimes that set the model globally.
 keywords: ui, ux, design, aesthetic, layout, tokens, accessibility, anti-slop, audit, redesign, study
 managed-by: sefi-agents

@@ -129,3 +129,19 @@ would run the printed commands.
 
 sefi stores no credentials -- rotate at this harness's own config or your CI secrets. See
 `Install.md`'s Operating Rules for the canonical statement.
+
+## Model tiers
+
+Hermes takes its model from the global `provider.model` setting and treats per-agent
+`model:` as advisory, so tiers here are resolved at DISPATCH time rather than baked into a
+file. When building a `delegate_task(...)` payload, resolve the agent's tier with:
+
+```sh
+bash plugins/sefi-core/scripts/model-for.sh hermes <high|mid|low>
+```
+
+and pass the result in the payload. The `hermes:` block in
+`plugins/sefi-core/config/model-map.yml` currently maps all three tiers to
+`deepseek-v4-flash-free`, which means the qa-engineer judges on the same model it is
+judging -- honest for a single-model free window, but weaker than a different judge. Point
+`high` at a stronger model when one is available.

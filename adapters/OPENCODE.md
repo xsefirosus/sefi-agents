@@ -81,3 +81,18 @@ contract, gate requirement), not a harmless retry.
 
 sefi stores no credentials -- rotate at this harness's own config or your CI secrets. See
 `Install.md`'s Operating Rules for the canonical statement.
+
+## Model tiers
+
+`install-opencode.sh` no longer strips `model:`. It resolves each agent's harness-neutral
+`tier:` through `plugins/sefi-core/config/model-map.yml` and writes the OpenCode model for
+that tier.
+
+Stripping the field (v0.2.2) fixed a hard crash -- OpenCode resolves `model: sonnet` as a
+real provider id and fails -- but made every agent inherit one session model, so the
+qa-engineer judged the software-engineer on the identical model and generator/evaluator
+separation degraded to instructions-only. Mapping the value fixes both.
+
+Point the `opencode:` block at your own models, or pass `--model-map <path>`. Give `high`
+a stronger model than `mid` if you have one: that is what restores a genuinely different
+judge. `validate-model-map.sh` warns (does not fail) while the two are identical.
