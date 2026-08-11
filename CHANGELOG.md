@@ -3,371 +3,190 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
-## [0.2.8] - 2026-08-11
+## [0.3.0] - 2026-08-11
 
-The seams, executed. Everything built in 0.2.3 through 0.2.7 was gated and validated but
-had never actually run in sequence, because no loop has ever completed a cycle. By the
-qa-engineer's own delete-the-line test that made much of it unwired -- reverting a mechanism
-would not have failed anything, because nothing exercised it end to end.
+A full-repo audit and the work it produced. Nine defects found, four documented-but-unbuilt
+mechanisms shipped, every agent read against the mechanisms that changed under it, and the
+whole loop skeleton executed end to end for the first time.
 
-### Added
-
-- `scripts/ci/test-integration.sh`: the full loop skeleton, run in a real throwaway git
-  repo, wired into `run-all.sh`. 30 assertions across 16 stages, in the order a real cycle
-  runs them:
-
-  scaffold and the `.worktrees` check-ignore gate -> `probe-tools.sh --loop` deciding full
-  vs reduced scope -> a plan in the product-manager's format passing
-  `validate-plan-structure.sh`, with its `(needs: -)` markers parsed to find the steps an
-  EM may start in parallel -> a dispatch envelope passing `check-handoff.sh` -> a budget
-  preflight that blocks a projected $0.30 dispatch against the $0.15 cap BEFORE it runs ->
-  a real `git worktree` at the exact absolute path the envelope pinned -> a real slice
-  built in it -> `gate.sh` reporting PASSED (2 checks), not "no known toolchain" -> the
-  plan's Done Criteria satisfied by EXECUTION (`node index.js --version` printing 1.4.2) ->
-  a grep-countable stop condition at 0 unchecked steps -> a metrics row whose target-path
-  resolves to a real managed-by file -> `close_out` filing a daily note -> `gen-router.sh`
-  picking it up -> the SessionStart injection carrying it back out -> a ledger row whose
-  SHA `git cat-file` confirms, so `git revert` is a real undo -> and an assertion that no
-  merge commit exists, because the human checkpoint is unconditional.
-
-  Two things it caught that unit tests structurally cannot: the memory round trip actually
-  closes (note -> router -> injection -> next session), and `loop-readiness.sh` scores a
-  genuinely exercised loop at 100/100 rather than the 80/100 it reports here, where signal
-  5 (a metrics row naming the loop) has never had data.
-
-- Scale, previously untested: a 135-note vault still injects within the 1500-char cap, and
-  all 15 decisions survive truncation. `gen-router.sh`'s durability ordering shipped in
-  v0.2.1 to make truncation drop trace notes before decisions, and until now that ordering
-  had only ever been exercised against 2 notes.
-
-- Install flows, previously untested end to end: all 13 OpenCode agents come out carrying a
-  `permission:` block and a mapped model, with no surviving Claude alias and no leaked
-  `tier:`; the Codex conversion writes `gpt-5.6-sol` / `-terra` / `-luna` by tier.
-
-- Workflow YAML is now parsed rather than assumed. `.github/workflows/triage.yml` is
-  asserted manual-only: `workflow_dispatch` present, `schedule` absent, so the commented-out
-  cron cannot be uncommented by accident and go unnoticed.
-
-### What this deliberately does not claim
-
-Every agent dispatch inside the integration test is performed by the test harness. It
-proves the machinery holds at the seams; it says nothing about whether a model decides well
-at them. The repo still has zero rows of real qa-engineer verdict data, and the honest
-status of the agents' judgment remains unmeasured. That distinction is stated in the
-script's own header, in the Proof section of the README, and here, because eliding it would
-be the exact overclaim the anti-hallucination skill exists to prevent.
-
-## [0.2.7] - 2026-08-11
-
-The last six agents, audited against the same test as 0.2.6: does this agent describe a
-mechanism that changed under it, or leave another agent guessing? Only one did. The other
-five are recorded here as deliberately unchanged, because padding an agent that needs
-nothing is the opposite of the token discipline this repo enforces.
+The pattern worth naming up front: almost every defect was in the EXECUTABLE layer, and most
+were mechanisms this repo had already written down and not built -- or built and left
+reachable by prose. Two were second occurrences of a bug class already fixed once elsewhere.
+That is the argument for each landing as an executed regression test rather than a corrected
+sentence. Validators 14 -> 16, assertions 7 -> 84.
 
 ### Fixed
 
-- `research-analyst` was doing its own ad-hoc `if codegraph is on PATH` check -- the exact
-  pattern `probe-tools.sh` consolidated, and with the same blind spot: on PATH is not the
-  same as working. It now falls back to `rg` when the tool answers nothing, and names the
-  source it actually used rather than the one it preferred.
+1. **`budget-check.sh` failed open a second time.** v0.2.1 closed the "ccusage absent"
+   branch; "ccusage present but broken" stayed open. A crash, an empty result, or a `null`
+   was assigned straight to `spent`, and `awk -v s="null" '{print s+0}'` is `0` -- so an
+   unreadable ledger certified every cap as within budget. Figures are validated before any
+   arithmetic. Exit codes now separate EXCEEDED (1) from CANNOT MEASURE (3): under `set -e` a
+   crashing ccusage previously aborted with a bare exit 1, indistinguishable from a real
+   overrun to any caller reading only the code.
+2. **`gate.sh` enforced no timeout at all**, while `loop-engineering/SKILL.md` shipped
+   per-operation timeout classes as a predecessor-earned rule ("a 300s default killed a live
+   12-task dispatch"). A hung suite hung the loop forever -- the same shape as the browser
+   tool that ate a 50-iteration retry budget. Two classes now ship (default 300s, test 900s),
+   expiry is named rather than surfacing as a bare exit 124, and a missing `timeout` binary
+   is announced instead of implying a bound.
+3. **`gate.sh` flag and coverage defects.** `npm test --silent` passed `--silent` to the test
+   script rather than the runner. `shellcheck` globbed `./*.sh` unquoted and top-level only,
+   so this repo's own scripts were never linted by its own gate. Added pnpm/yarn/bun
+   detection, a typecheck step, `go vet`, `cargo fmt`, and a Makefile fallback.
+4. **`compress-output.sh` could report a failure with zero diagnostics.** Output was filtered
+   to lines matching `error|fail|exception`, so a tool failing with "2 tests did not pass"
+   printed a FAIL line, a log pointer, and nothing else -- leaving the qa-engineer, the one
+   agent meant to read it, with no diagnostic. Falls back to the output tail; a genuinely
+   silent failure is labelled.
+5. **`inject-memory.sh` injected the head of `index.md` rather than the router.** The
+   `GENERATED:router` block starts at line 21 of the shipped template, so `head -n 40` spent
+   roughly half the 1500-char budget re-sending frontmatter, the title and the folder list
+   every session, then truncated the routing lines carrying the only signal. gen-router's
+   durability ordering (v0.2.1) only pays off once the window holds router lines at all.
+6. **The five-move loop gate was satisfiable by prose.** `grep -q Discovery` matches the word
+   anywhere, so a spec with no section for any move passed the validator whose entire purpose
+   is rejecting that. Anchored to the `## <Move>` heading in `validate-loops.sh` and
+   `loop-readiness.sh`; a prose-only spec drops from 80/100 to 40/100. `validate-loops.sh`
+   also now checks the project's own `loops/`, which this repo dogfoods and CI never read.
+7. **`install-opencode.sh` stripped `model:` entirely**, and that quietly cost more than it
+   saved. Dropping the field (v0.2.2) was right against a hard crash, but left every agent
+   inheriting one session model -- so the qa-engineer judged the software-engineer on the
+   IDENTICAL model. Generator/evaluator separation, this repo's first design principle,
+   silently degraded to instructions-only. The installer now writes the mapped OpenCode model
+   instead of deleting the field.
+8. **`research-analyst` ran its own ad-hoc `if codegraph is on PATH` check** -- the exact
+   pattern `probe-tools.sh` consolidates, with the same blind spot. On PATH is not working.
+9. **Four agents described mechanisms that had changed under them.** `software-engineer` and
+   `qa-engineer` now distinguish a gate TIMEOUT from a red gate (exit 124 is a measurement
+   that never finished, evidence for neither verdict). `devops-engineer` owns budget plumbing
+   and did not know about exit 3. `support-engineer` runs the triage Discovery move and did
+   not know `probe-tools.sh` exists.
 
 ### Added
 
-- `validate-links.sh` now checks BARE filenames in prose (`probe-tools.sh`), not only
-  path-prefixed references (`scripts/probe-tools.sh`). The existing regex required a
-  directory prefix, so a doc naming a script with no path was never checked at all.
+**`probe-tools.sh`** -- and with it, a claim the README had been making with no
+implementation: "tools are probed before a loop may grant them". No probe existed anywhere.
+The claim was also unbuildable as written (agent `tools:` frontmatter is granted by the
+harness, not by a loop), so the mechanism was scoped to what is real -- external commands a
+loop's moves shell out to -- and the README rewritten to describe it. Loops declare
+`requires-tools:`, `validate-loops.sh` requires the line, and the probe reports four states
+rather than two: presence is not health, and a binary that is installed and broken passes
+`command -v` while failing the work. Offline by default; `--deep` opts in to credential
+checks.
 
-  That surface is worth naming, because it is where the README's false probe claim survived
-  three releases. Two prose rules already forbade it: `technical-writer.md` item 4 ("no
-  feature that is not in the tree; a claim you cannot verify is omitted or marked UNKNOWN")
-  and `docs/CHECKLIST.md` ("back any runtime-behavior claim with a live log line or a probe,
-  not a reading of the code"). Both were correct, neither fired, and the claim shipped
-  anyway -- which is this repo's own thesis about gates versus prose rules, demonstrated on
-  itself. The honest fix was a validator, not more prose in the agent that was already right.
+**`check-handoff.sh`** -- closing the asymmetry between plans and handoffs. Plans had
+`validate-plan-structure.sh`; the handoff rule was enforced by nothing, despite failing more
+expensively. A dispatch with a relative `writes:` path resolves against whatever working
+directory the agent inherits, which is how a predecessor's task wrote to the user's home
+directory and a reviewer approved the empty folder it was pointed at. Blocks a relative path,
+an empty `reads:` or `context:`, a back-reference like "as discussed above", and an agent
+slug resolving to no file.
 
-  Scope stated plainly: this catches a doc naming a script that does not exist. It would
-  NOT have caught the original claim, which named no script at all. A general prose-claim
-  linter is not tractable; this closes the tractable half.
+**`state/retro-ledger.md`** -- the reversibility half of self-improvement. The retro loop
+could apply bounded, qa-verified edits and keep no record, so it could re-edit the same file
+weekly, re-propose something a human rejected, or leave a harmful edit in place forever.
+Written at edit time (the `before` value exists only then) and carrying the commit SHA that
+makes an edit revertible at all. Three read rules bind before target selection: churn guard,
+rejection memory, evidence debt. The revert threshold is fixed now, while `state/metrics.md`
+is still empty, because a threshold written after the numbers arrive is fitted to them.
 
-### Deliberately unchanged
+**`references/close-out.md`** -- the memory vault's missing producer. `close_out` was
+declared in every loop spec and defined nowhere, while `goal_intake` had a reference file.
+The consequence was structural: `knowledge-manager.md` read `memory/daily/*.md` as "the raw
+material", all twelve other agents filed observations as "a candidate for the
+knowledge-manager", and no agent, hook or command ever wrote a daily note. `/sefi:init`
+created `memory/daily/` and it stayed empty, so the weekly distill was a permanent no-op and
+SessionStart had nothing to inject -- memory looked broken from both ends at once. It stays
+an agent dispatch rather than a `Stop` hook because the privacy filter must run first, and a
+deterministic hook cannot judge which bytes are a credential.
 
-`security-engineer`, `solutions-architect`, `quant-analyst` and `ui-ux-designer` reference
-no repo mechanism at all -- they are self-contained around their own subject matter (the
-six security surfaces, n8n specs, the gate math, the direction lanes), so nothing in this
-batch changed under them.
+**`config/model-map.yml` and harness-neutral tiers.** Agents declare `tier:` (high/mid/low);
+one table maps that to a concrete model and reasoning effort per harness. A new model,
+rename, or harness is an edit there, never a pass over 13 agent files. `model-for.sh` is the
+single reader; `apply-model-map.sh` serves harnesses whose install path has no transform
+step. The literal `model:` stays beside `tier:` because the Claude Code plugin path reads
+`agents/*.md` directly with no install step, so that value must be correct on disk --
+`validate-model-map.sh` asserts the two agree.
 
-`technical-writer` was checked and left alone on purpose: its item 4 already states the rule
-that would have prevented the README claim. The failure was that the rule was bypassed, not
-that it was missing, and rewriting a correct rule to look busy would have taught nothing.
+**`.github/workflows/triage.yml`, installed at last** -- manual trigger only, cron present and
+commented out. The loop spec had declared `cloud: cron 0 6 * * * via .github/workflows/triage.yml`
+since the dogfooding scaffold, for a file never copied (the `/sefi:init` step is gated on
+confirmation, and none was given -- commit 11346f9 recorded that correctly). Nothing surfaced
+it afterwards, and it deadlocked the feedback apparatus: no scheduler, so no cycle; no cycle,
+so no verdict; no verdict, so `state/metrics.md` stays empty; empty scorecard, so
+`retro-improve` can never select a target; so the flip condition on `improvement.enabled`
+("once weekly-retro has run a few cycles") was unreachable BY CONSTRUCTION rather than merely
+unmet.
 
-Agents total 8196 -> 8222 words against the unchanged 8320 cap.
+**The plan gains the fields three other agents were guessing at.** `product-manager` writes
+the artifact the engineering-manager, software-engineer and qa-engineer all consume:
+- *Slice sizing.* The software-engineer builds "exactly one plan slice" and nothing defined
+  how big a slice may be, while `budget.yml` caps a dispatch at $0.15. The planner authors
+  the work those caps must hold and had never been told they exist, so an oversized slice was
+  a planning failure surfacing much later as a budget breach.
+- *Dependency markers.* The EM's protocol says "sequence, do not parallel-guess" -- and a
+  flat checkbox list gave it nothing to sequence FROM, so `max_parallel_worktrees: 3` was
+  unusable without guessing. Steps now end with `(needs: N)` or `(needs: -)`.
+- *Tool declaration.* Plans now carry `## Requires Tools`, with `none` as a deliberate
+  declaration rather than a blank.
 
-## [0.2.6] - 2026-08-11
+**`test-integration.sh`** -- the full loop skeleton, executed end to end in a real throwaway
+git repo. Everything above was gated and validated but had never run in sequence, because no
+loop has ever completed a cycle; by the qa-engineer's own delete-the-line test that made much
+of it unwired. 30 assertions across 16 stages, in the order a real cycle runs them: scaffold
+and the `.worktrees` check-ignore gate, tool probe deciding full vs reduced scope, a plan
+passing its gate with `(needs: -)` markers parsed for parallel-ready steps, an envelope
+passing the handoff gate, a budget preflight blocking a projected $0.30 dispatch against the
+$0.15 cap BEFORE it runs, a real `git worktree` at the exact absolute path the envelope
+pinned, a real slice built in it, `gate.sh` reporting PASSED (2 checks), the plan's Done
+Criteria satisfied by EXECUTION, a grep-countable stop condition, a metrics row resolving to a
+real managed-by file, `close_out` filing a note, `gen-router.sh` picking it up, the
+SessionStart injection carrying it back out, a ledger SHA `git cat-file` confirms, and an
+assertion that no merge commit exists.
 
-The agent files themselves. The three preceding releases built gates and mechanisms around
-the roster and barely touched the roster: 2 of 13 agents got a behavioral change, and
-product-manager -- the planner every other agent consumes -- got only a frontmatter field.
-This spends the remaining word budget on that gap. Agents total 7906 -> 8196 words against
-a cap of 8320; the cap itself is unchanged, because it is doing real work.
+Scale and install flows, previously untested: a 135-note vault still injects within the
+1500-char cap with all 15 decisions surviving truncation (the durability ordering had only
+ever run against 2 notes); 13 OpenCode agents convert with permission blocks and mapped
+models, no surviving Claude alias, no leaked `tier:`; Codex writes sol/terra/luna by tier.
+Workflow YAML is parsed rather than assumed, with `triage.yml` asserted manual-only.
 
-Two themes, both wiring rather than prose polish.
-
-### Fixed -- agents describing mechanisms that changed under them
-
-- `software-engineer` and `qa-engineer` now distinguish a gate TIMEOUT from a red gate.
-  Timeout classes shipped in 0.2.3 and neither agent was told: exit 124 is a measurement
-  that never finished, not a failure. The software-engineer must narrow the slice or raise
-  the budget rather than report a test failure; the qa-engineer must treat it as evidence
-  for NEITHER verdict, the same category as `gate.sh`'s "no known toolchain detected"
-  (which qa-engineer.md item 2 already handled, and which timeouts belong beside).
-- `devops-engineer` owns budget plumbing and did not know `budget-check.sh` grew exit 3.
-  CANNOT MEASURE is not EXCEEDED and is certainly not a pass -- and papering over it with
-  `--spent 0` re-opens the fail-open that 0.2.3 closed, so the agent now says so.
-- `support-engineer` runs the morning-triage Discovery move and did not know
-  `probe-tools.sh` exists. It now probes first and triages at STATED REDUCED SCOPE when a
-  tool is BROKEN or MISSING, which is the whole point of having built the probe.
-
-### Added -- the plan gains the fields three other agents were guessing at
-
-`product-manager` writes the artifact the engineering-manager, software-engineer and
-qa-engineer all consume. Three things it knew and never wrote down:
-
-- **Slice sizing.** The software-engineer builds "exactly one plan slice" and nothing
-  defined how big a slice may be, while `budget.yml` caps a dispatch at $0.15 with
-  `max_retries: 2`. The planner authors the work those caps must hold and had never been
-  told they exist, so an oversized slice was a planning failure that surfaced much later as
-  a budget breach. Steps are now sized to fit one dispatch; a step that cannot is two steps.
-- **Dependency markers.** The engineering-manager's protocol says "sequence, do not
-  parallel-guess" -- but a flat checkbox list gave it nothing to sequence FROM, so
-  `max_parallel_worktrees: 3` was unusable without guessing which steps were independent.
-  Every step now ends with `(needs: <numbers>)` or `(needs: -)`, and the
-  engineering-manager sequences from those markers rather than intuition.
-- **Tool declaration.** Loops declare `requires-tools:` and get probed; a plan whose steps
-  shell out to `gh` or `docker` declared nothing, so the probe could not cover it. Plans
-  now carry `## Requires Tools`, with `none` as a deliberate declaration rather than a
-  blank.
-
-`validate-plan-structure.sh` enforces all three, so they are gates rather than suggestions.
-A regression test asserts the product-manager's own worked example passes that validator --
-an agent that teaches a format its gate rejects trains every plan into a failure, and a
-small model matches structure from the example far more than from the prose.
-
-test-scripts: 51 -> 54.
-
-## [0.2.5] - 2026-08-11
-
-Model identifiers verified against the web rather than assumed, and a reasoning-effort dial
-added to the map. The placeholder ids shipped in 0.2.4 were labelled unverified; this
-replaces them with checked ones and revises one tier assignment on the evidence.
+**New validators.** `validate-model-map.sh` (tiers resolve to a model and a reasoning effort
+on every harness; the literal `model:` matches the map; every shipped script passes `bash -n`
+-- two live syntax errors in this batch came from an apostrophe inside an awk comment closing
+the shell single-quote, invisible on reading and instant under `bash -n`).
+`validate-links.sh` now also checks BARE filenames in prose, the surface the false README
+claim slipped through on.
 
 ### Changed
 
-- Codex now maps to the GPT-5.6 family, which turns out to be a three-model line that fits
-  the tiers exactly: `gpt-5.6-sol` (flagship) / `gpt-5.6-terra` (balanced workhorse) /
-  `gpt-5.6-luna` (fast, cheap) -- "Terra as default, Sol for the hard parts, Luna for
-  volume". 0.2.4 shipped terra on `high` and luna on `mid` with an unverified `5.5-gpt` on
-  `low`. Sol on `high` is the better fit: the high tier is the adversarial judge, and it
-  should be the strongest model available, not the middle one. Also corrected the prefix --
-  the real ids carry `gpt-`, so `5.6-terra` would not have resolved.
-- Noted a deadline that affects anyone still on the old line: `gpt-5.4` and `gpt-5.4-mini`
-  retire from Codex on 2026-08-31, replaced by `gpt-5.6-terra` and `gpt-5.6-luna`.
-- OpenCode and Hermes confirmed on `deepseek-v4-flash-free` (200K context, 128K output,
-  free tier). The name in 0.2.4's opencode row was shortened; both rows now carry the full
-  identifier. The free-window training caveat is confirmed and repeated in the map itself,
-  not only in the Hermes adapter.
+- Codex maps to the GPT-5.6 family, web-verified: `gpt-5.6-sol` / `-terra` / `-luna`, a
+  three-model line fitting the tiers exactly. Sol on `high` keeps the judge stronger than the
+  generator. Recorded deadline: `gpt-5.4` and `gpt-5.4-mini` retire from Codex on 2026-08-31.
+- OpenCode and Hermes on `deepseek-v4-flash-free`, web-verified (200K context, 128K output,
+  free tier). Reasoning effort added per tier: Codex xhigh/high/medium, DeepSeek
+  max/high/medium following its own "max for long agent loops" guidance. Claude Code has no
+  per-agent dial, so its rows read `none` rather than blank.
 
-### Added
+### Deliberately unchanged
 
-- Reasoning effort is now part of the map, as `<tier>_reasoning` beside each `<tier>`, and
-  scales with tier on purpose: the high tier is both the adversarial judge and the long
-  agent loop, which is exactly where more reasoning pays for itself.
-  - Codex `model_reasoning_effort` accepts minimal|low|medium|high|xhigh -> xhigh/high/medium.
-  - OpenCode and Hermes (DeepSeek V4 Flash) support high and max, with the documented
-    guidance "high for quick edits, max for long agent loops" -> max/high/medium. A loop
-    cycle is a long agent loop.
-  - Claude Code exposes no per-agent reasoning dial, so its rows read `none` -- stated
-    rather than left blank, so a missing value is never mistaken for an unset one.
-- `model-for.sh --reasoning` resolves the effort for a tier, so installers and validators
-  read it the same single way they already read the model.
-- `install-opencode.sh` writes `options.reasoningEffort` into each converted agent. Written
-  per agent rather than assumed, because some OpenCode versions exclude DeepSeek models
-  from the reasoning-effort system entirely.
-- `apply-model-map.sh` prints the matching `~/.codex/config.toml` block. Reasoning is
-  deliberately NOT written into Codex frontmatter: Codex reads it from config.toml, so an
-  agent-file field would be inert while looking wired -- the exact shape of the inert-config
-  problem `validate-config-wired.sh` exists to catch.
-- `validate-model-map.sh` now requires every tier to resolve a reasoning effort on every
-  harness, and rejects any value outside none|minimal|low|medium|high|xhigh.
+`security-engineer`, `solutions-architect`, `quant-analyst` and `ui-ux-designer` reference no
+repo mechanism at all and are self-contained around their own subject matter; nothing in this
+release changed under them. `technical-writer` was checked and left alone on purpose: its
+item 4 already states the rule that would have prevented the false README claim. The failure
+was that the rule was bypassed, not missing -- which is this repo's own thesis about gates
+versus prose, demonstrated on itself, and why the fix was a validator rather than more prose
+in an agent that was already right.
 
-### Caveats kept explicit
+Agents total 7549 -> 8222 words against an unchanged 8320 cap.
 
-`xhigh` is only available on top-tier (codex-max) coding models. It is set on
-`codex.high_reasoning` because the request was for the maximum applicable, but if a dispatch
-on `gpt-5.6-sol` rejects or silently ignores it, lowering that one value to `high` is the
-whole fix -- which is what a single-table map is for.
+### Still unproven, stated plainly
 
-OpenCode and Hermes still map all three tiers to one model, so `validate-model-map.sh`
-continues to warn that generator/evaluator separation is instructions-only there. That is
-an honest constraint of a single-model free window, not a defect, and it resolves the day a
-second model is available.
-
-## [0.2.4] - 2026-08-11
-
-Model tiers become harness-neutral, and the triage loop gets a scheduler it can actually
-run from. Both close gaps found while answering two direct questions rather than by audit.
-
-### Added
-
-- `config/model-map.yml` -- the one place a model identifier is written down. Agents now
-  declare a harness-neutral `tier:` (high / mid / low); the map turns that into a concrete
-  model per harness. Adding a model, renaming one, or supporting a new harness is an edit
-  to one table instead of a pass over 13 agent files. `scripts/model-for.sh` is the single
-  reader, so every installer and validator resolves a tier identically.
-- `scripts/apply-model-map.sh` for harnesses whose install path reads agent files directly
-  with no transform step (Codex via the marketplace). Those installers cannot rewrite
-  anything, so the frontmatter has to be right before it is read.
-- `.github/workflows/triage.yml`, installed at last -- MANUAL TRIGGER ONLY, with the cron
-  line present and commented out. The loop spec had declared `cloud: cron 0 6 * * * via
-  .github/workflows/triage.yml` since the dogfooding scaffold, for a file that was never
-  copied (the `/sefi:init` step is gated on user confirmation, and none was given -- see
-  commit 11346f9, which recorded that correctly). Nothing surfaced the gap afterwards, and
-  it deadlocked the whole feedback apparatus: no scheduler means no cycle, no cycle means
-  no qa-engineer verdict, no verdict means `state/metrics.md` stays empty, an empty
-  scorecard means `retro-improve` can never select a target, and so the flip condition on
-  `improvement.enabled` ("once weekly-retro has run a few cycles") was unreachable by
-  construction. Manual dispatch breaks the deadlock and produces the first real verdicts
-  without committing to unattended spend on a mechanism nobody has watched run.
-- `validate-model-map.sh`: every agent declares a tier in {high,mid,low}; every tier
-  resolves for every harness in the map; and the literal `model:` matches what the map
-  gives for claude-code at that tier. The last check exists because Claude Code reads
-  `agents/*.md` straight out of the plugin with no install step, so its model must be
-  literally correct on disk while every other harness is rewritten at install time -- two
-  fields that can disagree eventually will. It also runs `bash -n` over every shipped
-  script: two live syntax errors during this batch came from an apostrophe inside an awk
-  comment silently closing the shell single-quote around the awk program, which is
-  invisible on reading and instant under `bash -n`.
-- `validate-loops.sh` now checks that a project loop naming a cloud workflow names one that
-  exists -- the exact gap above, so it cannot recur silently.
-
-### Fixed
-
-- `install-opencode.sh` stripped `model:` entirely, and that quietly cost more than it
-  saved. Dropping the field (v0.2.2) was the right call against a hard crash -- OpenCode
-  resolves `model: sonnet` as a real provider id and fails -- but it left every agent
-  inheriting one session model, so the qa-engineer judged the software-engineer on the
-  IDENTICAL model. Generator/evaluator separation, this repo's first design principle,
-  silently degraded to instructions-only, and the routing table's "different model where
-  possible" was never possible there. The installer now writes the mapped OpenCode model
-  instead of deleting the field: the crash stays fixed and the separation comes back.
-- `install-hermes.sh` and the Codex path had no model handling at all. Hermes resolves
-  tiers at dispatch time (it takes its model from the global `provider.model` and treats
-  per-agent `model:` as advisory), so the adapter now documents resolving a tier into the
-  `delegate_task` payload rather than pretending an installer does it.
-
-### Notes on the shipped identifiers
-
-The `claude-code` row is verified -- those are the aliases Claude Code itself accepts. The
-`codex` and `opencode` rows are user-supplied and have NOT been checked against any
-provider's API from this repo, which has no way to check them offline; they are labelled
-as such in the map rather than implied to be confirmed. The `hermes` row uses
-`deepseek-v4-flash-free`, this repo's own documented Hermes model from
-`adapters/HERMES.md`, in preference to a shortened name. A wrong identifier is a one-line
-fix by construction, which is the point of the map.
-
-`validate-model-map.sh` warns, without failing, that `opencode` and `hermes` currently map
-`high` and `mid` to the same model. On a single-model free window that is an honest
-constraint rather than a mistake -- but it does mean the judge and the judged share a
-model there. Pointing `high` at a stronger model is what restores a real adversary.
-
-## [0.2.3] - 2026-08-11
-
-A full-repo audit, and the batch of fixes it produced. Nine findings, all first-party.
-The pattern across them is worth stating: almost every defect was in the executable layer,
-and most were mechanisms this repo had already written down and not built -- or built and
-left reachable by prose. Two are second occurrences of a bug class already fixed once
-elsewhere, which is the argument for each landing as an executed regression test rather
-than a corrected sentence. `test-scripts.sh`: 7 assertions -> 49.
-
-### Fixed
-
-- `budget-check.sh` failed open a second time. v0.2.1 closed the "no ccusage" branch; the
-  "ccusage present but broken" branch stayed open. A crash, an empty result, or a `null`
-  was assigned straight to `spent`, and `awk -v s="null" '{print s+0}'` is `0` -- so an
-  unreadable ledger certified every cap as within budget. Figures are now validated before
-  any arithmetic touches them. Exit codes separate EXCEEDED (1) from CANNOT MEASURE (3):
-  under `set -e` a crashing `ccusage` previously aborted with a bare exit 1, which no
-  caller could tell from a real overrun.
-- `gate.sh` enforced no timeout of any kind, while `loop-engineering/SKILL.md` shipped
-  per-operation timeout classes as a predecessor-earned rule ("a 300s default killed a live
-  12-task dispatch"). A hung suite hung the loop forever -- the same shape as the browser
-  tool that ate a 50-iteration retry budget. Two classes now ship (default 300s, test
-  900s), expiry is named rather than surfacing as a bare exit 124, and a missing `timeout`
-  binary is announced instead of implying a bound that is not enforced.
-- `gate.sh` also: `npm test --silent` passed `--silent` to the test script rather than the
-  runner; `shellcheck` globbed `./*.sh` unquoted and top-level only, so this repo's own 20
-  scripts were never linted by its own gate. Added pnpm/yarn/bun detection, a typecheck
-  step, `go vet`, `cargo fmt`, and a Makefile fallback.
-- `compress-output.sh` could report a failure with zero diagnostics. Output was filtered to
-  lines matching `error|fail|exception`, so a tool failing with "2 tests did not pass"
-  printed a FAIL line, a log pointer, and nothing else -- leaving the qa-engineer, the one
-  agent meant to read it, with no diagnostic. Falls back to the output tail; a genuinely
-  silent failure is labelled as such.
-- `inject-memory.sh` injected the head of `index.md` rather than the router. The
-  `GENERATED:router` block starts at line 21 of the shipped template, so `head -n 40` spent
-  roughly half the 1500-char cap re-sending frontmatter, the title and the folder list every
-  session, then truncated the routing lines carrying the only signal. `gen-router.sh`'s
-  durability ordering (v0.2.1) only pays off once the window holds router lines at all.
-  Falls back to the old window when markers are absent; an initialized-but-empty vault now
-  says so in one line instead of injecting a page about nothing.
-- The five-move loop gate was satisfiable by prose. `grep -q Discovery` matches the word
-  anywhere in the file, so a spec with no section for any move passed the validator whose
-  entire purpose is rejecting exactly that. Anchored to the `## <Move>` heading in both
-  `validate-loops.sh` and `loop-readiness.sh`; a prose-only spec drops from 80/100 to
-  40/100. `validate-loops.sh` now also checks the project's own `loops/`, which this repo
-  dogfoods and CI had never looked at.
-
-### Added
-
-- `scripts/probe-tools.sh`, and with it a claim the README had been making without an
-  implementation: "tools are probed before a loop may grant them". No probe existed
-  anywhere in the repo. The claim was also unbuildable as written -- agent `tools:`
-  frontmatter is granted by the harness, not by a loop -- so the mechanism was scoped to
-  what is real (external commands a loop's moves shell out to) and the README rewritten to
-  describe it. Loop specs now declare `requires-tools:`, `validate-loops.sh` requires the
-  line, and the probe reports four states rather than two: presence is not health, and a
-  binary that is installed and broken passes `command -v` while failing the work. Offline
-  by default; `--deep` opts in to credential checks. This repo's own first live triage lost
-  two of six findings to a missing `gh` and only discovered it mid-cycle.
-- `scripts/check-handoff.sh`, closing the asymmetry between plans and handoffs. Plans had
-  `validate-plan-structure.sh`; the handoff rule -- name the upstream file, inline all
-  context, pin the absolute output path -- was enforced by nothing, despite being the more
-  expensive failure. A dispatch with a relative `writes:` path resolves against whatever
-  working directory the agent inherits, which is how a predecessor's task wrote to the
-  user's home directory and a reviewer approved the empty folder it was pointed at. The
-  gate blocks a relative path, an empty `reads:` or `context:`, a back-reference such as
-  "as discussed above", and an agent slug that resolves to no file.
-- `state/retro-ledger.md` and the reversibility half of self-improvement. The retro loop
-  could apply bounded, qa-verified edits but had no memory of them: it could re-edit the
-  same file every week, re-propose something a human had already rejected, or leave an edit
-  in place indefinitely after it made things worse. The ledger is written at edit time
-  (the `before` value and the evidence pointer exist only then) and carries the commit SHA
-  that makes an edit revertible at all. Three read rules bind before any target is
-  selected -- churn guard, rejection memory, evidence debt. The revert threshold is fixed
-  now, deliberately, while `state/metrics.md` is still empty: a threshold written after the
-  numbers arrive is a threshold fitted to them. A detected regression becomes an `inbox/`
-  proposal naming the exact `git revert <sha>`, never an automatic commit.
-- `references/close-out.md`, and with it the memory vault's missing producer. `close_out`
-  was declared in every loop spec and defined nowhere, while `goal_intake` had a reference
-  file. The consequence was structural: `knowledge-manager.md` read `memory/daily/*.md` as
-  "the raw material" and distilled it weekly, all twelve other agents filed observations as
-  "a candidate for the knowledge-manager", and no agent, hook or command ever wrote a daily
-  note. `/sefi:init` created `memory/daily/` and it stayed empty, so the weekly distill was
-  a permanent no-op and SessionStart had nothing to inject. `close_out` now dispatches the
-  knowledge-manager to file a cycle's durable observations -- or to log SKIP when there are
-  none, never neither. It stays an agent dispatch rather than a `Stop` hook because the
-  memory-protocol privacy filter has to run first, and a deterministic hook cannot judge
-  which bytes are a credential. It produces `tier: trace` notes only; promotion stays the
-  weekly recurrence-based job, so the ladder still earns each rung from evidence.
+Every agent dispatch inside `test-integration.sh` is performed by the test harness. It proves
+the machinery holds at the seams; it says nothing about whether a model decides well at them.
+`state/metrics.md` still has zero rows, `improvement.enabled` is still false, the Codex and
+OpenCode identifiers are web-sourced rather than dispatch-tested, and the triage workflow has
+never executed on GitHub. The machinery is proven; the judgment is not.
 
 ## [0.2.2] - 2026-07-19
 
