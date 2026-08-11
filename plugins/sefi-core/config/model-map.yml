@@ -1,61 +1,90 @@
 # model-map.yml -- the ONE place a model identifier is written down.
 #
 # Agents declare a harness-neutral `tier:` (high / mid / low). This file maps each tier to
-# a concrete model for each harness. A new model, a renamed model, or a new harness is an
-# edit HERE and nowhere else -- never a pass over 13 agent files.
+# a concrete model AND a reasoning effort for each harness. A new model, a renamed model,
+# or a new harness is an edit HERE and nowhere else -- never a pass over 13 agent files.
 #
-# Read by: scripts/model-for.sh, scripts/install-opencode.sh, scripts/install-hermes.sh,
-# scripts/ci/validate-model-map.sh. Override the whole file with --model-map <path> on any
-# installer, or edit it in place; it is yours.
+# Read by: scripts/model-for.sh, scripts/install-opencode.sh, scripts/apply-model-map.sh,
+# scripts/ci/validate-model-map.sh. Override with --model-map <path> on any installer.
 #
-# PROVENANCE OF THESE IDENTIFIERS. The claude-code row is verified -- those are the tier
-# aliases Claude Code itself accepts. The codex and opencode/hermes rows are USER-SUPPLIED
-# and were written down exactly as given; they have not been checked against any provider's
-# API from this repo, and this repo has no way to check them offline. If a dispatch fails
-# with a model-not-found error, the identifier here is the first thing to correct -- that
-# is a one-line fix by construction. Marking them unverified rather than implying they are
-# confirmed is the anti-hallucination rule applied to config.
+# Keys per harness:
+#   <tier>            the model identifier
+#   <tier>_reasoning  the reasoning effort for that tier ("none" where the harness has no
+#                     such dial). Effort scales with tier on purpose: the high tier is the
+#                     adversarial judge and the long agent loop, which is exactly where
+#                     more reasoning pays for itself.
 #
-# WHY TIERS ARE NOT COSMETIC. The qa-engineer is `high` and the software-engineer is `mid`
-# on purpose: the routing table's "different model where possible" and the generator/
-# evaluator split are the repo's first design principle. When a harness maps two tiers to
-# the SAME identifier, that separation degrades to instructions-only -- still real, but
-# weaker than a genuinely different judge. validate-model-map.sh reports that as a warning,
-# not an error, because on a single-model harness it is an honest constraint rather than a
-# mistake. Give `high` a stronger model than `mid` wherever the harness has one.
-
-# tier -> model identifier, per harness.
+# WHY TIERS ARE NOT COSMETIC. The qa-engineer is `high` and the software-engineer it judges
+# is `mid`. That gap IS generator/evaluator separation -- the first design principle in this
+# repo. A harness that maps both tiers to one model keeps the separation in instructions
+# only. validate-model-map.sh reports that as a WARNING, not an error, because on a
+# single-model free window it is an honest constraint rather than a mistake.
 
 claude-code:
   # Verified: native Claude Code tier aliases.
+  # Claude Code exposes no per-agent reasoning dial, so reasoning is "none" here -- stated
+  # rather than left blank, so a missing value is never mistaken for an unset one.
   high: opus
   mid: sonnet
   low: haiku
+  high_reasoning: none
+  mid_reasoning: none
+  low_reasoning: none
 
 codex:
-  # USER-SUPPLIED, unverified from this repo. Codex installs via the plugin marketplace,
-  # which reads agent files directly with no transform step -- so nothing rewrites `model:`
-  # for Codex automatically. adapters/CODEX.md section 2 states `model:` is advisory there.
-  # To bake these in anyway, run `scripts/apply-model-map.sh codex <src> <dst>`.
-  high: 5.6-terra
-  mid: 5.6-luna
-  low: 5.5-gpt
+  # Web-verified 2026-08-11. GPT-5.6 ships as a three-model family that maps 1:1 onto these
+  # tiers: Sol is the flagship, Terra the balanced workhorse, Luna the fast/cheap option --
+  # "Terra as default, Sol for the hard parts, Luna for volume". Using Sol for `high` is
+  # what keeps the qa-engineer a genuinely stronger judge than the software-engineer.
+  #
+  # Use the explicit ids, never the bare `gpt-5.6` alias: that alias routes to gpt-5.6-sol
+  # today and adds a routing question to any diagnostic.
+  #
+  # DEADLINE: gpt-5.4 and gpt-5.4-mini retire from Codex on 2026-08-31. The documented
+  # replacements are gpt-5.4 -> gpt-5.6-terra and gpt-5.4-mini -> gpt-5.6-luna, so anything
+  # still pinned to the 5.4/5.5 line needs moving before then.
+  high: gpt-5.6-sol
+  mid: gpt-5.6-terra
+  low: gpt-5.6-luna
+  # `model_reasoning_effort` accepts minimal|low|medium|high|xhigh.
+  # CAVEAT: xhigh is only available on top-tier coding models (the codex-max tier). If a
+  # dispatch on gpt-5.6-sol rejects or silently ignores xhigh, drop this one value to
+  # "high" -- it is the single field to change, which is the point of this file.
+  high_reasoning: xhigh
+  mid_reasoning: high
+  low_reasoning: medium
 
 opencode:
-  # USER-SUPPLIED, unverified from this repo. All three tiers currently resolve to one
-  # model, which collapses generator/evaluator separation to instructions-only. Point
-  # `high` at a stronger model as soon as one is available on this harness.
-  high: deepseek-v4-flash
-  mid: deepseek-v4-flash
-  low: deepseek-v4-flash
+  # Web-verified 2026-08-11: deepseek-v4-flash-free is real on OpenCode Zen (200K context,
+  # 128K output, free tier, no card). All three tiers resolve to it because it is currently
+  # the only free model here -- which collapses generator/evaluator separation to
+  # instructions-only. Point `high` at a stronger model the moment one is available; that
+  # single line is what restores a real adversary.
+  #
+  # PRIVACY: during the free period, submitted data may be used to improve the model. Never
+  # run client or proprietary code through it (adapters/HERMES.md carries the same warning).
+  high: deepseek-v4-flash-free
+  mid: deepseek-v4-flash-free
+  low: deepseek-v4-flash-free
+  # DeepSeek V4 Flash supports reasoning_effort, with high and max variants; the guidance is
+  # "high for quick edits, max for long agent loops". A sefi loop cycle IS a long agent
+  # loop, so the high tier takes max.
+  # CAVEAT: some OpenCode versions exclude DeepSeek models from the reasoning-effort system
+  # entirely, and need options.reasoningEffort set per agent -- which is what
+  # install-opencode.sh now writes into each converted agent file.
+  high_reasoning: max
+  mid_reasoning: high
+  low_reasoning: medium
 
 hermes:
-  # `deepseek-v4-flash-free` is this repo's own documented Hermes model
-  # (adapters/HERMES.md section 1, set globally via `hermes config set provider.model`),
-  # so it is used here in preference to a shortened name. Hermes takes its model from that
-  # global setting and treats per-agent `model:` as advisory (HERMES.md section 4), so
-  # these values are consumed at DISPATCH time -- resolve a tier with
+  # Same model and same free-window privacy caveat as opencode above; `deepseek-v4-flash-free`
+  # is also what adapters/HERMES.md already documents (`hermes config set provider.model`).
+  # Hermes takes its model from that global setting and treats per-agent `model:` as
+  # advisory, so these values are consumed at DISPATCH time -- resolve a tier with
   # `scripts/model-for.sh hermes <tier>` and pass it in the delegate_task payload.
   high: deepseek-v4-flash-free
   mid: deepseek-v4-flash-free
   low: deepseek-v4-flash-free
+  high_reasoning: max
+  mid_reasoning: high
+  low_reasoning: medium

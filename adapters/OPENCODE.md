@@ -82,17 +82,33 @@ contract, gate requirement), not a harmless retry.
 sefi stores no credentials -- rotate at this harness's own config or your CI secrets. See
 `Install.md`'s Operating Rules for the canonical statement.
 
-## Model tiers
+## Model tiers and reasoning
 
 `install-opencode.sh` no longer strips `model:`. It resolves each agent's harness-neutral
-`tier:` through `plugins/sefi-core/config/model-map.yml` and writes the OpenCode model for
-that tier.
+`tier:` through `plugins/sefi-core/config/model-map.yml` and writes both the model and
+`options.reasoningEffort`.
 
-Stripping the field (v0.2.2) fixed a hard crash -- OpenCode resolves `model: sonnet` as a
-real provider id and fails -- but made every agent inherit one session model, so the
-qa-engineer judged the software-engineer on the identical model and generator/evaluator
-separation degraded to instructions-only. Mapping the value fixes both.
+| Tier | Model | reasoningEffort |
+|---|---|---|
+| high | `deepseek-v4-flash-free` | `max` |
+| mid | `deepseek-v4-flash-free` | `high` |
+| low | `deepseek-v4-flash-free` | `medium` |
 
-Point the `opencode:` block at your own models, or pass `--model-map <path>`. Give `high`
-a stronger model than `mid` if you have one: that is what restores a genuinely different
-judge. `validate-model-map.sh` warns (does not fail) while the two are identical.
+Verified 2026-08-11: `deepseek-v4-flash-free` is real on OpenCode Zen -- 200K context, 128K
+output, free tier, no card. DeepSeek V4 Flash supports `reasoning_effort` with `high` and
+`max` variants, and the guidance is "high for quick edits, max for long agent loops". A
+sefi loop cycle is a long agent loop, so the high tier takes `max`.
+
+`options.reasoningEffort` is written per agent rather than assumed, because some OpenCode
+versions exclude DeepSeek models from the reasoning-effort system entirely.
+
+**All three tiers currently resolve to one model**, because it is the only free model here.
+That collapses generator/evaluator separation to instructions-only: the qa-engineer judges
+on the same model it is judging. `validate-model-map.sh` warns about this rather than
+failing, since on a free window it is an honest constraint. Point `opencode.high` at a
+stronger model the moment one is available -- that single line restores a real adversary.
+
+**Privacy:** during the free period, submitted data may be used to improve the model. Never
+run client or proprietary code through it.
+
+Override the whole table with `--model-map <path>` or by editing the `opencode:` block.
