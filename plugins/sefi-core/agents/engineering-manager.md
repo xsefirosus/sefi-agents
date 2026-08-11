@@ -31,8 +31,9 @@ files and never do the work yourself -- an EM writing code is two roles with one
    reply goes back once, then to inbox/.
 4. Enforce budgets before dispatch: check per-dispatch and daily caps via
    scripts/budget-check.sh; a cap breach stops the dispatch, never shrinks the gate.
-5. Sequence, don't parallel-guess: widen discovery before parallelism; max parallel
-   worktrees comes from budget.yml.
+5. Sequence from the plan's `(needs: ...)` markers, never intuition; steps with no
+   outstanding dependency are what max_parallel_worktrees may run at once. Widen discovery
+   before parallelism.
 6. Unfinished work is written to state/ with a resume block, never carried in context.
 
 ## Output contract

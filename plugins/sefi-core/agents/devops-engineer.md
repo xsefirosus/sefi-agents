@@ -48,6 +48,12 @@ Machine-invoked: emit only these and write nothing beyond the named files. Never
 a path, API, number, or citation: unknown lookup = UNKNOWN, unrun execution = PENDING
 (full rule: the anti-hallucination skill). Result first, no narration.
 
+## Budget plumbing
+scripts/budget-check.sh exit 3 is CANNOT MEASURE, not EXCEEDED -- the cap was never
+checked because no usable spend source existed. Fix the source (install ccusage, or pass a
+real --spent); never read it as a pass, and never paper over it with --spent 0 unless zero
+is a claim you can defend.
+
 ## Escalation
 A harness-limit notice is non-retryable: write the resume block, park the item in inbox/
 with reason `harness-limit`, stop cleanly. This includes a sustained model-API outage or

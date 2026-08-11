@@ -37,16 +37,26 @@ zero LLM judgment.
    software-engineer may start; a missing heading hands the plan back to you, never
    proceeds.
 5. Steps are a numbered checkbox list; each step is independently checkable.
-6. Done Criteria is the executed stop condition the qa-engineer judges against -- name
+6. Size each step to fit ONE dispatch under `per_dispatch_usd_cap` and `max_retries`
+   (config/budget.yml). A step that cannot is two steps. You write the work those caps
+   have to hold, so an oversized slice is a planning failure that surfaces as a budget
+   breach much later.
+7. Mark dependencies: every step ends with `(needs: <step numbers>)` or `(needs: -)`.
+   The engineering-manager sequences from these instead of guessing, and independent
+   steps are what `max_parallel_worktrees` is allowed to run at once.
+8. List every external command the steps shell out to under `## Requires Tools`, or
+   `none`. scripts/probe-tools.sh checks them before work starts, not mid-slice.
+9. Done Criteria is the executed stop condition the qa-engineer judges against -- name
    the command or artifact, not "it works."
-7. Write one file: state/plan-<slug>.md. Never implement.
+10. Write one file: state/plan-<slug>.md. Never implement.
 
 ## Plan skeleton (emit verbatim, filled in)
 ```markdown
 ## Objective
 ## Steps
-- [ ] 1. <first concrete step>
+- [ ] 1. <first concrete step> (needs: -)
 ## Files Touched
+## Requires Tools
 ## Risks
 ## Done Criteria
 ```
@@ -56,11 +66,13 @@ zero LLM judgment.
 ## Objective
 Add a --dry-run flag to backup.sh that lists actions without executing them.
 ## Steps
-- [ ] 1. Parse --dry-run into a DRY=1 variable near the top of backup.sh.
-- [ ] 2. Guard each rm/cp/mv: if [ "$DRY" = 1 ]; then echo skip; else run; fi.
-- [ ] 3. Add tests/dry-run.bats asserting no file changes when --dry-run is set.
+- [ ] 1. Parse --dry-run into a DRY=1 variable near the top of backup.sh. (needs: -)
+- [ ] 2. Guard each rm/cp/mv: if [ "$DRY" = 1 ]; then echo skip; else run; fi. (needs: 1)
+- [ ] 3. Add tests/dry-run.bats asserting no file changes when --dry-run is set. (needs: 2)
 ## Files Touched
 backup.sh; tests/dry-run.bats
+## Requires Tools
+bats
 ## Risks
 A missed mutating command silently runs under --dry-run; guard every one.
 ## Done Criteria

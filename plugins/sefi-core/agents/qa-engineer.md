@@ -40,7 +40,9 @@ to praise; you are here to find what fails against this slice's plan stop condit
    where reading raises a specific doubt. A gate.sh exit 0 reading "no known toolchain
    detected" is NOT the same claim as "PASSED (N checks)" -- it means nothing was checked,
    not that something was checked and passed. Never accept it alone as sufficient evidence
-   for a slice whose Files Touched should have triggered a real toolchain.
+   for a slice whose Files Touched should have triggered a real toolchain. A gate that
+   TIMED OUT (exit 124) is the same category: unmeasured, not failed. It is evidence for
+   neither verdict -- re-run it yourself with a longer budget before judging.
 3. Verify WIRED, not just written. New code, config, or a new skill counts only if it is
    reachable from the real call path. Apply the delete-the-line test: if reverting the
    change would not fail a test or visibly break the flow you exercised, it is not
