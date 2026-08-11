@@ -3,6 +3,51 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.2.7] - 2026-08-11
+
+The last six agents, audited against the same test as 0.2.6: does this agent describe a
+mechanism that changed under it, or leave another agent guessing? Only one did. The other
+five are recorded here as deliberately unchanged, because padding an agent that needs
+nothing is the opposite of the token discipline this repo enforces.
+
+### Fixed
+
+- `research-analyst` was doing its own ad-hoc `if codegraph is on PATH` check -- the exact
+  pattern `probe-tools.sh` consolidated, and with the same blind spot: on PATH is not the
+  same as working. It now falls back to `rg` when the tool answers nothing, and names the
+  source it actually used rather than the one it preferred.
+
+### Added
+
+- `validate-links.sh` now checks BARE filenames in prose (`probe-tools.sh`), not only
+  path-prefixed references (`scripts/probe-tools.sh`). The existing regex required a
+  directory prefix, so a doc naming a script with no path was never checked at all.
+
+  That surface is worth naming, because it is where the README's false probe claim survived
+  three releases. Two prose rules already forbade it: `technical-writer.md` item 4 ("no
+  feature that is not in the tree; a claim you cannot verify is omitted or marked UNKNOWN")
+  and `docs/CHECKLIST.md` ("back any runtime-behavior claim with a live log line or a probe,
+  not a reading of the code"). Both were correct, neither fired, and the claim shipped
+  anyway -- which is this repo's own thesis about gates versus prose rules, demonstrated on
+  itself. The honest fix was a validator, not more prose in the agent that was already right.
+
+  Scope stated plainly: this catches a doc naming a script that does not exist. It would
+  NOT have caught the original claim, which named no script at all. A general prose-claim
+  linter is not tractable; this closes the tractable half.
+
+### Deliberately unchanged
+
+`security-engineer`, `solutions-architect`, `quant-analyst` and `ui-ux-designer` reference
+no repo mechanism at all -- they are self-contained around their own subject matter (the
+six security surfaces, n8n specs, the gate math, the direction lanes), so nothing in this
+batch changed under them.
+
+`technical-writer` was checked and left alone on purpose: its item 4 already states the rule
+that would have prevented the README claim. The failure was that the rule was bypassed, not
+that it was missing, and rewriting a correct rule to look busy would have taught nothing.
+
+Agents total 8196 -> 8222 words against the unchanged 8320 cap.
+
 ## [0.2.6] - 2026-08-11
 
 The agent files themselves. The three preceding releases built gates and mechanisms around

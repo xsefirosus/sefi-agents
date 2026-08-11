@@ -57,5 +57,26 @@ while IFS= read -r f; do
     | sort -u)
 done < <(git ls-files -- "$CORE/skills" "$CORE/agents" "$CORE/commands" docs README.md Install.md | grep -E '\.md$')
 
+# Bare filenames in prose -- `probe-tools.sh`, not `scripts/probe-tools.sh`. The path regex
+# above requires a directory prefix, so a doc naming a script with no path was never
+# checked at all. That is the surface README:60 slipped through on for three releases:
+# technical-writer.md item 4 ("no feature that is not in the tree") and docs/CHECKLIST.md
+# ("back any runtime-behavior claim with a live log line or a probe") both already forbade
+# it, and the claim shipped anyway -- which is this repo's own argument for gates over
+# prose rules, applied to itself.
+bare_errors=0
+while IFS= read -r f; do
+  [ -f "$f" ] || continue
+  while IFS= read -r name; do
+    [ -z "$name" ] && continue
+    # Resolve anywhere in the tree: docs legitimately name a script without its path.
+    if ! find . -name "$name" -not -path './.git/*' -print -quit 2>/dev/null | grep -q .; then
+      echo "ERROR: $f - names '$name', which is not a file anywhere in this repo"
+      bare_errors=$((bare_errors + 1))
+    fi
+  done < <(grep -ohE '`[A-Za-z0-9_.-]+\.(sh|yml)`' "$f" 2>/dev/null | tr -d '`' | sort -u)
+done < <(git ls-files -- "$CORE/skills" "$CORE/agents" "$CORE/commands" docs README.md Install.md CHANGELOG.md | grep -E '\.md$')
+errors=$((errors + bare_errors))
+
 if [ "$errors" -ne 0 ]; then echo "validate-links: $errors error(s)"; exit 1; fi
-echo "validate-links: OK ($scanned files scanned, all repo-path references resolve)"
+echo "validate-links: OK ($scanned files scanned, all repo-path references resolve; bare script names checked)"
