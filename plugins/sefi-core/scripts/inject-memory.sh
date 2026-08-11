@@ -28,8 +28,36 @@ INDEX="$VAULT/index.md"
 
 PREFIX="SEFI MEMORY ROUTER (truncated -- follow links via memory-protocol):"
 
-# First 40 lines, prefixed, then the whole injection hard-capped at memory.inject_char_cap.
-first40="$(head -n 40 "$INDEX")"
-full="$(printf '%s\n%s' "$PREFIX" "$first40")"
+BEGIN="<!-- GENERATED:router -->"
+END="<!-- /GENERATED:router -->"
+
+# Inject the GENERATED:router block, not the head of the file. Everything above that block
+# in a real index.md -- frontmatter, title, the folder list, the "do not hand-edit" note --
+# is static boilerplate the model gains nothing from re-reading every session. The previous
+# `head -n 40` spent roughly half its window on it (the block starts at line 21 of the
+# shipped template) and truncated the routing lines that carry the only actual signal.
+# gen-router.sh already orders notes so that truncation drops trace notes before decisions;
+# that ordering only pays off once the window is spent on router lines in the first place.
+body=""
+if grep -qF "$BEGIN" "$INDEX" && grep -qF "$END" "$INDEX"; then
+  body="$(awk -v b="$BEGIN" -v e="$END" '
+    $0==b { f=1; next }
+    $0==e { f=0 }
+    f && $0 !~ /^<!--/ { print }
+  ' "$INDEX")"
+  if [ -z "$body" ]; then
+    # Initialized but empty. Say so in one line: it tells the session a vault exists and is
+    # writable here, which is the whole cue for filing anything into it.
+    printf '%s\n' "SEFI MEMORY: vault at $VAULT/ is initialized but empty (no notes filed yet)."
+    exit 0
+  fi
+else
+  # No markers: a hand-written index.md. Fall back to the old window rather than emitting
+  # nothing -- some router is better than none.
+  body="$(head -n 40 "$INDEX")"
+fi
+
+# Prefixed, then the whole injection hard-capped at memory.inject_char_cap.
+full="$(printf '%s\n%s' "$PREFIX" "$body")"
 
 printf '%s\n' "${full:0:$CAP}"

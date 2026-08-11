@@ -28,12 +28,14 @@ expect_code() {
 echo "=== budget-check.sh (audit gap 8.1: the fail-open) ==="
 
 # The fix: no ccusage AND no --spent means there is no spend source, so the cap cannot be
-# checked and the gate must fail. Skipped when ccusage is installed locally; CI has no
-# ccusage, and CI is the authority for this assertion.
+# checked and the gate must fail -- now with exit 3 (CANNOT MEASURE), distinct from exit 1
+# (EXCEEDED). A caller reading only the exit code could not previously tell "you blew the
+# budget" from "the telemetry is broken". Skipped when ccusage is installed locally; CI has
+# no ccusage, and CI is the authority for this assertion.
 if command -v ccusage >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
   echo "  SKIP: no-spend-source assertion (ccusage present locally; CI has none)"
 else
-  expect_code 1 "no ccusage + no --spent exits nonzero" \
+  expect_code 3 "no ccusage + no --spent exits 3 (CANNOT MEASURE, not EXCEEDED)" \
     bash "$CORE/scripts/budget-check.sh" --scope daily --config "$BUDGET_TPL"
 fi
 
@@ -44,6 +46,142 @@ expect_code 0 "explicit --spent 0 still passes" \
 # The pre-existing over-cap path must not regress: 3.00 against the template's 2.00 daily.
 expect_code 1 "--spent 3.00 over the 2.00 daily cap exits nonzero" \
   bash "$CORE/scripts/budget-check.sh" --scope daily --spent 3.00 --config "$BUDGET_TPL"
+
+# A non-numeric figure must be rejected as a usage error, never coerced to 0 by awk.
+expect_code 2 "--spent abc is a usage error, not a silent zero" \
+  bash "$CORE/scripts/budget-check.sh" --scope daily --spent abc --config "$BUDGET_TPL"
+expect_code 2 "--pending 1.2.3 is a usage error" \
+  bash "$CORE/scripts/budget-check.sh" --scope daily --spent 0 --pending 1.2.3 --config "$BUDGET_TPL"
+
+# --pending must catch an overrun BEFORE it happens: 1.90 spent + 0.50 pending > 2.00 cap.
+expect_code 1 "--pending pushes a within-cap spend over the cap" \
+  bash "$CORE/scripts/budget-check.sh" --scope daily --spent 1.90 --pending 0.50 --config "$BUDGET_TPL"
+
+# The SECOND fail-open, found 2026-08-11: ccusage present but returning null/empty/crashing.
+# The old code assigned that straight to `spent`, and `awk -v s="null" '{print s+0}'` is 0 --
+# so a broken telemetry source silently certified every cap as within budget. Stub ccusage
+# and jq onto PATH to prove each unusable shape now fails closed.
+FAKEBIN="$(mktemp -d)"
+mkfake() {
+  # mkfake <ccusage-body> <jq-body>
+  printf '#!/bin/sh\n%s\n' "$1" > "$FAKEBIN/ccusage"
+  printf '#!/bin/sh\ncat >/dev/null\n%s\n' "$2" > "$FAKEBIN/jq"
+  chmod +x "$FAKEBIN/ccusage" "$FAKEBIN/jq"
+}
+
+mkfake 'echo "{}"' 'echo null'
+expect_code 3 "ccusage returning null fails closed (was: coerced to 0 and passed)" \
+  env PATH="$FAKEBIN:$PATH" bash "$CORE/scripts/budget-check.sh" --scope daily --config "$BUDGET_TPL"
+
+mkfake 'exit 1' 'echo 0'
+expect_code 3 "a crashing ccusage fails closed" \
+  env PATH="$FAKEBIN:$PATH" bash "$CORE/scripts/budget-check.sh" --scope daily --config "$BUDGET_TPL"
+
+mkfake 'echo "{}"' 'echo ""'
+expect_code 3 "ccusage returning an empty figure fails closed" \
+  env PATH="$FAKEBIN:$PATH" bash "$CORE/scripts/budget-check.sh" --scope daily --config "$BUDGET_TPL"
+
+# A broken ccusage must still defer to an explicit caller claim rather than hard-failing.
+mkfake 'echo "{}"' 'echo null'
+expect_code 0 "a broken ccusage falls back to an explicit --spent" \
+  env PATH="$FAKEBIN:$PATH" bash "$CORE/scripts/budget-check.sh" --scope daily --spent 0 --config "$BUDGET_TPL"
+
+# And a WORKING ccusage must still be read and still enforce the cap.
+mkfake 'echo "{}"' 'echo 5.00'
+expect_code 1 "a working ccusage over the cap still exits EXCEEDED" \
+  env PATH="$FAKEBIN:$PATH" bash "$CORE/scripts/budget-check.sh" --scope daily --config "$BUDGET_TPL"
+rm -rf "$FAKEBIN"
+
+echo
+echo "=== gate.sh (2026-08-11 audit: no timeout, wrong npm flag, top-level-only shellcheck) ==="
+
+GW="$(mktemp -d)"
+
+# The two exact strings qa-engineer.md item 2 distinguishes between. If either is reworded,
+# the qa-engineer's "nothing was checked" vs "something passed" rule silently stops working.
+gate_out="$( cd "$GW" && bash "$CORE/scripts/gate.sh" 2>&1 )" || true
+case "$gate_out" in
+  *"no known toolchain detected"*) ok "empty project still reports 'no known toolchain detected'" ;;
+  *) bad "the no-toolchain string qa-engineer.md item 2 keys on has changed" ;;
+esac
+
+mkdir -p "$GW/node"
+printf '{"name":"x","scripts":{"lint":"true","typecheck":"true","test":"true"}}' > "$GW/node/package.json"
+gate_out="$( cd "$GW/node" && bash "$CORE/scripts/gate.sh" 2>&1 )" || true
+case "$gate_out" in
+  *"PASSED (3 checks)"*) ok "lint + typecheck + test all run and report 'PASSED (N checks)'" ;;
+  *) bad "expected 'PASSED (3 checks)', got: $(printf '%s' "$gate_out" | tail -1)" ;;
+esac
+
+# A failing check must propagate its own exit code, not a generic 1.
+printf '{"name":"x","scripts":{"test":"exit 7"}}' > "$GW/node/package.json"
+expect_code 7 "a failing check preserves its exit code" \
+  bash -c "cd '$GW/node' && bash '$CORE/scripts/gate.sh'"
+
+# The timeout class: before this fix gate.sh had no time bound at all, so a hung suite hung
+# the loop forever -- the same failure shape as the predecessor's browser tool eating a
+# 50-iteration retry budget. Skipped when no timeout binary exists (the script says so
+# itself in that case rather than implying a bound).
+if command -v timeout >/dev/null 2>&1 || command -v gtimeout >/dev/null 2>&1; then
+  printf '{"name":"x","scripts":{"test":"sleep 30"}}' > "$GW/node/package.json"
+  gate_out="$( cd "$GW/node" && SEFI_GATE_TEST_TIMEOUT=2 bash "$CORE/scripts/gate.sh" 2>&1 )" || true
+  case "$gate_out" in
+    *"TIMEOUT npm-test exceeded 2s"*) ok "a hung suite is killed by its class budget and named as a TIMEOUT" ;;
+    *) bad "expected a named TIMEOUT line, got: $(printf '%s' "$gate_out" | tail -1)" ;;
+  esac
+else
+  echo "  SKIP: timeout assertion (no timeout/gtimeout binary on PATH)"
+fi
+
+# shellcheck must reach nested scripts. The old `ls ./*.sh` glob was top-level only, so
+# this repo's own 20 scripts under plugins/sefi-core/scripts/ were never linted by its gate.
+if command -v shellcheck >/dev/null 2>&1; then
+  mkdir -p "$GW/nested/deep/scripts"
+  printf '#!/bin/sh\nexit 0\n' > "$GW/nested/deep/scripts/ok.sh"
+  gate_out="$( cd "$GW/nested" && bash "$CORE/scripts/gate.sh" 2>&1 )" || true
+  case "$gate_out" in
+    *shellcheck*) ok "shellcheck reaches a nested scripts/ directory" ;;
+    *) bad "shellcheck did not run on a nested .sh file" ;;
+  esac
+else
+  echo "  SKIP: nested-shellcheck assertion (shellcheck not on PATH)"
+fi
+rm -rf "$GW"
+
+echo
+echo "=== compress-output.sh (2026-08-11 audit: a failure could report zero diagnostics) ==="
+
+CW="$(mktemp -d)"
+
+# The bug: on failure the compressor printed only lines matching error|fail|exception. A
+# tool that fails without naming one of those words produced a FAIL line, a log pointer,
+# and nothing else -- leaving the qa-engineer re-running the gate with no diagnostic at all.
+cmp_out="$( cd "$CW" && bash "$CORE/scripts/compress-output.sh" t \
+  sh -c 'echo "2 tests did not pass"; echo "expected 3, got 4"; exit 1' 2>&1 )" || true
+case "$cmp_out" in
+  *"expected 3, got 4"*) ok "a failure with no error-keyword lines still shows the output tail" ;;
+  *) bad "no diagnostics for a keyword-free failure: $cmp_out" ;;
+esac
+
+# The keyword path must not regress, dedup included.
+cmp_out="$( cd "$CW" && bash "$CORE/scripts/compress-output.sh" t \
+  sh -c 'echo "Error: boom"; echo "Error: boom"; exit 1' 2>&1 )" || true
+case "$cmp_out" in
+  *"2 Error: boom"*) ok "keyword lines are still deduped with a count" ;;
+  *) bad "the dedup path regressed: $cmp_out" ;;
+esac
+
+# A failure with no output at all must say so rather than printing an empty section.
+cmp_out="$( cd "$CW" && bash "$CORE/scripts/compress-output.sh" t sh -c 'exit 3' 2>&1 )" || true
+case "$cmp_out" in
+  *"produced no output"*) ok "a silent failure is labelled, not left blank" ;;
+  *) bad "a silent failure printed nothing useful: $cmp_out" ;;
+esac
+
+# The wrapped command's exit code is still preserved (fail-open contract).
+expect_code 3 "the wrapped command's exit code survives compression" \
+  bash -c "cd '$CW' && bash '$CORE/scripts/compress-output.sh' t sh -c 'exit 3'"
+rm -rf "$CW"
 
 echo
 echo "=== gen-router.sh (audit gap 5.1: trace notes evicting decisions) ==="
@@ -72,6 +210,127 @@ fi
 printf -- '---\ntags: [daily]\nkeywords: beta\n---\n' > "$TMP/memory/daily/2026-01-02.md"
 expect_code 1 "--check flags drift after a new note is added" \
   bash -c "cd '$TMP' && bash '$CORE/scripts/gen-router.sh' --check"
+
+echo
+echo "=== inject-memory.sh (2026-08-11 audit: half the injection window spent on boilerplate) ==="
+
+IW="$(mktemp -d)"
+mkdir -p "$IW/memory/decisions" "$IW/memory/daily"
+cp "$CORE/templates/memory/index.md" "$IW/memory/index.md"
+printf -- '---\ntags: [decision]\nkeywords: auth\ndescription: use PKCE\n---\n' > "$IW/memory/decisions/auth.md"
+printf -- '---\ntags: [daily]\nkeywords: note1\n---\n' > "$IW/memory/daily/2026-01-01.md"
+( cd "$IW" && bash "$CORE/scripts/gen-router.sh" ) >/dev/null 2>&1
+
+inj="$( cd "$IW" && bash "$CORE/scripts/inject-memory.sh" 2>/dev/null )"
+
+# The router lines are the only part carrying signal; they must be present.
+case "$inj" in
+  *"decisions/auth"*) ok "the generated router block is injected" ;;
+  *) bad "router lines missing from the injection: $inj" ;;
+esac
+
+# The static preamble must NOT be. `head -n 40` re-sent the frontmatter, title and folder
+# list every session -- roughly half the 1500-char cap on boilerplate the model gains
+# nothing from, while truncating the routing lines it does need.
+case "$inj" in
+  *"Entry point to the Obsidian-style memory vault"*|*"tags: [index]"*)
+    bad "static preamble is still being injected (the head-40 window is back)" ;;
+  *) ok "static index.md preamble is no longer injected" ;;
+esac
+
+# An initialized-but-empty vault says so in one line rather than injecting a page of
+# folder headers describing an empty vault.
+IE="$(mktemp -d)"
+mkdir -p "$IE/memory"
+cp "$CORE/templates/memory/index.md" "$IE/memory/index.md"
+inj_empty="$( cd "$IE" && bash "$CORE/scripts/inject-memory.sh" 2>/dev/null )"
+case "$inj_empty" in
+  *"initialized but empty"*) ok "an empty vault injects a single-line notice" ;;
+  *) bad "empty-vault case produced: $inj_empty" ;;
+esac
+rm -rf "$IE"
+
+# A hand-written index.md with no markers must still inject something rather than nothing.
+IH="$(mktemp -d)"
+mkdir -p "$IH/memory"
+printf '# my own router\n- see [[decisions/thing]]\n' > "$IH/memory/index.md"
+inj_hand="$( cd "$IH" && bash "$CORE/scripts/inject-memory.sh" 2>/dev/null )"
+case "$inj_hand" in
+  *"decisions/thing"*) ok "a marker-less hand-written index still falls back to the head window" ;;
+  *) bad "marker-less fallback produced: $inj_hand" ;;
+esac
+rm -rf "$IH"
+
+# The hard char cap still binds.
+IC="$(mktemp -d)"
+mkdir -p "$IC/memory/decisions" "$IC/config"
+cp "$CORE/templates/memory/index.md" "$IC/memory/index.md"
+printf 'memory:\n  inject_char_cap: 120\n' > "$IC/config/sefi.config.yml"
+i=0; while [ "$i" -lt 40 ]; do
+  printf -- '---\ntags: [decision]\nkeywords: k%s\n---\n' "$i" > "$IC/memory/decisions/d$i.md"; i=$((i + 1))
+done
+( cd "$IC" && bash "$CORE/scripts/gen-router.sh" ) >/dev/null 2>&1
+n_chars="$( cd "$IC" && bash "$CORE/scripts/inject-memory.sh" 2>/dev/null | wc -c | tr -d ' ')"
+if [ "$n_chars" -le 121 ]; then
+  ok "memory.inject_char_cap still bounds the injection ($n_chars bytes)"
+else
+  bad "injection exceeded the configured cap ($n_chars bytes for a cap of 120)"
+fi
+rm -rf "$IC" "$IW"
+
+echo
+echo "=== loop move detection (2026-08-11 audit: prose satisfied the five-move gate) ==="
+
+# validate-loops.sh and loop-readiness.sh both detected the five moves with a bare
+# `grep -q Discovery`, so a spec that merely used the words in a sentence -- with no
+# section for any move -- scored as a complete loop. loop-readiness.sh is the testable one
+# (it reads loops/ relative to cwd); both now use the same `^## <Move>` anchor.
+LR="$(mktemp -d)"
+mkdir -p "$LR/loops"
+cat > "$LR/loops/prose.loop.md" <<'PROSE'
+# Loop: prose
+managed-by: sefi-agents
+agentic-signals: goal_intake, refusal_gate, verification, loop_discipline, close_out
+
+This loop does Discovery and Handoff, then Verification and Persistence, all
+scheduled via SCHEDULING. It has a human checkpoint too.
+## Budget
+per-run cap: $0.50
+PROSE
+lr_out="$( cd "$LR" && bash "$CORE/scripts/loop-readiness.sh" 2>/dev/null )"
+lr_score="${lr_out##*: }"; lr_score="${lr_score%%/*}"
+if [ "${lr_score:-100}" -le 40 ]; then
+  ok "a prose-only spec no longer scores the five-move signal ($lr_out)"
+else
+  bad "prose-only spec still scores the move signal: $lr_out"
+fi
+
+# A spec with real headings must still score them.
+cat > "$LR/loops/real.loop.md" <<'REAL'
+# Loop: real
+managed-by: sefi-agents
+agentic-signals: goal_intake, refusal_gate, verification, loop_discipline, close_out
+## Trigger (SCHEDULING)
+cloud: cron
+## Discovery
+skill: loop-engineering
+## Handoff
+one worktree per finding
+## Verification
+generator/evaluator split
+## Persistence
+state file: `state/real.md`
+## Budget
+per-run cap: $0.50   daily cap: $2.00
+## Human checkpoint
+PRs are opened, never merged.
+REAL
+lr_out="$( cd "$LR" && bash "$CORE/scripts/loop-readiness.sh" 2>/dev/null | grep '^real:' )"
+case "$lr_out" in
+  *"60/100"*|*"80/100"*|*"100/100"*) ok "a properly sectioned spec still scores its moves ($lr_out)" ;;
+  *) bad "a valid spec lost its move score: $lr_out" ;;
+esac
+rm -rf "$LR"
 
 echo
 echo "=== install-opencode.sh (live bug, 2026-07-19: OpenCode hard-fails resolving a Claude Code model alias) ==="
