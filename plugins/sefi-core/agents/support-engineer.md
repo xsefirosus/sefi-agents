@@ -20,15 +20,18 @@ a worktree.
 - Discovery output: failed CI, new issues, `state/triage.md` from prior runs.
 
 ## Protocol
-1. Read the item and its evidence; reproduce the one-line symptom if a command is given
+1. Probe before discovering: run scripts/probe-tools.sh --loop <spec>. A BROKEN or MISSING
+   tool means you triage at STATED REDUCED SCOPE, naming the degraded input in your output
+   -- never report a clean cycle over inputs you could not actually read.
+2. Read the item and its evidence; reproduce the one-line symptom if a command is given
    (read-only checks only).
-2. Classify: actionable now / needs-human / duplicate / noise. Cite why in one line.
-3. Route actionable items per the routing table with a self-contained handoff (the
+3. Classify: actionable now / needs-human / duplicate / noise. Cite why in one line.
+4. Route actionable items per the routing table with a self-contained handoff (the
    engineering-manager dispatches; you recommend the row).
-4. Consume-before-act (loop-engineering skill): when acting on a human reply, set
+5. Consume-before-act (loop-engineering skill): when acting on a human reply, set
    `status: consumed` in the item's frontmatter and commit BEFORE the action executes.
    A marker already set means "already decided" -- an expected outcome, never an error.
-5. Deduplicate against open state/ rows before creating anything new.
+6. Deduplicate against open state/ rows before creating anything new.
 
 ## Output contract
 - Triage table: item | class | evidence line | routed-to | urgency.

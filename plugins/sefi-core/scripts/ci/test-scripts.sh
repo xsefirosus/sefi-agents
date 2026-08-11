@@ -459,6 +459,52 @@ else
 fi
 
 echo
+echo "=== plan structure (2026-08-11: the plan is consumed by 3 agents, 2 were guessing) ==="
+
+PV="$(mktemp -d)"; mkdir -p "$PV/state"
+
+# The product-manager's worked example must pass the product-manager's own gate. An agent
+# that teaches a format its validator rejects trains every plan into a failure -- and a
+# small model matches structure from the example far more than from the prose.
+python3 - "$PV" <<'EXTRACT' 2>/dev/null || true
+import sys, pathlib, re
+t = pathlib.Path("plugins/sefi-core/agents/product-manager.md").read_text()
+m = re.search(r'## Worked example.*?```markdown\n(.*?)```', t, re.S)
+if m:
+    pathlib.Path(sys.argv[1] + "/state/plan-example.md").write_text(m.group(1))
+EXTRACT
+
+if [ -f "$PV/state/plan-example.md" ]; then
+  if ( cd "$PV" && bash "$CORE/scripts/validate-plan-structure.sh" ) 2>/dev/null; then
+    ok "the product-manager's worked example passes validate-plan-structure.sh"
+  else
+    bad "the product-manager teaches a plan format its own gate rejects"
+  fi
+
+  # Every step needs a dependency marker: the engineering-manager sequences from these, and
+  # a flat checkbox list left max_parallel_worktrees unusable without guessing.
+  sed 's/ (needs: 1)//' "$PV/state/plan-example.md" > "$PV/state/plan-nodeps.md"
+  rm -f "$PV/state/plan-example.md"
+  if ( cd "$PV" && bash "$CORE/scripts/validate-plan-structure.sh" ) 2>/dev/null; then
+    bad "a step with no (needs: ...) marker was accepted"
+  else
+    ok "a step missing its (needs: ...) marker is rejected"
+  fi
+  rm -f "$PV/state/plan-nodeps.md"
+
+  # `none` is a deliberate declaration; blank is an omission. The probe needs the difference.
+  printf '## Objective\nx\n## Steps\n- [ ] 1. do a thing (needs: -)\n## Files Touched\na.sh\n## Requires Tools\n\n## Risks\nnone\n## Done Criteria\nit runs\n' > "$PV/state/plan-blank.md"
+  if ( cd "$PV" && bash "$CORE/scripts/validate-plan-structure.sh" ) 2>/dev/null; then
+    bad "an empty '## Requires Tools' was accepted"
+  else
+    ok "an empty '## Requires Tools' is rejected (use 'none' deliberately)"
+  fi
+else
+  bad "could not extract the worked example from product-manager.md"
+fi
+rm -rf "$PV"
+
+echo
 echo "=== install-opencode.sh (live bug, 2026-07-19: OpenCode hard-fails resolving a Claude Code model alias) ==="
 
 # Live-observed: model: sonnet (a Claude Code tier alias) made OpenCode's own subagent

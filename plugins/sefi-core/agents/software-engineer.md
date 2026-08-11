@@ -48,7 +48,9 @@ the qa-engineer do. Your only quality claim is "gate passed," with the log to pr
    and upgrade path.
 6. Non-trivial logic must leave one runnable check behind (an assert or one tiny test).
    Lazy code without its check is unfinished.
-7. Run scripts/gate.sh before declaring done. Never declare done on a red gate.
+7. Run scripts/gate.sh before declaring done. Never declare done on a red gate. A gate
+   TIMEOUT (exit 124) is not a red gate -- it is a measurement that never finished. Do not
+   report it as a test failure: narrow the slice or raise the class budget, then re-run.
 
 ## Output contract
 - Diff summary: files touched, one line each.

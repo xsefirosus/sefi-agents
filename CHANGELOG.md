@@ -3,6 +3,58 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.2.6] - 2026-08-11
+
+The agent files themselves. The three preceding releases built gates and mechanisms around
+the roster and barely touched the roster: 2 of 13 agents got a behavioral change, and
+product-manager -- the planner every other agent consumes -- got only a frontmatter field.
+This spends the remaining word budget on that gap. Agents total 7906 -> 8196 words against
+a cap of 8320; the cap itself is unchanged, because it is doing real work.
+
+Two themes, both wiring rather than prose polish.
+
+### Fixed -- agents describing mechanisms that changed under them
+
+- `software-engineer` and `qa-engineer` now distinguish a gate TIMEOUT from a red gate.
+  Timeout classes shipped in 0.2.3 and neither agent was told: exit 124 is a measurement
+  that never finished, not a failure. The software-engineer must narrow the slice or raise
+  the budget rather than report a test failure; the qa-engineer must treat it as evidence
+  for NEITHER verdict, the same category as `gate.sh`'s "no known toolchain detected"
+  (which qa-engineer.md item 2 already handled, and which timeouts belong beside).
+- `devops-engineer` owns budget plumbing and did not know `budget-check.sh` grew exit 3.
+  CANNOT MEASURE is not EXCEEDED and is certainly not a pass -- and papering over it with
+  `--spent 0` re-opens the fail-open that 0.2.3 closed, so the agent now says so.
+- `support-engineer` runs the morning-triage Discovery move and did not know
+  `probe-tools.sh` exists. It now probes first and triages at STATED REDUCED SCOPE when a
+  tool is BROKEN or MISSING, which is the whole point of having built the probe.
+
+### Added -- the plan gains the fields three other agents were guessing at
+
+`product-manager` writes the artifact the engineering-manager, software-engineer and
+qa-engineer all consume. Three things it knew and never wrote down:
+
+- **Slice sizing.** The software-engineer builds "exactly one plan slice" and nothing
+  defined how big a slice may be, while `budget.yml` caps a dispatch at $0.15 with
+  `max_retries: 2`. The planner authors the work those caps must hold and had never been
+  told they exist, so an oversized slice was a planning failure that surfaced much later as
+  a budget breach. Steps are now sized to fit one dispatch; a step that cannot is two steps.
+- **Dependency markers.** The engineering-manager's protocol says "sequence, do not
+  parallel-guess" -- but a flat checkbox list gave it nothing to sequence FROM, so
+  `max_parallel_worktrees: 3` was unusable without guessing which steps were independent.
+  Every step now ends with `(needs: <numbers>)` or `(needs: -)`, and the
+  engineering-manager sequences from those markers rather than intuition.
+- **Tool declaration.** Loops declare `requires-tools:` and get probed; a plan whose steps
+  shell out to `gh` or `docker` declared nothing, so the probe could not cover it. Plans
+  now carry `## Requires Tools`, with `none` as a deliberate declaration rather than a
+  blank.
+
+`validate-plan-structure.sh` enforces all three, so they are gates rather than suggestions.
+A regression test asserts the product-manager's own worked example passes that validator --
+an agent that teaches a format its gate rejects trains every plan into a failure, and a
+small model matches structure from the example far more than from the prose.
+
+test-scripts: 51 -> 54.
+
 ## [0.2.5] - 2026-08-11
 
 Model identifiers verified against the web rather than assumed, and a reasoning-effort dial
