@@ -16,12 +16,14 @@ for f in "$DIR"/*.loop.md; do
   name="$(basename "$f" .loop.md)"
   score=0
 
-  # 1. Five moves present.
+  # 1. Five moves present, each as its own `## <Move>` heading. Anchored, not a bare
+  # substring: an unanchored match scores a file that merely mentions the word (see the
+  # same fix in scripts/ci/validate-loops.sh).
   moves_ok=1
   for m in Discovery Handoff Verification Persistence; do
-    grep -q "$m" "$f" || moves_ok=0
+    grep -qE "^## $m" "$f" || moves_ok=0
   done
-  grep -qE '(SCHEDULING|^## Trigger)' "$f" || moves_ok=0
+  grep -qE '^## Trigger|^## .*SCHEDULING' "$f" || moves_ok=0
   [ "$moves_ok" -eq 1 ] && score=$((score + 20))
 
   # 2. All five agentic-signals present.
@@ -31,8 +33,8 @@ for f in "$DIR"/*.loop.md; do
   done
   [ "$sig_ok" -eq 1 ] && score=$((score + 20))
 
-  # 3. Human checkpoint line present.
-  grep -qiE 'human checkpoint' "$f" && score=$((score + 20))
+  # 3. Human checkpoint section present (anchored, same reason as move detection above).
+  grep -qiE '^## Human checkpoint' "$f" && score=$((score + 20))
 
   # 4. Budget section has real values, not unfilled placeholders (a bare "<" marks one).
   # Scoped to the Budget section body only -- an unrelated placeholder elsewhere in the
