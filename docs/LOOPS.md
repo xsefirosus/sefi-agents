@@ -11,6 +11,7 @@ procedure, the resume block, and the inbox contract.
 ```markdown
 # Loop: <name>
 managed-by: sefi-agents
+requires-tools: <comma-separated external commands, or `none`>
 
 ## Trigger (SCHEDULING)
 cloud: <cron expr + workflow file>   |   local: <interval + invocation>
@@ -42,6 +43,27 @@ before then.
 
 Also declare the agentic-signals line so `validate-loops.sh` confirms the loop gates rather
 than advises: `agentic-signals: goal_intake, refusal_gate, verification, loop_discipline, close_out`.
+
+## Tool preflight (the `requires-tools:` line)
+Declare every external command the loop's moves depend on, then probe them before the
+Discovery move runs:
+```sh
+bash scripts/probe-tools.sh --loop loops/<name>.loop.md   # exit 1 = do not proceed as normal
+```
+`validate-loops.sh` requires the line; a loop that genuinely shells out to nothing declares
+`requires-tools: none` deliberately rather than omitting it.
+
+Presence is not health -- `command -v` passes for a binary that is installed and broken,
+which is what a predecessor's browser tool was when it ate a 50-iteration retry budget. The
+probe reports four states (OK / UNVERIFIED / BROKEN / MISSING) and is offline by default;
+`--deep` opts in to credential and connectivity checks such as `gh auth status`.
+
+On a failed probe the loop does not proceed as if the tool worked, and does not silently
+skip the move either: it runs at **stated reduced scope** and records which move was
+degraded and why. That is the difference between a cycle that reports "no findings" and one
+that reports "no findings from CI -- gh unavailable, commits and prior state only." This
+repo's own first live triage lost two of six findings to a missing `gh` and only discovered
+it mid-cycle (`state/triage.md`, 2026-07-16).
 
 ## The five moves in repo terms
 - Discovery: a skill reads CI / issues / commits / state and judges actionability.

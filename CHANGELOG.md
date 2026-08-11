@@ -3,6 +3,96 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.2.3] - 2026-08-11
+
+A full-repo audit, and the batch of fixes it produced. Nine findings, all first-party.
+The pattern across them is worth stating: almost every defect was in the executable layer,
+and most were mechanisms this repo had already written down and not built -- or built and
+left reachable by prose. Two are second occurrences of a bug class already fixed once
+elsewhere, which is the argument for each landing as an executed regression test rather
+than a corrected sentence. `test-scripts.sh`: 7 assertions -> 49.
+
+### Fixed
+
+- `budget-check.sh` failed open a second time. v0.2.1 closed the "no ccusage" branch; the
+  "ccusage present but broken" branch stayed open. A crash, an empty result, or a `null`
+  was assigned straight to `spent`, and `awk -v s="null" '{print s+0}'` is `0` -- so an
+  unreadable ledger certified every cap as within budget. Figures are now validated before
+  any arithmetic touches them. Exit codes separate EXCEEDED (1) from CANNOT MEASURE (3):
+  under `set -e` a crashing `ccusage` previously aborted with a bare exit 1, which no
+  caller could tell from a real overrun.
+- `gate.sh` enforced no timeout of any kind, while `loop-engineering/SKILL.md` shipped
+  per-operation timeout classes as a predecessor-earned rule ("a 300s default killed a live
+  12-task dispatch"). A hung suite hung the loop forever -- the same shape as the browser
+  tool that ate a 50-iteration retry budget. Two classes now ship (default 300s, test
+  900s), expiry is named rather than surfacing as a bare exit 124, and a missing `timeout`
+  binary is announced instead of implying a bound that is not enforced.
+- `gate.sh` also: `npm test --silent` passed `--silent` to the test script rather than the
+  runner; `shellcheck` globbed `./*.sh` unquoted and top-level only, so this repo's own 20
+  scripts were never linted by its own gate. Added pnpm/yarn/bun detection, a typecheck
+  step, `go vet`, `cargo fmt`, and a Makefile fallback.
+- `compress-output.sh` could report a failure with zero diagnostics. Output was filtered to
+  lines matching `error|fail|exception`, so a tool failing with "2 tests did not pass"
+  printed a FAIL line, a log pointer, and nothing else -- leaving the qa-engineer, the one
+  agent meant to read it, with no diagnostic. Falls back to the output tail; a genuinely
+  silent failure is labelled as such.
+- `inject-memory.sh` injected the head of `index.md` rather than the router. The
+  `GENERATED:router` block starts at line 21 of the shipped template, so `head -n 40` spent
+  roughly half the 1500-char cap re-sending frontmatter, the title and the folder list every
+  session, then truncated the routing lines carrying the only signal. `gen-router.sh`'s
+  durability ordering (v0.2.1) only pays off once the window holds router lines at all.
+  Falls back to the old window when markers are absent; an initialized-but-empty vault now
+  says so in one line instead of injecting a page about nothing.
+- The five-move loop gate was satisfiable by prose. `grep -q Discovery` matches the word
+  anywhere in the file, so a spec with no section for any move passed the validator whose
+  entire purpose is rejecting exactly that. Anchored to the `## <Move>` heading in both
+  `validate-loops.sh` and `loop-readiness.sh`; a prose-only spec drops from 80/100 to
+  40/100. `validate-loops.sh` now also checks the project's own `loops/`, which this repo
+  dogfoods and CI had never looked at.
+
+### Added
+
+- `scripts/probe-tools.sh`, and with it a claim the README had been making without an
+  implementation: "tools are probed before a loop may grant them". No probe existed
+  anywhere in the repo. The claim was also unbuildable as written -- agent `tools:`
+  frontmatter is granted by the harness, not by a loop -- so the mechanism was scoped to
+  what is real (external commands a loop's moves shell out to) and the README rewritten to
+  describe it. Loop specs now declare `requires-tools:`, `validate-loops.sh` requires the
+  line, and the probe reports four states rather than two: presence is not health, and a
+  binary that is installed and broken passes `command -v` while failing the work. Offline
+  by default; `--deep` opts in to credential checks. This repo's own first live triage lost
+  two of six findings to a missing `gh` and only discovered it mid-cycle.
+- `scripts/check-handoff.sh`, closing the asymmetry between plans and handoffs. Plans had
+  `validate-plan-structure.sh`; the handoff rule -- name the upstream file, inline all
+  context, pin the absolute output path -- was enforced by nothing, despite being the more
+  expensive failure. A dispatch with a relative `writes:` path resolves against whatever
+  working directory the agent inherits, which is how a predecessor's task wrote to the
+  user's home directory and a reviewer approved the empty folder it was pointed at. The
+  gate blocks a relative path, an empty `reads:` or `context:`, a back-reference such as
+  "as discussed above", and an agent slug that resolves to no file.
+- `state/retro-ledger.md` and the reversibility half of self-improvement. The retro loop
+  could apply bounded, qa-verified edits but had no memory of them: it could re-edit the
+  same file every week, re-propose something a human had already rejected, or leave an edit
+  in place indefinitely after it made things worse. The ledger is written at edit time
+  (the `before` value and the evidence pointer exist only then) and carries the commit SHA
+  that makes an edit revertible at all. Three read rules bind before any target is
+  selected -- churn guard, rejection memory, evidence debt. The revert threshold is fixed
+  now, deliberately, while `state/metrics.md` is still empty: a threshold written after the
+  numbers arrive is a threshold fitted to them. A detected regression becomes an `inbox/`
+  proposal naming the exact `git revert <sha>`, never an automatic commit.
+- `references/close-out.md`, and with it the memory vault's missing producer. `close_out`
+  was declared in every loop spec and defined nowhere, while `goal_intake` had a reference
+  file. The consequence was structural: `knowledge-manager.md` read `memory/daily/*.md` as
+  "the raw material" and distilled it weekly, all twelve other agents filed observations as
+  "a candidate for the knowledge-manager", and no agent, hook or command ever wrote a daily
+  note. `/sefi:init` created `memory/daily/` and it stayed empty, so the weekly distill was
+  a permanent no-op and SessionStart had nothing to inject. `close_out` now dispatches the
+  knowledge-manager to file a cycle's durable observations -- or to log SKIP when there are
+  none, never neither. It stays an agent dispatch rather than a `Stop` hook because the
+  memory-protocol privacy filter has to run first, and a deterministic hook cannot judge
+  which bytes are a credential. It produces `tier: trace` notes only; promotion stays the
+  weekly recurrence-based job, so the ladder still earns each rung from evidence.
+
 ## [0.2.2] - 2026-07-19
 
 Hotfix: a real user running sefi-agents on OpenCode for the first time hit a hard failure

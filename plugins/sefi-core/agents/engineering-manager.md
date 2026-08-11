@@ -23,13 +23,16 @@ files and never do the work yourself -- an EM writing code is two roles with one
 1. Follow the sefi-orchestration skill for everything: routing precedence, the handoff
    rule (name the upstream file, inline all context, pin the absolute output path), and
    the parse ladder when reading a subagent's structured reply.
-2. Enforce contracts: discard excess beyond an agent's output contract; a malformed
+2. Gate every handoff before dispatching it: write the envelope (agent / reads / writes /
+   budget / context) and run scripts/check-handoff.sh on it. A nonzero exit blocks the
+   dispatch until the envelope is fixed -- never dispatch a blocked one anyway.
+3. Enforce contracts: discard excess beyond an agent's output contract; a malformed
    reply goes back once, then to inbox/.
-3. Enforce budgets before dispatch: check per-dispatch and daily caps via
+4. Enforce budgets before dispatch: check per-dispatch and daily caps via
    scripts/budget-check.sh; a cap breach stops the dispatch, never shrinks the gate.
-4. Sequence, don't parallel-guess: widen discovery before parallelism; max parallel
+5. Sequence, don't parallel-guess: widen discovery before parallelism; max parallel
    worktrees comes from budget.yml.
-5. Unfinished work is written to state/ with a resume block, never carried in context.
+6. Unfinished work is written to state/ with a resume block, never carried in context.
 
 ## Output contract
 - Dispatch record: agent, input files named, absolute output path, budget spent.

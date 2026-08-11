@@ -26,7 +26,17 @@ serving more than one project.
 Never edit host-runtime memory, user config, or other plugins.
 
 ## Inputs (the scorecard)
-Review qa-engineer REJECTs, gate failures, and the knowledge-manager's
+Read `state/retro-ledger.md` FIRST, before selecting any target. It is this loop's memory
+of its own edits, and without it the loop cannot tell that it already edited a file last
+week, or that a human already rejected the exact proposal it is about to make again. Three
+rules bind (full text and rationale in the ledger's own header):
+- Churn guard: a target with an `applied` row in either of the last 2 runs is not eligible
+  again; take the next-worst performer and log the skip.
+- Rejection memory: never re-propose a `rejected` row -- escalate once to `inbox/` citing
+  it if the evidence recurs.
+- Evidence debt: a `pending-evidence` row blocks a new edit to that same target.
+
+Then review qa-engineer REJECTs, gate failures, and the knowledge-manager's
 `## Possible contradiction` flags. Read `state/metrics.md` as the scorecard -- worst
 success rate first. A recurring routing-table miss (the engineering-manager escalating "no
 table row matches" more than once for a similar trigger) is an explicit scorecard signal
@@ -61,6 +71,22 @@ where that drift actually gets caught.
   self-certify its own edit as effective, the same way the software-engineer cannot
   self-certify a slice.
 
+## Ledger append (at edit time, not afterwards)
+Every retro decision appends one row to `state/retro-ledger.md` -- `applied`, `proposed`,
+`rejected` and `skip` alike -- carrying the target-path, the commit SHA of the applied
+edit, the motivating evidence, and the `before` PASS rate from `state/metrics.md`. Write it
+when the decision is made: the `before` value and the evidence pointer exist only at that
+moment, and a run that skips the append is permanently un-analyzable afterwards. The SHA is
+what makes an edit undoable at all.
+
+## Reversibility (the other half of the loop)
+Applying an edit without being able to un-apply it is a ratchet, not learning. The revert
+rule -- evaluation window, minimum data, regression definition -- is fixed in
+`state/retro-ledger.md`, written deliberately before any metrics existed so it could not be
+fitted to them. A detected regression becomes an `inbox/` proposal naming the exact
+`git revert <sha>`; it is never applied automatically, because a revert is still a commit
+and `human-checkpoint.md` is unconditional.
+
 ## Commit message format
 Every applied edit's commit message states the metric that motivated it and the
 before/after values from `state/metrics.md` (e.g. "qa-engineer PASS rate 6/10 -> target:
@@ -74,7 +100,11 @@ yet -- never a vague "improved X" with no cited evidence.
 | "Nothing to change, moving on." | SKIP is logged with a data-backed reason, not skipped silently. |
 | "The worst path isn't ours, no-op." | An unresolvable target is a wiring bug for inbox/, not a no-op. |
 | "I'll add a new skill to fix this." | New skills need a human-approved inbox/ entry first. |
+| "This file is still the worst performer, edit it again." | Churn guard: an `applied` row in the last 2 runs makes it ineligible. |
+| "The human rejected it, but the bug is still there." | Rejection memory: escalate to inbox/ citing the row, never silently retry. |
+| "The edit made things worse, revert it." | A revert is a commit: propose it to inbox/, never self-apply. |
 
 Self-test: every edit landed in a managed-by sefi-agents file the runtime actually loads,
-changed <= 3 sentences, and passed the qa-engineer's pre-commit effectiveness check
-against its cited failure evidence.
+changed <= 3 sentences, passed the qa-engineer's pre-commit effectiveness check against its
+cited failure evidence, and appended a row to state/retro-ledger.md carrying the SHA that
+makes it revertible.

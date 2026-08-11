@@ -58,6 +58,10 @@ for machine-only markers (invisible in reading view, greppable by the knowledge-
 Use `rg` for anything else. Never open a file > 100 KB without a stated need.
 
 ## WRITE (privacy-filtered, append-only)
+The vault's only producer is the knowledge-manager, dispatched at close_out
+(`skills/sefi-orchestration/references/close-out.md`). No hook writes here: persisting
+session content requires step 1's privacy filter to run, and a deterministic hook cannot
+judge which bytes are a credential. Every other agent nominates candidates only.
 1. Run the privacy filter first: strip secrets, API keys, and `<private>...</private>`
    blocks before anything is persisted. Watch specifically for provider-key prefixes
    (e.g. `sk-`, `ghp_`/`ghu_`, `xoxb-`/`xapp-`, `AKIA...`), `-----BEGIN...PRIVATE KEY-----`

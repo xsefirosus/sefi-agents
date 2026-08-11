@@ -12,12 +12,19 @@ repo's own anti-hallucination convention.
 | Free-model dispatch success ~45% | Predecessor | `docs/BUDGET.md` | 4+ weeks of `state/metrics.md` PASS-rate rows from a live free-model loop on this architecture |
 | Single dispatch hit 1.36M tokens (self-batching) | Predecessor | `docs/BUDGET.md` | A measured per-dispatch token total from `state/metrics.md` on this system, run with the per-dispatch cap already in place (expected to never reproduce the incident, which is itself the evidence the cap works) |
 | Parse-ladder rescue avoided ~324K tokens (JSON present, not at position 0) | Predecessor | `docs/BUDGET.md` | A logged instance where this system's parse ladder actually recovered a reply the first rung missed, with the token cost of the naive re-ask it avoided |
-| Broken browser tool burned a 50-iteration retry budget | Predecessor | `docs/BUDGET.md` | A logged instance where this system's tool-verification-before-granting step actually caught a broken tool before a loop retried against it |
+| Broken browser tool burned a 50-iteration retry budget | Predecessor | `docs/BUDGET.md` | A logged instance where `probe-tools.sh` actually caught a BROKEN or MISSING tool before a loop retried against it. Note: until v0.2.3 this condition named a mechanism that did not exist, so it was unreachable rather than merely unmet; the probe now ships, and the condition is live |
 | 184 green tests, half the new modules unwired | Predecessor | `docs/ANTIPATTERNS.md` | A qa-engineer wired/delete-the-line finding on this system's own code, with a before/after count of tests vs. actually-reachable modules |
 | 5 config keys declared but never read or named as a rule; 0 after fix | First-party | `README.md`, `CHANGELOG.md` [0.2.1] | N/A -- already first-party, verified live by `validate-config-wired.sh`, a permanent CI gate |
 | 6 shipped files referenced paths that resolved to nothing; 0 after fix | First-party | `README.md`, `CHANGELOG.md` [0.2.1] | N/A -- already first-party, verified live by `validate-links.sh`, a permanent CI gate |
 | Budget-enforcement gate silently passed with no spend data (confirmed live: no `ccusage`/`jq` on the build machine) | First-party | `README.md`, `CHANGELOG.md` [0.2.1] | N/A -- already first-party, proven by an executed regression test in `test-scripts.sh`, not just read |
 | Every OpenCode subagent dispatch failed with `Model not found: sonnet/`, live-observed on a real user install (not internal testing) | First-party | `adapters/OPENCODE.md`, `CHANGELOG.md` [0.2.2] | N/A -- already first-party, verified by re-running `install-opencode.sh` against every one of the 13 agents and confirming `model:` is absent; proven by an executed regression test in `test-scripts.sh` |
+| `budget-check.sh` failed open a second time -- `ccusage` present but returning `null`/empty/crashing was coerced to `0` spend | First-party | `README.md`, `CHANGELOG.md` [0.2.3] | N/A -- already first-party, proven by executed regression tests that stub each unusable `ccusage` shape onto PATH |
+| `gate.sh` enforced no timeout, while `loop-engineering` shipped the per-operation-timeout-class rule | First-party | `README.md`, `CHANGELOG.md` [0.2.3] | N/A -- already first-party, proven by an executed test that hangs a suite against a 2s class budget and asserts the kill |
+| A failing command could produce zero diagnostics when its output named no error keyword | First-party | `CHANGELOG.md` [0.2.3] | N/A -- already first-party, proven by an executed test asserting the output tail appears |
+| The SessionStart injection spent roughly half its 1500-char budget on static preamble (the router block starts at line 21 of the shipped index template) | First-party | `README.md`, `CHANGELOG.md` [0.2.3] | N/A -- already first-party, proven by an executed test asserting the preamble is absent and router lines present |
+| The five-move loop gate was satisfiable by prose (`grep -q Discovery` matched the word anywhere) | First-party | `README.md`, `CHANGELOG.md` [0.2.3] | N/A -- already first-party, proven by an executed test scoring a prose-only spec at 40/100 |
+| The README claimed a tool probe that existed nowhere in the repo | First-party | `README.md`, `CHANGELOG.md` [0.2.3] | N/A -- already first-party; the mechanism now ships and the claim was rewritten to match it |
+| The memory vault had a consumer and no producer -- `memory/daily/` was read weekly and written by nothing | First-party | `README.md`, `CHANGELOG.md` [0.2.3] | N/A -- already first-party, proven by an executed test asserting an agent authors daily notes and each loop dispatches close_out |
 
 The first three rows above are this ledger's first first-party rows, and arrived by a
 different path than the "Standing check" below: a direct audit found and fixed them
@@ -30,6 +37,15 @@ actual field usage rather than internal audit or testing -- a real user hit it r
 sefi-agents on OpenCode, not a controlled check. Worth naming as its own category: a live
 user report is stronger provenance than an internal test, not weaker, precisely because
 nothing about the failure was staged.
+
+The seven rows after it come from the 2026-08-11 full-repo audit and share a shape worth
+naming: each is a mechanism this repo had already DOCUMENTED and not implemented, or
+implemented and left reachable by prose. Two of them (`budget-check.sh` failing open, the
+loop gate satisfiable by prose) are second occurrences of a bug class this repo had already
+fixed once elsewhere -- evidence that a fix applied to one branch of a check does not
+generalise itself, and that the validator asserting a rule is not the same artifact as the
+rule. That is the argument for every one of them landing as an executed regression test
+rather than a corrected sentence.
 
 ## Standing check
 

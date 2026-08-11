@@ -18,6 +18,7 @@ the project root, never overwriting existing files, and report what was skipped.
    - `templates/memory/decisions/` -> `memory/decisions/`
    - `templates/memory/entities/` -> `memory/entities/`
    - `templates/state/metrics.md` -> `state/metrics.md`
+   - `templates/state/retro-ledger.md` -> `state/retro-ledger.md`
    - `templates/state/` (placeholder) -> `state/`
    - `templates/inbox/` -> `inbox/`
    - `templates/loops/morning-triage.loop.md` -> `loops/morning-triage.loop.md`

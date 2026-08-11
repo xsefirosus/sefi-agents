@@ -21,7 +21,8 @@ describes the package layout.
 - `hooks/hooks.json` -- a SessionStart hook that injects the memory router. Auto-loaded;
   do NOT also declare hooks in `plugin.json`.
 - `scripts/` -- `gate.sh`, `compress-output.sh`, `inject-memory.sh`, `budget-check.sh`,
-  `gen-router.sh`, plus the `ci/` validation suite (`run-all.sh` is the entry point).
+  `gen-router.sh`, `probe-tools.sh`, `check-handoff.sh`, plus the `ci/` validation suite
+  (`run-all.sh` is the entry point).
 - `templates/` -- copied into the user's project by `/sefi:init`: the memory vault, state
   ledger, inbox, two loop specs, config, and a GitHub Actions workflow. The plugin never
   owns project state; the project does.

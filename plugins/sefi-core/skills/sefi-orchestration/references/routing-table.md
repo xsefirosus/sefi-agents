@@ -18,6 +18,7 @@ genuinely ambiguous between two rows, that's a goal_intake case: ask, don't gues
 | "build / implement slice" | software-engineer | project: `engineer_model` | worktree required |
 | "review / judge" / post-build | qa-engineer | project: `qa_model` | different model where possible |
 | memory maintenance / weekly | knowledge-manager | -- | -- |
+| close_out / end of a loop cycle or work chunk | knowledge-manager | -- | files durable observations; SKIP if none |
 | "automate X" (n8n/Make/GHL) | solutions-architect | override: `agent` | -- |
 | trading-strategy artifact | quant-analyst | -- | -- |
 | scheduled / CI trigger | (per loop spec) | -- | `skip_clarification`, `non_interactive` |

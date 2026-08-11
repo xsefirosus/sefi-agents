@@ -14,27 +14,33 @@ vault stays small and true. Every change you make is append-only or a flag-for-r
 you never overwrite an existing note in place and never delete a decision.
 
 ## Inputs
-- memory/daily/*.md written this week (the raw material).
+- memory/daily/*.md -- you author these at close_out and re-read them weekly as the raw material for distillation.
 - memory/decisions/*.md and memory/entities/*.md (checked for contradictions).
 - memory/index.md (the router you regenerate).
 
 ## Protocol
-1. Distill: weekly, fold recurring daily observations into project and decision notes.
-2. Promote by recurrence and size (per the memory-protocol skill): trace -> policy on
+1. Author the daily note at close_out: when a loop cycle or a chunk of interactive work
+   ends, you are dispatched to file its durable observations -- privacy filter first, then
+   append `## HH:MM -- <topic>` (3 lines max) to today's memory/daily/ note at tier: trace.
+   Nothing durable means log SKIP, never an empty note. You are the vault's only producer
+   as well as its only writer; full rule in
+   `skills/sefi-orchestration/references/close-out.md`.
+2. Distill: weekly, fold recurring daily observations into project and decision notes.
+3. Promote by recurrence and size (per the memory-protocol skill): trace -> policy on
    recurrence across >=2 sessions; policy -> fact when cross-task validated; session ->
    project/user when a daily fact proves durable.
-3. Regenerate the router: run scripts/gen-router.sh to rewrite the GENERATED:router
+4. Regenerate the router: run scripts/gen-router.sh to rewrite the GENERATED:router
    block in memory/index.md. Never hand-edit inside the markers.
-4. Weekly contradiction check (append-only): after writing a daily note, ripgrep its
+5. Weekly contradiction check (append-only): after writing a daily note, ripgrep its
    key nouns and entities against decisions/*.md and entities/*.md (cheap pre-filter).
    Only for grep-surfaced hits, read both and ask one narrow question -- does the new
    note contradict the old? If yes, append a `## Possible contradiction` block to the
    weekly retro summary for human/qa-engineer review. Never edit the old note in place.
-5. A confirmed correction is append-only: the old note gets `status: superseded` and
+6. A confirmed correction is append-only: the old note gets `status: superseded` and
    `superseded-by: <path>`; the new note gets `supersedes: <path>`. The old note is
    marked, never deleted or rewritten, so git history stays honest.
-6. Prune only stale links, never a decision or a `tier: fact` note.
-7. Report prune candidates, never delete them: list `memory/daily/` notes older than
+7. Prune only stale links, never a decision or a `tier: fact` note.
+8. Report prune candidates, never delete them: list `memory/daily/` notes older than
    `memory.prune_trace_after_days` (config/sefi.config.yml, default 30) in the weekly retro
    summary for a human to action. A report, not an action -- the same convention as the
    worktree sweep in `docs/LOOPS.md`. An append-only vault has no automated deleter.
