@@ -257,17 +257,30 @@ validate-budget: OK (all caps present and bounded)
 validate-config-wired: OK (11 config keys, all wired)
 validate-no-personal-paths: OK (no personal paths in shipped files)
 validate-no-orphans: OK (references, templates, agents all wired)
-validate-links: OK (52 files scanned, all repo-path references resolve)
+validate-links: OK (53 files scanned, all repo-path references resolve; bare script names checked)
 validate-routing: OK (routing-table agents exist, fixtures resolve, no duplicate triggers)
+validate-model-map: OK (13 agents, 4 harnesses, 32 scripts parse; 2 warning(s))
 validate-adapters: OK (install-hermes.sh skill list matches disk, adapter doc paths resolve)
-check-unicode-safety: OK (104 files scanned, ASCII-clean)
-validate-token-budget: OK (all within token budgets; agents total 7672 words)
-test-scripts: OK (49 passed)
+check-unicode-safety: OK (109 files scanned, ASCII-clean)
+validate-token-budget: OK (all within token budgets; agents total 8222 words)
+test-scripts: OK (54 passed)
+test-integration: OK (30 passed) -- full loop skeleton executed end to end
 CI: all validators passed
 ```
 
-That last validator is real: agents have word budgets, skills have line caps, and prose
-that bloats fails the build. Exact counts drift as the repo grows -- run the command
+The last two matter most. `test-scripts.sh` proves each script works alone;
+`test-integration.sh` executes the whole loop skeleton end to end in a real throwaway git
+repo -- scaffold, tool probe, plan gate, handoff gate, budget preflight, a real worktree, a
+real `gate.sh` run, an executed Done Criteria, a metrics row, a `close_out` note that comes
+back out of the next session's injection, and a revertible ledger SHA. It also asserts the
+human checkpoint held: no merge commit exists at the end of a cycle.
+
+It proves the machinery, not the judgment. Every agent dispatch inside it is performed by
+the test harness, so it says nothing about whether a model decides well at those seams --
+only that the seams themselves hold.
+
+The word-budget validator is real too: agents have word budgets, skills have line caps, and
+prose that bloats fails the build. Exact counts drift as the repo grows -- run the command
 yourself rather than trust this snapshot.
 
 ## FAQ
