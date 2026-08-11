@@ -72,11 +72,14 @@ party distinction for every number this repo cites):
 | 5 config keys declared but never read or named as a rule -- one implied auto-merge was a toggle it never was | v0.2.1: `validate-config-wired.sh`, a permanent CI gate; the misleading key deleted, the rest genuinely wired |
 | 6 shipped files pointed at paths that resolve to nothing | v0.2.1: `validate-links.sh`, a permanent CI gate closing the one direction the existing orphan-check cannot see |
 | the budget-enforcement gate silently passed with no spend data, confirmed live (no `ccusage` on the build machine) | v0.2.1: `budget-check.sh` fails closed; proven by an executed regression test, not just read |
-| the same gate still failed OPEN one branch over -- a `ccusage` that was present but returned `null` became `0` under `awk`, certifying every cap as within budget | v0.2.3: figures validated before any arithmetic, and exit 3 (CANNOT MEASURE) separated from exit 1 (EXCEEDED) |
-| `gate.sh` enforced no timeout at all, while `loop-engineering` shipped the per-operation-timeout rule as a predecessor-earned lesson | v0.2.3: two timeout classes; a hung suite is killed and named instead of hanging the loop forever |
-| the five-move loop gate was satisfiable by prose -- `grep -q Discovery` matched the word anywhere, so a spec with no such section passed | v0.2.3: anchored to the `## <Move>` heading; a prose-only spec drops from 80/100 to 40/100 |
-| the README claimed tools were probed before a loop could grant them; no probe existed anywhere in the repo | v0.2.3: `probe-tools.sh` ships, loops declare `requires-tools:`, and the claim was rewritten to what the code does |
-| the memory vault had a consumer and no producer -- the weekly distill read `memory/daily/`, and nothing ever wrote there | v0.2.3: `close_out` defined and bound to a knowledge-manager dispatch; CI asserts a producer exists |
+| the same gate still failed OPEN one branch over -- a `ccusage` that was present but returned `null` became `0` under `awk`, certifying every cap as within budget | v0.3.0: figures validated before any arithmetic, and exit 3 (CANNOT MEASURE) separated from exit 1 (EXCEEDED) |
+| `gate.sh` enforced no timeout at all, while `loop-engineering` shipped the per-operation-timeout rule as a predecessor-earned lesson | v0.3.0: two timeout classes; a hung suite is killed and named instead of hanging the loop forever |
+| the five-move loop gate was satisfiable by prose -- `grep -q Discovery` matched the word anywhere, so a spec with no such section passed | v0.3.0: anchored to the `## <Move>` heading; a prose-only spec drops from 80/100 to 40/100 |
+| the README claimed tools were probed before a loop could grant them; no probe existed anywhere in the repo | v0.3.0: `probe-tools.sh` ships, loops declare `requires-tools:`, and the claim was rewritten to what the code does |
+| the memory vault had a consumer and no producer -- the weekly distill read `memory/daily/`, and nothing ever wrote there | v0.3.0: `close_out` defined and bound to a knowledge-manager dispatch; CI asserts a producer exists |
+| stripping `model:` for OpenCode left every agent on one session model, so the qa-engineer judged the software-engineer on the identical model | v0.3.0: a harness-neutral `tier:` plus `config/model-map.yml`; the installer writes a mapped model, restoring a genuinely different judge |
+| the loop declared a cron workflow that was never installed, deadlocking the whole feedback chain: no scheduler, so no verdict, so no metrics, so `improvement.enabled` was unreachable by construction | v0.3.0: the workflow ships manual-trigger-only, and CI fails a loop whose declared workflow does not exist |
+| every mechanism above was gated but had never run in sequence -- unwired by the qa-engineer's own delete-the-line test | v0.3.0: `test-integration.sh` executes the full loop skeleton end to end in a real git repo, 30 assertions across 16 stages |
 
 Full list: [CHANGELOG.md](CHANGELOG.md).
 
@@ -94,7 +97,7 @@ rows yourself:
 | Memory | a human-readable Obsidian-style vault, in your git repo | opaque state or a hosted service |
 | Autonomy boundary | opens PRs, never merges -- one canonical never-auto-merge rule | often merge- or deploy-capable by default |
 | Hallucination policy | UNKNOWN/PENDING instead of plausible guesses, CI-enforced in every agent and skill | unstated |
-| Self-improvement | bounded (3 sentences/file/run), single-writer, opt-out -- propose-only by default on a shared install | unbounded or absent |
+| Self-improvement | bounded (3 sentences/file/run), single-writer, ledgered and revertible by commit SHA, propose-only by default | unbounded, or absent, or unable to undo itself |
 | Portability | Claude Code, Hermes, OpenCode, Codex | usually locked to its own runner |
 
 The edges, spelled out: the work is judged by an adversary, not its author; the whole
@@ -105,28 +108,36 @@ all five, use whichever you like.
 
 ## The team (13 agents)
 
-An org chart, not a swarm. Each agent is a markdown file with a tool whitelist, a named
-model tier, an output contract, and an escalation path.
+An org chart, not a swarm. Each agent is a markdown file with a tool whitelist, a
+harness-neutral model tier, an output contract, and an escalation path.
 
 | Agent | Use for | Tier |
 |---|---|---|
-| engineering-manager | routes work, enforces contracts and budgets, never codes | sonnet |
-| research-analyst | web/repo/doc context, returned as a bounded digest | haiku |
-| product-manager | goal -> checkable plan with grep-countable steps | sonnet |
-| ui-ux-designer | build, audit, redesign, or study a UI, direction-first | sonnet |
-| software-engineer | full-stack vertical slices in isolated worktrees | sonnet |
-| qa-engineer | adversarial PASS/REJECT against executed evidence | opus |
-| security-engineer | trust-boundary review: secrets, injection, deps | opus |
-| devops-engineer | CI/CD, worktrees, scheduling, budget plumbing | sonnet |
-| support-engineer | inbox and issue triage, consume-before-act | haiku |
-| knowledge-manager | memory vault curation, append-only | haiku |
-| technical-writer | READMEs, changelogs, guides -- verified claims only | haiku |
-| solutions-architect | n8n / Make / GoHighLevel / RAG / Vapi specs | sonnet |
-| quant-analyst | trading-strategy gates and tier promotion | sonnet |
+| qa-engineer | adversarial PASS/REJECT against executed evidence | high |
+| security-engineer | trust-boundary review: secrets, injection, deps | high |
+| engineering-manager | routes work, enforces contracts and budgets, never codes | mid |
+| product-manager | goal -> checkable plan with grep-countable steps | mid |
+| software-engineer | full-stack vertical slices in isolated worktrees | mid |
+| ui-ux-designer | build, audit, redesign, or study a UI, direction-first | mid |
+| devops-engineer | CI/CD, worktrees, scheduling, budget plumbing | mid |
+| solutions-architect | n8n / Make / GoHighLevel / RAG / Vapi specs | mid |
+| quant-analyst | trading-strategy gates and tier promotion | mid |
+| research-analyst | web/repo/doc context, returned as a bounded digest | low |
+| support-engineer | inbox and issue triage, consume-before-act | low |
+| knowledge-manager | memory vault curation, append-only | low |
+| technical-writer | READMEs, changelogs, guides -- verified claims only | low |
 
-Model tiers are advisory: on runtimes that set the model globally they are ignored, and
-the whole roster is designed to hold up on a small free model (see the ~45% row above --
-the gates carry the quality, not the model).
+Tiers are the source of truth; `plugins/sefi-core/config/model-map.yml` maps each one to a
+concrete model and reasoning effort per harness, so a new model is an edit to one table
+rather than a pass over 13 files. On Claude Code that is opus/sonnet/haiku; on Codex
+gpt-5.6-sol/terra/luna; on OpenCode and Hermes a single free model.
+
+The load-bearing relationship is `qa-engineer: high` sitting above `software-engineer: mid`.
+That gap IS generator/evaluator separation. Where a harness maps both to one model, CI warns
+that the separation is instructions-only there -- honest on a single-model free window, and
+one line to fix the day a second model exists. The roster is still designed to hold up on a
+small model (see the ~45% row above -- the gates carry the quality), but a harness with two
+models gets a genuinely stronger judge.
 
 ### Scaling the roster (future guideline)
 
@@ -236,8 +247,12 @@ never pulls in this repo's own vault.
 
 - The writer never grades its own work; a separate qa-engineer judges executed evidence.
 - A security-engineer gates diffs that touch trust boundaries.
-- Deterministic gates (lint, tests) run in scripts the model cannot skip.
-- Hard budget caps: per-run, daily, per-dispatch; retries capped and counted on disk.
+- Deterministic gates the model cannot skip: `gate.sh` (lint/typecheck/tests, with
+  per-operation timeout classes), `validate-plan-structure.sh` on every plan,
+  `check-handoff.sh` on every dispatch, and `probe-tools.sh` before a loop's first move.
+- Hard budget caps: per-run, daily, per-dispatch; retries capped and counted on disk. The
+  budget gate fails CLOSED -- it exits distinctly when it cannot measure, rather than
+  passing a check it never performed.
 - Anything uncertain lands in `inbox/` for you, with a fixed confirm/change/exit contract.
 - Loops open PRs; merging is yours. One canonical rule, linked from every agent that
   could reach a destructive action.
