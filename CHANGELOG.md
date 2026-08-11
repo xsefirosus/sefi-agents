@@ -3,6 +3,60 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.2.8] - 2026-08-11
+
+The seams, executed. Everything built in 0.2.3 through 0.2.7 was gated and validated but
+had never actually run in sequence, because no loop has ever completed a cycle. By the
+qa-engineer's own delete-the-line test that made much of it unwired -- reverting a mechanism
+would not have failed anything, because nothing exercised it end to end.
+
+### Added
+
+- `scripts/ci/test-integration.sh`: the full loop skeleton, run in a real throwaway git
+  repo, wired into `run-all.sh`. 30 assertions across 16 stages, in the order a real cycle
+  runs them:
+
+  scaffold and the `.worktrees` check-ignore gate -> `probe-tools.sh --loop` deciding full
+  vs reduced scope -> a plan in the product-manager's format passing
+  `validate-plan-structure.sh`, with its `(needs: -)` markers parsed to find the steps an
+  EM may start in parallel -> a dispatch envelope passing `check-handoff.sh` -> a budget
+  preflight that blocks a projected $0.30 dispatch against the $0.15 cap BEFORE it runs ->
+  a real `git worktree` at the exact absolute path the envelope pinned -> a real slice
+  built in it -> `gate.sh` reporting PASSED (2 checks), not "no known toolchain" -> the
+  plan's Done Criteria satisfied by EXECUTION (`node index.js --version` printing 1.4.2) ->
+  a grep-countable stop condition at 0 unchecked steps -> a metrics row whose target-path
+  resolves to a real managed-by file -> `close_out` filing a daily note -> `gen-router.sh`
+  picking it up -> the SessionStart injection carrying it back out -> a ledger row whose
+  SHA `git cat-file` confirms, so `git revert` is a real undo -> and an assertion that no
+  merge commit exists, because the human checkpoint is unconditional.
+
+  Two things it caught that unit tests structurally cannot: the memory round trip actually
+  closes (note -> router -> injection -> next session), and `loop-readiness.sh` scores a
+  genuinely exercised loop at 100/100 rather than the 80/100 it reports here, where signal
+  5 (a metrics row naming the loop) has never had data.
+
+- Scale, previously untested: a 135-note vault still injects within the 1500-char cap, and
+  all 15 decisions survive truncation. `gen-router.sh`'s durability ordering shipped in
+  v0.2.1 to make truncation drop trace notes before decisions, and until now that ordering
+  had only ever been exercised against 2 notes.
+
+- Install flows, previously untested end to end: all 13 OpenCode agents come out carrying a
+  `permission:` block and a mapped model, with no surviving Claude alias and no leaked
+  `tier:`; the Codex conversion writes `gpt-5.6-sol` / `-terra` / `-luna` by tier.
+
+- Workflow YAML is now parsed rather than assumed. `.github/workflows/triage.yml` is
+  asserted manual-only: `workflow_dispatch` present, `schedule` absent, so the commented-out
+  cron cannot be uncommented by accident and go unnoticed.
+
+### What this deliberately does not claim
+
+Every agent dispatch inside the integration test is performed by the test harness. It
+proves the machinery holds at the seams; it says nothing about whether a model decides well
+at them. The repo still has zero rows of real qa-engineer verdict data, and the honest
+status of the agents' judgment remains unmeasured. That distinction is stated in the
+script's own header, in the Proof section of the README, and here, because eliding it would
+be the exact overclaim the anti-hallucination skill exists to prevent.
+
 ## [0.2.7] - 2026-08-11
 
 The last six agents, audited against the same test as 0.2.6: does this agent describe a

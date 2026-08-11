@@ -25,6 +25,7 @@ validate-adapters.sh
 check-unicode-safety.sh
 validate-token-budget.sh
 test-scripts.sh
+test-integration.sh
 "
 
 fail=0
