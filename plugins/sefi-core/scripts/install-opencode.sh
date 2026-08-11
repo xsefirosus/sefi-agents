@@ -9,20 +9,28 @@
 # schema validation. The per-file awk transform below converts our comma-separated
 # `tools:` and `disallowedTools:` lines into the `permission:` mapping that
 # OpenCode expects, leaving every other field and the body byte-for-byte intact --
-# EXCEPT `model:`, which is dropped entirely. Live-observed on a real OpenCode
-# install (2026-07-19): `model: sonnet` (a bare Claude Code tier alias) makes
-# OpenCode's own subagent dispatch fail hard with "Model not found: sonnet/" --
-# OpenCode does not silently ignore an unresolvable per-agent model override the
-# way Claude Code treats "sonnet" as a native alias; it tries to resolve it as a
-# real provider/model identifier and fails when it can't. Every one of this
-# repo's 13 agents carries a `model:` line, so this broke every subagent dispatch
-# on OpenCode, not just one agent. Dropping the field lets OpenCode fall back to
-# whatever model the session is actually configured with (adapters/OPENCODE.md
-# section 1), matching this repo's own stated intent that model tiers are
-# advisory and ignored on runtimes that set the model globally -- which was
-# previously only asserted, not true in practice for OpenCode until this fix.
+# EXCEPT `model:`, which is REPLACED via config/model-map.yml, and `tier:`, which is
+# consumed to pick it.
 #
-# Usage: bash plugins/sefi-core/scripts/install-opencode.sh [--force]
+# Live-observed on a real OpenCode install (2026-07-19): `model: sonnet` (a bare
+# Claude Code tier alias) makes OpenCode's own subagent dispatch fail hard with
+# "Model not found: sonnet/" -- OpenCode does not silently ignore an unresolvable
+# per-agent model override the way Claude Code treats "sonnet" as a native alias;
+# it tries to resolve it as a real provider/model identifier and fails when it
+# can't. Every one of this repo's 13 agents carries a `model:` line, so this broke
+# every subagent dispatch on OpenCode, not just one agent.
+#
+# v0.2.2 fixed that by DROPPING the field. That stopped the crash, but made every
+# agent inherit one session model -- so the qa-engineer judged the
+# software-engineer on the identical model, and generator/evaluator separation (the
+# first design principle in this repo) silently degraded to instructions-only.
+# v0.2.4 maps the tier to a real OpenCode model instead: the crash stays fixed and
+# the separation comes back the moment the map names two different models.
+#
+# `options.reasoningEffort` is written per agent because some OpenCode versions
+# exclude DeepSeek models from the reasoning-effort system entirely.
+#
+# Usage: bash plugins/sefi-core/scripts/install-opencode.sh [--force] [--model-map <path>]
 set -euo pipefail
 
 FORCE=0
@@ -130,11 +138,16 @@ agent_model() {
   bash "$HERE/model-for.sh" --agent "$1" opencode ${MODEL_MAP:+--map "$MODEL_MAP"} 2>/dev/null || printf ''
 }
 
+agent_reasoning() {
+  # agent_reasoning <src-path> -- resolve this agent's tier to an OpenCode reasoning effort.
+  bash "$HERE/model-for.sh" --agent "$1" opencode --reasoning ${MODEL_MAP:+--map "$MODEL_MAP"} 2>/dev/null || printf ''
+}
+
 transform_agent() {
   # transform_agent <src-path> <dst-path>
   local src="$1"
   local dst="$2"
-  awk -v MODEL="$(agent_model "$src")" '
+  awk -v MODEL="$(agent_model "$src")" -v REASONING="$(agent_reasoning "$src")" '
     BEGIN { in_fm = -1 }
 
     # First ---: start of frontmatter.
@@ -171,6 +184,14 @@ transform_agent() {
         # software-engineer it judges ran on the identical model, so the routing
         # table rule "different model where possible" was never possible here.
         if (MODEL != "") { print "model: " MODEL }
+        # Some OpenCode versions exclude DeepSeek models from the reasoning-effort system
+        # and need options.reasoningEffort set per agent, so it is written here rather than
+        # assumed. Effort scales with tier: the high tier is the adversarial judge and the
+        # long agent loop, which is where more reasoning actually pays for itself.
+        if (REASONING != "" && REASONING != "none") {
+          print "options:"
+          print "  reasoningEffort: " REASONING
+        }
         next
       }
       # Every other frontmatter line (description, keywords, managed-by, comments,

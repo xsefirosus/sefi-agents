@@ -65,3 +65,21 @@ done
 
 [ "$count" -gt 0 ] || { echo "apply-model-map: no agent files found in $SRC" >&2; exit 1; }
 echo "apply-model-map: $count agent(s) written to $DST for harness '$HARNESS'"
+
+# Reasoning effort is NOT written into the frontmatter: Codex reads it from
+# ~/.codex/config.toml, not from an agent file, so emitting it above would be an inert
+# field that looks wired. Print the setting instead, so the value is at least visible.
+r_high="$(bash "$HERE/model-for.sh" "$HARNESS" high --reasoning ${MAP:+--map "$MAP"} 2>/dev/null || printf '')"
+r_mid="$(bash "$HERE/model-for.sh" "$HARNESS" mid --reasoning ${MAP:+--map "$MAP"} 2>/dev/null || printf '')"
+if [ -n "$r_high" ] && [ "$r_high" != "none" ]; then
+  echo ""
+  echo "reasoning effort is read from the harness config, not agent frontmatter. For Codex,"
+  echo "put this in ~/.codex/config.toml:"
+  echo ""
+  echo "    model = \"$(bash "$HERE/model-for.sh" "$HARNESS" mid ${MAP:+--map "$MAP"} 2>/dev/null)\"          # mid tier: the default"
+  echo "    model_reasoning_effort = \"$r_mid\""
+  echo "    review_model = \"$(bash "$HERE/model-for.sh" "$HARNESS" high ${MAP:+--map "$MAP"} 2>/dev/null)\"   # high tier: the adversarial judge"
+  echo ""
+  echo "note: xhigh is only available on top-tier (codex-max) coding models. If a dispatch"
+  echo "rejects or ignores it, lower ${HARNESS}.high_reasoning in the model map to \"high\"."
+fi

@@ -2,8 +2,8 @@
 # validate-model-map.sh -- the model map is the single place a model identifier is written
 # down, so this asserts nothing can silently fall out of it:
 #   1. every agent declares a `tier:` in {high,mid,low}
-#   2. every declared tier resolves to a model for EVERY harness in the map (a new harness
-#      or a new tier cannot leave a hole)
+#   2. every declared tier resolves to a model AND a reasoning effort for EVERY harness in
+#      the map (a new harness or a new tier cannot leave a hole)
 #   3. the literal `model:` in each agent equals what the map gives for claude-code at that
 #      agent's tier -- the two fields coexist because the Claude Code plugin path has no
 #      install step that could rewrite files, and two fields that can disagree will
@@ -46,12 +46,22 @@ for f in "$CORE"/agents/*.md; do
     *)  echo "ERROR: $rel - tier '$tier' not in {high,mid,low}"; errors=$((errors + 1)); continue ;;
   esac
 
-  # (2) the tier must resolve on every harness, not just the one someone tested.
+  # (2) the tier must resolve on every harness, not just the one someone tested -- model
+  # AND reasoning effort, since a missing reasoning key silently drops the dial rather than
+  # failing loudly.
   for h in $harnesses; do
     if ! bash "$MODEL_FOR" "$h" "$tier" >/dev/null 2>&1; then
       echo "ERROR: $rel - tier '$tier' has no model for harness '$h' in model-map.yml"
       errors=$((errors + 1))
     fi
+    r="$(bash "$MODEL_FOR" "$h" "$tier" --reasoning 2>/dev/null || printf '')"
+    case "$r" in
+      none|minimal|low|medium|high|xhigh|max) : ;;
+      '') echo "ERROR: $rel - tier '$tier' has no '${tier}_reasoning' for harness '$h'"
+          errors=$((errors + 1)) ;;
+      *)  echo "ERROR: $rel - tier '$tier' reasoning '$r' on '$h' is not a known effort level (none|minimal|low|medium|high|xhigh|max)"
+          errors=$((errors + 1)) ;;
+    esac
   done
 
   # (3) the literal Claude Code model must match the map.

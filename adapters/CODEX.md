@@ -59,18 +59,55 @@ health).
 sefi stores no credentials -- rotate at this harness's own config or your CI secrets. See
 `Install.md`'s Operating Rules for the canonical statement.
 
-## Model tiers
+## Model tiers and reasoning
+
+Verified 2026-08-11. GPT-5.6 ships as a three-model family that lines up 1:1 with the tiers:
+
+| Tier | Model | Reasoning | Used by |
+|---|---|---|---|
+| high | `gpt-5.6-sol` | `xhigh` | qa-engineer, security-engineer |
+| mid | `gpt-5.6-terra` | `high` | 7 agents incl. software-engineer |
+| low | `gpt-5.6-luna` | `medium` | 4 haiku-tier agents |
+
+Sol is the flagship, Terra the balanced workhorse, Luna the fast/cheap option -- "Terra as
+default, Sol for the hard parts, Luna for volume". Putting Sol on `high` is what keeps the
+qa-engineer a genuinely stronger judge than the software-engineer it reviews.
+
+Use the explicit ids. The bare `gpt-5.6` alias routes to `gpt-5.6-sol` today, which adds a
+routing question to any diagnostic.
+
+**Deadline:** `gpt-5.4` and `gpt-5.4-mini` retire from Codex on **2026-08-31**. The
+documented replacements are `gpt-5.4` -> `gpt-5.6-terra` and `gpt-5.4-mini` ->
+`gpt-5.6-luna`.
+
+### Reasoning effort
+
+`model_reasoning_effort` accepts `minimal | low | medium | high | xhigh`. Set it in
+`~/.codex/config.toml`:
+
+```toml
+model = "gpt-5.6-terra"          # mid tier: the default
+model_reasoning_effort = "high"
+review_model = "gpt-5.6-sol"     # high tier: the adversarial judge
+```
+
+`xhigh` is only available on top-tier (codex-max) coding models, so an effort setting can
+silently constrain which models make sense for a profile. If a dispatch on `gpt-5.6-sol`
+rejects or ignores `xhigh`, lower `codex.high_reasoning` in the model map to `high` -- one
+line, which is the point of the map.
+
+### Baking the models in
 
 The Codex marketplace path reads agent files directly with no transform step, so nothing
-rewrites `model:` for Codex automatically -- and `model:` is advisory here in any case.
-
-To bake in Codex model ids before installing, run:
+rewrites `model:` for Codex automatically, and `model:` is advisory here in any case. To
+bake in the ids first:
 
 ```sh
 bash plugins/sefi-core/scripts/apply-model-map.sh codex plugins/sefi-core/agents <dst-dir>
 ```
 
-That resolves each agent's `tier:` through `plugins/sefi-core/config/model-map.yml`, writes
-the Codex model, and drops the `tier:` line (it is this repo's field, not a Codex one).
-Everything else is preserved byte-for-byte. Edit the `codex:` block in the map to change
-models; the identifiers shipped there are user-supplied and unverified from this repo.
+It resolves each agent's `tier:` through `plugins/sefi-core/config/model-map.yml`, writes
+the Codex model, drops the `tier:` line, preserves everything else byte-for-byte, and
+prints the matching `config.toml` block. Reasoning effort is deliberately NOT written into
+frontmatter: Codex reads it from `config.toml`, so an agent-file field would be inert while
+looking wired.

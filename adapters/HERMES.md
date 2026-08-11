@@ -130,18 +130,27 @@ would run the printed commands.
 sefi stores no credentials -- rotate at this harness's own config or your CI secrets. See
 `Install.md`'s Operating Rules for the canonical statement.
 
-## Model tiers
+## Model tiers and reasoning
 
 Hermes takes its model from the global `provider.model` setting and treats per-agent
-`model:` as advisory, so tiers here are resolved at DISPATCH time rather than baked into a
-file. When building a `delegate_task(...)` payload, resolve the agent's tier with:
+`model:` as advisory, so tiers are resolved at DISPATCH time rather than baked into a file.
+When building a `delegate_task(...)` payload:
 
 ```sh
-bash plugins/sefi-core/scripts/model-for.sh hermes <high|mid|low>
+bash plugins/sefi-core/scripts/model-for.sh hermes high              # -> deepseek-v4-flash-free
+bash plugins/sefi-core/scripts/model-for.sh hermes high --reasoning  # -> max
 ```
 
-and pass the result in the payload. The `hermes:` block in
-`plugins/sefi-core/config/model-map.yml` currently maps all three tiers to
-`deepseek-v4-flash-free`, which means the qa-engineer judges on the same model it is
-judging -- honest for a single-model free window, but weaker than a different judge. Point
-`high` at a stronger model when one is available.
+| Tier | Model | Reasoning |
+|---|---|---|
+| high | `deepseek-v4-flash-free` | `max` |
+| mid | `deepseek-v4-flash-free` | `high` |
+| low | `deepseek-v4-flash-free` | `medium` |
+
+`max` on the high tier follows the DeepSeek V4 Flash guidance -- high for quick edits, max
+for long agent loops -- and a loop cycle is the latter.
+
+All three tiers share one model here, so the qa-engineer judges on the model it is judging.
+That is honest for a single-model free window, but weaker than a different judge; point
+`hermes.high` at a stronger model when one is available. The free-window training caveat in
+section 2 applies unchanged.

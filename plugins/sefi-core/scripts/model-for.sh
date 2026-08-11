@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# model-for.sh <harness> <tier> [--map <path>]
+# model-for.sh <harness> <tier> [--reasoning] [--map <path>]
 # model-for.sh --agent <agent-file> <harness> [--map <path>]
 #
 # Resolve a harness-neutral tier to that harness's concrete model identifier, from
@@ -19,10 +19,13 @@ AGENT=""
 HARNESS=""
 TIER=""
 
+FIELD="model"
+
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --map)   MAP="${2:-}"; shift 2 ;;
     --agent) AGENT="${2:-}"; shift 2 ;;
+    --reasoning) FIELD="reasoning"; shift ;;
     -h|--help) sed -n '2,4p' "$0"; exit 0 ;;
     -*) echo "model-for: unknown arg $1" >&2; exit 2 ;;
     *)
@@ -46,7 +49,11 @@ fi
 [ -n "$HARNESS" ] || { echo "model-for: usage: model-for.sh <harness> <tier>" >&2; exit 2; }
 [ -n "$TIER" ]    || { echo "model-for: usage: model-for.sh <harness> <tier>" >&2; exit 2; }
 
-result="$(awk -v h="$HARNESS" -v t="$TIER" '
+# --reasoning reads `<tier>_reasoning`; the default reads the bare `<tier>` key.
+lookup="$TIER"
+[ "$FIELD" = "reasoning" ] && lookup="${TIER}_reasoning"
+
+result="$(awk -v h="$HARNESS" -v t="$lookup" '
   /^[[:space:]]*#/ { next }
   /^[[:space:]]*$/ { next }
   /^[a-z][a-z0-9-]*:[[:space:]]*$/ {
@@ -54,7 +61,7 @@ result="$(awk -v h="$HARNESS" -v t="$TIER" '
     inblock = (block == h)
     next
   }
-  inblock && /^[[:space:]]+[a-z]+:[[:space:]]*[^[:space:]]/ {
+  inblock && /^[[:space:]]+[a-z_]+:[[:space:]]*[^[:space:]]/ {
     key = $1; sub(/:$/, "", key)
     if (key == t) { print $2; exit }
   }
@@ -62,7 +69,7 @@ result="$(awk -v h="$HARNESS" -v t="$TIER" '
 
 if [ -z "$result" ]; then
   known="$(awk '/^[a-z][a-z0-9-]*:[[:space:]]*$/ { k=$1; sub(/:$/,"",k); printf "%s ", k }' "$MAP")"
-  echo "model-for: no model for harness='$HARNESS' tier='$TIER' in $MAP (known harnesses: $known)" >&2
+  echo "model-for: no $FIELD for harness='$HARNESS' tier='$TIER' (key '$lookup') in $MAP (known harnesses: $known)" >&2
   exit 1
 fi
 

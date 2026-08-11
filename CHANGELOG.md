@@ -3,6 +3,63 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.2.5] - 2026-08-11
+
+Model identifiers verified against the web rather than assumed, and a reasoning-effort dial
+added to the map. The placeholder ids shipped in 0.2.4 were labelled unverified; this
+replaces them with checked ones and revises one tier assignment on the evidence.
+
+### Changed
+
+- Codex now maps to the GPT-5.6 family, which turns out to be a three-model line that fits
+  the tiers exactly: `gpt-5.6-sol` (flagship) / `gpt-5.6-terra` (balanced workhorse) /
+  `gpt-5.6-luna` (fast, cheap) -- "Terra as default, Sol for the hard parts, Luna for
+  volume". 0.2.4 shipped terra on `high` and luna on `mid` with an unverified `5.5-gpt` on
+  `low`. Sol on `high` is the better fit: the high tier is the adversarial judge, and it
+  should be the strongest model available, not the middle one. Also corrected the prefix --
+  the real ids carry `gpt-`, so `5.6-terra` would not have resolved.
+- Noted a deadline that affects anyone still on the old line: `gpt-5.4` and `gpt-5.4-mini`
+  retire from Codex on 2026-08-31, replaced by `gpt-5.6-terra` and `gpt-5.6-luna`.
+- OpenCode and Hermes confirmed on `deepseek-v4-flash-free` (200K context, 128K output,
+  free tier). The name in 0.2.4's opencode row was shortened; both rows now carry the full
+  identifier. The free-window training caveat is confirmed and repeated in the map itself,
+  not only in the Hermes adapter.
+
+### Added
+
+- Reasoning effort is now part of the map, as `<tier>_reasoning` beside each `<tier>`, and
+  scales with tier on purpose: the high tier is both the adversarial judge and the long
+  agent loop, which is exactly where more reasoning pays for itself.
+  - Codex `model_reasoning_effort` accepts minimal|low|medium|high|xhigh -> xhigh/high/medium.
+  - OpenCode and Hermes (DeepSeek V4 Flash) support high and max, with the documented
+    guidance "high for quick edits, max for long agent loops" -> max/high/medium. A loop
+    cycle is a long agent loop.
+  - Claude Code exposes no per-agent reasoning dial, so its rows read `none` -- stated
+    rather than left blank, so a missing value is never mistaken for an unset one.
+- `model-for.sh --reasoning` resolves the effort for a tier, so installers and validators
+  read it the same single way they already read the model.
+- `install-opencode.sh` writes `options.reasoningEffort` into each converted agent. Written
+  per agent rather than assumed, because some OpenCode versions exclude DeepSeek models
+  from the reasoning-effort system entirely.
+- `apply-model-map.sh` prints the matching `~/.codex/config.toml` block. Reasoning is
+  deliberately NOT written into Codex frontmatter: Codex reads it from config.toml, so an
+  agent-file field would be inert while looking wired -- the exact shape of the inert-config
+  problem `validate-config-wired.sh` exists to catch.
+- `validate-model-map.sh` now requires every tier to resolve a reasoning effort on every
+  harness, and rejects any value outside none|minimal|low|medium|high|xhigh.
+
+### Caveats kept explicit
+
+`xhigh` is only available on top-tier (codex-max) coding models. It is set on
+`codex.high_reasoning` because the request was for the maximum applicable, but if a dispatch
+on `gpt-5.6-sol` rejects or silently ignores it, lowering that one value to `high` is the
+whole fix -- which is what a single-table map is for.
+
+OpenCode and Hermes still map all three tiers to one model, so `validate-model-map.sh`
+continues to warn that generator/evaluator separation is instructions-only there. That is
+an honest constraint of a single-model free window, not a defect, and it resolves the day a
+second model is available.
+
 ## [0.2.4] - 2026-08-11
 
 Model tiers become harness-neutral, and the triage loop gets a scheduler it can actually
