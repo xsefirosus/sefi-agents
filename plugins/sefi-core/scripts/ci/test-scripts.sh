@@ -333,6 +333,132 @@ esac
 rm -rf "$LR"
 
 echo
+echo "=== probe-tools.sh (README claimed a probe that did not exist until 2026-08-11) ==="
+
+PB="$CORE/scripts/probe-tools.sh"
+
+# MISSING: the failure this repo actually hit. state/triage.md, first live cycle: two of six
+# findings lost to "gh CLI not installed ... unreachable this cycle", discovered mid-cycle.
+expect_code 1 "a missing tool fails the probe" bash "$PB" --quiet definitely-not-a-real-binary-xyz
+
+# BROKEN: the shape `command -v` cannot see -- installed and unusable, which is what the
+# predecessor's browser tool was when it ate a 50-iteration retry budget.
+PBIN="$(mktemp -d)"
+printf '#!/bin/sh\nexit 1\n' > "$PBIN/jq"; chmod +x "$PBIN/jq"
+expect_code 1 "an installed-but-broken tool fails the probe (presence is not health)" \
+  env PATH="$PBIN:$PATH" bash "$PB" --quiet jq
+rm -rf "$PBIN"
+
+# A working tool passes.
+expect_code 0 "a working tool passes the probe" bash "$PB" --quiet git
+
+# --loop reads the spec's own requires-tools declaration.
+PL="$(mktemp -d)"
+printf 'requires-tools: git\n' > "$PL/good.loop.md"
+expect_code 0 "--loop probes the spec's requires-tools line" bash "$PB" --quiet --loop "$PL/good.loop.md"
+printf 'requires-tools: definitely-not-a-real-binary-xyz\n' > "$PL/bad.loop.md"
+expect_code 1 "--loop fails when a declared tool is unusable" bash "$PB" --quiet --loop "$PL/bad.loop.md"
+
+# `none` is a deliberate declaration, not an empty value to fall through on.
+printf 'requires-tools: none\n' > "$PL/none.loop.md"
+expect_code 0 "requires-tools: none is a valid declaration" bash "$PB" --quiet --loop "$PL/none.loop.md"
+
+# A spec with no declaration at all is a usage error, never a silent pass.
+printf '# Loop: x\n' > "$PL/undeclared.loop.md"
+expect_code 2 "a spec with no requires-tools line is a usage error, not a pass" \
+  bash "$PB" --quiet --loop "$PL/undeclared.loop.md"
+rm -rf "$PL"
+
+# Every shipped loop spec must declare the line (validate-loops.sh enforces it; this
+# asserts the shipped templates actually satisfy their own gate).
+for lf in "$CORE"/templates/loops/*.loop.md; do
+  [ -e "$lf" ] || continue
+  if grep -qE '^requires-tools:[[:space:]]*[^[:space:]]' "$lf"; then
+    ok "$(basename "$lf") declares requires-tools"
+  else
+    bad "$(basename "$lf") is missing its requires-tools line"
+  fi
+done
+
+echo
+echo "=== check-handoff.sh (the handoff rule was prose-only until 2026-08-11) ==="
+
+CH="$CORE/scripts/check-handoff.sh"
+good_env='agent: software-engineer
+reads: state/plan-auth.md
+writes: /abs/proj/.worktrees/feat-auth
+budget: dispatch
+context: Implement slice 2. The API contract is POST /session returning 201 with a session id.'
+
+expect_code 0 "a well-formed envelope passes" bash -c "printf '%s\n' '$good_env' | bash '$CH' -"
+
+# The live failure recorded in qa-engineer.md item 4: a dispatch with no pinned ABSOLUTE
+# output path wrote to the user's home directory, and the reviewer reading the designated
+# folder approved an empty one. An empty folder and never-written work look identical.
+rel_env="${good_env/\/abs\/proj\/.worktrees\/feat-auth/.worktrees/feat-auth}"
+expect_code 1 "a relative writes: path blocks the dispatch" \
+  bash -c "printf '%s\n' '$rel_env' | bash '$CH' -"
+
+# The handoff rule's other half: the receiving agent does not share the dispatcher's
+# context window, so a back-reference resolves to nothing on its side.
+back_env="${good_env/Implement slice 2./Implement the slice as discussed above.}"
+expect_code 1 "a dangling back-reference blocks the dispatch" \
+  bash -c "printf '%s\n' '$back_env' | bash '$CH' -"
+
+# A typo'd agent slug routes nowhere and would otherwise surface as a mysterious no-op.
+bad_agent="${good_env/software-engineer/backend-guy}"
+expect_code 1 "an agent slug resolving to no file blocks the dispatch" \
+  bash -c "printf '%s\n' '$bad_agent' | bash '$CH' -"
+
+expect_code 1 "an envelope missing required fields blocks the dispatch" \
+  bash -c "printf 'agent: qa-engineer\n' | bash '$CH' -"
+
+echo
+echo "=== memory producer (2026-08-11 audit: the vault had a consumer and no producer) ==="
+
+# knowledge-manager.md read memory/daily/*.md as "the raw material" and distilled it weekly;
+# every other agent filed observations as "a candidate for the knowledge-manager"; and NO
+# agent, hook or command ever wrote a daily note. /sefi:init created memory/daily/ and it
+# stayed empty forever, so the weekly distill was a permanent no-op and SessionStart had
+# nothing to inject. These assert the producer exists and stays wired.
+if grep -rlq 'memory/daily' "$CORE/agents"; then
+  producer="$(grep -rl 'memory/daily' "$CORE/agents" | head -1)"
+  if grep -qiE 'author|append|write' "$producer"; then
+    ok "an agent authors daily notes ($(basename "$producer"))"
+  else
+    bad "$(basename "$producer") names memory/daily but never writes to it"
+  fi
+else
+  bad "no agent references memory/daily -- the vault has no producer"
+fi
+
+# close_out was declared in every loop spec and defined nowhere; goal_intake had a
+# reference file and it did not. An undefined signal is a label, not a gate.
+if [ -f "$CORE/skills/sefi-orchestration/references/close-out.md" ]; then
+  ok "close_out has a defined behavior reference"
+else
+  bad "close_out is declared in loop specs but has no behavior reference"
+fi
+
+# Every loop must actually invoke the producer, not merely list the signal in its header.
+for lf in "$CORE"/templates/loops/*.loop.md; do
+  [ -e "$lf" ] || continue
+  if grep -q 'close_out: dispatch the knowledge-manager' "$lf"; then
+    ok "$(basename "$lf") invokes the close_out dispatch"
+  else
+    bad "$(basename "$lf") declares close_out but never dispatches it"
+  fi
+done
+
+# The privacy filter is why this is an agent dispatch and not a Stop hook. If a hook ever
+# starts writing the vault, that filter is bypassed.
+if grep -q 'SessionStart' "$CORE/hooks/hooks.json" && ! grep -qE '"(Stop|SessionEnd|PostToolUse)"' "$CORE/hooks/hooks.json"; then
+  ok "no hook writes the vault (the privacy filter stays on the write path)"
+else
+  bad "hooks.json declares a write-side hook -- the memory-protocol privacy filter cannot run in one"
+fi
+
+echo
 echo "=== install-opencode.sh (live bug, 2026-07-19: OpenCode hard-fails resolving a Claude Code model alias) ==="
 
 # Live-observed: model: sonnet (a Claude Code tier alias) made OpenCode's own subagent

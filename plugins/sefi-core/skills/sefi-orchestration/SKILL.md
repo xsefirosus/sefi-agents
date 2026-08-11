@@ -49,6 +49,21 @@ into, with one example joined path, e.g.
 designated output location writes to whatever its working directory happens to be, and the
 verifier reading the designated folder sees nothing.
 
+Write the handoff as an envelope and gate it before dispatching -- the rule above is
+deterministic, so it is checked by a script rather than trusted:
+```
+agent:   software-engineer
+reads:   state/plan-feat-x.md
+writes:  /abs/project/.worktrees/feat-x
+budget:  dispatch
+context: <inlined; must stand alone on the receiving side>
+```
+`scripts/check-handoff.sh <envelope>` exits nonzero on a relative `writes:` path, an empty
+`reads:` or `context:`, a back-reference such as "as discussed above", or an agent slug
+that resolves to no file. A blocked envelope is fixed and re-checked, never dispatched
+anyway. Plans have had `scripts/validate-plan-structure.sh` for a while; handoffs fail more
+expensively and had only prose until this gate.
+
 ## Parse ladder (consume another agent's structured output)
 Accept the payload anywhere in the reply, not only at position 0. Try in order:
 1. the exact expected shape;
@@ -80,6 +95,8 @@ with chat ("Here's the summary: ...").
 - `references/human-checkpoint.md` -- the canonical never-auto-merge rule.
 - `references/anti-patterns.md` -- authoring anti-patterns.
 - `references/goal-intake.md` -- the canonical goal_intake behavior.
+- `references/close-out.md` -- the canonical close_out behavior, and the vault's only
+  producer: the knowledge-manager dispatch that files a cycle's durable observations.
 - `docs/BUDGET.md` -- the token-discipline stack, biggest lever first; terse-mode (output
   compression) is last and smallest on purpose -- check the bigger levers before reaching
   for it.

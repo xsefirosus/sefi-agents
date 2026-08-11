@@ -2,6 +2,8 @@
 managed-by: sefi-agents
 
 agentic-signals: goal_intake, refusal_gate, verification, loop_discipline, close_out
+requires-tools: git, gh, rg
+<!-- probed by scripts/probe-tools.sh --loop before the Discovery move runs. gh reads CI status and issues in the Discovery move; without it discovery degrades to commits + prior state only, and says so. -->
 
 ## Trigger (SCHEDULING)
 cloud: cron `0 6 * * *` via `.github/workflows/triage.yml`   |   local: daily 06:00 interval invoking the headless agent
@@ -20,6 +22,7 @@ stop condition: the plan's numbered-checkbox list is fully checked AND the qa-en
 state file: `state/triage.md` (committed, carries the 6-field resume block; one row per finding)
 metrics: append one row per qa-engineer verdict to `state/metrics.md` (target-path keyed)
 outputs: PRs + `inbox/` for uncertainty
+close_out: dispatch the knowledge-manager to file this cycle's durable observations to `memory/daily/` (privacy-filtered, tier: trace), or log SKIP with a reason -- never neither. Rule: `skills/sefi-orchestration/references/close-out.md`
 
 ## Budget (from config/budget.yml)
 per-run cap: $0.50   daily cap: $2.00   max retries: 2

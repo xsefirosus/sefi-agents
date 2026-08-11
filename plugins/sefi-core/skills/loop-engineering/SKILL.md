@@ -13,11 +13,13 @@ User instructions always override this skill.
 All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never guess.
 
 agentic-signals: goal_intake, refusal_gate, verification, loop_discipline, close_out
-(goal_intake's behavior: `skills/sefi-orchestration/references/goal-intake.md`)
+(goal_intake's behavior: `skills/sefi-orchestration/references/goal-intake.md`;
+close_out's: `skills/sefi-orchestration/references/close-out.md`)
 
 ## The five moves (mapped to repo mechanics)
 - Discovery: a skill invoked by the automation reads CI / issues / commits / state and
-  judges actionability.
+  judges actionability. Preflight first: `scripts/probe-tools.sh --loop <spec>` probes the
+  spec's `requires-tools:` line before the move runs.
 - Handoff: one git worktree per finding, per the worktree procedure in `docs/LOOPS.md`.
 - Verification: the qa-engineer plus an executed stop condition, judged separately from
   the generator.
@@ -42,6 +44,11 @@ that self-declared done lies.)
 ## Hard rules
 - Git-reconciliation trust: a `state/*.md` claim that disagrees with git loses to git.
 - Cycle-count preservation: a resumed loop reads its counter from disk, never resets it.
+- Probe before you grant: a loop may not assume any external command its spec did not
+  declare in `requires-tools:` and the probe did not clear. Presence is not health -- a
+  binary that is installed and broken passes `command -v` and fails the work. On a BROKEN
+  or MISSING result the loop runs at STATED REDUCED SCOPE, naming the degraded move and the
+  tool in its output, and never reports a clean cycle it could not actually perform.
 
 ## Four predecessor-earned rules (each observed live)
 - Consume-before-act: when acting on a human decision or any once-only trigger, write the

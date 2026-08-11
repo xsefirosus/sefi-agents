@@ -57,21 +57,26 @@ number in this README is invented -- that discipline is itself a shipped skill
 | 184 green tests while half the new modules had zero call sites | the qa-engineer's wired-not-just-written check + an unwired-artifact linter in CI |
 | one self-batching dispatch burned 1.36M tokens | a hard per-dispatch cap ($0.15 default) that trips long before the daily cap |
 | ~324K tokens lost re-asking for JSON that was present but not at position 0 | a 3-rung parse ladder that accepts structured output anywhere in a reply |
-| a broken browser tool silently ate a 50-iteration retry budget | tools are probed before a loop may grant them |
+| a broken browser tool silently ate a 50-iteration retry budget | each loop declares the external commands it needs and `probe-tools.sh` checks they run, not just that they exist, before the loop's first move |
 | free-model dispatch succeeded ~45% of the time -- and still delivered | gates and human checkpoints are load-bearing, so a cheap model is enough |
 
 ### First-party receipts (this repo, not the predecessor)
 
 The table above is inherited history. These are first-party: found in this exact system's
-own runtime, same day, fixed and CI-gated the same day
+own runtime by a direct audit, fixed and CI-gated the same day
 ([docs/METRICS-PROVENANCE.md](docs/METRICS-PROVENANCE.md) tracks the predecessor-vs-first-
 party distinction for every number this repo cites):
 
-| What a fresh audit found, live in this repo | What v0.2.1 ships because of it |
+| What a fresh audit found, live in this repo | What ships because of it |
 |---|---|
-| 5 config keys declared but never read or named as a rule -- one implied auto-merge was a toggle it never was | `validate-config-wired.sh`, a permanent CI gate; the misleading key deleted, the rest genuinely wired |
-| 6 shipped files pointed at paths that resolve to nothing | `validate-links.sh`, a permanent CI gate closing the one direction the existing orphan-check cannot see |
-| the budget-enforcement gate silently passed with no spend data, confirmed live (no `ccusage` on the build machine) | `budget-check.sh` now fails closed; proven by an executed regression test, not just read |
+| 5 config keys declared but never read or named as a rule -- one implied auto-merge was a toggle it never was | v0.2.1: `validate-config-wired.sh`, a permanent CI gate; the misleading key deleted, the rest genuinely wired |
+| 6 shipped files pointed at paths that resolve to nothing | v0.2.1: `validate-links.sh`, a permanent CI gate closing the one direction the existing orphan-check cannot see |
+| the budget-enforcement gate silently passed with no spend data, confirmed live (no `ccusage` on the build machine) | v0.2.1: `budget-check.sh` fails closed; proven by an executed regression test, not just read |
+| the same gate still failed OPEN one branch over -- a `ccusage` that was present but returned `null` became `0` under `awk`, certifying every cap as within budget | v0.2.3: figures validated before any arithmetic, and exit 3 (CANNOT MEASURE) separated from exit 1 (EXCEEDED) |
+| `gate.sh` enforced no timeout at all, while `loop-engineering` shipped the per-operation-timeout rule as a predecessor-earned lesson | v0.2.3: two timeout classes; a hung suite is killed and named instead of hanging the loop forever |
+| the five-move loop gate was satisfiable by prose -- `grep -q Discovery` matched the word anywhere, so a spec with no such section passed | v0.2.3: anchored to the `## <Move>` heading; a prose-only spec drops from 80/100 to 40/100 |
+| the README claimed tools were probed before a loop could grant them; no probe existed anywhere in the repo | v0.2.3: `probe-tools.sh` ships, loops declare `requires-tools:`, and the claim was rewritten to what the code does |
+| the memory vault had a consumer and no producer -- the weekly distill read `memory/daily/`, and nothing ever wrote there | v0.2.3: `close_out` defined and bound to a knowledge-manager dispatch; CI asserts a producer exists |
 
 Full list: [CHANGELOG.md](CHANGELOG.md).
 
@@ -198,6 +203,20 @@ decisions with supersede-never-delete semantics, and a generated router injected
 at 1,500 chars) at session start. It is markdown in your repo -- open it in Obsidian,
 grep it, diff it in PRs. No database, no service, no vendor.
 
+Both halves are wired, which is worth stating plainly because until v0.2.3 only one was.
+**Read:** a SessionStart hook injects the generated router block -- the routing lines
+themselves, not the head of the file, so the cap buys routing signal instead of re-sending
+the same folder headers every session. **Write:** at `close_out` -- the end of a loop cycle
+or a chunk of work -- the knowledge-manager is dispatched to file that cycle's durable
+observations, or to log SKIP when there were none. It is the vault's only writer and now
+its only producer.
+
+Nothing is captured by a hook, deliberately. Persisting session content has to run the
+memory-protocol privacy filter first, and a deterministic shell hook cannot judge which
+bytes are a credential or a client name. That judgment is why the producer is an agent
+dispatch. It also means capture is per cycle, not per turn: the vault holds decisions and
+hard-won constraints, not a transcript.
+
 This repo dogfoods its own tooling: the `memory/`, `state/`, `loops/`, and `config/`
 folders at this repo's own root are `/sefi:init` run against sefi-agents itself, not part
 of what a fresh install gets. `plugin.json` and `marketplace.json` ship only `agents/`,
@@ -233,7 +252,7 @@ $ bash plugins/sefi-core/scripts/ci/run-all.sh
 validate-agents: OK (13 agent files validated)
 validate-skills: OK (12 SKILL.md validated)
 validate-doc-counts: OK (agents=13 skills=12 commands=5 loops=2, all prose matches disk)
-validate-loops: OK (2 loop spec(s) validated)
+validate-loops: OK (2 loop spec(s) validated, plus 2 in this project's loops/)
 validate-budget: OK (all caps present and bounded)
 validate-config-wired: OK (11 config keys, all wired)
 validate-no-personal-paths: OK (no personal paths in shipped files)
@@ -241,9 +260,9 @@ validate-no-orphans: OK (references, templates, agents all wired)
 validate-links: OK (52 files scanned, all repo-path references resolve)
 validate-routing: OK (routing-table agents exist, fixtures resolve, no duplicate triggers)
 validate-adapters: OK (install-hermes.sh skill list matches disk, adapter doc paths resolve)
-check-unicode-safety: OK (100 files scanned, ASCII-clean)
-validate-token-budget: OK (all within token budgets; agents total 7549 words)
-test-scripts: OK (5 passed)
+check-unicode-safety: OK (104 files scanned, ASCII-clean)
+validate-token-budget: OK (all within token budgets; agents total 7672 words)
+test-scripts: OK (49 passed)
 CI: all validators passed
 ```
 

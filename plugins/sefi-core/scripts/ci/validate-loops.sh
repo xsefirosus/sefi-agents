@@ -43,6 +43,14 @@ check_loop() {
   for sig in goal_intake refusal_gate verification loop_discipline close_out; do
     grep -q "$sig" "$f" || { echo "ERROR: $rel - missing agentic-signal: $sig"; errors=$((errors + 1)); }
   done
+
+  # requires-tools: the external commands this loop's moves depend on, probed by
+  # scripts/probe-tools.sh before the loop runs. Required, not optional: an undeclared
+  # dependency is exactly how a loop discovers mid-cycle that it cannot do its job (this
+  # repo's own first live triage lost two of six findings to a missing gh CLI). A loop with
+  # no external dependencies declares `requires-tools: none` and says so deliberately.
+  grep -qE '^requires-tools:[[:space:]]*[^[:space:]]' "$f" \
+    || { echo "ERROR: $rel - missing 'requires-tools:' line (use 'none' if it truly needs no external command)"; errors=$((errors + 1)); }
 }
 
 for f in "$TPL_DIR"/*.loop.md; do
