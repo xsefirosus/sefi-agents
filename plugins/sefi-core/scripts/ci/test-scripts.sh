@@ -468,11 +468,44 @@ echo "=== install-opencode.sh (live bug, 2026-07-19: OpenCode hard-fails resolvi
 # carries a model: line, so this broke every subagent dispatch on OpenCode, not one.
 TMP_OC="$(mktemp -d)"
 OPENCODE_HOME="$TMP_OC" bash "$CORE/scripts/install-opencode.sh" >/dev/null 2>&1
-if grep -q '^model:' "$TMP_OC/agents/software-engineer.md" 2>/dev/null; then
-  bad "install-opencode.sh must strip model: (OpenCode cannot resolve a bare Claude Code alias)"
+
+# The original guard, unchanged in intent: no bare Claude Code tier alias may survive into
+# an OpenCode agent file, because OpenCode resolves the value as a real provider/model id
+# and fails hard on "sonnet". v0.2.3 satisfies this by REPLACING the alias via
+# config/model-map.yml rather than deleting the field -- deleting it fixed the crash but
+# made every agent inherit one session model, so the qa-engineer judged the
+# software-engineer on the identical model and generator/evaluator separation went with it.
+oc_model="$(sed -n 's/^model:[[:space:]]*//p' "$TMP_OC/agents/software-engineer.md" 2>/dev/null | head -1)"
+case "$oc_model" in
+  opus|sonnet|haiku)
+    bad "a bare Claude Code alias ('$oc_model') survived into the OpenCode agent file" ;;
+  "")
+    bad "install-opencode.sh emitted no model: at all (every agent falls back to one session model)" ;;
+  *)
+    ok "install-opencode.sh emits a mapped OpenCode model ('$oc_model'), not a Claude alias" ;;
+esac
+
+# The tier is this repo's own field and must not leak into a harness file.
+if grep -q '^tier:' "$TMP_OC/agents/software-engineer.md" 2>/dev/null; then
+  bad "tier: leaked into the converted OpenCode agent file"
 else
-  ok "install-opencode.sh strips model: from every converted agent"
+  ok "install-opencode.sh consumes tier: without leaking it"
 fi
+
+# Tier differentiation must actually work: with a map that gives distinct models per tier,
+# the high-tier judge and the mid-tier generator must NOT resolve to the same model.
+OC_MAP="$(mktemp)"
+printf 'opencode:\n  high: judge-model\n  mid: build-model\n  low: cheap-model\n' > "$OC_MAP"
+TMP_OC2="$(mktemp -d)"
+OPENCODE_HOME="$TMP_OC2" bash "$CORE/scripts/install-opencode.sh" --model-map "$OC_MAP" >/dev/null 2>&1
+qa_m="$(sed -n 's/^model:[[:space:]]*//p' "$TMP_OC2/agents/qa-engineer.md" 2>/dev/null | head -1)"
+se_m="$(sed -n 's/^model:[[:space:]]*//p' "$TMP_OC2/agents/software-engineer.md" 2>/dev/null | head -1)"
+if [ "$qa_m" = "judge-model" ] && [ "$se_m" = "build-model" ]; then
+  ok "tiers differentiate on OpenCode (qa=$qa_m vs engineer=$se_m), restoring generator/evaluator separation"
+else
+  bad "tier differentiation broken on OpenCode (qa='$qa_m' engineer='$se_m')"
+fi
+rm -rf "$TMP_OC2" "$OC_MAP"
 # Everything else must still survive byte-for-byte: pick one field per source line kind.
 if grep -q '^disallowedTools: WebFetch, WebSearch$' "$TMP_OC/agents/software-engineer.md" 2>/dev/null \
    && grep -q '^  edit: allow$' "$TMP_OC/agents/software-engineer.md" 2>/dev/null; then

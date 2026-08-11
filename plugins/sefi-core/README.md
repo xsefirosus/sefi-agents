@@ -20,9 +20,12 @@ describes the package layout.
   `/sefi:loop-new`.
 - `hooks/hooks.json` -- a SessionStart hook that injects the memory router. Auto-loaded;
   do NOT also declare hooks in `plugin.json`.
+- `config/model-map.yml` -- the ONE place a model identifier is written down. Agents
+  declare a harness-neutral `tier:` (high/mid/low); this maps each tier to a concrete model
+  per harness. A new model is an edit here, never a pass over 13 agent files.
 - `scripts/` -- `gate.sh`, `compress-output.sh`, `inject-memory.sh`, `budget-check.sh`,
-  `gen-router.sh`, `probe-tools.sh`, `check-handoff.sh`, plus the `ci/` validation suite
-  (`run-all.sh` is the entry point).
+  `gen-router.sh`, `probe-tools.sh`, `check-handoff.sh`, `model-for.sh`,
+  `apply-model-map.sh`, plus the `ci/` validation suite (`run-all.sh` is the entry point).
 - `templates/` -- copied into the user's project by `/sefi:init`: the memory vault, state
   ledger, inbox, two loop specs, config, and a GitHub Actions workflow. The plugin never
   owns project state; the project does.

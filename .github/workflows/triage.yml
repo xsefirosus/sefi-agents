@@ -1,0 +1,111 @@
+# sefi-morning-triage -- the morning-triage loop, running against this repo.
+#
+# MANUAL TRIGGER ONLY, deliberately. The cron line below is present and commented out.
+#
+# Why: this repo's loops have never completed a cycle end to end. state/metrics.md has zero
+# rows, which is why retro-improve has no target to select and why improvement.enabled is
+# still false -- a deadlock, since the flip condition in config/sefi.config.yml is "once
+# weekly-retro has run a few cycles". Manual dispatch breaks that deadlock and produces the
+# first real verdicts, without committing to unattended spend or unattended PRs on a
+# mechanism nobody has watched run yet. Uncomment the schedule once a few dispatched runs
+# have landed clean; that is a one-line change by design.
+name: sefi-morning-triage
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Discovery only -- report findings, open no PR"
+        type: boolean
+        default: true
+  # schedule:
+  #   - cron: "0 6 * * *"   # daily 06:00 UTC. Enable only after supervised runs look right.
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  # A loop that claims work in state/ must not race itself. The claim protocol (v0.2.1)
+  # commits before opening a worktree and uses push rejection as the arbiter, but not
+  # starting a second run at all is cheaper than resolving the race.
+  group: sefi-morning-triage
+  cancel-in-progress: false
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # the Discovery move reads commits since the last run
+
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
+      - name: Probe declared tools before the loop runs
+        # requires-tools: git, gh, rg. The probe checks each RUNS, not merely that it
+        # exists. A BROKEN or MISSING tool means the loop proceeds at stated reduced scope
+        # rather than reporting a clean cycle it could not perform. Non-blocking here:
+        # `gh` is present on GitHub runners but unauthenticated until GH_TOKEN is set below,
+        # and reduced scope is a valid outcome, not a build failure.
+        continue-on-error: true
+        run: bash plugins/sefi-core/scripts/probe-tools.sh --loop loops/morning-triage.loop.md
+
+      - name: Install the headless agent CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run the triage loop
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          [ -n "${ANTHROPIC_API_KEY:-}" ] || {
+            echo "ANTHROPIC_API_KEY is not set. Add it under Settings > Secrets > Actions." >&2
+            exit 1
+          }
+          # The prompt goes via stdin, never as an inline argument: harness-actions.md
+          # records that Windows CLI argument-length limits break long inline prompts, and
+          # stdin is the live-verified invocation for this CLI.
+          {
+            echo "Run /sefi:triage against this repository."
+            echo "Follow loops/morning-triage.loop.md exactly, including its human checkpoint."
+            if [ "${DRY_RUN}" = "true" ]; then
+              echo "DRY RUN: perform Discovery and Persistence only. Write findings to state/triage.md. Open no PR and create no worktree."
+            fi
+          } | claude --print --dangerously-skip-permissions --add-dir "$PWD"
+
+      - name: Enforce budget caps
+        # --spent is a real claim, and budget-check.sh fails closed (exit 3) rather than
+        # passing a check it never performed. ccusage is not installed on this runner, and
+        # the Claude CLI reports no token usage, so there is no ledger to read here: this
+        # asserts the run's spend is unmeasured-but-declared rather than pretending it was
+        # measured. Install ccusage on the runner to make this a real reading.
+        if: always()
+        run: bash plugins/sefi-core/scripts/budget-check.sh --scope run --spent 0
+
+      - name: Commit state (never auto-merge)
+        # Loops open PRs and stop; a human merges. skills/sefi-orchestration/references/
+        # human-checkpoint.md is unconditional, and nothing here may weaken it.
+        if: always()
+        run: |
+          set -euo pipefail
+          git config user.name  "sefi-triage[bot]"
+          git config user.email "sefi-triage[bot]@users.noreply.github.com"
+          if git diff --quiet -- state/ memory/ inbox/; then
+            echo "no state changes to commit"
+            exit 0
+          fi
+          BRANCH="triage/$(date +%Y-%m-%d-%H%M)"
+          git checkout -b "$BRANCH"
+          git add state/ memory/ inbox/
+          git commit -m "chore(triage): morning-triage cycle $(date +%Y-%m-%d)"
+          git push -u origin "$BRANCH"
+          gh pr create --fill --base main --head "$BRANCH" \
+            --title "triage: morning-triage cycle $(date +%Y-%m-%d)" \
+            --body "Automated morning-triage cycle. Findings in \`state/triage.md\`. Never auto-merged -- a human reviews and merges."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

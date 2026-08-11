@@ -58,3 +58,19 @@ health).
 
 sefi stores no credentials -- rotate at this harness's own config or your CI secrets. See
 `Install.md`'s Operating Rules for the canonical statement.
+
+## Model tiers
+
+The Codex marketplace path reads agent files directly with no transform step, so nothing
+rewrites `model:` for Codex automatically -- and `model:` is advisory here in any case.
+
+To bake in Codex model ids before installing, run:
+
+```sh
+bash plugins/sefi-core/scripts/apply-model-map.sh codex plugins/sefi-core/agents <dst-dir>
+```
+
+That resolves each agent's `tier:` through `plugins/sefi-core/config/model-map.yml`, writes
+the Codex model, and drops the `tier:` line (it is this repo's field, not a Codex one).
+Everything else is preserved byte-for-byte. Edit the `codex:` block in the map to change
+models; the identifiers shipped there are user-supplied and unverified from this repo.
