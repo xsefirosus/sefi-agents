@@ -41,6 +41,9 @@ check "$CORE/README.md" "skills" "$skills_n" '\b[0-9]+ skills\b'
 # different, legitimately smaller number and must not be flagged against the total.
 check "$ROOT/adapters/CODEX.md" "agents" "$agents_n" '\ball [0-9]+ agents\b'
 check "$ROOT/adapters/OPENCODE.md" "agents" "$agents_n" '\ball [0-9]+ agents\b'
+# sefi-orchestration/SKILL.md's "At N files the roster sits..." line -- same class of
+# ungated drift as the adapters check above, found in the same audit pass.
+check "$CORE/skills/sefi-orchestration/SKILL.md" "roster files" "$agents_n" '\bAt [0-9]+ files\b'
 
 if [ "$errors" -ne 0 ]; then echo "validate-doc-counts: $errors error(s)"; exit 1; fi
 echo "validate-doc-counts: OK (agents=$agents_n skills=$skills_n commands=$commands_n loops=$loops_n, all prose matches disk)"
