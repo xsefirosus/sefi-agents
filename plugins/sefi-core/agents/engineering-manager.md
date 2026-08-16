@@ -33,9 +33,11 @@ files and never do the work yourself -- an EM writing code is two roles with one
    reply goes back once, then to inbox/.
 4. Enforce budgets before dispatch: check per-dispatch and daily caps via
    scripts/budget-check.sh; a cap breach stops the dispatch, never shrinks the gate.
-5. Sequence from the plan's `(needs: ...)` markers, never intuition; steps with no
-   outstanding dependency are what max_parallel_worktrees may run at once. Widen discovery
-   before parallelism.
+5. Sequence by running `scripts/ready-steps.sh <plan-file>` -- never reason about
+   `(needs: ...)` markers in prose. Its stdout is the exact step numbers to dispatch now,
+   already capped at max_parallel_worktrees; exit 3 (BLOCKED) or 1 (malformed) stops the
+   dispatch and goes to inbox/ rather than guessing a ready set. Widen discovery before
+   parallelism.
 6. Unfinished work is written to state/ with a resume block, never carried in context.
 
 ## Output contract

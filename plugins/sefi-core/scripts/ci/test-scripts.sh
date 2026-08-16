@@ -562,5 +562,64 @@ fi
 rm -rf "$TMP_OC"
 
 echo
+echo "=== ready-steps.sh (fan-out: the ready set from a plan's (needs: ...) markers, previously reasoned about in prose) ==="
+
+RS="$CORE/scripts/ready-steps.sh"
+PLANTMP="$(mktemp -d)"
+
+cat > "$PLANTMP/linear.md" <<'EOF'
+## Steps
+- [ ] 1. first (needs: -)
+- [ ] 2. second (needs: 1)
+EOF
+out="$(bash "$RS" --config "$BUDGET_TPL" "$PLANTMP/linear.md" 2>/dev/null)"
+[ "$out" = "1" ] && ok "a linear plan yields exactly step 1" || bad "linear plan ready set was '$out', wanted '1'"
+
+sed -i.bak 's/\[ \] 1\./[x] 1./' "$PLANTMP/linear.md" && rm -f "$PLANTMP/linear.md.bak"
+out="$(bash "$RS" --config "$BUDGET_TPL" "$PLANTMP/linear.md" 2>/dev/null)"
+[ "$out" = "2" ] && ok "checking step 1 releases step 2" || bad "after checking step 1, ready set was '$out', wanted '2'"
+
+cat > "$PLANTMP/three.md" <<'EOF'
+## Steps
+- [ ] 1. a (needs: -)
+- [ ] 2. b (needs: -)
+- [ ] 3. c (needs: -)
+EOF
+out="$(bash "$RS" --config "$BUDGET_TPL" "$PLANTMP/three.md" 2>/dev/null | tr '\n' ',')"
+[ "$out" = "1,2,3," ] && ok "three (needs: -) steps yield three" || bad "three independent steps gave '$out', wanted '1,2,3,'"
+
+cat > "$PLANTMP/four.md" <<'EOF'
+## Steps
+- [ ] 1. a (needs: -)
+- [ ] 2. b (needs: -)
+- [ ] 3. c (needs: -)
+- [ ] 4. d (needs: -)
+EOF
+n="$(bash "$RS" --config "$BUDGET_TPL" "$PLANTMP/four.md" 2>/dev/null | grep -c .)"
+[ "$n" = "3" ] && ok "four independent steps cap at three (max_parallel_worktrees)" || bad "four independent steps emitted $n, wanted 3"
+
+cat > "$PLANTMP/complete.md" <<'EOF'
+## Steps
+- [x] 1. a (needs: -)
+- [x] 2. b (needs: 1)
+EOF
+expect_code 4 "all-checked plan exits 4 (COMPLETE)" bash "$RS" --config "$BUDGET_TPL" "$PLANTMP/complete.md"
+
+cat > "$PLANTMP/cycle.md" <<'EOF'
+## Steps
+- [ ] 1. a (needs: 2)
+- [ ] 2. b (needs: 1)
+EOF
+expect_code 3 "a two-step cycle exits 3 (BLOCKED)" bash "$RS" --config "$BUDGET_TPL" "$PLANTMP/cycle.md"
+
+cat > "$PLANTMP/baddep.md" <<'EOF'
+## Steps
+- [ ] 1. a (needs: 9)
+EOF
+expect_code 1 "a dep on a nonexistent step exits 1 (malformed)" bash "$RS" --config "$BUDGET_TPL" "$PLANTMP/baddep.md"
+
+rm -rf "$PLANTMP"
+
+echo
 if [ "$fail" -ne 0 ]; then echo "test-scripts: $fail failed, $pass passed"; exit 1; fi
 echo "test-scripts: OK ($pass passed)"
