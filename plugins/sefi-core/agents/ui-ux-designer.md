@@ -44,6 +44,7 @@ a. Locate the governing spec: the build's design stamp names the direction and s
    anti-slop-checklist.md.
 b. Findings: numbered, each citing the spec line or Rule-block item it violates. The
    qa-engineer still gates function; you gate design fidelity.
+c. AUDIT/REDESIGN may declare a bar-comparison envelope (skills/anti-hallucination/references/bar-comparison.md) via check-bar.sh.
 
 REDESIGN:
 a. Follow BUILD a-d with one added constraint: preserve copy, information

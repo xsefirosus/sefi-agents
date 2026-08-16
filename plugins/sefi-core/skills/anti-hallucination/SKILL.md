@@ -38,6 +38,11 @@ happened, never what was hoped. This skill is the writing-side counterpart of th
 checking-side rules -- if agents never invent, the gates spend their budget on real
 defects instead of fabricated context.
 
+## References
+- `references/bar-comparison.md` -- an optional qa-engineer evidence type: a blind,
+  binary comparison against a Named/Fetchable/Comparable external artifact, gated by
+  `scripts/check-bar.sh`. Additive only; never replaces Done Criteria.
+
 ## Common Rationalizations
 | Excuse | Rebuttal |
 |---|---|
