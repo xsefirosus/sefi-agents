@@ -6,12 +6,12 @@ plan's `(needs: ...)` markers, and the Handoff move dispatches up to
 imported; three existing declarations stop being prose.
 
 ## Steps
-- [ ] 1. Write `scripts/ready-steps.sh`. Parse `- [ ]` / `- [x]` steps plus `(needs: N,M)` and `(needs: -)`; emit the unchecked steps whose dependencies are all checked, capped at `max_parallel_worktrees` from `config/budget.yml`. Exit codes follow budget-check.sh's precedent: 0 ready set emitted, 1 malformed (a dep naming a nonexistent step), 2 usage, 3 BLOCKED (unchecked steps remain but none are ready -- a cycle), 4 COMPLETE (every step checked). A silent empty result would let a caller mistake a cycle for a finished plan. (needs: -)
-- [ ] 2. Add regression tests to `scripts/ci/test-scripts.sh`: a linear plan yields exactly step 1; checking step 1 releases step 2; three `(needs: -)` steps yield three; four independent steps cap at three; all-checked exits 4; a two-step cycle exits 3; a dep on a nonexistent step exits 1. (needs: 1)
-- [ ] 3. Replace `test-integration.sh` stage 3's `grep -c '(needs: -)'` stand-in with a real `ready-steps.sh` call asserting the exact ready set, so the integration suite exercises the scheduler rather than approximating it. (needs: 1)
-- [ ] 4. Rewrite `engineering-manager.md` protocol item 5 to RUN `scripts/ready-steps.sh` rather than reason about markers in prose. Keep the edit word-neutral against the 8320-word cap. (needs: 1)
-- [ ] 5. Update `loops/morning-triage.loop.md` and its template: Handoff names `ready-steps.sh` as the source of the dispatch set; Verification states one qa-engineer pass per finding, never batched. (needs: 1)
-- [ ] 6. Run `run-all.sh`, confirm green, and add the 0.3.1 CHANGELOG entry. (needs: 2, 3, 4, 5)
+- [x] 1. Write `scripts/ready-steps.sh`. Parse `- [ ]` / `- [x]` steps plus `(needs: N,M)` and `(needs: -)`; emit the unchecked steps whose dependencies are all checked, capped at `max_parallel_worktrees` from `config/budget.yml`. Exit codes follow budget-check.sh's precedent: 0 ready set emitted, 1 malformed (a dep naming a nonexistent step), 2 usage, 3 BLOCKED (unchecked steps remain but none are ready -- a cycle), 4 COMPLETE (every step checked). A silent empty result would let a caller mistake a cycle for a finished plan. (needs: -)
+- [x] 2. Add regression tests to `scripts/ci/test-scripts.sh`: a linear plan yields exactly step 1; checking step 1 releases step 2; three `(needs: -)` steps yield three; four independent steps cap at three; all-checked exits 4; a two-step cycle exits 3; a dep on a nonexistent step exits 1. (needs: 1)
+- [x] 3. Replace `test-integration.sh` stage 3's `grep -c '(needs: -)'` stand-in with a real `ready-steps.sh` call asserting the exact ready set, so the integration suite exercises the scheduler rather than approximating it. (needs: 1)
+- [x] 4. Rewrite `engineering-manager.md` protocol item 5 to RUN `scripts/ready-steps.sh` rather than reason about markers in prose. Keep the edit word-neutral against the 8320-word cap. (needs: 1)
+- [x] 5. Update `loops/morning-triage.loop.md` and its template: Handoff names `ready-steps.sh` as the source of the dispatch set; Verification states one qa-engineer pass per finding, never batched. (needs: 1)
+- [x] 6. Run `run-all.sh`, confirm green, and add the 0.3.1 CHANGELOG entry. (needs: 2, 3, 4, 5)
 
 ## Files Touched
 plugins/sefi-core/scripts/ready-steps.sh; plugins/sefi-core/scripts/ci/test-scripts.sh; plugins/sefi-core/scripts/ci/test-integration.sh; plugins/sefi-core/agents/engineering-manager.md; loops/morning-triage.loop.md; plugins/sefi-core/templates/loops/morning-triage.loop.md; CHANGELOG.md
