@@ -28,10 +28,11 @@ All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, n
 | technical-writer | user-facing docs, changelogs, guides | haiku |
 | solutions-architect | n8n / Make / GHL / RAG / Vapi specs | sonnet |
 | quant-analyst | trading-strategy gate and tier | sonnet |
+| prompt-engineer | Stage 0 -- restate a raw human message before routing | haiku |
 
 Read `references/roster.md` for each agent's skills, gates, and cost tier; do not inline
-it here. At 13 files the roster sits just past the ~10-12 flat-folder boundary: it stays
-flat, and the NEXT addition introduces a file-name prefix and domain subfolders.
+it here. At 14 files the roster sits past the ~10-12 flat-folder boundary: it stays flat
+for now, and the NEXT addition introduces a file-name prefix and domain subfolders.
 
 ## Dispatch (one dispatcher, table-driven)
 Stage 0: an interactive human message passes through `prompt-engineer` first -- it
