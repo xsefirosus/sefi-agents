@@ -109,12 +109,14 @@ else
 fi
 
 # The dependency markers must be machine-readable, which is the whole point of adding them:
-# the engineering-manager sequences from these instead of guessing.
-ready="$(grep -c '(needs: -)' state/plan-add-flag.md)"
-if [ "$ready" -ge 1 ]; then
-  ok "the EM can identify $ready step(s) with no outstanding dependency to start in parallel"
+# the engineering-manager runs scripts/ready-steps.sh (engineering-manager.md item 5)
+# instead of reasoning about markers in prose. Step 2 needs step 1, so exactly step 1 is
+# ready here -- a real scheduler call, not the grep -c '(needs: -)' stand-in this replaces.
+ready="$(bash "$CORE/scripts/ready-steps.sh" --config config/budget.yml state/plan-add-flag.md 2>/dev/null)"
+if [ "$ready" = "1" ]; then
+  ok "the EM can identify 1 step(s) with no outstanding dependency to start in parallel"
 else
-  bad "no step is marked ready to start -- max_parallel_worktrees is unusable"
+  bad "ready-steps.sh gave '$ready', wanted exactly step 1 ready"
 fi
 
 echo

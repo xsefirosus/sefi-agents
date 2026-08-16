@@ -12,10 +12,10 @@ cloud: cron `0 6 * * *` via `.github/workflows/triage.yml`   |   local: daily 06
 skill: loop-engineering (discovery move)   agent: support-engineer   inputs read: failed CI, issues in the last 24h, commits since the last run, and the prior `state/triage.md`. Judge each finding's actionability; drop the noise.
 
 ## Handoff
-one worktree per kept finding: branch `triage/<slug>` under `.worktrees/`   max parallel: 3 (from `config/budget.yml` max_parallel_worktrees). Each dispatched task names its absolute worktree output path. Before opening it, grep other `state/*.md` for a matching `acting_on`; skip and log if already claimed.
+one worktree per kept finding: branch `triage/<slug>` under `.worktrees/`. Once a finding is planned, `scripts/ready-steps.sh` computes that plan's dispatch set, capped at max parallel: 3 (`config/budget.yml` max_parallel_worktrees) -- never reasoned about in prose. Each dispatched task names its absolute worktree output path. Before opening it, grep other `state/*.md` for a matching `acting_on`; skip and log if already claimed.
 
 ## Verification
-generator: software-engineer   evaluator: qa-engineer (different model where possible)
+generator: software-engineer   evaluator: qa-engineer (different model where possible), one pass per finding -- never batched, so each retains task-scoped adversarial focus
 stop condition: the plan's numbered-checkbox list is fully checked AND the qa-engineer PASSes against the plan's `## Done Criteria` (executed, judged separately from the generator).
 
 ## Persistence

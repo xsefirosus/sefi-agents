@@ -27,6 +27,18 @@ approval to build -- this release is that approval, executed.
    note is corrected to match -- the flat folder holds through this addition as planned,
    and the NEXT one is what introduces a naming prefix or subfolders.
 
+2. **The fan-out `morning-triage.loop.md`, `engineering-manager.md`, and `config/budget.yml`
+   already declared.** `scripts/ready-steps.sh` computes the ready set from a plan's
+   `(needs: ...)` markers -- the unchecked steps whose dependencies are all checked, capped
+   at `max_parallel_worktrees` -- with 5 distinct exit codes (0 ready / 1 malformed / 2
+   usage / 3 BLOCKED-cycle / 4 COMPLETE) so a caller can never mistake a stalled plan for a
+   finished one. `engineering-manager.md` protocol item 5 now runs it instead of reasoning
+   about markers in prose; `morning-triage.loop.md`'s Handoff names it as the dispatch-set
+   source, and Verification is explicit that qa-engineer runs one pass per finding, never
+   batched. `test-integration.sh` stage 3 exercises the real scheduler in place of the
+   `grep -c '(needs: -)'` stand-in it shipped with. 7 new regression cases in
+   `test-scripts.sh` (54 -> 61 assertions).
+
 ## [0.3.0] - 2026-08-11
 
 A full-repo audit and the work it produced. Nine defects found, four documented-but-unbuilt
