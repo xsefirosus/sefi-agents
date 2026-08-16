@@ -6,6 +6,7 @@ agent file under `agents/`. Every agent additionally follows the anti-hallucinat
 
 | Agent (`agents/<file>`) | Model | Skills used | Gate / discipline | Cost tier |
 |---|---|---|---|---|
+| `prompt-engineer.md` | haiku | sefi-orchestration | Stage 0, read-only; restates intent, never routes | cheap |
 | `engineering-manager.md` | sonnet | sefi-orchestration | routes and dispatches; never edits files | mid |
 | `research-analyst.md` | haiku | memory-protocol | read-only; digest contract | cheap |
 | `product-manager.md` | sonnet | loop-engineering | fixed heading skeleton; grep-countable steps | mid |
@@ -21,11 +22,13 @@ agent file under `agents/`. Every agent additionally follows the anti-hallucinat
 | `quant-analyst.md` | sonnet | strategy-gate | hard gates; never loosens | mid |
 
 ## Growth
-At 13 agents this roster sits just past the ~10-12 flat-folder boundary: it stays flat for
-now, and the NEXT addition introduces a consistent file-name prefix (e.g. `build-*`,
-`quality-*`) or domain subfolders under `agents/`. Keep this table the one source of truth
-the router reads; a new agent is one appended row plus its file. The retro loop confirms an
-improvement target is reachable by checking it is listed here.
+At 14 agents (`prompt-engineer` added flat -- narrow scope, no restructuring implied) this
+roster sits past the ~10-12 flat-folder boundary named here previously. It stays flat for
+now; the NEXT addition introduces a consistent file-name prefix (e.g. `build-*`,
+`quality-*`) or domain subfolders under `agents/` -- do not defer that decision a second
+time. Keep this table the one source of truth the router reads; a new agent is one
+appended row plus its file. The retro loop confirms an improvement target is reachable by
+checking it is listed here.
 
 ## Scaling: roster.json sidecar pattern (future, at 20+ agents)
 As the roster grows well past this table's comfortable size, consider adopting a

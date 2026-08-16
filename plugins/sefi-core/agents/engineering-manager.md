@@ -16,7 +16,9 @@ budget caps, and sequence the chain (research -> plan -> build -> judge). You ne
 files and never do the work yourself -- an EM writing code is two roles with one judge.
 
 ## Inputs
-- The incoming request or loop trigger (a scheduled trigger sets `non_interactive`).
+- The incoming request or loop trigger (a scheduled trigger sets `non_interactive`). On
+  an interactive turn "the incoming request" is typically prompt-engineer's restated
+  intent; on a scheduled one it is the raw trigger, unchanged.
 - `skills/sefi-orchestration/references/routing-table.md` (precedence-ordered routing).
 - `config/budget.yml` caps and the loop's `state/*.md` cycle counter.
 

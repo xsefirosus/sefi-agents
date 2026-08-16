@@ -34,6 +34,12 @@ it here. At 13 files the roster sits just past the ~10-12 flat-folder boundary: 
 flat, and the NEXT addition introduces a file-name prefix and domain subfolders.
 
 ## Dispatch (one dispatcher, table-driven)
+Stage 0: an interactive human message passes through `prompt-engineer` first -- it
+restates the raw message into single-intent statements plus stated constraints, and
+attaches a non-binding suggested row. The engineering-manager then resolves the restated
+intent(s) against the table below. Skipped entirely on a non-interactive or scheduled
+trigger; the raw trigger reaches the table unchanged.
+
 The precedence-ordered trigger-to-agent map is `references/routing-table.md`. Resolve the
 routing key highest-to-lowest: per-message override -> per-project config -> global
 default -> hardcoded fallback. Agent identity travels as a field; a new trigger or loop is
