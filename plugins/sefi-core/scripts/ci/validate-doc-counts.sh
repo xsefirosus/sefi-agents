@@ -33,6 +33,14 @@ check "$ROOT/README.md" "SKILL.md" "$skills_n" '[0-9]+ SKILL\.md'
 check "$ROOT/README.md" "loop spec" "$loops_n" '[0-9]+ loop spec'
 check "$CORE/README.md" "agents" "$agents_n" '\b[0-9]+ agents\b'
 check "$CORE/README.md" "skills" "$skills_n" '\b[0-9]+ skills\b'
+# adapters/*.md total-roster prose: the class of drift a fresh audit found live
+# (2026-08-16) in CODEX.md and OPENCODE.md after a roster change -- neither
+# validate-links.sh nor validate-adapters.sh checks a bare number, only paths, so it was
+# silently ungated. Scoped to "all N agents" specifically: CODEX.md's tier table also
+# names per-tier subset counts (e.g. "7 agents incl. software-engineer") that are a
+# different, legitimately smaller number and must not be flagged against the total.
+check "$ROOT/adapters/CODEX.md" "agents" "$agents_n" '\ball [0-9]+ agents\b'
+check "$ROOT/adapters/OPENCODE.md" "agents" "$agents_n" '\ball [0-9]+ agents\b'
 
 if [ "$errors" -ne 0 ]; then echo "validate-doc-counts: $errors error(s)"; exit 1; fi
 echo "validate-doc-counts: OK (agents=$agents_n skills=$skills_n commands=$commands_n loops=$loops_n, all prose matches disk)"

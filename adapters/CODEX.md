@@ -13,7 +13,7 @@ codex plugin marketplace add xsefirosus/sefi-agents
 codex plugin add sefi-core@sefi-agents
 ```
 
-The first registers the marketplace; the second installs all 13 agents, 12 skills,
+The first registers the marketplace; the second installs all 14 agents, 12 skills,
 hooks, commands, and templates into `~/.codex/plugins/cache/sefi-agents/sefi-core/
 <version>/`.
 
@@ -67,7 +67,7 @@ Verified 2026-08-11. GPT-5.6 ships as a three-model family that lines up 1:1 wit
 |---|---|---|---|
 | high | `gpt-5.6-sol` | `xhigh` | qa-engineer, security-engineer |
 | mid | `gpt-5.6-terra` | `high` | 7 agents incl. software-engineer |
-| low | `gpt-5.6-luna` | `medium` | 4 haiku-tier agents |
+| low | `gpt-5.6-luna` | `medium` | 5 haiku-tier agents |
 
 Sol is the flagship, Terra the balanced workhorse, Luna the fast/cheap option -- "Terra as
 default, Sol for the hard parts, Luna for volume". Putting Sol on `high` is what keeps the

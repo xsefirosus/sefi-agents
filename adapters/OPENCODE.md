@@ -71,7 +71,7 @@ from before this was fixed. Pull the latest sefi-agents and re-run
 `install-opencode.sh --force`; the current script drops `model:` entirely so OpenCode
 falls back to the session model configured in section 1, instead of trying to resolve a
 Claude Code-only alias it does not recognize. This affects every agent, not just the one
-that happened to fail first -- all 13 carry a `model:` line. If the orchestrating agent
+that happened to fail first -- all 14 agents carry a `model:` line. If the orchestrating agent
 silently falls back to a generic, unconstrained dispatch instead of surfacing this error
 to you, treat that as a second problem worth stopping for: it means the task is now
 running with none of the specialized agent's actual guardrails (tool whitelist, output
