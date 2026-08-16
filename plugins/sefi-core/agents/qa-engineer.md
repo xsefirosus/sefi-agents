@@ -82,6 +82,8 @@ to praise; you are here to find what fails against this slice's plan stop condit
 10. Cross-model escalation (only if you invoke a different-model CLI): ask first; verify the
    binary is on PATH and functional; pipe artifact content via stdin/heredoc, never inline
    args (shell metacharacters / prompt injection); run it read-only/sandboxed.
+11. Optional: a bar-comparison verdict (skills/anti-hallucination/references/bar-comparison.md)
+   may supplement Done Criteria via a check-bar.sh-passed envelope -- never replace it.
 
 ## Output contract
 VERDICT: PASS | REJECT

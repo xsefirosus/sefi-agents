@@ -39,6 +39,26 @@ approval to build -- this release is that approval, executed.
    `grep -c '(needs: -)'` stand-in it shipped with. 7 new regression cases in
    `test-scripts.sh` (54 -> 61 assertions).
 
+3. **`bar-comparison`, an optional qa-engineer evidence type.** Additive only, never a
+   replacement for Done Criteria, and only when a real external artifact exists to judge
+   against. `skills/anti-hallucination/references/bar-comparison.md` defines the
+   Named/Fetchable/Comparable test, the blind protocol (the critic sees only the artifact
+   and the bar, never the builder's report), and a binary MEETS_BAR/DOES_NOT_MEET_BAR
+   verdict -- never a 1-10 score, since a similar critic-loop technique's own published log
+   shows a score climbing 3.59 -> 5.05/10 across rounds while never once crossing its bar.
+   `scripts/check-bar.sh` gates the envelope: a denylisted category label (award-winning,
+   best-in-class, ...) is rejected, a local `source:` is checked for real, a URL's
+   reachability is explicitly NOT verified (the plugin makes no network calls), and an
+   empty `compare:` is rejected. `ui-ux-designer` AUDIT/REDESIGN is the mechanism's
+   producer -- a consumer with no producer is the exact defect the memory vault already
+   shipped once, not repeated here. Still bound by `max_retries` and both circuit
+   breakers; explicitly does not adopt that technique's own uncapped "loop until wowed"
+   design. 4 new regression cases in `test-scripts.sh` (61 -> 65 assertions).
+
+All three plans above build to a single CI snapshot: 14 agents, 34 scripts parsing, 65 +
+30 = 95 test assertions, 8811 of 8960 agent-budget words used. The Proof section below is
+that snapshot, pasted from an actual run, not reconstructed from memory.
+
 ## [0.3.0] - 2026-08-11
 
 A full-repo audit and the work it produced. Nine defects found, four documented-but-unbuilt

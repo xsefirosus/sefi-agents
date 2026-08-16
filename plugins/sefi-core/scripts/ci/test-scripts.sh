@@ -414,6 +414,26 @@ expect_code 1 "an envelope missing required fields blocks the dispatch" \
   bash -c "printf 'agent: qa-engineer\n' | bash '$CH' -"
 
 echo
+echo "=== check-bar.sh (bar-comparison: Named / Fetchable / Comparable, gated before a qa-engineer verdict may cite it) ==="
+
+CB="$CORE/scripts/check-bar.sh"
+BAR_SOURCE="$(mktemp)"
+
+expect_code 0 "a named bar with a resolvable local source passes" \
+  bash -c "printf 'bar: Linear issue list view\nsource: %s\ncompare: keyboard-first triage speed\n' '$BAR_SOURCE' | bash '$CB' -"
+
+expect_code 1 "'award-winning SaaS sites' is rejected as a category" \
+  bash -c "printf 'bar: award-winning SaaS sites\nsource: %s\ncompare: layout density\n' '$BAR_SOURCE' | bash '$CB' -"
+
+expect_code 1 "a source pointing at a nonexistent path is rejected" \
+  bash -c "printf 'bar: Linear issue list view\nsource: %s.does-not-exist\ncompare: layout density\n' '$BAR_SOURCE' | bash '$CB' -"
+
+expect_code 1 "an empty compare: is rejected" \
+  bash -c "printf 'bar: Linear issue list view\nsource: %s\ncompare: \n' '$BAR_SOURCE' | bash '$CB' -"
+
+rm -f "$BAR_SOURCE"
+
+echo
 echo "=== memory producer (2026-08-11 audit: the vault had a consumer and no producer) ==="
 
 # knowledge-manager.md read memory/daily/*.md as "the raw material" and distilled it weekly;
