@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 # validate-no-orphans.sh -- unwired-artifact linter. Every skills/*/references/ file is
 # referenced from its SKILL.md; every templates/ file (except .gitkeep) is named in
-# commands/init.md's copy list; every agents/*.md is listed in references/roster.md.
+# commands/init.md's copy list; every agents/*.md is listed in references/roster.md AND in
+# sefi-orchestration/SKILL.md's own inline roster table (a separate, shorter summary table
+# that a new agent can be added to disk without ever touching -- found live 2026-08-16 when
+# the 14th agent shipped with references/roster.md updated but this second table left
+# stale, silently, because nothing checked it).
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
@@ -45,6 +49,20 @@ while IFS= read -r a; do
     :
   else
     echo "ERROR: $rel - not listed in references/roster.md"
+    errors=$((errors + 1))
+  fi
+done < <(find "$CORE/agents" -name '*.md')
+
+# 4. agents listed in sefi-orchestration/SKILL.md's own inline roster table -- a second,
+# shorter summary table distinct from references/roster.md, and not covered by check 3.
+INLINE_ROSTER="$CORE/skills/sefi-orchestration/SKILL.md"
+while IFS= read -r a; do
+  name="$(basename "$a" .md)"
+  rel="${a#"$ROOT"/}"
+  if [ -f "$INLINE_ROSTER" ] && grep -qF "| $name |" "$INLINE_ROSTER"; then
+    :
+  else
+    echo "ERROR: $rel - not listed in sefi-orchestration/SKILL.md's inline roster table"
     errors=$((errors + 1))
   fi
 done < <(find "$CORE/agents" -name '*.md')
