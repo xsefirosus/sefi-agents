@@ -3,6 +3,30 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.1] - 2026-08-16
+
+Three drafted-and-gated plans, built. Each was validated by
+`validate-plan-structure.sh` and left uncommitted-to-code deliberately, pending explicit
+approval to build -- this release is that approval, executed.
+
+### Added
+
+1. **`prompt-engineer`, a 14th agent.** Runs as Stage 0 on an interactive human message,
+   before the engineering-manager opens the routing table: restates a raw message into
+   single-intent statements, surfaces only constraints actually stated, and attaches a
+   non-binding suggested routing-table row. Tier `low` (haiku), read-only (Read/Grep/Glob,
+   no Write/Edit/Bash) -- it restates, it never routes, plans, or persists. Reuses the
+   existing `goal_intake` escalation (one question, then `needs-human`) rather than
+   inventing a second clarification mechanism, and is skipped entirely on a
+   non-interactive or scheduled trigger via the same flag `goal_intake` already honors.
+   Boundary, stated in the agent file itself: prompt-engineer decides whether a request is
+   clear enough to ROUTE; product-manager's goal_intake decides whether it is clear enough
+   to PLAN -- if those two ever converge, delete the newer one. Self-funded: the word cap
+   rises to 14 x 640 = 8960 against an unchanged 13-agent total of 8222 words, so no
+   existing agent lost headroom. `skills/sefi-orchestration/references/roster.md`'s Growth
+   note is corrected to match -- the flat folder holds through this addition as planned,
+   and the NEXT one is what introduces a naming prefix or subfolders.
+
 ## [0.3.0] - 2026-08-11
 
 A full-repo audit and the work it produced. Nine defects found, four documented-but-unbuilt

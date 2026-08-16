@@ -10,7 +10,7 @@
 <a href="#works-with-your-harness"><img src="https://img.shields.io/badge/runs%20on-Claude%20Code%20%7C%20Hermes%20%7C%20OpenCode%20%7C%20Codex-555.svg" alt="runs on"></a>
 </p>
 
-Thirteen markdown-defined agents -- product manager, full-stack engineer, QA, security,
+Fourteen markdown-defined agents -- product manager, full-stack engineer, QA, security,
 DevOps, design, and more -- that plan, build, judge, and remember as a team, with hard
 budget caps and a human holding the merge button. Plain markdown plus POSIX shell.
 Nothing to install, nothing phoning home.
@@ -27,7 +27,7 @@ Or hand the setup to any coding agent:
 > https://raw.githubusercontent.com/xsefirosus/sefi-agents/main/Install.md
 
 **Contents:** [Why this exists](#why-this-exists) -- [The receipts](#the-receipts-real-numbers-first-party)
--- [How it compares](#how-it-compares) -- [The team](#the-team-13-agents) --
+-- [How it compares](#how-it-compares) -- [The team](#the-team-14-agents) --
 [The skills](#the-skills-12) -- [The loops](#the-loops-2-shipped-template-for-more) --
 [Memory](#memory-that-survives-the-session) -- [Harness support](#works-with-your-harness) --
 [Safety rails](#safety-rails-all-of-them-in-one-place) -- [Proof](#proof) -- [FAQ](#faq) --
@@ -106,7 +106,7 @@ in cents, not dollars; your team's memory is markdown you can open, diff, and gr
 nothing irreversible happens without a human. If a framework you are considering can say
 all five, use whichever you like.
 
-## The team (13 agents)
+## The team (14 agents)
 
 An org chart, not a swarm. Each agent is a markdown file with a tool whitelist, a
 harness-neutral model tier, an output contract, and an escalation path.
@@ -126,10 +126,11 @@ harness-neutral model tier, an output contract, and an escalation path.
 | support-engineer | inbox and issue triage, consume-before-act | low |
 | knowledge-manager | memory vault curation, append-only | low |
 | technical-writer | READMEs, changelogs, guides -- verified claims only | low |
+| prompt-engineer | Stage 0 -- restates a raw human message into single-intent asks | low |
 
 Tiers are the source of truth; `plugins/sefi-core/config/model-map.yml` maps each one to a
 concrete model and reasoning effort per harness, so a new model is an edit to one table
-rather than a pass over 13 files. On Claude Code that is opus/sonnet/haiku; on Codex
+rather than a pass over 14 files. On Claude Code that is opus/sonnet/haiku; on Codex
 gpt-5.6-sol/terra/luna; on OpenCode and Hermes a single free model.
 
 The load-bearing relationship is `qa-engineer: high` sitting above `software-engineer: mid`.
@@ -141,7 +142,7 @@ models gets a genuinely stronger judge.
 
 ### Scaling the roster (future guideline)
 
-At 13 agents, the flat folder and bare names work fine. When the roster grows into the
+At 14 agents, the flat folder and bare names work fine. When the roster grows into the
 high teens: (a) introduce a consistent naming prefix (pick one scheme and stick with
 it so grepping by prefix is fast), and (b) introduce domain subfolders
 (`agents/core/`, `agents/specialized/`) to keep the folder browsable. Document this
@@ -264,9 +265,9 @@ command:
 
 ```
 $ bash plugins/sefi-core/scripts/ci/run-all.sh
-validate-agents: OK (13 agent files validated)
+validate-agents: OK (14 agent files validated)
 validate-skills: OK (12 SKILL.md validated)
-validate-doc-counts: OK (agents=13 skills=12 commands=5 loops=2, all prose matches disk)
+validate-doc-counts: OK (agents=14 skills=12 commands=5 loops=2, all prose matches disk)
 validate-loops: OK (2 loop spec(s) validated, plus 2 in this project's loops/)
 validate-budget: OK (all caps present and bounded)
 validate-config-wired: OK (11 config keys, all wired)
@@ -274,7 +275,7 @@ validate-no-personal-paths: OK (no personal paths in shipped files)
 validate-no-orphans: OK (references, templates, agents all wired)
 validate-links: OK (53 files scanned, all repo-path references resolve; bare script names checked)
 validate-routing: OK (routing-table agents exist, fixtures resolve, no duplicate triggers)
-validate-model-map: OK (13 agents, 4 harnesses, 32 scripts parse; 2 warning(s))
+validate-model-map: OK (14 agents, 4 harnesses, 32 scripts parse; 2 warning(s))
 validate-adapters: OK (install-hermes.sh skill list matches disk, adapter doc paths resolve)
 check-unicode-safety: OK (109 files scanned, ASCII-clean)
 validate-token-budget: OK (all within token budgets; agents total 8222 words)
