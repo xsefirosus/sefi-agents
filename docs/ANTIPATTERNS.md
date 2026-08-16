@@ -46,6 +46,13 @@ the tree.
   (its docstring says so) -- the self-grading pattern, shipped as a default.
 - mem0's April-2026 change demoted silent auto-overwrite of memories from default to opt-in
   -- independent evidence that memory maintenance must be append-only or flag-for-review.
+- Self-preference bias research (2026) documents models rating their own output higher than
+  other models' output on the same task -- a model checking its own reasoning with no
+  outside input does not reliably catch its own mistakes. This is why the qa-engineer is a
+  structurally separate, higher-tier agent rather than a self-check step, and why
+  bar-comparison's blind protocol withholds the builder's report from the critic. It is also
+  current graph-engineering practice's "diamond pattern": split -> parallel workers -> a
+  SEPARATE verifier node -> merge, never a worker verifying its own branch.
 
 ## Auto-merge: a tension surfaced, not a contradiction resolved
 cobusgreyling/loop-engineering's own dogfood workflow auto-merges a narrow allowlist
