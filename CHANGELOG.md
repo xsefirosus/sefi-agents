@@ -3,6 +3,28 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.2] - 2026-08-17
+
+### Fixed
+
+1. **OpenCode dispatch failed to resolve its own mapped model.** Live-observed by a real
+   user's `engineering-manager` dispatch on OpenCode 1.18.18 (2026-08-07): every subagent
+   dispatch failed, because `config/model-map.yml`'s `opencode:` block wrote a bare model id
+   (`deepseek-v4-flash-free`) with no provider prefix. This is the exact failure class the
+   v0.2.2/v0.2.4 fix already diagnosed and fixed for the Claude Code tier alias (`model:
+   sonnet`) -- OpenCode resolves `model:` as a real `provider/model-id` and fails hard on
+   anything less -- just never carried through to the replacement value that fix wrote in.
+   Confirmed against OpenCode's own agent-frontmatter spec before changing anything: `opencode`
+   is the provider segment for every OpenCode Zen model, and a bare model name is explicitly
+   unsupported. Fixed to `opencode/deepseek-v4-flash-free` in all three tiers; a new
+   regression test in `test-scripts.sh` asserts the emitted model carries a `/` provider
+   prefix, verified to fail on the un-prefixed value before the fix and pass after.
+   `adapters/CODEX.md` and `adapters/HERMES.md` were not touched -- Codex's own model ids are
+   not provider-prefixed by convention, and Hermes consumes `deepseek-v4-flash-free` through
+   its own `provider.model` config with no evidence of the same defect; extending an
+   OpenCode-specific, live-verified fix to either would be exactly the kind of unverified
+   claim this repo's anti-hallucination discipline forbids.
+
 ## [0.3.1] - 2026-08-16
 
 Three drafted-and-gated plans, built. Each was validated by

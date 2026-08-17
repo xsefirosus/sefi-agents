@@ -551,6 +551,15 @@ case "$oc_model" in
     ok "install-opencode.sh emits a mapped OpenCode model ('$oc_model'), not a Claude alias" ;;
 esac
 
+# Live-observed 2026-08-07: the mapped value itself must carry OpenCode's required
+# provider/model-id prefix, or dispatch fails the exact same way as a bare Claude alias --
+# the fix above closed the alias case but not this one, on the replacement value.
+case "$oc_model" in
+  */*) ok "OpenCode model '$oc_model' carries a provider/model-id prefix" ;;
+  "") : ;;  # already reported as a failure above
+  *) bad "OpenCode model '$oc_model' has no provider prefix -- dispatch will fail to resolve it" ;;
+esac
+
 # The tier is this repo's own field and must not leak into a harness file.
 if grep -q '^tier:' "$TMP_OC/agents/software-engineer.md" 2>/dev/null; then
   bad "tier: leaked into the converted OpenCode agent file"
