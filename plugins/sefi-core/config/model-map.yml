@@ -61,11 +61,19 @@ opencode:
   # instructions-only. Point `high` at a stronger model the moment one is available; that
   # single line is what restores a real adversary.
   #
+  # Live-observed 2026-08-07: a bare model id (no provider prefix) makes OpenCode's own
+  # subagent dispatch fail to resolve the model, on every agent -- the exact same failure
+  # class the v0.2.2/v0.2.4 fix already diagnosed and fixed for the Claude Code alias
+  # (`model: sonnet`), just not carried through to the replacement value written here.
+  # OpenCode's own model field format is `provider/model-id`; `opencode` is the provider
+  # segment for every OpenCode Zen model, confirmed against OpenCode's own agent-frontmatter
+  # spec ("don't use bare model names... without the preceding provider designation").
+  #
   # PRIVACY: during the free period, submitted data may be used to improve the model. Never
   # run client or proprietary code through it (adapters/HERMES.md carries the same warning).
-  high: deepseek-v4-flash-free
-  mid: deepseek-v4-flash-free
-  low: deepseek-v4-flash-free
+  high: opencode/deepseek-v4-flash-free
+  mid: opencode/deepseek-v4-flash-free
+  low: opencode/deepseek-v4-flash-free
   # DeepSeek V4 Flash supports reasoning_effort, with high and max variants; the guidance is
   # "high for quick edits, max for long agent loops". A sefi loop cycle IS a long agent
   # loop, so the high tier takes max.

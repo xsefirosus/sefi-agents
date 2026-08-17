@@ -8,7 +8,9 @@ file only names the OpenCode-specific wiring.
 
 Point OpenCode at the Zen provider and select a model:
 - Base URL: `https://opencode.ai/zen/v1`
-- Model: `deepseek-v4-flash-free` (free window) or `deepseek-v4-flash` (paid fallback)
+- Model: `opencode/deepseek-v4-flash-free` (free window) or `opencode/deepseek-v4-flash`
+  (paid fallback) -- the `opencode/` provider prefix is required; OpenCode resolves a bare
+  model id as a real provider/model identifier and fails (see Troubleshooting).
 
 ## 2. Install
 
@@ -77,6 +79,13 @@ to you, treat that as a second problem worth stopping for: it means the task is 
 running with none of the specialized agent's actual guardrails (tool whitelist, output
 contract, gate requirement), not a harmless retry.
 
+**`Model not found: deepseek-v4-flash-free/`** (or any dispatch silently failing to resolve
+its model) on an install that already has the tier-mapped `model:` line -- live-observed
+2026-08-07: the mapped value itself was missing OpenCode's required `provider/model-id`
+prefix, the exact same failure class as the `sonnet/` case above, just on the replacement
+value rather than the original Claude Code alias. Pull the latest sefi-agents (the map now
+writes `opencode/deepseek-v4-flash-free`) and re-run `install-opencode.sh --force`.
+
 ## Credentials
 
 sefi stores no credentials -- rotate at this harness's own config or your CI secrets. See
@@ -90,14 +99,15 @@ sefi stores no credentials -- rotate at this harness's own config or your CI sec
 
 | Tier | Model | reasoningEffort |
 |---|---|---|
-| high | `deepseek-v4-flash-free` | `max` |
-| mid | `deepseek-v4-flash-free` | `high` |
-| low | `deepseek-v4-flash-free` | `medium` |
+| high | `opencode/deepseek-v4-flash-free` | `max` |
+| mid | `opencode/deepseek-v4-flash-free` | `high` |
+| low | `opencode/deepseek-v4-flash-free` | `medium` |
 
 Verified 2026-08-11: `deepseek-v4-flash-free` is real on OpenCode Zen -- 200K context, 128K
 output, free tier, no card. DeepSeek V4 Flash supports `reasoning_effort` with `high` and
 `max` variants, and the guidance is "high for quick edits, max for long agent loops". A
-sefi loop cycle is a long agent loop, so the high tier takes `max`.
+sefi loop cycle is a long agent loop, so the high tier takes `max`. The `opencode/` provider
+prefix is required in the written value, confirmed 2026-08-07 (Troubleshooting below).
 
 `options.reasoningEffort` is written per agent rather than assumed, because some OpenCode
 versions exclude DeepSeek models from the reasoning-effort system entirely.
