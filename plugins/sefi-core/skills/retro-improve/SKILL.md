@@ -70,6 +70,24 @@ where that drift actually gets caught.
   either makes the edit an `inbox/` proposal, never a commit -- the retro loop cannot
   self-certify its own edit as effective, the same way the software-engineer cannot
   self-certify a slice.
+  - A cheap deterministic pre-filter runs BEFORE that judgment call, same ordering
+    principle as `check-bar.sh` / `check-reply.sh` / `gate.sh`: deterministic checks
+    first, spend the LLM call second. Run `scripts/check-structure-diff.sh
+    <target-before> <target-after>` on the proposed edit; a removed or changed
+    structural field (a stripped `tools:` entry, a changed `tier:`, a missing
+    anti-hallucination pointer) becomes cited evidence for the qa-engineer's own call,
+    never a silent auto-block -- same additive relationship bar-comparison has to Done
+    Criteria. If the target is named in `routing-table.md`, also re-run the EXISTING
+    `validate-routing.sh` against the proposed edit; if the target IS
+    `routing-table.md` itself, run it directly. No new routing-fixture mechanism is
+    built -- the one that already exists (`routing-cases.txt`) is reused.
+  - This does not replace the ledger's revert rule below: that rule is slow and
+    statistical by design, needing 3-5 real qa-engineer verdicts accumulated over live
+    dispatches after an edit ships. This pre-filter is instant and deterministic,
+    catching a structural or routing regression before the edit is even committed.
+    Neither replaces the other; if the two ever start catching the identical failure
+    shape, delete this one -- same rule already applied when `prompt-engineer` was
+    added against `goal_intake`.
 
 ## Ledger append (at edit time, not afterwards)
 Every retro decision appends one row to `state/retro-ledger.md` -- `applied`, `proposed`,
