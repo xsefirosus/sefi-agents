@@ -24,6 +24,21 @@ arrived at the same three-way shape for its own human-in-loop gate -- external
 corroboration that this is the minimal, sufficient contract for an approval gate,
 not a convention invented here without precedent.
 
+## Enforcement, stated honestly
+Until now this rule was prose only -- confirmed live (2026-08-18) when an
+engineering-manager session used Bash to write files its own `disallowedTools` list
+forbids, the same class of gap that would let a Bash-capable agent push straight to
+`main` with nothing to stop it. `/sefi:init` now installs `templates/hooks/pre-push` as
+`.git/hooks/pre-push`, refusing a direct push to `main`/`master` unless
+`SEFI_ALLOW_MAIN_PUSH=1` is set deliberately.
+
+This is defense-in-depth, not the fix. A Bash-capable agent can still route around a
+local hook -- edit it, delete it, or run `git push --no-verify`, which skips hooks by
+design. The only backstop that survives that is a branch protection rule on the remote
+(GitHub Settings -> Branches -> require a PR, block force pushes), which this hook
+cannot configure and does not claim to. Claiming otherwise would be exactly the
+overclaim the anti-hallucination skill forbids.
+
 ## Binary self-test
 Every merge / deploy / destructive step in a loop turn traces to an explicit human
 approval. If any does not, the loop is violating this rule.

@@ -80,6 +80,7 @@ party distinction for every number this repo cites):
 | stripping `model:` for OpenCode left every agent on one session model, so the qa-engineer judged the software-engineer on the identical model | v0.3.0: a harness-neutral `tier:` plus `config/model-map.yml`; the installer writes a mapped model, restoring a genuinely different judge |
 | the loop declared a cron workflow that was never installed, deadlocking the whole feedback chain: no scheduler, so no verdict, so no metrics, so `improvement.enabled` was unreachable by construction | v0.3.0: the workflow ships manual-trigger-only, and CI fails a loop whose declared workflow does not exist |
 | every mechanism above was gated but had never run in sequence -- unwired by the qa-engineer's own delete-the-line test | v0.3.0: `test-integration.sh` executes the full loop skeleton end to end in a real git repo, 30 assertions across 16 stages |
+| the never-auto-merge rule had zero deterministic enforcement -- confirmed live when a dispatched agent used Bash to write files its own `disallowedTools` forbade, the same gap that would let a push straight to `main` go unstopped | v0.3.5: `/sefi:init` installs a `pre-push` hook refusing a direct push to `main`/`master`; stated honestly as defense-in-depth, not the fix -- a Bash-capable agent can still bypass a local hook, so the real backstop is a remote branch protection rule this hook cannot configure |
 
 Full list: [CHANGELOG.md](CHANGELOG.md).
 
@@ -273,13 +274,13 @@ validate-budget: OK (all caps present and bounded)
 validate-config-wired: OK (11 config keys, all wired)
 validate-no-personal-paths: OK (no personal paths in shipped files)
 validate-no-orphans: OK (references, templates, agents all wired)
-validate-links: OK (55 files scanned, all repo-path references resolve; bare script names checked)
+validate-links: OK (56 files scanned, all repo-path references resolve; bare script names checked)
 validate-routing: OK (routing-table agents exist, fixtures resolve, no duplicate triggers)
 validate-model-map: OK (14 agents, 4 harnesses, 35 scripts parse; 2 warning(s))
 validate-adapters: OK (install-hermes.sh skill list matches disk, adapter doc paths resolve)
-check-unicode-safety: OK (115 files scanned, ASCII-clean)
-validate-token-budget: OK (all within token budgets; agents total 8858 words)
-test-scripts: OK (76 passed)
+check-unicode-safety: OK (116 files scanned, ASCII-clean)
+validate-token-budget: OK (all within token budgets; agents total 8887 words)
+test-scripts: OK (81 passed)
 test-integration: OK (30 passed) -- full loop skeleton executed end to end
 CI: all validators passed
 ```

@@ -3,6 +3,32 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.5] - 2026-08-18
+
+### Added
+
+1. **Never-auto-merge enforcement -- `templates/hooks/pre-push`.** Confirmed live via the
+   engineering-manager's own forensic self-audit (it queried its harness's session-log
+   database and found itself using Bash-invoked `Add-Content`/`sed -i` 8 times, directly
+   violating its own `disallowedTools: Write, Edit, MultiEdit`): nothing in this repo
+   deterministically enforced `human-checkpoint.md`'s canonical rule ("loops open PRs; they
+   never merge"). A prior `loops.never_auto_merge` config key had already been deleted after
+   being found under-wired, with no replacement mechanism put in its place -- the rule was
+   prose only, restated in 11 agent files and enforced in none of them. `/sefi:init` now
+   installs a POSIX `sh` `pre-push` git hook that refuses a direct push to `main`/`master`
+   unless `SEFI_ALLOW_MAIN_PUSH=1` is set deliberately.
+
+   Stated honestly rather than overclaimed: this is defense-in-depth, not the fix. Git never
+   tracks `.git/hooks/`, so the hook is local-only and a Bash-capable agent can still route
+   around it -- edit it, delete it, or run `git push --no-verify`, which skips hooks by
+   design. The only backstop that survives that is a branch protection rule on the GitHub
+   remote, which no tool available to an agent can configure; only a repo owner can set it in
+   GitHub Settings. `human-checkpoint.md` now documents both the hook and this limit in one
+   place instead of letting the hook imply more coverage than it has. Verified the regression
+   tests actually catch the failure mode: re-broke the hook's blocking logic, confirmed the
+   exact expected 3 failures (`main`, `master`, and a multi-ref push containing `main`),
+   restored, re-ran green. 5 new regression cases (76 -> 81 assertions).
+
 ## [0.3.4] - 2026-08-18
 
 ### Added

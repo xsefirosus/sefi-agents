@@ -1,0 +1,40 @@
+#!/bin/sh
+# sefi-agents pre-push hook -- refuses a direct push to the protected branch.
+#
+# Installed by /sefi:init into .git/hooks/pre-push. Git never tracks .git/hooks/, so this
+# is local-only and must be reinstalled after every fresh clone -- expected git-hook
+# behavior, not a bug in this file.
+#
+# Why this exists: human-checkpoint.md's rule ("loops open PRs; they never merge") had
+# zero deterministic enforcement anywhere in the repo -- confirmed live (2026-08-18) when
+# an engineering-manager session used Bash to write files its own disallowedTools list
+# explicitly forbids. The same class of gap applies here: nothing stopped a Bash-capable
+# agent (or a distracted human) from pushing straight to main.
+#
+# HONEST LIMIT, stated rather than overclaimed: this is defense-in-depth, not the real
+# fix. A Bash-capable agent can still bypass it -- edit or delete this file, or run
+# `git push --no-verify`, which skips hooks entirely by design. The only backstop this
+# file cannot route around is a branch protection rule on the remote (GitHub Settings ->
+# Branches -> require a PR before merging, block force pushes). This hook does not and
+# cannot configure that; it only catches the common, non-adversarial case fast and
+# locally, the same way a linter catches most typos without claiming to catch all bugs.
+set -e
+
+PROTECTED="${SEFI_PROTECTED_BRANCH:-main}"
+ALT_PROTECTED="master"
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    "refs/heads/$PROTECTED"|"refs/heads/$ALT_PROTECTED")
+      if [ "${SEFI_ALLOW_MAIN_PUSH:-0}" != "1" ]; then
+        echo "sefi-agents pre-push: refusing to push directly to $remote_ref." >&2
+        echo "Loops and agents never merge -- open a PR instead. Full rule:" >&2
+        echo "  skills/sefi-orchestration/references/human-checkpoint.md" >&2
+        echo "A human pushing deliberately: SEFI_ALLOW_MAIN_PUSH=1 git push ..." >&2
+        exit 1
+      fi
+      ;;
+  esac
+done
+
+exit 0
