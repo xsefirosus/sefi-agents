@@ -464,6 +464,18 @@ expect_code 1 "a digest plus a full HTML document is rejected (the live failure)
 expect_code 1 "an over-budget reply is rejected against per_agent_return_tokens" \
   bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/long.txt"
 
+# Cap raised 150 -> 200 (2026-08-18): live data showed qa-engineer's verdict-with-evidence
+# replies landing at 162 and 172 words against the old cap -- not rambling, just the natural
+# size of a PASS/REJECT call that has to cite file:line evidence. A reply in that real,
+# previously-punished range must now pass (all labels present, same as good.txt, so a failure
+# here can only be the word-count check); a reply that is actually bloated must still fail.
+{ cat "$RTMP/good.txt"; for _ in $(seq 1 131); do printf 'word '; done; } > "$RTMP/onceoverold.txt"
+expect_code 0 "a 172-word reply (the real qa-engineer incident) passes against the 200 cap" \
+  bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/onceoverold.txt"
+{ cat "$RTMP/good.txt"; for _ in $(seq 1 179); do printf 'word '; done; } > "$RTMP/stilltoolong.txt"
+expect_code 1 "a 220-word reply is still rejected -- the raise did not remove the ceiling" \
+  bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/stilltoolong.txt"
+
 grep -v '^SUGGESTED:' "$RTMP/good.txt" > "$RTMP/missing.txt"
 expect_code 1 "a reply omitting a declared label is rejected" \
   bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/missing.txt"
