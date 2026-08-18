@@ -850,5 +850,78 @@ if [ "$got" -eq 0 ]; then ok "no agent_type: fails open (exit 0, nothing to scop
 
 unset CLAUDE_PLUGIN_ROOT
 
+echo
+echo "=== scan-placeholders.sh (proposal 1: deterministic hallucination-pattern evidence) ==="
+
+SP="$CORE/scripts/scan-placeholders.sh"
+
+clean_out="$(printf 'This function reads the config file and returns its parsed value.\n' | bash "$SP" - 2>&1)"
+case "$clean_out" in
+  *"0 total hit(s)"*) ok "a clean baseline reports zero hits" ;;
+  *) bad "clean baseline reported a hit: $clean_out" ;;
+esac
+expect_code 0 "scan-placeholders always exits 0 on a clean baseline" \
+  bash -c "printf 'clean text here' | bash '$SP' -"
+
+uncertain_out="$(printf 'I believe that this probably works.\n' | bash "$SP" - 2>&1)"
+case "$uncertain_out" in
+  *"uncertain_language: 1 hit"*) ok "uncertain_language category detects a hedge on a claim" ;;
+  *) bad "uncertain_language missed: $uncertain_out" ;;
+esac
+
+incomplete_out="$(printf 'TODO: implement retry logic here.\n' | bash "$SP" - 2>&1)"
+case "$incomplete_out" in
+  *"incomplete_implementation: 1 hit"*) ok "incomplete_implementation category detects an unresolved TODO" ;;
+  *) bad "incomplete_implementation missed: $incomplete_out" ;;
+esac
+
+placeholder_out="$(printf 'This is a placeholder value for now.\n' | bash "$SP" - 2>&1)"
+case "$placeholder_out" in
+  *"placeholder_content: 1 hit"*) ok "placeholder_content category detects unfilled template material" ;;
+  *) bad "placeholder_content missed: $placeholder_out" ;;
+esac
+
+url_out="$(printf 'See http://example.com for the docs.\n' | bash "$SP" - 2>&1)"
+case "$url_out" in
+  *"test_urls: 1 hit"*) ok "test_urls category detects a fixture address in delivered output" ;;
+  *) bad "test_urls missed: $url_out" ;;
+esac
+
+multi_out="$(printf 'TODO: implement this\nFIXME: this is broken\nHACK: workaround for now\n' | bash "$SP" - 2>&1)"
+case "$multi_out" in
+  *"incomplete_implementation: 3 hit(s)"*) ok "multi-hit counting: 3 separate lines in one category counted, not just detected" ;;
+  *) bad "multi-hit count wrong: $multi_out" ;;
+esac
+
+empty_out="$(printf '' | bash "$SP" - 2>&1)"
+case "$empty_out" in
+  *"0 total hit(s)"*) ok "empty input reports zero hits, not an error" ;;
+  *) bad "empty input produced: $empty_out" ;;
+esac
+expect_code 0 "empty input exits 0" bash -c "printf '' | bash '$SP' -"
+
+expect_code 0 "a nonexistent file path exits 0, not an error (evidence-only design)" \
+  bash "$SP" /no/such/file/exists
+
+# Re-break/restore proof, per qa-engineer.md item 6's own rule: temporarily disable the
+# TODO pattern, confirm the assertion that depends on it now fails, then restore and
+# confirm it passes again. This proves the test is actually exercising the pattern, not
+# passing by construction.
+SP_BAK="$(mktemp)"
+cp "$SP" "$SP_BAK"
+sed -i 's/"\*todo: implement\*"/"*NEVER_MATCHES_ANYTHING*"/' "$SP"
+broken_out="$(printf 'TODO: implement retry logic here.\n' | bash "$SP" - 2>&1)"
+case "$broken_out" in
+  *"incomplete_implementation: 1 hit"*) bad "re-break did not disable the pattern -- the test proves nothing" ;;
+  *) ok "re-break proof: disabling the TODO pattern makes the hit disappear as expected" ;;
+esac
+cp "$SP_BAK" "$SP"
+rm -f "$SP_BAK"
+restored_out="$(printf 'TODO: implement retry logic here.\n' | bash "$SP" - 2>&1)"
+case "$restored_out" in
+  *"incomplete_implementation: 1 hit"*) ok "restore proof: the pattern is back and the hit is detected again" ;;
+  *) bad "restore failed -- scan-placeholders.sh was not returned to its working state: $restored_out" ;;
+esac
+
 if [ "$fail" -ne 0 ]; then echo "test-scripts: $fail failed, $pass passed"; exit 1; fi
 echo "test-scripts: OK ($pass passed)"

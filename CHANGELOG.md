@@ -3,6 +3,34 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.9] - 2026-08-18
+
+### Added
+
+1. **`scripts/scan-placeholders.sh` -- deterministic post-hoc hallucination-pattern
+   scanner.** Sourced from a related project's `orchestrator/hallucination_checker.py`
+   after checking it against what already exists here, not assumed: 4 of its 5 pattern
+   categories are portable as-is (`uncertain_language`, `incomplete_implementation`,
+   `placeholder_content`, `test_urls`); the fifth, `code_generation` (matching
+   `def`/`class`/`import`/fenced code blocks), is deliberately excluded, confirmed
+   redundant against `check-reply.sh`'s existing foreign-deliverable check (its check 3
+   already catches a full HTML/plan-skeleton leak from a read-only agent -- the same
+   failure shape `code_generation` was trying to catch more crudely).
+
+   Always exits 0: this is evidence collection for the qa-engineer to judge against a
+   slice's Done Criteria, never an automatic verdict -- the same relationship
+   `check-bar.sh` has to the bar-comparison evidence type. `qa-engineer.md` gains
+   Protocol item 12 pointing at it, in 20 words against a word budget that had ~73 words
+   of headroom left across all 14 agents; the new
+   `skills/anti-hallucination/references/placeholder-scan.md` carries the per-category
+   false-positive guidance a bare hit count cannot (e.g. "probably" inside a sentence
+   explaining why something is UNKNOWN is the discipline working, not a violation).
+
+   12 new regression assertions (94 -> 106), including a re-break/restore proof per
+   `qa-engineer.md` item 6's own rule: the `TODO:` pattern was temporarily disabled,
+   the dependent assertion confirmed to fail, then restored and confirmed to pass again
+   -- proving the test exercises the pattern rather than passing by construction.
+
 ## [0.3.8] - 2026-08-18
 
 ### Added
