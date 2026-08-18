@@ -31,7 +31,7 @@ runs on time, in isolation, under caps, and leaves honest telemetry behind.
    never touch real external channels; mock at the client seam.
 4. Timeouts: give a long operation its own timeout class (e.g. 900s for multi-task
    dispatch) instead of stretching the default for everything.
-5. Budget plumbing: run scripts/budget-check.sh in every pipeline before agent steps;
+5. Budget plumbing: run ${CLAUDE_PLUGIN_ROOT}/scripts/budget-check.sh in every pipeline before agent steps;
    read retry counts from the state cycle counter, never reset on resume.
 6. Releases: prepare the tag, changelog entry, and PR; a human ships it.
 7. Before opening a PR, fetch and check the branch against current `main`: if a conflict
@@ -49,7 +49,7 @@ a path, API, number, or citation: unknown lookup = UNKNOWN, unrun execution = PE
 (full rule: the anti-hallucination skill). Result first, no narration.
 
 ## Budget plumbing
-scripts/budget-check.sh exit 3 is CANNOT MEASURE, not EXCEEDED -- the cap was never
+${CLAUDE_PLUGIN_ROOT}/scripts/budget-check.sh exit 3 is CANNOT MEASURE, not EXCEEDED -- the cap was never
 checked because no usable spend source existed. Fix the source (install ccusage, or pass a
 real --spent); never read it as a pass, and never paper over it with --spent 0 unless zero
 is a claim you can defend.

@@ -1061,5 +1061,68 @@ else
   bad "restore failed -- routing-table.md was not returned to its working state (exit $restored_rc)"
 fi
 
+echo
+echo "=== script-path resolution (found live: 24 bare 'scripts/x.sh' refs, no installer copied scripts/) ==="
+
+SPR="$CORE/scripts/ci/validate-script-refs.sh"
+
+# validate-script-refs.sh resolves its own repo root relative to its own path, not an
+# argument (same discipline as validate-routing.sh's fixture), so proving it catches a
+# regression means mutating a real tracked agent file and restoring it, not a scratch copy.
+QA_AGENT="$CORE/agents/qa-engineer.md"
+QA_BAK="$(mktemp)"
+cp "$QA_AGENT" "$QA_BAK"
+
+sed -i 's#\${CLAUDE_PLUGIN_ROOT}/scripts/gate\.sh#scripts/gate.sh#' "$QA_AGENT"
+broken_rc=0
+bash "$SPR" >/dev/null 2>&1 || broken_rc=$?
+cp "$QA_BAK" "$QA_AGENT"
+rm -f "$QA_BAK"
+if [ "$broken_rc" -ne 0 ]; then
+  ok "a bare (unprefixed) scripts/x.sh reference is caught by validate-script-refs.sh (exit $broken_rc)"
+else
+  bad "validate-script-refs.sh did not catch a bare scripts/gate.sh reference"
+fi
+
+restored_rc=0
+bash "$SPR" >/dev/null 2>&1 || restored_rc=$?
+if [ "$restored_rc" -eq 0 ]; then
+  ok "restore proof: qa-engineer.md is back and validate-script-refs.sh passes again"
+else
+  bad "restore failed -- qa-engineer.md was not returned to its working state (exit $restored_rc)"
+fi
+
+# install.sh --copy: scripts/ must land at the destination and every ${CLAUDE_PLUGIN_ROOT}
+# placeholder in copied agent/skill/command content must resolve to a literal path -- the
+# two halves of the bug (files missing; references unresolvable) proven together.
+HERMES_TMP="$(mktemp -d)"
+HERMES_HOME="$HERMES_TMP" bash "$ROOT/install.sh" --target hermes --copy >/dev/null 2>&1
+if [ -d "$HERMES_TMP/scripts" ] && [ -f "$HERMES_TMP/scripts/gate.sh" ]; then
+  ok "install.sh --copy --target hermes places scripts/ (including gate.sh) at the destination"
+else
+  bad "install.sh --copy --target hermes did not place scripts/ at the destination"
+fi
+if grep -rl '${CLAUDE_PLUGIN_ROOT}' "$HERMES_TMP/agents" "$HERMES_TMP/skills" "$HERMES_TMP/commands" >/dev/null 2>&1; then
+  bad "install.sh --copy left an unresolved \${CLAUDE_PLUGIN_ROOT} placeholder in copied agent/skill/command content"
+else
+  ok "install.sh --copy resolved every \${CLAUDE_PLUGIN_ROOT} placeholder to a literal path"
+fi
+rm -rf "$HERMES_TMP"
+
+# install-opencode.sh is always-copy (never symlink), so the same two checks apply there.
+OC_TMP="$(mktemp -d)"
+OPENCODE_HOME="$OC_TMP" bash "$CORE/scripts/install-opencode.sh" >/dev/null 2>&1
+if [ -d "$OC_TMP/scripts" ] && [ -f "$OC_TMP/scripts/gate.sh" ]; then
+  ok "install-opencode.sh places scripts/ (including gate.sh) at the destination"
+else
+  bad "install-opencode.sh did not place scripts/ at the destination"
+fi
+if grep -rl '${CLAUDE_PLUGIN_ROOT}' "$OC_TMP/agents" "$OC_TMP/skills" "$OC_TMP/commands" >/dev/null 2>&1; then
+  bad "install-opencode.sh left an unresolved \${CLAUDE_PLUGIN_ROOT} placeholder in copied agent/skill/command content"
+else
+  ok "install-opencode.sh resolved every \${CLAUDE_PLUGIN_ROOT} placeholder to a literal path"
+fi
+rm -rf "$OC_TMP"
+
 if [ "$fail" -ne 0 ]; then echo "test-scripts: $fail failed, $pass passed"; exit 1; fi
 echo "test-scripts: OK ($pass passed)"

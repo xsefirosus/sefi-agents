@@ -65,10 +65,10 @@ writes:  /abs/project/.worktrees/feat-x
 budget:  dispatch
 context: <inlined; must stand alone on the receiving side>
 ```
-`scripts/check-handoff.sh <envelope>` exits nonzero on a relative `writes:` path, an empty
+`${CLAUDE_PLUGIN_ROOT}/scripts/check-handoff.sh <envelope>` exits nonzero on a relative `writes:` path, an empty
 `reads:` or `context:`, a back-reference such as "as discussed above", or an agent slug
 that resolves to no file. A blocked envelope is fixed and re-checked, never dispatched
-anyway. Plans have had `scripts/validate-plan-structure.sh` for a while; handoffs fail more
+anyway. Plans have had `${CLAUDE_PLUGIN_ROOT}/scripts/validate-plan-structure.sh` for a while; handoffs fail more
 expensively and had only prose until this gate.
 
 ## Parse ladder (consume another agent's structured output)
@@ -103,7 +103,7 @@ with chat ("Here's the summary: ...").
 - `references/anti-patterns.md` -- authoring anti-patterns.
 - `references/goal-intake.md` -- the canonical goal_intake behavior.
 - `references/scope-boundary.md` -- produce your own deliverable, never another agent's;
-  gated on the dispatched path by `scripts/check-reply.sh`.
+  gated on the dispatched path by `${CLAUDE_PLUGIN_ROOT}/scripts/check-reply.sh`.
 - `references/close-out.md` -- the canonical close_out behavior, and the vault's only
   producer: the knowledge-manager dispatch that files a cycle's durable observations.
 - `docs/BUDGET.md` -- the token-discipline stack, biggest lever first; terse-mode (output

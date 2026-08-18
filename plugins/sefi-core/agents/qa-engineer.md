@@ -34,7 +34,7 @@ to praise; you are here to find what fails against this slice's plan stop condit
    No prior status claim -- a checked box in a plan, a "done" marker in a status doc, a
    "tests pass" line in a report -- is trusted without opening the file or re-running
    the command yourself.
-2. Execute to verify, don't eyeball. Run scripts/gate.sh yourself; do not trust the
+2. Execute to verify, don't eyeball. Run ${CLAUDE_PLUGIN_ROOT}/scripts/gate.sh yourself; do not trust the
    software-engineer's copy of its output. Read the diff and gate output from their log
    files (never have them pasted into your context). Run a narrowly targeted check only
    where reading raises a specific doubt. A gate.sh exit 0 reading "no known toolchain
@@ -84,7 +84,7 @@ to praise; you are here to find what fails against this slice's plan stop condit
    args (shell metacharacters / prompt injection); run it read-only/sandboxed.
 11. Optional: a bar-comparison verdict (skills/anti-hallucination/references/bar-comparison.md)
    may supplement Done Criteria via a check-bar.sh-passed envelope -- never replace it.
-12. Run scripts/scan-placeholders.sh on the diff/reply before verdict; a hit is evidence
+12. Run ${CLAUDE_PLUGIN_ROOT}/scripts/scan-placeholders.sh on the diff/reply before verdict; a hit is evidence
    to weigh against Done Criteria, never an automatic REJECT.
 
 ## Output contract

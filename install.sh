@@ -1,8 +1,19 @@
 #!/usr/bin/env bash
 # install.sh -- human fallback for non-plugin runtimes. Symlinks (or copies) agents/,
-# skills/, and commands/ into the target harness's config directory. Refuses to overwrite
-# without --force. Resolves symlinks and handles Windows paths via cygpath. Fails fast if a
-# required file is missing.
+# skills/, commands/, and scripts/ into the target harness's config directory. Refuses to
+# overwrite without --force. Resolves symlinks and handles Windows paths via cygpath.
+# Fails fast if a required file is missing.
+#
+# scripts/ is included so agent/skill prose referencing a bundled script (e.g.
+# `${CLAUDE_PLUGIN_ROOT}/scripts/gate.sh`) has something to find at the destination. In
+# --copy mode that placeholder is also resolved to a literal `$DEST` path below, so a
+# copied install needs no runtime understanding of `${CLAUDE_PLUGIN_ROOT}` at all. The
+# DEFAULT symlink mode cannot do that substitution without rewriting the source checkout
+# through the symlink, so it is a stated, known gap: scripts/ becomes reachable, but the
+# placeholder stays literal in a symlinked (non-plugin) install. Only Claude Code's own
+# native `/plugin install` path (this repo's documented primary install method) resolves
+# `${CLAUDE_PLUGIN_ROOT}` unconditionally, via its own plugin loader -- confirmed against
+# official Claude Code docs, not assumed.
 #
 # Usage: ./install.sh --target <claude|hermes|opencode> [--force] [--copy]
 set -euo pipefail
@@ -28,7 +39,7 @@ SRC="$(cd "$(dirname "$0")" && pwd)"
 CORE="$SRC/plugins/sefi-core"
 
 # Fail fast if a required source dir is missing.
-for d in agents skills commands; do
+for d in agents skills commands scripts; do
   [ -d "$CORE/$d" ] || { echo "install.sh: missing required source dir $CORE/$d" >&2; exit 1; }
 done
 
@@ -80,9 +91,19 @@ if [ "$TARGET" = "opencode" ]; then
   [ "$FORCE" -eq 1 ] && opencode_args+=(--force)
   bash "$CORE/scripts/install-opencode.sh" "${opencode_args[@]}" || rc=1
 else
-  for sub in agents skills commands; do
+  for sub in agents skills commands scripts; do
     link_one "$sub" || rc=1
   done
+  # Copy mode produces independent files (unlike a symlink, which still points back at
+  # the source checkout), so it is safe to rewrite the placeholder here without touching
+  # the source. Applied to agents/skills/commands only -- scripts/ itself never contains
+  # the placeholder, it is what the placeholder resolves to.
+  if [ "$MODE" = "copy" ] && [ "$rc" -eq 0 ]; then
+    for sub in agents skills commands; do
+      find "$DEST/$sub" -type f -name '*.md' -exec sed -i "s#\${CLAUDE_PLUGIN_ROOT}#$DEST#g" {} \;
+    done
+    echo "resolved \${CLAUDE_PLUGIN_ROOT} -> $DEST in copied agents/skills/commands"
+  fi
 fi
 
 if [ "$rc" -ne 0 ]; then

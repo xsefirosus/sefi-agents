@@ -4,6 +4,13 @@
 # OpenCode auto-discovers agents, skills, and commands under
 # ~/.config/opencode/{agents,skills,commands}/. A plain copy is enough for skills
 # and commands (their frontmatter has no field collisions with OpenCode's schema).
+#
+# scripts/ is copied too (~/.config/opencode/scripts/), and every copied agent/skill/
+# command file has `${CLAUDE_PLUGIN_ROOT}` -- the placeholder agent/skill prose uses to
+# reference a bundled script -- rewritten to a literal absolute `$DEST` path at install
+# time. OpenCode has no plugin loader to substitute that placeholder at runtime the way
+# Claude Code's native /plugin install does, so this installer does it once, here,
+# instead: the copied output needs no runtime understanding of the placeholder at all.
 # Agents are different: OpenCode's `tools` field is a strictly-typed object, not a
 # string, and is deprecated in favor of `permission`. A raw agent file fails
 # schema validation. The per-file awk transform below converts our comma-separated
@@ -60,9 +67,10 @@ CORE="$(cd "$HERE/.." && pwd)"
 AGENTS_SRC="$CORE/agents"
 SKILLS_SRC="$CORE/skills"
 COMMANDS_SRC="$CORE/commands"
+SCRIPTS_SRC="$CORE/scripts"
 
 # Fail fast if a required source dir is missing.
-for d in "$AGENTS_SRC" "$SKILLS_SRC" "$COMMANDS_SRC"; do
+for d in "$AGENTS_SRC" "$SKILLS_SRC" "$COMMANDS_SRC" "$SCRIPTS_SRC"; do
   [ -d "$d" ] || { echo "install-opencode.sh: missing required source dir $d" >&2; exit 1; }
 done
 
@@ -92,14 +100,14 @@ if [ "$FORCE" -ne 1 ]; then
     [ -f "$src" ] || continue
     preflight_target "$DEST/agents/$(basename "$src")"
   done
-  for src_dir in "$SKILLS_SRC" "$COMMANDS_SRC"; do
+  for src_dir in "$SKILLS_SRC" "$COMMANDS_SRC" "$SCRIPTS_SRC"; do
     for entry in "$src_dir"/*; do
       [ -e "$entry" ] || continue
-      if [ "$src_dir" = "$SKILLS_SRC" ]; then
-        preflight_target "$DEST/skills/$(basename "$entry")"
-      else
-        preflight_target "$DEST/commands/$(basename "$entry")"
-      fi
+      case "$src_dir" in
+        "$SKILLS_SRC")   preflight_target "$DEST/skills/$(basename "$entry")" ;;
+        "$COMMANDS_SRC") preflight_target "$DEST/commands/$(basename "$entry")" ;;
+        *)               preflight_target "$DEST/scripts/$(basename "$entry")" ;;
+      esac
     done
   done
   if [ "$conflicts" -ne 0 ]; then
@@ -108,7 +116,7 @@ if [ "$FORCE" -ne 1 ]; then
   fi
 fi
 
-mkdir -p "$DEST/agents" "$DEST/skills" "$DEST/commands"
+mkdir -p "$DEST/agents" "$DEST/skills" "$DEST/commands" "$DEST/scripts"
 
 # Per-file check: refuse to overwrite unless --force was passed.
 check_target() {
@@ -310,12 +318,18 @@ for src in "$AGENTS_SRC"/*.md; do
   dst="$DEST/agents/$base"
   if ! check_target "$dst"; then continue; fi
   transform_agent "$src" "$dst"
+  # OpenCode has no plugin loader to substitute ${CLAUDE_PLUGIN_ROOT} at runtime the way
+  # Claude Code's native /plugin install does, so it is resolved here at install time
+  # instead, to a literal absolute path -- a copied install needs no runtime understanding
+  # of the placeholder at all.
+  sed -i "s#\${CLAUDE_PLUGIN_ROOT}#$DEST#g" "$dst"
   echo "transformed agent: $base -> $dst" >&2
   agent_count=$((agent_count + 1))
 done
 
-# 2. Skills and 3. Commands -- verbatim copy (no transformation; their
-# frontmatter has no field collisions with OpenCode's schema).
+# 2. Skills, 3. Commands, and 4. Scripts -- verbatim copy (no transformation; skill and
+# command frontmatter has no field collisions with OpenCode's schema, and scripts are
+# plain shell).
 copy_dir() {
   # copy_dir <src-dir> <dest-dir> <label>
   local src_dir="$1"
@@ -336,5 +350,10 @@ copy_dir() {
 
 copy_dir "$SKILLS_SRC" "$DEST/skills" "skill"
 copy_dir "$COMMANDS_SRC" "$DEST/commands" "command"
+copy_dir "$SCRIPTS_SRC" "$DEST/scripts" "script"
+
+# Same placeholder resolution as the agent transform above, applied to copied skills and
+# commands (scripts/ itself never contains the placeholder -- it is what it resolves to).
+find "$DEST/skills" "$DEST/commands" -type f -name '*.md' -exec sed -i "s#\${CLAUDE_PLUGIN_ROOT}#$DEST#g" {} \;
 
 echo "install-opencode.sh: $agent_count agents transformed; dest=$DEST" >&2

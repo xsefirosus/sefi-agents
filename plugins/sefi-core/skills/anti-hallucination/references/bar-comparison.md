@@ -2,7 +2,7 @@
 
 Additive evidence only. Done Criteria (`state/plan-<slug>.md`) stays the qa-engineer's
 primary stop condition on every slice; a bar comparison never replaces it, and only
-applies when a real external artifact exists to compare against. `scripts/check-bar.sh`
+applies when a real external artifact exists to compare against. `${CLAUDE_PLUGIN_ROOT}/scripts/check-bar.sh`
 gates the envelope below before a verdict may cite it.
 
 ## The bar test: Named / Fetchable / Comparable

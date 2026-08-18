@@ -27,7 +27,7 @@ the work and stop.
 | "It's a small artifact, not worth a handoff." | Size is not the criterion; ownership is. Triviality is judged by the gate, not the producer. |
 
 ## Enforcement, stated honestly
-`scripts/check-reply.sh` gates this on the DISPATCHED path: the engineering-manager runs it
+`${CLAUDE_PLUGIN_ROOT}/scripts/check-reply.sh` gates this on the DISPATCHED path: the engineering-manager runs it
 on a returned reply, and a nonzero exit blocks acceptance. It derives the expected labels
 from the agent's own contract, bounds verbosity against `per_agent_return_tokens`, and
 flags full foreign deliverables in a read-only agent's reply.

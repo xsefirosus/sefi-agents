@@ -18,7 +18,7 @@ close_out's: `skills/sefi-orchestration/references/close-out.md`)
 
 ## The five moves (mapped to repo mechanics)
 - Discovery: a skill invoked by the automation reads CI / issues / commits / state and
-  judges actionability. Preflight first: `scripts/probe-tools.sh --loop <spec>` probes the
+  judges actionability. Preflight first: `${CLAUDE_PLUGIN_ROOT}/scripts/probe-tools.sh --loop <spec>` probes the
   spec's `requires-tools:` line before the move runs.
 - Handoff: one git worktree per finding, per the worktree procedure in `docs/LOOPS.md`.
 - Verification: the qa-engineer plus an executed stop condition, judged separately from

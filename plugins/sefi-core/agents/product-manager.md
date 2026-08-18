@@ -33,7 +33,7 @@ zero LLM judgment.
    without stating the tradeoff. Finalize on one approach, but the alternative is
    documented so the software-engineer knows what was rejected and why.
 4. Emit exactly the heading skeleton below, every heading present and in order. A
-   deterministic gate (`scripts/validate-plan-structure.sh`) greps for these before the
+   deterministic gate (`${CLAUDE_PLUGIN_ROOT}/scripts/validate-plan-structure.sh`) greps for these before the
    software-engineer may start; a missing heading hands the plan back to you, never
    proceeds.
 5. Steps are a numbered checkbox list; each step is independently checkable.
@@ -45,7 +45,7 @@ zero LLM judgment.
    The engineering-manager sequences from these instead of guessing, and independent
    steps are what `max_parallel_worktrees` is allowed to run at once.
 8. List every external command the steps shell out to under `## Requires Tools`, or
-   `none`. scripts/probe-tools.sh checks them before work starts, not mid-slice.
+   `none`. ${CLAUDE_PLUGIN_ROOT}/scripts/probe-tools.sh checks them before work starts, not mid-slice.
 9. Done Criteria is the executed stop condition the qa-engineer judges against -- name
    the command or artifact, not "it works."
 10. Write one file: state/plan-<slug>.md. Never implement.

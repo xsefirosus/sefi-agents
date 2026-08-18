@@ -20,7 +20,7 @@ a worktree.
 - Discovery output: failed CI, new issues, `state/triage.md` from prior runs.
 
 ## Protocol
-1. Probe before discovering: run scripts/probe-tools.sh --loop <spec>. A BROKEN or MISSING
+1. Probe before discovering: run ${CLAUDE_PLUGIN_ROOT}/scripts/probe-tools.sh --loop <spec>. A BROKEN or MISSING
    tool means you triage at STATED REDUCED SCOPE, naming the degraded input in your output
    -- never report a clean cycle over inputs you could not actually read.
 2. Read the item and its evidence; reproduce the one-line symptom if a command is given
