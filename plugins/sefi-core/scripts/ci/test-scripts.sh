@@ -600,13 +600,30 @@ PV="$(mktemp -d)"; mkdir -p "$PV/state"
 # The product-manager's worked example must pass the product-manager's own gate. An agent
 # that teaches a format its validator rejects trains every plan into a failure -- and a
 # small model matches structure from the example far more than from the prose.
-python3 - "$PV" <<'EXTRACT' 2>/dev/null || true
+extract_plan_example() {
+  # extract_plan_example <dest-dir> -- write <dest-dir>/state/plan-example.md from
+  # product-manager.md's worked example, using the first WORKING python (python3,
+  # then python, then py). `command -v` alone cannot tell the Microsoft Store
+  # python3 alias stub from a real interpreter; each candidate is smoke-tested.
+  # Returns 0 when the file was written.
+  local dest="$1" py=""
+  for t in python3 python py; do
+    if command -v "$t" >/dev/null 2>&1 && "$t" -c 'import json,sys' >/dev/null 2>&1; then
+      py="$t"; break
+    fi
+  done
+  [ -n "$py" ] || return 1
+  ( cd "$ROOT" && "$py" - "$dest" <<'EXTRACT' 2>/dev/null
 import sys, pathlib, re
 t = pathlib.Path("plugins/sefi-core/agents/product-manager.md").read_text()
 m = re.search(r'## Worked example.*?```markdown\n(.*?)```', t, re.S)
 if m:
     pathlib.Path(sys.argv[1] + "/state/plan-example.md").write_text(m.group(1))
 EXTRACT
+  )
+}
+
+extract_plan_example "$PV"
 
 if [ -f "$PV/state/plan-example.md" ]; then
   if ( cd "$PV" && bash "$CORE/scripts/validate-plan-structure.sh" ) 2>/dev/null; then
@@ -847,6 +864,63 @@ expect_bw 0 "knowledge-manager: sed -i is allowed (only MultiEdit denied, not Wr
 got=0
 printf '{"tool_input":{"command":"sed -i s/a/b/ state/foo.md"}}' | bash "$CBW" >/dev/null 2>&1 || got=$?
 if [ "$got" -eq 0 ]; then ok "no agent_type: fails open (exit 0, nothing to scope enforcement to)"; else bad "no agent_type: expected exit 0, got $got"; fi
+
+# The health-check fix (2026-08-18): `command -v python3` is presence-only, and this
+# host's python3 is the Microsoft Store alias stub -- present, prints "Python was
+# not found", exits 1 -- so the extractors returned empty and the gate failed OPEN
+# (sed -i/tee exited 0, not 2; CI reddened 3 failed / 89 passed). Three cases pin
+# the fix and its boundary, deterministically, on any host with bash + coreutils.
+PYSHIM="$(mktemp -d)"
+real_py=""
+for t in python3 python py; do
+  if command -v "$t" >/dev/null 2>&1 && "$t" -c 'import json,sys' >/dev/null 2>&1; then
+    real_py="$(command -v "$t")"; break
+  fi
+done
+mkpy() {
+  # mkpy <name> <body> -- write a shim executable into PYSHIM.
+  printf '#!/bin/sh\n%s\n' "$2" > "$PYSHIM/$1"
+  chmod +x "$PYSHIM/$1"
+}
+mkpy jq 'exit 1'
+mkpy python3 'exit 1'
+if [ -n "$real_py" ]; then
+  mkpy python "exec \"$real_py\" \"\$@\""
+fi
+
+# (a) broken python3 + working python -> the gate still blocks sed -i (exit 2).
+got=0
+printf '{"agent_type":"engineering-manager","tool_input":{"command":"sed -i s/a/b/ state/foo.md"}}' \
+  | env PATH="$PYSHIM:$PATH" bash "$CBW" >/dev/null 2>&1 || got=$?
+if [ "$got" -eq 2 ]; then
+  ok "broken python3 + working python: sed -i still blocked (exit 2)"
+else
+  bad "broken python3 + working python: sed -i expected exit 2, got $got"
+fi
+
+# (b) broken python3 + working python -> the worked-example extraction still
+# succeeds (the CI-red "could not extract the worked example" failure).
+EXB="$(mktemp -d)"; mkdir -p "$EXB/state"
+if PATH="$PYSHIM:$PATH" extract_plan_example "$EXB" && [ -f "$EXB/state/plan-example.md" ]; then
+  ok "worked-example extraction survives a broken python3 (working python fallback)"
+else
+  bad "worked-example extraction failed under a broken python3 shim"
+fi
+rm -rf "$EXB"
+
+# (c) no working parser at all (jq, python3, python, py all broken) -> the
+# documented fail-open exit 0 is preserved, not silently regressed.
+mkpy python 'exit 1'
+mkpy py 'exit 1'
+got=0
+printf '{"agent_type":"engineering-manager","tool_input":{"command":"sed -i s/a/b/ state/foo.md"}}' \
+  | env PATH="$PYSHIM:$PATH" bash "$CBW" >/dev/null 2>&1 || got=$?
+if [ "$got" -eq 0 ]; then
+  ok "no working parser at all: documented fail-open preserved (exit 0)"
+else
+  bad "no working parser: expected fail-open exit 0, got $got"
+fi
+rm -rf "$PYSHIM"
 
 unset CLAUDE_PLUGIN_ROOT
 

@@ -3,6 +3,26 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.9] - 2026-08-18
+
+### Fixed
+
+1. **The Bash-write gate and the CI worked-example extraction trusted `command -v
+   python3` presence without checking the interpreter runs.** On this Windows dev machine
+   `python3` is the Microsoft Store alias stub -- present on PATH, prints "Python was not
+   found", exits nonzero -- so `extract_command()`/`extract_agent_type()` returned empty
+   and sed -i/tee failed OPEN (exit 0 instead of 2) while a working Python 3.11.15 sat on
+   PATH as `python`. The same root cause reddened local CI (3 failed / 89 passed:
+   test-scripts.sh line 603's swallowed extraction -> "could not extract the worked
+   example", and the two expected exit-2 cases). The fix is a health-checked resolver
+   chain (jq -> python3 -> python -> py, smoke-tested before trust) used by both
+   extractors and the extraction; the documented fail-open for hosts with no working
+   parser is preserved and pinned by a regression case. CI parity: ubuntu runners have a
+   healthy python3 (and jq), so their non-shim behavior is unchanged; the new shim tests
+   force the broken-python3 path deterministically there. 3 new regression cases (94 ->
+   97 assertions on this host; counts vary by platform -- timeout/shellcheck/ccusage
+   skips differ per machine).
+
 ## [0.3.8] - 2026-08-18
 
 ### Added
