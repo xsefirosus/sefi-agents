@@ -30,6 +30,16 @@
 # `options.reasoningEffort` is written per agent because some OpenCode versions
 # exclude DeepSeek models from the reasoning-effort system entirely.
 #
+# Live-observed (2026-08-18): with no `mode:` field, OpenCode defaults every agent to
+# `mode: all` -- primary (Tab-cycle switchable, a direct human entry point) AND subagent
+# (dispatchable) at once. That put all 13 specialists in the same Tab-cycle list as
+# engineering-manager, with nothing distinguishing "the one you talk to" from "the ones
+# it dispatches" -- the exact direct-invocation path that caused the prompt-engineer
+# scope-creep bug this repo's whole check-reply.sh/scope-boundary.md mechanism exists for.
+# `mode:` is OpenCode's own native field for this distinction, so this writes it rather
+# than inventing a workaround: engineering-manager gets `mode: primary` (the one entry
+# point), every other agent gets `mode: subagent` (dispatchable, invisible to Tab-cycle).
+#
 # Usage: bash plugins/sefi-core/scripts/install-opencode.sh [--force] [--model-map <path>]
 set -euo pipefail
 
@@ -153,8 +163,12 @@ transform_agent() {
     # First ---: start of frontmatter.
     in_fm == -1 && /^---$/ { in_fm = 0; print; next }
 
-    # Second ---: end of frontmatter. Emit the permission block right before it.
-    in_fm == 0 && /^---$/ { emit_permission_block(); print; in_fm = 1; next }
+    # Second ---: end of frontmatter. Emit mode: and the permission block right before it.
+    in_fm == 0 && /^---$/ {
+      if (fm_name == "engineering-manager") { print "mode: primary" }
+      else { print "mode: subagent" }
+      emit_permission_block(); print; in_fm = 1; next
+    }
 
     # Inside frontmatter: capture name, tools, disallowedTools; print others as-is.
     in_fm == 0 {

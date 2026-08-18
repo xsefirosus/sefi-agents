@@ -30,11 +30,13 @@ transformed: OpenCode's `tools` field is a strictly-typed `{name: boolean}` obje
 deprecated in favor of `permission`), so a raw copy of our `tools: Read, Grep, ...`
 string fails schema validation. The script converts each agent's `tools:` /
 `disallowedTools:` pair into the 15-key `permission:` mapping OpenCode expects
-(conversion table lives in the script's comments). `model:` is dropped entirely, not
-preserved -- OpenCode tries to resolve a bare Claude Code tier alias (`sonnet`, `haiku`,
-`opus`) as a real provider/model identifier and fails hard rather than ignoring it (see
-Troubleshooting). Every other frontmatter field and the entire body is preserved
-byte-for-byte.
+(conversion table lives in the script's comments). `model:` is REPLACED with the
+harness-resolved value via `config/model-map.yml`, not dropped -- see "Model tiers and
+reasoning" below for why dropping it was tried once and reverted. A `mode:` field is
+also written: `primary` for `engineering-manager` only, `subagent` for every other
+agent, so OpenCode's own Tab-cycle switcher shows just the one entry point instead of
+all 14 (see "Agent visibility" below). Every other frontmatter field and the entire body
+is preserved byte-for-byte.
 
 ## 3. Headless (CI loops)
 
@@ -122,3 +124,23 @@ stronger model the moment one is available -- that single line restores a real a
 run client or proprietary code through it.
 
 Override the whole table with `--model-map <path>` or by editing the `opencode:` block.
+
+## Agent visibility (Tab-cycle vs. dispatch-only)
+
+OpenCode's `mode:` field controls whether an installed agent shows up in the Tab-cycle
+switcher (`primary`), is reachable only via `@ mention` or an `engineering-manager`
+dispatch (`subagent`), or both (`all` -- OpenCode's own default when `mode:` is unset).
+
+Live-observed (2026-08-18): with no `mode:` written, every converted agent defaulted to
+`all`, so all 14 -- every specialist alongside `engineering-manager` -- sat in the same
+switcher as OpenCode's native `build`/`plan` agents. Nothing distinguished the one entry
+point from the ones it dispatches, and a direct switch to a specialist skips every gate
+that only runs on the dispatched path (`check-reply.sh`, `check-handoff.sh`,
+`ready-steps.sh`'s parallel cap) -- the same failure class as the `prompt-engineer`
+scope-creep bug that motivated `scope-boundary.md`.
+
+`install-opencode.sh` now writes `mode: primary` for `engineering-manager` and
+`mode: subagent` for the other 13, so the switcher shows one entry point and the
+specialists remain dispatchable exactly as before. This is enforcement, not a suggestion
+on top of the existing "always go through the EM" convention -- the other 13 are
+structurally absent from the switcher, not just discouraged.
