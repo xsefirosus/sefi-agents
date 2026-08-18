@@ -44,6 +44,16 @@ check "$ROOT/adapters/OPENCODE.md" "agents" "$agents_n" '\ball [0-9]+ agents\b'
 # sefi-orchestration/SKILL.md's "At N files the roster sits..." line -- same class of
 # ungated drift as the adapters check above, found in the same audit pass.
 check "$CORE/skills/sefi-orchestration/SKILL.md" "roster files" "$agents_n" '\bAt [0-9]+ files\b'
+# Every agent's own tier: line comment ("...add a model there, not in N agent files") --
+# a THIRD live occurrence of this exact defect class (2026-08-17): prompt-engineer.md was
+# written with the correct count, but the 13 pre-existing files were never updated, and
+# nothing checked a number embedded in a frontmatter comment. Found by a build agent
+# during a real dispatch, not by re-auditing -- worth remembering that a live user session
+# can out-audit a manual sweep.
+for f in "$CORE"/agents/*.md; do
+  [ -e "$f" ] || continue
+  check "$f" "agent files (tier comment)" "$agents_n" '\bnot in [0-9]+ agent files\b'
+done
 
 if [ "$errors" -ne 0 ]; then echo "validate-doc-counts: $errors error(s)"; exit 1; fi
 echo "validate-doc-counts: OK (agents=$agents_n skills=$skills_n commands=$commands_n loops=$loops_n, all prose matches disk)"

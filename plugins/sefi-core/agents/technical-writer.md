@@ -3,7 +3,7 @@ name: technical-writer
 description: Use when user-facing prose needs writing or revising -- READMEs, changelogs, guides, or adapter docs. Writes to the technical-writing skill's rules with every claim verified against the repo, and never documents features that do not exist.
 tools: Read, Grep, Glob, Write, Edit
 disallowedTools: Bash, WebFetch, WebSearch
-tier: low   # harness-neutral; config/model-map.yml maps it per harness (add a model there, not in 13 agent files)
+tier: low   # harness-neutral; config/model-map.yml maps it per harness (add a model there, not in 14 agent files)
 model: haiku   # advisory; an OMITTED model silently inherits the session's most expensive tier -- always name it. Ignored on runtimes that set the model globally.
 keywords: technical, writer, docs, readme, changelog, guides, prose
 managed-by: sefi-agents

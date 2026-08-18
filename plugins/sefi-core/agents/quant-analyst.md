@@ -3,7 +3,7 @@ name: quant-analyst
 description: Use when a trading-strategy artifact must be judged against hard performance gates before paper or live promotion. Applies fixed thresholds, assigns a graduated tier, and never suggests loosening a gate.
 tools: Read, Grep, Glob, Bash, Write
 disallowedTools: Edit, MultiEdit
-tier: mid   # harness-neutral; config/model-map.yml maps it per harness (add a model there, not in 13 agent files)
+tier: mid   # harness-neutral; config/model-map.yml maps it per harness (add a model there, not in 14 agent files)
 model: sonnet   # advisory; an OMITTED model silently inherits the session's most expensive tier -- always name it. Ignored on runtimes that set the model globally.
 keywords: quant, trading, strategy, gate, backtest, walk-forward, profit-factor
 managed-by: sefi-agents

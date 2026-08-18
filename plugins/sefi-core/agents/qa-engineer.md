@@ -3,7 +3,7 @@ name: qa-engineer
 description: Use when a built plan slice must be judged before it can be trusted or merged. The adversarial reviewer runs a task-scoped gate against executed evidence and returns PASS or REJECT, never praise.
 tools: Read, Grep, Glob, Bash
 disallowedTools: Write, Edit, MultiEdit
-tier: high   # harness-neutral; config/model-map.yml maps it per harness (add a model there, not in 13 agent files)
+tier: high   # harness-neutral; config/model-map.yml maps it per harness (add a model there, not in 14 agent files)
 model: opus   # advisory; an OMITTED model silently inherits the session's most expensive tier -- always name it. Ignored on runtimes that set the model globally.
 keywords: qa, quality, adversarial, review, gate, verdict, verify, wired
 managed-by: sefi-agents
