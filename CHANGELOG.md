@@ -3,6 +3,26 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.7] - 2026-08-18
+
+### Changed
+
+1. **`per_agent_return_tokens` raised 150 -> 200.** Live data, not a guess: qa-engineer's
+   verdict-with-evidence replies (a PASS/REJECT call that has to cite file:line evidence)
+   twice landed at 162 and 172 words against the old 150-word cap, both real dispatches, both
+   forced through a redo round-trip by `check-reply.sh`. That is not the same output shape as
+   engineering-manager's three-line dispatch record, which the same flat number was also
+   governing. 200 covers the verdict-with-evidence shape without raising the ceiling far
+   enough to stop catching genuine bloat -- the fix that actually caused the redo (an HTML
+   document instead of a digest) was hundreds of words over any reasonable cap and still
+   fails here. Changed in both `config/budget.yml` (this repo's own install) and
+   `templates/config/budget.yml` (what `/sefi:init` hands every new project). A true
+   per-agent cap (qa-engineer's evidence-bearing verdicts vs. engineering-manager's terse
+   dispatch records) remains open; this is a single recalibrated number, not that redesign.
+   Verified the new regression cases actually test the new threshold, not just happen to
+   pass: temporarily reverted the cap to 150, confirmed the 172-word case failed exactly as
+   expected, restored, re-ran green. 2 new regression cases (90 -> 92 assertions).
+
 ## [0.3.6] - 2026-08-18
 
 ### Added

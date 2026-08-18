@@ -281,7 +281,7 @@ validate-model-map: OK (14 agents, 4 harnesses, 36 scripts parse; 2 warning(s))
 validate-adapters: OK (install-hermes.sh skill list matches disk, adapter doc paths resolve)
 check-unicode-safety: OK (117 files scanned, ASCII-clean)
 validate-token-budget: OK (all within token budgets; agents total 8887 words)
-test-scripts: OK (90 passed)
+test-scripts: OK (92 passed)
 test-integration: OK (30 passed) -- full loop skeleton executed end to end
 CI: all validators passed
 ```
