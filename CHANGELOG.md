@@ -3,6 +3,44 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.10] - 2026-08-18
+
+### Added
+
+1. **`scripts/check-structure-diff.sh` -- a fast deterministic pre-filter for
+   `retro-improve`, wired ahead of its existing qa-engineer judgment call.** Proposal 2
+   from the sefi-os contribution brief, NOT a port of its actual shape (stored
+   input/expected-output pairs, diffed after running an `executor_func`) -- that does not
+   map onto this repo: sefi-agents' agents are LLM-driven markdown prose, not
+   deterministic functions, so no `executor_func` reproduces byte-identical output for a
+   stored input the way code does. The source doc raised this doubt itself ("may be a
+   deliberate design choice... worth asking, not assuming a gap") rather than assuming a
+   gap; evaluating it against the current repo confirmed the doubt and found the
+   genuinely non-redundant sliver instead: a structural-invariant diff catching a
+   silently stripped `tools:` entry, a changed `tier:`, or a missing anti-hallucination
+   pointer, the same failure shape `validate-config-wired.sh` catches for config keys,
+   applied to agent/skill frontmatter. An addition is never flagged -- this repo's own
+   roster gained `tier:` and `agentic-signals:` mid-project, and that is not a
+   regression.
+
+   For a routing-relevant target, `retro-improve` also re-runs the ALREADY-SHIPPED
+   `validate-routing.sh` / `routing-cases.txt` fixture pair against the proposed edit --
+   no parallel baseline-fixture mechanism was built; the one that already existed is
+   reused. `retro-improve/SKILL.md` states explicitly why this does not replace
+   `state/retro-ledger.md`'s existing revert rule: the ledger's rule is slow and
+   statistical by design (3-5 live qa-engineer verdicts accumulated after the edit
+   ships); this pre-filter is instant and deterministic, catching a regression before
+   the edit is even committed. Neither replaces the other -- same non-duplication
+   discipline already applied when `prompt-engineer` was added against `goal_intake`.
+
+   8 new regression assertions (106 -> 114), including a re-break/restore proof against
+   the LIVE `routing-table.md` (mutated, confirmed `validate-routing.sh` catches the
+   break, restored, confirmed it passes again) -- `validate-routing.sh` resolves its
+   fixture path relative to its own script location rather than accepting one as an
+   argument, so proving the reused mechanism actually catches a regression meant
+   exercising the real file directly, the same discipline already used for
+   `scan-placeholders.sh` in 0.3.9.
+
 ## [0.3.9] - 2026-08-18
 
 ### Added

@@ -923,5 +923,69 @@ case "$restored_out" in
   *) bad "restore failed -- scan-placeholders.sh was not returned to its working state: $restored_out" ;;
 esac
 
+echo
+echo "=== check-structure-diff.sh (proposal 2: retro-improve's fast deterministic pre-filter) ==="
+
+CSD="$CORE/scripts/check-structure-diff.sh"
+SW="$(mktemp -d)"
+cp "$CORE/agents/software-engineer.md" "$SW/before.md"
+
+cp "$SW/before.md" "$SW/identical.md"
+expect_code 0 "identical files: no structural change flagged" \
+  bash "$CSD" "$SW/before.md" "$SW/identical.md"
+
+sed 's/^managed-by: sefi-agents$/managed-by: sefi-agents\nnew-field: hello/' \
+  "$SW/before.md" > "$SW/added.md"
+expect_code 0 "an addition-only edit (a new frontmatter key) passes clean" \
+  bash "$CSD" "$SW/before.md" "$SW/added.md"
+
+sed 's/^tools: Read, Grep, Glob, Bash, Write, Edit, MultiEdit$/tools: Read, Grep, Glob, Write, Edit, MultiEdit/' \
+  "$SW/before.md" > "$SW/stripped-tool.md"
+diff_out="$(bash "$CSD" "$SW/before.md" "$SW/stripped-tool.md" 2>&1)" || true
+case "$diff_out" in
+  *"tools: Read, Grep, Glob, Bash"*) ok "a removed tools: entry (Bash) is flagged" ;;
+  *) bad "removed tools: entry not flagged: $diff_out" ;;
+esac
+expect_code 1 "a stripped tool exits 1" bash "$CSD" "$SW/before.md" "$SW/stripped-tool.md"
+
+grep -v "anti-hallucination" "$SW/before.md" > "$SW/stripped-ah.md"
+expect_code 1 "a stripped anti-hallucination pointer exits 1" \
+  bash "$CSD" "$SW/before.md" "$SW/stripped-ah.md"
+
+expect_code 2 "check-structure-diff usage error on a missing file" \
+  bash "$CSD" "$SW/before.md" /no/such/file
+rm -rf "$SW"
+
+echo
+echo "=== routing regression re-run (reuses validate-routing.sh / routing-cases.txt, no new mechanism) ==="
+
+VR="$CORE/scripts/ci/validate-routing.sh"
+TABLE="$CORE/skills/sefi-orchestration/references/routing-table.md"
+TABLE_BAK="$(mktemp)"
+cp "$TABLE" "$TABLE_BAK"
+
+# Re-break/restore, applied directly to the live fixture target: validate-routing.sh
+# resolves TABLE relative to its own script location, not a passable argument, so proving
+# it catches a routing regression means mutating the real file and restoring it -- the same
+# discipline as scan-placeholders.sh's re-break/restore test above.
+sed -i 's/| "plan X" \/ goal to spec | product-manager |/| "plan X" \/ goal to spec | knowledge-manager |/' "$TABLE"
+broken_rc=0
+bash "$VR" >/dev/null 2>&1 || broken_rc=$?
+cp "$TABLE_BAK" "$TABLE"
+rm -f "$TABLE_BAK"
+if [ "$broken_rc" -ne 0 ]; then
+  ok "a routing-table edit that breaks the 'plan X' fixture is caught by validate-routing.sh (exit $broken_rc)"
+else
+  bad "validate-routing.sh did not catch a broken 'plan X' fixture -- the re-run this plan reuses is not actually wired"
+fi
+
+restored_rc=0
+bash "$VR" >/dev/null 2>&1 || restored_rc=$?
+if [ "$restored_rc" -eq 0 ]; then
+  ok "restore proof: routing-table.md is back and validate-routing.sh passes again"
+else
+  bad "restore failed -- routing-table.md was not returned to its working state (exit $restored_rc)"
+fi
+
 if [ "$fail" -ne 0 ]; then echo "test-scripts: $fail failed, $pass passed"; exit 1; fi
 echo "test-scripts: OK ($pass passed)"
