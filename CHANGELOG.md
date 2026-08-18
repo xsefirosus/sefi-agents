@@ -3,6 +3,53 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.6] - 2026-08-18
+
+### Added
+
+1. **Bash-content-write gate -- `scripts/check-bash-write.sh`.** `disallowedTools: Write,
+   Edit, MultiEdit` does not survive `Bash`: confirmed live via the engineering-manager's
+   own forensic self-audit, which queried its harness's session-log database and found
+   itself had used Bash-invoked `Add-Content`/`sed -i` 8 times to write state-file content
+   despite that exact line. `disallowedTools` blocks the named tools; it cannot see what a
+   still-allowed `Bash` does. This gap applied to 5 agents that fully disallow all three
+   write tools -- engineering-manager, qa-engineer, research-analyst, security-engineer,
+   support-engineer -- and, more narrowly, to knowledge-manager and quant-analyst (only
+   `MultiEdit` denied, real `Write` access retained, so a Bash write is not a bypass of a
+   false claim for either).
+
+   The original design put a `PreToolUse` hook directly in each exposed agent's own
+   frontmatter. Verified against the docs before wiring it into five files (the same
+   look-before-you-leap standard this repo asks of its own agents): "For security reasons,
+   plugin subagents don't support the `hooks` ... frontmatter fields. These fields are
+   ignored when loading agents from a plugin" (`sub-agents.md`, confirmed independently in
+   `plugins-reference.md`) -- a deliberate Claude Code restriction, since a plugin
+   intercepting its own subagents' tool calls is itself a capability worth gating. The
+   actual fix registers once in `hooks/hooks.json` (which plugins CAN use) and reads the
+   standard PreToolUse payload's `agent_type` field to look up that agent's own
+   `agents/<agent_type>.md` at runtime, enforcing only when its `disallowedTools` fully
+   covers Write, Edit, and MultiEdit. One script stays in sync automatically as agents are
+   added or changed; no second list to go stale.
+
+   `install-opencode.sh` gets the OpenCode-native equivalent: an agent that fully disallows
+   the three write tools now gets a `bash:` permission **pattern map**
+   (`{"*": allow, "sed -i*": deny, ...}`, OpenCode's own last-match-wins glob syntax) instead
+   of a flat `bash: allow`, using the identical dynamic disallowedTools check so both gates
+   can never drift apart. `adapters/CODEX.md` and `adapters/HERMES.md` now say plainly,
+   where they previously only said `disallowedTools` is "advisory", that neither harness has
+   a per-agent equivalent available today and name the specific bypass mechanism, instead of
+   leaving the gap implied.
+
+   Stated honestly rather than overclaimed, in the script's own header and in both adapter
+   docs: this is pattern-matching on the literal command string, not a sandbox -- it can miss
+   obfuscated commands and can false-positive on a literal `>` inside a quoted search
+   pattern (the fix there is to use the Grep/Glob tool instead of Bash, which this hook does
+   not gate). It narrows the gap; it does not close it. Verified both new regression suites
+   actually catch their failure mode: removed the hook's blocking logic, confirmed the exact
+   2 expected `test-scripts.sh` failures, restored, re-ran green; separately removed
+   `install-opencode.sh`'s pattern-map branch, confirmed the exact 1 expected failure,
+   restored, re-ran green. 9 new regression cases (81 -> 90 assertions).
+
 ## [0.3.5] - 2026-08-18
 
 ### Added

@@ -81,6 +81,7 @@ party distinction for every number this repo cites):
 | the loop declared a cron workflow that was never installed, deadlocking the whole feedback chain: no scheduler, so no verdict, so no metrics, so `improvement.enabled` was unreachable by construction | v0.3.0: the workflow ships manual-trigger-only, and CI fails a loop whose declared workflow does not exist |
 | every mechanism above was gated but had never run in sequence -- unwired by the qa-engineer's own delete-the-line test | v0.3.0: `test-integration.sh` executes the full loop skeleton end to end in a real git repo, 30 assertions across 16 stages |
 | the never-auto-merge rule had zero deterministic enforcement -- confirmed live when a dispatched agent used Bash to write files its own `disallowedTools` forbade, the same gap that would let a push straight to `main` go unstopped | v0.3.5: `/sefi:init` installs a `pre-push` hook refusing a direct push to `main`/`master`; stated honestly as defense-in-depth, not the fix -- a Bash-capable agent can still bypass a local hook, so the real backstop is a remote branch protection rule this hook cannot configure |
+| `disallowedTools: Write, Edit, MultiEdit` does not survive `Bash` -- confirmed live via the engineering-manager's own forensic self-audit of its harness's session log, which found it had used Bash-invoked `Add-Content`/`sed -i` 8 times to write state-file content despite that line | v0.3.6: `scripts/check-bash-write.sh`, a `PreToolUse` hook that reads which agent is running and blocks a write-shaped Bash command only for one whose own frontmatter fully disallows Write/Edit/MultiEdit; `install-opencode.sh` emits the equivalent `bash:` deny-pattern map for OpenCode. Plugin subagents cannot declare their own hooks (Claude Code disables that "for security reasons"), so this registers once in `hooks/hooks.json` and self-scopes per agent instead -- one script, not five files to keep in sync. Pattern-matching, not a sandbox, stated as such; Codex and Hermes have no per-agent equivalent today and their docs now say so plainly instead of leaving it implied |
 
 Full list: [CHANGELOG.md](CHANGELOG.md).
 
@@ -276,11 +277,11 @@ validate-no-personal-paths: OK (no personal paths in shipped files)
 validate-no-orphans: OK (references, templates, agents all wired)
 validate-links: OK (56 files scanned, all repo-path references resolve; bare script names checked)
 validate-routing: OK (routing-table agents exist, fixtures resolve, no duplicate triggers)
-validate-model-map: OK (14 agents, 4 harnesses, 35 scripts parse; 2 warning(s))
+validate-model-map: OK (14 agents, 4 harnesses, 36 scripts parse; 2 warning(s))
 validate-adapters: OK (install-hermes.sh skill list matches disk, adapter doc paths resolve)
-check-unicode-safety: OK (116 files scanned, ASCII-clean)
+check-unicode-safety: OK (117 files scanned, ASCII-clean)
 validate-token-budget: OK (all within token budgets; agents total 8887 words)
-test-scripts: OK (81 passed)
+test-scripts: OK (90 passed)
 test-integration: OK (30 passed) -- full loop skeleton executed end to end
 CI: all validators passed
 ```

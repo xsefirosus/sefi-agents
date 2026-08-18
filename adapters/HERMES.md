@@ -41,6 +41,16 @@ retrieves vault content; the injection is an optimization on top of it.
 ## 4. Roster
 The roster maps to Hermes subagent delegation. `model:` and `disallowedTools:` are advisory
 on Hermes, so treat the whitelist as a soft contract; the gates are the hard enforcement.
+Concretely: a `delegate_task` granted the `terminal` toolset almost certainly has the same
+Bash-content-write bypass as Claude Code's `Bash` tool -- it can write file content by
+shell means (`sed -i`, `tee`, redirection) regardless of what the agent's
+`disallowedTools:` line says, since that field is not read by Hermes at all. This is the
+same live-confirmed gap `scripts/check-bash-write.sh` closes on Claude Code and
+`install-opencode.sh`'s `bash:` permission map closes on OpenCode. Stated honestly: this
+repo has no live Hermes access to build or verify an equivalent gate, so it is an open gap
+here. If Hermes's own toolset system supports per-command restriction within `terminal`
+(unconfirmed), that would be the place to enforce it -- not this repo's `disallowedTools:`
+field, which Hermes never consults.
 
 ## 5. Scheduling
 Loop triggers map to `hermes cron`.

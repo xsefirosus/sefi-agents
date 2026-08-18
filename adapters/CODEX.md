@@ -26,7 +26,15 @@ run `codex features enable multi_agent` (equivalent to `-c features.multi_agent=
 ## 3. Roster, instructions, and headless
 
 Codex reads `AGENTS.md` as its instructions file. `model:` and `disallowedTools:` are
-advisory; the gates are the hard line. Installed plugins show up in
+advisory; the gates are the hard line. Concretely: Codex has no per-agent mechanism to stop
+a Bash-capable agent from writing file content by other means (`sed -i`, `tee`, shell
+redirection) even though its `disallowedTools:` line says it never does -- the same live-
+confirmed gap `scripts/check-bash-write.sh` closes on Claude Code and
+`install-opencode.sh`'s `bash:` permission map closes on OpenCode. Codex's own lever,
+`-s/--sandbox` and `-a/--ask-for-approval` below, is session-wide, not per-agent, so it
+cannot single out research-analyst or qa-engineer while leaving software-engineer free to
+write. Stated honestly rather than left implicit: this is an open gap on Codex today.
+Installed plugins show up in
 `~/.codex/config.toml` as `[plugins."sefi-core@sefi-agents"]` with `enabled = true`.
 Headless: `codex exec`. Sandbox and approval: `-s/--sandbox` and `-a/--ask-for-approval`
 (unattended loops usually want `--ask-for-approval never` for routine calls).

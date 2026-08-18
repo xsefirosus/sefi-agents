@@ -239,11 +239,51 @@ transform_agent() {
       n = split(sources, parts, ",")
       allow = 0
       for (j = 1; j <= n; j++) if (parts[j] != "" && parts[j] in tools) { allow = 1; break }
-      if (allow) { print "  " key ": allow"; return }
+      if (allow) {
+        # bash is special: an agent that fully disallows Write, Edit, AND MultiEdit --
+        # i.e. already claims to never touch file content -- gets a pattern-map deny list
+        # instead of a flat allow, because Bash can otherwise write files by other means
+        # (sed -i, tee, shell redirection) with nothing to stop it. Live-confirmed
+        # 2026-08-18: an engineering-manager session used exactly this route (Bash-invoked
+        # Add-Content/sed -i) to violate its own disallowedTools. Same dynamic check as
+        # scripts/check-bash-write.sh (the equivalent Claude Code gate), so both stay in
+        # sync with no second list to go stale.
+        if (key == "bash" && ("Write" in deny) && ("Edit" in deny) && ("MultiEdit" in deny)) {
+          emit_bash_write_gate(); return
+        }
+        print "  " key ": allow"; return
+      }
       deny_hit = 0
       for (j = 1; j <= n; j++) if (parts[j] != "" && parts[j] in deny)  { deny_hit = 1; break }
       if (deny_hit) { print "  " key ": deny"; return }
       print "  " key ": " default_for(key)
+    }
+
+    function emit_bash_write_gate() {
+      # OpenCode bash permission rules match in order; the LAST matching rule wins, so the
+      # catch-all "*": allow must come first and every deny pattern after it. Same pattern
+      # classes as check-bash-write.sh grep/case checks, expressed as OpenCode globs
+      # instead: in-place editors, tee, dd of=, PowerShell content-write cmdlets, cp/mv, and
+      # shell redirection. Unverified against a live OpenCode install (this repo has no
+      # runtime to test against); the equivalent Claude Code hook was live-tested via
+      # test-scripts.sh, this was not.
+      print "  bash:"
+      print "    \"*\": allow"
+      print "    \"sed -i*\": deny"
+      print "    \"sed --in-place*\": deny"
+      print "    \"perl -i*\": deny"
+      print "    \"perl -pi*\": deny"
+      print "    \"tee *\": deny"
+      print "    \"dd *of=*\": deny"
+      print "    \"*Add-Content*\": deny"
+      print "    \"*Set-Content*\": deny"
+      print "    \"*Out-File*\": deny"
+      print "    \"*New-Item*ItemType*File*\": deny"
+      print "    \"*[System.IO.File]*\": deny"
+      print "    \"cp *\": deny"
+      print "    \"mv *\": deny"
+      print "    \"* > *\": deny"
+      print "    \"* >> *\": deny"
     }
 
     function default_for(key) {
