@@ -3,6 +3,35 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.4] - 2026-08-18
+
+### Added
+
+1. **Agent visibility -- `mode:` written for every OpenCode agent.** Live-observed: with
+   no `mode:` field, OpenCode defaults every agent to `mode: all` (Tab-cycle switchable
+   AND dispatchable at once), so all 14 agents -- every specialist alongside
+   `engineering-manager` -- sat in the same switcher as OpenCode's native `build`/`plan`
+   agents, with nothing distinguishing the one entry point from the ones it dispatches. A
+   direct switch to a specialist skips every gate that only runs on the dispatched path
+   (`check-reply.sh`, `check-handoff.sh`, `ready-steps.sh`'s parallel cap) -- the same
+   failure class as the `prompt-engineer` scope-creep bug `scope-boundary.md` exists for,
+   just reachable through OpenCode's own UI instead of a direct prompt. `mode: primary`
+   for `engineering-manager`, `mode: subagent` for the other 13, using OpenCode's own
+   native field for exactly this distinction rather than inventing a workaround -- this is
+   enforcement, not a restatement of the existing "always go through the EM" convention;
+   the other 13 are now structurally absent from the switcher. Verified the regression
+   test actually catches the gap (re-broke the fix, confirmed the exact failure, restored,
+   re-ran green) and confirmed live: an actual install now shows exactly one `mode:
+   primary` file among the 14. 1 new regression case (75 -> 76 assertions).
+
+### Fixed
+
+2. **`adapters/OPENCODE.md` contradicted itself.** Its own Install section still said
+   `model:` "is dropped entirely, not preserved" -- the pre-`v0.2.4` behavior -- while its
+   own "Model tiers and reasoning" section (written during the `v0.3.2` fix) correctly
+   said the opposite. Missed during that fix because it only touched the section it was
+   actively editing. Corrected to state the replace-not-drop behavior once, consistently.
+
 ## [0.3.3] - 2026-08-17
 
 ### Added
