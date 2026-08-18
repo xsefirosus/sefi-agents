@@ -3,6 +3,38 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.8] - 2026-08-18
+
+### Added
+
+1. **`per_agent_return_tokens_target: 150` -- a soft target alongside the hard cap.**
+   Refines v0.3.7's flat raise (150 -> 200): the user's instruction was "aim for 150,
+   200 only if not possible", which needs two numbers, not one. `per_agent_return_tokens`
+   (200) stays the hard cap `check-reply.sh` rejects and forces a redo above; the new
+   `per_agent_return_tokens_target` (150) is read by the same script and prints a
+   non-blocking `NOTE:` when a reply clears the target but stays within the cap -- visible
+   feedback that it should aim shorter next time, without spending a wasted redo round-trip
+   on a reply that was not actually a contract violation. Added to both `config/budget.yml`
+   (this repo's own install) and `templates/config/budget.yml` (what `/sefi:init` hands
+   every new project), and to `validate-budget.sh`'s required-key list so a future accidental
+   deletion is caught in CI rather than silently degrading the advisory to nothing.
+
+   Deliberately NOT a second hard gate: a target is aspirational by nature (a verdict citing
+   evidence may legitimately need more than 150 words), so making it block would just
+   reintroduce the miscalibration v0.3.7 fixed, one number lower. `validate-config-wired.sh`
+   confirms the new key is genuinely read, not decorative -- the exact failure mode
+   `per_agent_return_tokens` itself sat in since v0.2.1 before `check-reply.sh` existed.
+
+   Caught a real bug while writing the regression tests, not shipped it: the first version
+   piped `check-reply.sh`'s output live into `grep -q` under this file's own
+   `set -o pipefail`. `grep -q` exits the instant it matches without draining its input, so
+   the writer can receive SIGPIPE (exit 141) for writing past a closed pipe -- clobbering the
+   reported pipeline status even though the match was real, a classic pipefail/`grep -q`
+   pitfall. Fixed by capturing output into a variable first and matching with `case`, the
+   same idiom this file's own `gate.sh` checks already use. Verified the fix actually catches
+   a regression: reverted the advisory logic, confirmed the expected single failure, restored,
+   re-ran green. 2 new regression cases (92 -> 94 assertions).
+
 ## [0.3.7] - 2026-08-18
 
 ### Changed

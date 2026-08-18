@@ -21,8 +21,10 @@
 #      load-bearing: qa-engineer's contract says "If REJECT:" and "If PASS:" mid-line as
 #      conditional branches, and ui-ux-designer's names per-mode branches, none of which
 #      are simultaneously-required labels. Matching those would fail valid replies.
-#   2. Verbosity. Word count against `per_agent_return_tokens`. This is a WORD count used
-#      as a PROXY for tokens -- a bound on verbosity, never an accounting claim.
+#   2. Verbosity. Word count against `per_agent_return_tokens` (hard cap, blocks and forces
+#      a redo above it) and `per_agent_return_tokens_target` (soft target, 2026-08-18: a
+#      NOTE only -- clearing target but staying within cap is not a failure). This is a WORD
+#      count used as a PROXY for tokens -- a bound on verbosity, never an accounting claim.
 #   3. Foreign deliverables, for READ-ONLY agents only (no Write/Edit/MultiEdit in their
 #      tools line). Narrow, full-document markers only. A research digest may legitimately
 #      quote code and technical-writer legitimately emits markdown, so "any fenced block"
@@ -85,6 +87,9 @@ fi
 [ -f "$CONFIG" ] || { echo "check-reply: budget config not found (tried $CONFIG)" >&2; exit 2; }
 CAP="$(sed -n 's/^per_agent_return_tokens:[[:space:]]*\([0-9][0-9]*\).*/\1/p' "$CONFIG" | head -1)"
 [ -n "${CAP:-}" ] || { echo "check-reply: per_agent_return_tokens missing in $CONFIG" >&2; exit 2; }
+# The target is advisory, not a gate: missing it degrades to no advisory note, never a
+# usage error, since nothing depends on it to make a pass/fail call.
+TARGET="$(sed -n 's/^per_agent_return_tokens_target:[[:space:]]*\([0-9][0-9]*\).*/\1/p' "$CONFIG" | head -1)"
 
 errors=0
 err() { echo "ERROR: $1"; errors=$((errors + 1)); }
@@ -112,6 +117,11 @@ fi
 words="$(printf '%s' "$REPLY_TXT" | wc -w | tr -d ' ')"
 if [ "${words:-0}" -gt "$CAP" ]; then
   err "reply is $words words against a $CAP per_agent_return_tokens cap (word count is a proxy for tokens, not a token count)"
+elif [ -n "${TARGET:-}" ] && [ "${words:-0}" -gt "$TARGET" ]; then
+  # Advisory only: does not touch $errors or the exit code. Aim for TARGET first; CAP is the
+  # ceiling for when the job genuinely needs more (a verdict citing evidence), not the
+  # default length to write toward.
+  echo "NOTE: reply is $words words, over the $TARGET-word target but within the $CAP cap -- no action required" >&2
 fi
 
 # --- 3. Foreign deliverables, read-only agents only ------------------------------------
