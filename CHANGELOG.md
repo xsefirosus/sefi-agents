@@ -30,6 +30,20 @@ Changelog; this project adheres to Semantic Versioning.
    its caller to ignore it. 6 new regression cases anchored on the real artifact
    (66 -> 72 assertions).
 
+   **Hardened same-day by hunting further, not by trusting the first pass.** Probing beyond
+   the shipped regression suite found two more gaps before this ever reached a tag: the
+   reply-side label match was unanchored, so a label merely MENTIONED in prose ("I could not
+   form a SUGGESTED: route because...") passed as if it were a real section -- fixed by
+   anchoring it the same way extraction is anchored. And a single accurate verbatim quote of
+   one plan heading (e.g. restating a constraint from a referenced plan) was rejected as a
+   leaked plan on one marker hit -- fixed to require >= 2 of the 6 headings
+   `validate-plan-structure.sh` already treats as one set, since correlated presence is real
+   evidence and a lone quote is not. A third gap -- an agent with a malformed `tools:` line
+   defaulting to read-only -- is documented in the script's own header as an accepted
+   limitation rather than fixed: `validate-agents.sh` already requires every agent to
+   declare `tools:` in CI, so the precondition has no live path to reach a CI-clean repo.
+   3 more regression cases (72 -> 75 assertions).
+
 2. **`skills/sefi-orchestration/references/scope-boundary.md`** -- the canonical
    produce-your-own-deliverable rule and its rationalization table, carrying the excuse
    observed live ("I have no write tool, so I'll produce the artifact inline instead") and

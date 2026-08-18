@@ -29,6 +29,14 @@
 #      would produce false failures -- and a gate that cries wolf on valid replies trains
 #      its caller to ignore it, which is worse than no gate at all.
 #
+# KNOWN LIMITATION, documented rather than special-cased: an agent file with no parseable
+# `tools:` line defaults to read-only for check 3 -- the safer direction against missing a
+# real leak, but it means a write-capable agent's OWN legitimate output (e.g. HTML it just
+# built) would be wrongly flagged if its `tools:` line were ever malformed. Not fixed
+# because validate-agents.sh already requires every agent to declare `tools:` in CI, so
+# this precondition has no live path to reach a CI-clean repo; adding a CANNOT-CHECK branch
+# for a state CI already prevents would be speculative complexity, not a real fix.
+#
 # Exit codes (a caller must be able to tell these apart, per budget-check.sh's precedent):
 #   0  clean -- every check that applies ran and passed
 #   1  contract violated
@@ -92,7 +100,10 @@ if [ -n "$LABELS" ]; then
   label_check_ran=1
   while IFS= read -r label; do
     [ -z "$label" ] && continue
-    printf '%s\n' "$REPLY_TXT" | grep -qF "$label" \
+    # Anchored the same way extraction is anchored: a real section start, not merely
+    # mentioned. Live-observed gap, 2026-08-17: an unanchored match let "...I could not
+    # form a SUGGESTED: route because..." pass as if SUGGESTED were a real section.
+    printf '%s\n' "$REPLY_TXT" | grep -qE "^(- )?${label}" \
       || err "reply omits the declared label '$label' from $AGENT_NAME's output contract"
   done <<< "$LABELS"
 fi
@@ -114,6 +125,7 @@ case "$tools_line" in
 esac
 
 if [ "$read_only" -eq 1 ]; then
+  # Full-document markers hard to quote by accident: a single hit is real evidence.
   while IFS= read -r marker; do
     [ -z "$marker" ] && continue
     if printf '%s' "$REPLY_TXT" | grep -qiF "$marker"; then
@@ -122,8 +134,20 @@ if [ "$read_only" -eq 1 ]; then
   done <<'MARKERS'
 <!DOCTYPE
 <html
-## Done Criteria
 MARKERS
+
+  # Plan-skeleton headings: a single accurate quote of one heading (e.g. restating a
+  # constraint verbatim from a referenced plan) is not evidence of a leaked plan -- only
+  # correlated presence of several is. Live-observed false positive, 2026-08-17: a
+  # single-marker check on "## Done Criteria" rejected an accurate verbatim quote. Fixed
+  # to require >= 2 of the 6 headings validate-plan-structure.sh treats as one set.
+  plan_hits=0
+  for heading in "Objective" "Steps" "Files Touched" "Requires Tools" "Risks" "Done Criteria"; do
+    printf '%s\n' "$REPLY_TXT" | grep -qE "^## $heading" && plan_hits=$((plan_hits + 1))
+  done
+  if [ "$plan_hits" -ge 2 ]; then
+    err "reply contains $plan_hits of the 6 product-manager plan headings -- a full plan skeleton belonging to an agent that can write files; $AGENT_NAME is read-only and must name the owning agent instead of producing it"
+  fi
 fi
 
 # --- verdict ---------------------------------------------------------------------------
