@@ -41,14 +41,29 @@ set -uo pipefail
 
 INPUT="$(cat)"
 
+json_tool() {
+  local t
+  for t in jq python3 python py; do
+    if command -v "$t" >/dev/null 2>&1; then
+      case "$t" in
+        jq) printf '{}' | jq -e . >/dev/null 2>&1 || continue ;;
+        *)  "$t" -c 'import json,sys' >/dev/null 2>&1 || continue ;;
+      esac
+      printf '%s' "$t"
+      return 0
+    fi
+  done
+  return 1
+}
+
 extract_command() {
-  local out=""
-  if command -v jq >/dev/null 2>&1; then
+  local t out=""
+  t="$(json_tool)" || { printf ''; return 0; }
+  if [ "$t" = jq ]; then
     out="$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"
-    if [ -n "$out" ]; then printf '%s' "$out"; return 0; fi
+    printf '%s' "$out"; return 0
   fi
-  if command -v python3 >/dev/null 2>&1; then
-    out="$(printf '%s' "$INPUT" | python3 -c '
+  out="$(printf '%s' "$INPUT" | "$t" -c '
 import json, sys
 try:
     data = json.load(sys.stdin)
@@ -56,20 +71,17 @@ try:
 except Exception:
     pass
 ' 2>/dev/null || true)"
-    printf '%s' "$out"
-    return 0
-  fi
-  printf ''
+  printf '%s' "$out"
 }
 
 extract_agent_type() {
-  local out=""
-  if command -v jq >/dev/null 2>&1; then
+  local t out=""
+  t="$(json_tool)" || { printf ''; return 0; }
+  if [ "$t" = jq ]; then
     out="$(printf '%s' "$INPUT" | jq -r '.agent_type // empty' 2>/dev/null || true)"
-    if [ -n "$out" ]; then printf '%s' "$out"; return 0; fi
+    printf '%s' "$out"; return 0
   fi
-  if command -v python3 >/dev/null 2>&1; then
-    out="$(printf '%s' "$INPUT" | python3 -c '
+  out="$(printf '%s' "$INPUT" | "$t" -c '
 import json, sys
 try:
     data = json.load(sys.stdin)
@@ -77,14 +89,11 @@ try:
 except Exception:
     pass
 ' 2>/dev/null || true)"
-    printf '%s' "$out"
-    return 0
-  fi
-  printf ''
+  printf '%s' "$out"
 }
 
-# No JSON parser available, no agent_type, or no command: fail OPEN in every case. Blocking
-# every Bash call on a host that lacks jq and python3 would break every agent entirely --
+# No WORKING JSON parser available, no agent_type, or no command: fail OPEN in every case. Blocking
+# every Bash call on a host that lacks a working jq/python3/python/py would break every agent entirely --
 # strictly worse than the gap this hook narrows. Not being able to identify which agent is
 # running means this hook has nothing to scope enforcement to, so it does nothing rather
 # than guess. Both are the same fail-open call check-reply.sh makes with its CANNOT-CHECK
