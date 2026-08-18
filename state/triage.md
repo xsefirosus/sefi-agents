@@ -1,52 +1,30 @@
 # Triage -- morning-triage loop state
 
-First run: 2026-07-16. No prior state/triage.md existed (this is the loop's first live
-cycle against this repo). Discovery performed by a support-engineer dispatch, per
-`loops/morning-triage.loop.md`'s Discovery move; findings below reviewed and corrected by
-the dispatching session before persistence (the raw dispatch under-classified one finding --
-see note).
+Cycle date: 2026-08-18. Full first loop: Discovery, Handoff, Verification, Persistence all
+ran this cycle. Discovery digest reviewed and corrected by the dispatching session before
+persistence.
 
 ## Findings
 
 | item | class | evidence | routed-to | urgency |
 |---|---|---|---|---|
-| Failed CI (past 24h) | needs-human | `gh` CLI not installed in this environment; GitHub Actions status unreachable this cycle | engineering-manager (tooling gap, not a code issue) | routine |
-| Open issues (past 24h) | needs-human | `gh` CLI not installed; issue tracker unreachable this cycle | engineering-manager (tooling gap, not a code issue) | routine |
-| Polish tier held from a prior plan (skill naming convention pass) | needs-human | `.superpowers/sdd/progress.md:120-121`: "Confirm the user wants this pass before proceeding" (breaking change, directory renames) -- held since 2026-07-15, never actioned or re-raised since | product-manager / human decision | routine (aging: 1 day at time of this triage) |
-| Polish tier held from a prior plan (escalation SLA sharpening) | needs-human | `.superpowers/sdd/progress.md:122-123`: "awaiting user decision on which SLA bound to adopt" -- held since 2026-07-15, never actioned or re-raised since | product-manager / human decision | routine (aging: 1 day at time of this triage) |
-| Recent commit activity (7 commits, last 7 days) | noise | all attributable to the just-completed loop-engineering-cobusgreyling-adoption plan, already reflected in the ledger above; no unreviewed change found | -- | -- |
-| Repo-wide TODO/FIXME markers | noise | none found (`grep -rn "TODO\|FIXME"` across shipped files returned no hits) | -- | -- |
+| Red CI "3 failed / 89 passed" | actionable | run-all.sh failure in test-scripts.sh extraction and expected exit-2 cases | engineering-manager | high |
+| Bash-write gate silently disabled | actionable | check-bash-write.sh fail-open: sed -i/tee exited 0 instead of 2 on this host | engineering-manager | high |
+| Broken python3 Store stub + jq missing | actionable | `command -v python3` present but exits 1 ("Python was not found"); no jq on PATH | engineering-manager | high |
+| gh missing | actionable tooling gap | `gh` CLI not installed; CI/issue discovery unreachable -- unresolved since 2026-07-16 triage | engineering-manager | low |
+| Per-agent reply cap | actionable improvement | CHANGELOG v0.3.7 open item | engineering-manager | low |
 
-## Resolved since this triage
-- Escalation SLA sharpening (row above, Task 13): resolved 2026-07-16, commit `1924fe5`.
-  Human chose the hybrid bound ("within 2 minutes or this turn, whichever is sooner");
-  the 3 agents missing any bound (devops-engineer, qa-engineer, technical-writer) now
-  carry it, matching the 10 that already did. The finding row above is left as-written
-  (this state file is a record of what the triage cycle found, not a live dashboard) --
-  this note is the append-only correction, per the same pattern the memory vault uses for
-  a superseded note: never silently rewrite the original finding.
-- Skill naming convention pass (row above, Task 12): explicitly NOT resolved -- the human
-  chose to leave it exactly as-is. Still needs-human if ever revisited.
-
-## Correction note (dispatching session, not the support-engineer's own claim)
-The support-engineer dispatch found the two held Polish-tier tasks (Task 12, Task 13 from
-`.superpowers/sdd/progress.md`) but classified them as "already captured decisions, not new
-triage findings" and omitted them from its returned table. Per this repo's own qa-engineer
-discipline ("do not trust the report... re-run it yourself"), that classification was
-checked and corrected here: a decision explicitly held pending human input, sitting
-unresolved with no further action since, is exactly what `needs-human` means -- it belongs
-in the table, not silently dropped as noise. Both are now recorded above.
+## Resolved this cycle
+- Bash-write gate fail-open fixed via a health-checked resolver (`json_tool()` jq ->
+  python3 -> python -> py, smoke-tested before trust): plan-bash-write-health, worktree
+  `.worktrees/bash-write-health`, qa VERDICT: PASS, PR at human checkpoint.
 
 ## Resume and Execution Handoff
-1. selected plan/loop file path: `loops/morning-triage.loop.md`
-2. last completed phase or step: Discovery (this triage pass). No Handoff, Verification,
-   or Persistence-of-fixes phase run -- scope for this first cycle was discovery + report
-   only, by explicit human agreement, not a wiring limitation.
-3. gate/qa-engineer status: pending (nothing was built or dispatched for a fix this cycle)
-4. supporting context files loaded: `plugins/sefi-core/agents/support-engineer.md`,
-   `.superpowers/sdd/progress.md`, `git log` (last 7 days)
-5. next step for a fresh agent picking up mid-run: none of today's findings were approved
-   for a worktree/fix. A future cycle should re-check `gh` CLI availability (if installed,
-   real CI/issue discovery becomes possible), and should re-surface the two aging
-   needs-human items above to a human until they're resolved or explicitly dropped.
-6. acting_on: none (no worktree opened this cycle)
+1. loop file: loops/morning-triage.loop.md
+2. last completed phase: Persistence (Discovery, Handoff, Verification, Persistence all ran
+   this cycle)
+3. gate/qa-engineer status: PASS (evidence: run-all.sh exit 0, 97 passed)
+4. supporting context: plan-bash-write-health.md, metrics row 1, git log 0553e69
+5. next step for a fresh agent: human review of PR triage/bash-write-health (confirm/change/
+   exit per human-checkpoint.md)
+6. acting_on: triage/bash-write-health
