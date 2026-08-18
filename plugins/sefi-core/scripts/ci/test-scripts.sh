@@ -745,5 +745,19 @@ expect_code 1 "a dep on a nonexistent step exits 1 (malformed)" bash "$RS" --con
 rm -rf "$PLANTMP"
 
 echo
+echo "=== templates/hooks/pre-push (2026-08-18: human-checkpoint.md's never-auto-merge rule had zero deterministic enforcement) ==="
+
+PP="$CORE/templates/hooks/pre-push"
+expect_code 0 "a push to a feature branch is allowed" \
+  bash -c "printf 'refs/heads/feat/x abc123 refs/heads/feat/x def456\n' | sh '$PP'"
+expect_code 1 "a direct push to main is refused" \
+  bash -c "printf 'refs/heads/main abc123 refs/heads/main def456\n' | sh '$PP'"
+expect_code 1 "a direct push to master is refused" \
+  bash -c "printf 'refs/heads/master abc123 refs/heads/master def456\n' | sh '$PP'"
+expect_code 0 "a deliberate human override (SEFI_ALLOW_MAIN_PUSH=1) is allowed" \
+  bash -c "printf 'refs/heads/main abc123 refs/heads/main def456\n' | SEFI_ALLOW_MAIN_PUSH=1 sh '$PP'"
+expect_code 1 "a multi-ref push where only one ref is main is still refused" \
+  bash -c "printf 'refs/heads/feat/x abc123 refs/heads/feat/x def456\nrefs/heads/main aaa111 refs/heads/main bbb222\n' | sh '$PP'"
+
 if [ "$fail" -ne 0 ]; then echo "test-scripts: $fail failed, $pass passed"; exit 1; fi
 echo "test-scripts: OK ($pass passed)"

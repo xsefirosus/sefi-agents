@@ -27,12 +27,19 @@ the project root, never overwriting existing files, and report what was skipped.
    - `templates/config/budget.yml` -> `config/budget.yml`
 3. Copy `templates/workflows/triage.yml` -> `.github/workflows/triage.yml` ONLY if the user
    confirms (it schedules a cloud job).
-4. Worktree check-ignore gate: run `git check-ignore -q .worktrees`. If `.worktrees/` is not
+4. Copy `templates/hooks/pre-push` -> `.git/hooks/pre-push` and `chmod +x` it. Local-only
+   (git never tracks `.git/hooks/`), so re-run this step after every fresh clone. Refuses
+   a direct push to `main`/`master` -- the first deterministic backstop for
+   human-checkpoint.md's never-auto-merge rule, which had none. State its real limit when
+   reporting this step: a Bash-capable agent can still bypass it (`--no-verify`, or
+   editing the file); the actual fix is a branch protection rule on the remote, which this
+   cannot configure.
+5. Worktree check-ignore gate: run `git check-ignore -q .worktrees`. If `.worktrees/` is not
    ignored, append it to `.gitignore` and commit before any loop creates a worktree. Create
    `.worktrees/logs/`.
-5. `.gitignore` policy: `state/` and `inbox/` are committed by default; append them to
+6. `.gitignore` policy: `state/` and `inbox/` are committed by default; append them to
    `.gitignore` only if the user asks. `.worktrees/logs/` is always ignored.
-6. Shared-install check: ask whether this install serves more than one project. `managed-by:
+7. Shared-install check: ask whether this install serves more than one project. `managed-by:
    sefi-agents` files (agents, skills) are installed once per user, not per project, so a
    retro loop in this project edits files every other project also loads. If the answer is
    yes -- or if this run is non-interactive and cannot ask -- set `improvement.enabled:
@@ -40,7 +47,7 @@ the project root, never overwriting existing files, and report what was skipped.
    runs and still writes its proposed diff to `state/retro-<date>.md`, but a human applies it,
    so one project cannot silently rewrite another's agents. Leave `true` only when the user
    confirms this install serves this project alone.
-7. Print next steps: open `memory/` in Obsidian; review `config/budget.yml`; try
+8. Print next steps: open `memory/` in Obsidian; review `config/budget.yml`; try
    `/sefi:triage`.
 
 ## Guardrails
