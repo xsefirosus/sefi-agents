@@ -683,6 +683,30 @@ if [ "$primary_n" = "1" ] && [ "$primary_file" = "engineering-manager.md" ] && [
 else
   bad "mode: split is wrong (primary_n=$primary_n primary_file='$primary_file' subagent_n=$subagent_n)"
 fi
+
+# Live-confirmed (2026-08-18): an engineering-manager session used Bash-invoked sed -i to
+# write state-file content despite disallowedTools: Write, Edit, MultiEdit -- OpenCode's
+# flat bash: allow has the identical gap. An agent that fully disallows all three now gets a
+# pattern-map deny list instead; an agent with real Write access (software-engineer,
+# knowledge-manager -- only MultiEdit denied) must NOT be narrowed by this.
+if grep -q '^  bash:$' "$TMP_OC/agents/engineering-manager.md" 2>/dev/null \
+   && grep -qF '"sed -i*": deny' "$TMP_OC/agents/engineering-manager.md" 2>/dev/null \
+   && grep -qF '"*": allow' "$TMP_OC/agents/engineering-manager.md" 2>/dev/null; then
+  ok "engineering-manager's OpenCode bash: permission is a deny-pattern map, not a flat allow"
+else
+  bad "engineering-manager's OpenCode bash: permission did not get the write-pattern deny map"
+fi
+if grep -q '^  bash: allow$' "$TMP_OC/agents/software-engineer.md" 2>/dev/null; then
+  ok "software-engineer's OpenCode bash: stays a flat allow (real Write access, not narrowed)"
+else
+  bad "software-engineer's OpenCode bash: was unexpectedly narrowed despite real Write access"
+fi
+if grep -q '^  bash: allow$' "$TMP_OC/agents/knowledge-manager.md" 2>/dev/null; then
+  ok "knowledge-manager's OpenCode bash: stays a flat allow (only MultiEdit denied, not Write)"
+else
+  bad "knowledge-manager's OpenCode bash: was unexpectedly narrowed (only MultiEdit is denied, not Write)"
+fi
+
 rm -rf "$TMP_OC"
 
 echo
@@ -758,6 +782,41 @@ expect_code 0 "a deliberate human override (SEFI_ALLOW_MAIN_PUSH=1) is allowed" 
   bash -c "printf 'refs/heads/main abc123 refs/heads/main def456\n' | SEFI_ALLOW_MAIN_PUSH=1 sh '$PP'"
 expect_code 1 "a multi-ref push where only one ref is main is still refused" \
   bash -c "printf 'refs/heads/feat/x abc123 refs/heads/feat/x def456\nrefs/heads/main aaa111 refs/heads/main bbb222\n' | sh '$PP'"
+
+echo
+echo "=== check-bash-write.sh (2026-08-18: disallowedTools: Write,Edit,MultiEdit does not survive Bash -- live-confirmed via engineering-manager's own forensic self-audit, Bash-invoked Add-Content/sed -i wrote state-file content 8 times despite that line) ==="
+
+CBW="$CORE/scripts/check-bash-write.sh"
+export CLAUDE_PLUGIN_ROOT="$CORE"
+
+bw_json() {
+  # bw_json <agent_type> <command> -- minimal PreToolUse-shaped JSON for check-bash-write.sh.
+  printf '{"agent_type":"%s","tool_input":{"command":"%s"}}' "$1" "$2"
+}
+
+expect_bw() {
+  # expect_bw <expected-exit> <label> <agent_type> <command>
+  local want="$1" label="$2" agent="$3" cmd="$4" got=0
+  bw_json "$agent" "$cmd" | bash "$CBW" >/dev/null 2>&1 || got=$?
+  if [ "$got" -eq "$want" ]; then ok "$label (exit $got)"; else bad "$label (expected exit $want, got $got)"; fi
+}
+
+expect_bw 2 "engineering-manager: sed -i on a state file is blocked" \
+  engineering-manager "sed -i s/a/b/ state/foo.md"
+expect_bw 2 "qa-engineer: tee into a state file is blocked" \
+  qa-engineer "echo hi | tee state/foo.md"
+expect_bw 0 "engineering-manager: an ordinary grep is allowed" \
+  engineering-manager "grep -rn TODO plugins/"
+expect_bw 0 "software-engineer: sed -i is allowed (real Write access -- not this hook's concern)" \
+  software-engineer "sed -i s/a/b/ src/foo.py"
+expect_bw 0 "knowledge-manager: sed -i is allowed (only MultiEdit denied, not Write)" \
+  knowledge-manager "sed -i s/a/b/ memory/foo.md"
+
+got=0
+printf '{"tool_input":{"command":"sed -i s/a/b/ state/foo.md"}}' | bash "$CBW" >/dev/null 2>&1 || got=$?
+if [ "$got" -eq 0 ]; then ok "no agent_type: fails open (exit 0, nothing to scope enforcement to)"; else bad "no agent_type: expected exit 0, got $got"; fi
+
+unset CLAUDE_PLUGIN_ROOT
 
 if [ "$fail" -ne 0 ]; then echo "test-scripts: $fail failed, $pass passed"; exit 1; fi
 echo "test-scripts: OK ($pass passed)"
