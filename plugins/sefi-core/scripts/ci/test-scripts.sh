@@ -481,6 +481,38 @@ printf 'item | class | evidence | routed-to | urgency\nCI red | actionable | run
 expect_code 3 "support-engineer's table-shaped contract exits 3 CANNOT-CHECK, not a false 1" \
   bash "$CR" $BUDGET_ARG "$AG/support-engineer.md" "$RTMP/support.txt"
 
+# A second live gap found by hunting further (2026-08-17): an unanchored label match let a
+# mid-sentence mention of a label word pass as if it were a real section.
+printf 'INTENTS: build a page.\nCONSTRAINTS: none stated.\nI could not form a SUGGESTED: route because the request was ambiguous.\n' > "$RTMP/prose_label.txt"
+expect_code 1 "a label merely MENTIONED in prose (not a real section) is rejected" \
+  bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/prose_label.txt"
+
+# A third: a single accurate verbatim quote of one plan heading must not be mistaken for a
+# leaked plan -- only correlated presence of several headings is real evidence.
+cat > "$RTMP/quote_one_heading.txt" <<'EOF'
+INTENTS: build the feature described in the attached plan.
+CONSTRAINTS: the message verbatim-quotes an existing plan section: "## Done Criteria
+`npm test` passes and the endpoint returns 201."
+SUGGESTED: "build / implement slice" (software-engineer).
+EOF
+expect_code 0 "quoting ONE plan heading verbatim is not a leaked plan" \
+  bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/quote_one_heading.txt"
+
+# A genuinely leaked plan (multiple correlated headings) must still be caught.
+cat > "$RTMP/leaked_plan.txt" <<'EOF'
+INTENTS: build the feature.
+CONSTRAINTS: none stated.
+SUGGESTED: "build / implement slice" (software-engineer).
+## Objective
+Add the feature.
+## Steps
+- [ ] 1. do it (needs: -)
+## Done Criteria
+tests pass
+EOF
+expect_code 1 "a reply carrying 3+ correlated plan headings is still rejected as a leaked plan" \
+  bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/leaked_plan.txt"
+
 rm -rf "$RTMP"
 
 echo
