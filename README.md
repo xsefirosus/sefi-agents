@@ -83,6 +83,7 @@ party distinction for every number this repo cites):
 | the never-auto-merge rule had zero deterministic enforcement -- confirmed live when a dispatched agent used Bash to write files its own `disallowedTools` forbade, the same gap that would let a push straight to `main` go unstopped | v0.3.5: `/sefi:init` installs a `pre-push` hook refusing a direct push to `main`/`master`; stated honestly as defense-in-depth, not the fix -- a Bash-capable agent can still bypass a local hook, so the real backstop is a remote branch protection rule this hook cannot configure |
 | `disallowedTools: Write, Edit, MultiEdit` does not survive `Bash` -- confirmed live via the engineering-manager's own forensic self-audit of its harness's session log, which found it had used Bash-invoked `Add-Content`/`sed -i` 8 times to write state-file content despite that line | v0.3.6: `scripts/check-bash-write.sh`, a `PreToolUse` hook that reads which agent is running and blocks a write-shaped Bash command only for one whose own frontmatter fully disallows Write/Edit/MultiEdit; `install-opencode.sh` emits the equivalent `bash:` deny-pattern map for OpenCode. Plugin subagents cannot declare their own hooks (Claude Code disables that "for security reasons"), so this registers once in `hooks/hooks.json` and self-scopes per agent instead -- one script, not five files to keep in sync. Pattern-matching, not a sandbox, stated as such; Codex and Hermes have no per-agent equivalent today and their docs now say so plainly instead of leaving it implied |
 | `check-bash-write.sh` trusted `command -v python3` presence, not that the interpreter actually runs -- found live on a host where `python3` was a Microsoft Store alias stub (present on PATH, exits nonzero, prints nothing usable) while a working interpreter sat on PATH as `python`; the gate's JSON parsing failed OPEN instead of blocking | v0.3.12: a health-checked resolver chain (jq -> python3 -> python -> py, smoke-tested before trust, not just checked to exist) used everywhere the gate and CI parse worked-example JSON; the documented fail-open for a host with no working parser at all is preserved and pinned by a regression case |
+| 24 prose instructions across agent and skill files told an LLM to "run scripts/gate.sh" as a bare relative path with no stated resolution rule, and neither `install.sh` nor `install-opencode.sh` ever copied `scripts/` into an installed destination at all -- found live by another session running this repo's own `main`, then independently verified rather than taken on trust | v0.3.13: every reference now reads `${CLAUDE_PLUGIN_ROOT}/scripts/gate.sh` -- inline-substituted by Claude Code's native plugin loader (confirmed against official docs, the same mechanism `hooks.json` already used), fixing the documented primary install path outright; `install.sh` and `install-opencode.sh` now also copy `scripts/` and resolve that same placeholder to a literal path at install time for their copy-mode targets, stated honestly as incomplete for the DEFAULT symlink-mode fallback install, which cannot rewrite content without mutating the source checkout |
 
 Full list: [CHANGELOG.md](CHANGELOG.md).
 
@@ -277,12 +278,13 @@ validate-config-wired: OK (12 config keys, all wired)
 validate-no-personal-paths: OK (no personal paths in shipped files)
 validate-no-orphans: OK (references, templates, agents all wired)
 validate-links: OK (57 files scanned, all repo-path references resolve; bare script names checked)
+validate-script-refs: OK (43 files scanned, every scripts/*.sh reference carries ${CLAUDE_PLUGIN_ROOT}/)
 validate-routing: OK (routing-table agents exist, fixtures resolve, no duplicate triggers)
-validate-model-map: OK (14 agents, 4 harnesses, 38 scripts parse; 2 warning(s))
+validate-model-map: OK (14 agents, 4 harnesses, 39 scripts parse; 2 warning(s))
 validate-adapters: OK (install-hermes.sh skill list matches disk, adapter doc paths resolve)
-check-unicode-safety: OK (120 files scanned, ASCII-clean)
+check-unicode-safety: OK (121 files scanned, ASCII-clean)
 validate-token-budget: OK (all within token budgets; agents total 8925 words)
-test-scripts: OK (117 passed)
+test-scripts: OK (123 passed)
 test-integration: OK (30 passed) -- full loop skeleton executed end to end
 CI: all validators passed
 ```

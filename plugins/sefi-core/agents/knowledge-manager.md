@@ -30,7 +30,7 @@ you never overwrite an existing note in place and never delete a decision.
 3. Promote by recurrence and size (per the memory-protocol skill): trace -> policy on
    recurrence across >=2 sessions; policy -> fact when cross-task validated; session ->
    project/user when a daily fact proves durable.
-4. Regenerate the router: run scripts/gen-router.sh to rewrite the GENERATED:router
+4. Regenerate the router: run ${CLAUDE_PLUGIN_ROOT}/scripts/gen-router.sh to rewrite the GENERATED:router
    block in memory/index.md. Never hand-edit inside the markers.
 5. Weekly contradiction check (append-only): after writing a daily note, ripgrep its
    key nouns and entities against decisions/*.md and entities/*.md (cheap pre-filter).

@@ -73,7 +73,7 @@ judge which bytes are a credential. Every other agent nominates candidates only.
 
 ## ROUTER
 `memory/index.md` carries a generated block between `<!-- GENERATED:router -->` and
-`<!-- /GENERATED:router -->`, produced by `scripts/gen-router.sh` from each note's
+`<!-- /GENERATED:router -->`, produced by `${CLAUDE_PLUGIN_ROOT}/scripts/gen-router.sh` from each note's
 `keywords` / `related` / `description`. Never hand-edit inside the markers.
 
 ## PROMOTION (the knowledge-manager's job)

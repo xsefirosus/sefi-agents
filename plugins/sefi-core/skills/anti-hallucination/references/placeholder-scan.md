@@ -1,6 +1,6 @@
 # Placeholder Scan -- interpreting scan-placeholders.sh hits
 
-`scripts/scan-placeholders.sh` is a deterministic post-hoc scan across 4 categories. It
+`${CLAUDE_PLUGIN_ROOT}/scripts/scan-placeholders.sh` is a deterministic post-hoc scan across 4 categories. It
 always exits 0 and reports hit counts on stderr; it is evidence for a verdict, never a
 verdict itself. Read the matched lines, not just the count -- a category name tells you
 where to look, not what to conclude.

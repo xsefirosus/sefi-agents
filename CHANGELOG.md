@@ -3,6 +3,47 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.13] - 2026-08-18
+
+### Fixed
+
+1. **24 agent/skill instructions told a dispatched agent to "run scripts/x.sh" as a bare
+   relative path with no stated resolution rule, and neither `install.sh` nor
+   `install-opencode.sh` ever copied `plugins/sefi-core/scripts/` into an installed
+   destination at all.** Found live by another session running this repo's own `main` via
+   `install-opencode.sh`, then independently re-verified here rather than taken on trust:
+   read both installers end to end (confirmed neither touches `scripts/`), and confirmed
+   via an official-docs lookup that `${CLAUDE_PLUGIN_ROOT}` is inline-substituted by Claude
+   Code's native plugin loader anywhere it appears in loaded agent/skill markdown -- the
+   same mechanism `hooks/hooks.json` already relies on for its two hook scripts -- but that
+   substitution is specific to the native `/plugin install` path, not to `install.sh`'s own
+   "human fallback for non-plugin runtimes" (its own header's words).
+
+   Two-part fix, matching the two-part gap: (1) all 24 references across 16 agent/skill
+   files now read `${CLAUDE_PLUGIN_ROOT}/scripts/x.sh`, fixing this repo's documented
+   primary install path (`/plugin marketplace add` + `/plugin install`) outright -- Claude
+   Code's own loader resolves the placeholder, no repo-side machinery needed. (2)
+   `install.sh` and `install-opencode.sh` now also copy `scripts/` into every destination,
+   and in copy mode (always-on for OpenCode; `--copy` for `install.sh`) additionally
+   rewrite the `${CLAUDE_PLUGIN_ROOT}` placeholder to a literal resolved path across every
+   copied agent/skill/command file, so a copied install needs no runtime understanding of
+   the placeholder at all -- verified against real temp directories (`HERMES_HOME=`, then
+   `OPENCODE_HOME=`), not asserted.
+
+   Stated honestly, not silently left implied-fixed: `install.sh`'s DEFAULT symlink mode
+   gets the files (`scripts/` becomes reachable) but not the placeholder resolution, since
+   rewriting a symlinked file's content would mutate the source checkout -- a known,
+   documented gap in the script's own header, not a claim of completeness this fix does
+   not earn.
+
+   New validator `scripts/ci/validate-script-refs.sh` -- the direction `validate-links.sh`
+   cannot see: that script proves a `scripts/x.sh` reference resolves on disk, in this
+   checkout; it says nothing about whether a dispatched agent can find it at runtime from
+   an installed destination. Wired into `run-all.sh` after `validate-links.sh`. 6 new
+   regression assertions in `test-scripts.sh` (117 -> 123), including a re-break/restore
+   proof against the live `qa-engineer.md` and real installer runs against real temp
+   directories for both `install.sh --copy --target hermes` and `install-opencode.sh`.
+
 ## [0.3.12] - 2026-08-18
 
 ### Fixed

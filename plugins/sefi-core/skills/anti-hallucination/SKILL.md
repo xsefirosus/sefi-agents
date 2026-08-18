@@ -41,8 +41,8 @@ defects instead of fabricated context.
 ## References
 - `references/bar-comparison.md` -- an optional qa-engineer evidence type: a blind,
   binary comparison against a Named/Fetchable/Comparable external artifact, gated by
-  `scripts/check-bar.sh`. Additive only; never replaces Done Criteria.
-- `references/placeholder-scan.md` -- interpreting `scripts/scan-placeholders.sh` hits
+  `${CLAUDE_PLUGIN_ROOT}/scripts/check-bar.sh`. Additive only; never replaces Done Criteria.
+- `references/placeholder-scan.md` -- interpreting `${CLAUDE_PLUGIN_ROOT}/scripts/scan-placeholders.sh` hits
   (uncertain language, incomplete markers, placeholder content, test URLs): the
   detection-side counterpart to this skill's writing-side rules. Evidence for a verdict,
   never a verdict itself.

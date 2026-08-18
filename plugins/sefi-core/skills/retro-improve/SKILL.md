@@ -72,7 +72,7 @@ where that drift actually gets caught.
   self-certify a slice.
   - A cheap deterministic pre-filter runs BEFORE that judgment call, same ordering
     principle as `check-bar.sh` / `check-reply.sh` / `gate.sh`: deterministic checks
-    first, spend the LLM call second. Run `scripts/check-structure-diff.sh
+    first, spend the LLM call second. Run `${CLAUDE_PLUGIN_ROOT}/scripts/check-structure-diff.sh
     <target-before> <target-after>` on the proposed edit; a removed or changed
     structural field (a stripped `tools:` entry, a changed `tier:`, a missing
     anti-hallucination pointer) becomes cited evidence for the qa-engineer's own call,
