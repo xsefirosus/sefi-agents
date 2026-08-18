@@ -102,6 +102,8 @@ with chat ("Here's the summary: ...").
 - `references/human-checkpoint.md` -- the canonical never-auto-merge rule.
 - `references/anti-patterns.md` -- authoring anti-patterns.
 - `references/goal-intake.md` -- the canonical goal_intake behavior.
+- `references/scope-boundary.md` -- produce your own deliverable, never another agent's;
+  gated on the dispatched path by `scripts/check-reply.sh`.
 - `references/close-out.md` -- the canonical close_out behavior, and the vault's only
   producer: the knowledge-manager dispatch that files a cycle's durable observations.
 - `docs/BUDGET.md` -- the token-discipline stack, biggest lever first; terse-mode (output

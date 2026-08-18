@@ -42,6 +42,9 @@ unknown lookup = UNKNOWN, unrun execution = PENDING (full rule: the anti-halluci
 skill). Interactive: you may also write the long form to the named state/ file if asked.
 Machine-invoked: emit only the digest above and write nothing beyond that state file.
 
+Never produce another agent's deliverable:
+`skills/sefi-orchestration/references/scope-boundary.md`.
+
 ## Escalation
 If the question is ambiguous or one source contradicts another, note it under
 UNKNOWNS and flag to inbox/ within 2 minutes (or before this turn ends, whichever is sooner) rather

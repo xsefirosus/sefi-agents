@@ -434,6 +434,56 @@ expect_code 1 "an empty compare: is rejected" \
 rm -f "$BAR_SOURCE"
 
 echo
+echo "=== check-reply.sh (live 2026-08-17: prompt-engineer returned a full HTML document against 'exactly this digest and nothing else') ==="
+
+CR="$CORE/scripts/check-reply.sh"
+AG="$CORE/agents"
+RTMP="$(mktemp -d)"
+BUDGET_ARG="--config $BUDGET_TPL"
+
+# The shape a valid prompt-engineer reply takes -- all three declared labels, nothing else.
+cat > "$RTMP/good.txt" <<'EOF'
+INTENTS: Create an HTML file in the root folder describing what is known about the user.
+CONSTRAINTS: minimalist; black and white; contrast compliance; HTML file is the only deliverable.
+SUGGESTED: "design / UI / UX spec" then "build / implement slice".
+EOF
+expect_code 0 "a well-formed prompt-engineer digest passes" \
+  bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/good.txt"
+
+# The actual observed failure: the digest, plus a deliverable owned by two other agents.
+# The tool whitelist held here (no file was written) -- only content leaked, which is
+# precisely the gap this gate closes.
+cp "$RTMP/good.txt" "$RTMP/leak.txt"
+printf '<!DOCTYPE html>\n<html lang="en"><body><h1>About</h1></body></html>\n' >> "$RTMP/leak.txt"
+expect_code 1 "a digest plus a full HTML document is rejected (the live failure)" \
+  bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/leak.txt"
+
+# Verbosity bound: per_agent_return_tokens had sat in budget.yml since v0.2.1 with no
+# script reading it.
+{ cat "$RTMP/good.txt"; for _ in $(seq 1 200); do printf 'padding '; done; } > "$RTMP/long.txt"
+expect_code 1 "an over-budget reply is rejected against per_agent_return_tokens" \
+  bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/long.txt"
+
+grep -v '^SUGGESTED:' "$RTMP/good.txt" > "$RTMP/missing.txt"
+expect_code 1 "a reply omitting a declared label is rejected" \
+  bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/missing.txt"
+
+# Guards against a gate that only accepts one agent's shape. qa-engineer's contract names
+# "If REJECT:" and "If PASS:" as conditional branches mid-line; requiring those as labels
+# would fail every valid verdict, so only start-of-line labels count.
+printf 'VERDICT: PASS\nExecuted npm test -- 14 passing, before/after in .worktrees/logs/.\n' > "$RTMP/qa.txt"
+expect_code 0 "a qa-engineer VERDICT reply passes (conditional branches are not labels)" \
+  bash "$CR" $BUDGET_ARG "$AG/qa-engineer.md" "$RTMP/qa.txt"
+
+# A table-shaped contract must report CANNOT-CHECK, never a false rejection: a gate that
+# cries wolf on valid replies trains its caller to ignore it.
+printf 'item | class | evidence | routed-to | urgency\nCI red | actionable | run 412 | devops-engineer | routine\n' > "$RTMP/support.txt"
+expect_code 3 "support-engineer's table-shaped contract exits 3 CANNOT-CHECK, not a false 1" \
+  bash "$CR" $BUDGET_ARG "$AG/support-engineer.md" "$RTMP/support.txt"
+
+rm -rf "$RTMP"
+
+echo
 echo "=== memory producer (2026-08-11 audit: the vault had a consumer and no producer) ==="
 
 # knowledge-manager.md read memory/daily/*.md as "the raw material" and distilled it weekly;

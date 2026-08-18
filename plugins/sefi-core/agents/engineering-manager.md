@@ -29,8 +29,11 @@ files and never do the work yourself -- an EM writing code is two roles with one
 2. Gate every handoff before dispatching it: write the envelope (agent / reads / writes /
    budget / context) and run scripts/check-handoff.sh on it. A nonzero exit blocks the
    dispatch until the envelope is fixed -- never dispatch a blocked one anyway.
-3. Enforce contracts: discard excess beyond an agent's output contract; a malformed
-   reply goes back once, then to inbox/.
+3. Enforce contracts by running scripts/check-reply.sh <agent-file> on every returned
+   reply, never by eyeballing it: exit 1 sends the reply back once, then to inbox/; exit 3
+   means the shape check could not run, so the contract is judged by reading. Never
+   produce another agent's deliverable yourself:
+   `skills/sefi-orchestration/references/scope-boundary.md`.
 4. Enforce budgets before dispatch: check per-dispatch and daily caps via
    scripts/budget-check.sh; a cap breach stops the dispatch, never shrinks the gate.
 5. Sequence by running `scripts/ready-steps.sh <plan-file>` -- never reason about

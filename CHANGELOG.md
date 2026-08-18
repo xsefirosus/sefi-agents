@@ -3,6 +3,58 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.3] - 2026-08-17
+
+### Added
+
+1. **Output-contract enforcement -- `scripts/check-reply.sh`.** Live failure: a
+   `prompt-engineer` dispatch returned a full HTML/CSS document, the deliverable of
+   `ui-ux-designer` and `software-engineer`, against a contract reading "Reply with exactly
+   this digest and nothing else". A roster audit established why more prose was not the fix:
+   that agent already carried the strongest defenses in the read-only set -- the tightest
+   output contract, an explicit negative boundary, a machine-invoked clause, and a tool
+   whitelist that HELD (no file was written; only content leaked). The whitelist governs file
+   operations; nothing governed the reply. `per_agent_return_tokens` had sat in
+   `config/budget.yml` since v0.2.1 read by no script -- a key `validate-config-wired.sh`'s
+   own comment already named as a past example of decorative config, patched once to stop
+   being orphaned and never actually wired. This wires it.
+
+   The gate derives each agent's expected labels from its OWN `## Output contract` rather
+   than a hand-kept parallel table, so the contract stays the single source of truth. Labels
+   are matched only at the start of a line or bullet: qa-engineer's contract names
+   "If REJECT:" and "If PASS:" mid-line as conditional branches, and ui-ux-designer's names
+   per-mode branches, none of which are simultaneously required -- matching those would have
+   failed every valid verdict. Exit 3 (CANNOT-CHECK) is distinct from 0 for agents whose
+   contracts are table- or prose-shaped: reporting a pass for a check that never ran is the
+   overclaim these gates exist to prevent, and a gate that cries wolf on valid replies trains
+   its caller to ignore it. 6 new regression cases anchored on the real artifact
+   (66 -> 72 assertions).
+
+2. **`skills/sefi-orchestration/references/scope-boundary.md`** -- the canonical
+   produce-your-own-deliverable rule and its rationalization table, carrying the excuse
+   observed live ("I have no write tool, so I'll produce the artifact inline instead") and
+   its rebuttal: the missing tool is the boundary, not an obstacle to route around. One
+   shared reference plus one-line links from the four read-only agents the audit found
+   exposed (`prompt-engineer`, `engineering-manager`, `research-analyst`,
+   `support-engineer`); four separate tables would have cost ~260 words against 149 of
+   headroom, and this repo already resolves that with a canonical file plus links.
+   `engineering-manager.md` item 3 now RUNS the gate instead of "discard excess" by eye.
+
+   **Scope, stated rather than implied:** the gate covers the dispatched path, where an
+   orchestrator exists to run it. A human invoking a specialist directly has no orchestrator
+   in the loop, so nothing runs there -- and that is the path the live failure came through.
+   `scope-boundary.md` says so plainly instead of letting the fix imply coverage it does not
+   have.
+
+### Fixed
+
+3. **README's Proof block had drifted again** -- it claimed 65 assertions, 34 scripts, and
+   8811 agent words while disk had moved past all three (v0.3.2 changed the suite without
+   refreshing the pasted snapshot). Updated to the real output. Unlike the agent-count
+   claims, this block is a pasted command result that no validator checks, since gating it
+   would mean running the full suite inside a validator; it stays a manual refresh, named
+   here so the gap is known rather than assumed closed.
+
 ## [0.3.2] - 2026-08-17
 
 ### Fixed

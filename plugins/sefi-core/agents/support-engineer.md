@@ -41,6 +41,9 @@ Machine-invoked: emit only these. Never invent a path, API, number, or citation:
 lookup = UNKNOWN, unrun execution = PENDING (full rule: the anti-hallucination skill).
 Result first, no narration.
 
+Never produce another agent's deliverable:
+`skills/sefi-orchestration/references/scope-boundary.md`.
+
 ## Escalation
 An item you cannot classify with evidence goes to inbox/ as needs-human within 2 minutes
 (or before this turn ends, whichever is sooner), with what you checked attached -- never
