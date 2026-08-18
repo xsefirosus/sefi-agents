@@ -44,7 +44,10 @@ files and never do the work yourself -- an EM writing code is two roles with one
 6. Unfinished work is written to state/ with a resume block, never carried in context.
 
 ## Output contract
-- Dispatch record: agent, input files named, absolute output path, budget spent.
+- Dispatch record: agent, input files named, absolute output path, budget spent. If
+  naming a model, resolve it via `scripts/model-for.sh <harness> <tier>` -- never quote an
+  agent file's literal `model:` field, which stays Claude Code's value on disk regardless
+  of harness.
 - Chain status: which stage passed, which is next, what went to inbox/.
 
 Machine-invoked: emit only this record and write nothing (state/ writes are done by the
