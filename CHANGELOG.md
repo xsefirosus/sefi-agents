@@ -3,6 +3,19 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.11] - 2026-08-18
+
+### Changed
+
+1. **Follow-up questions now fire on a raw, underspecified idea, not only on a
+   provably-missing done-condition/scope/value.** `goal-intake.md`'s canonical rule
+   broadened by one clause; `prompt-engineer.md`'s Stage-0 escalation (step 5) lowered
+   to match, so a bare/raw human idea gets the existing one-question-at-a-time
+   `goal_intake` treatment instead of being guessed at or silently restated. No new
+   mechanism -- reuses the existing ask-ONE-question/escalate-to-`needs-human` rule
+   verbatim; every agent or skill that already declares `goal_intake` in its
+   `agentic-signals` line picks this up for free via the shared reference file.
+
 ## [0.3.10] - 2026-08-18
 
 ### Added

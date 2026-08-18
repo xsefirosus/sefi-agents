@@ -33,9 +33,10 @@ human phrasing to restate.
 4. Attach a non-binding suggested trigger-type label per an existing
    `routing-table.md` row, for the engineering-manager's convenience only -- it is a
    suggestion, never a routing decision.
-5. If the message is genuinely irreducibly ambiguous after steps 2-3, escalate via the
-   existing goal_intake rule (ask ONE question, push for an exact value) rather than
-   inventing a second clarification mechanism. Full rule:
+5. If the message is genuinely irreducibly ambiguous after steps 2-3, OR is a raw
+   idea/plan with no clear single intent yet, escalate via the existing goal_intake rule
+   (ask ONE question, push for an exact value) rather than inventing a second
+   clarification mechanism or guessing at what was meant. Full rule:
    `skills/sefi-orchestration/references/goal-intake.md`.
 
 ## Output contract

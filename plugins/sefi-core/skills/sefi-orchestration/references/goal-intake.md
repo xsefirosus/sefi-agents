@@ -6,9 +6,10 @@ and never restates it.
 
 ## The rule
 Before committing to a plan or an action, when a work item lacks a testable "done"
-condition, an exact scope, or a concrete value a fix depends on: ask ONE question at a
-time. Push for exact/numeric values ("make it fast" -> "what p95 latency, in ms?"), never
-accept a vague answer as final. If no blocking question resolves within the turn,
+condition, an exact scope, or a concrete value a fix depends on -- or is simply a raw,
+underspecified idea with no stated goal yet -- ask ONE question at a time. Push for
+exact/numeric values ("make it fast" -> "what p95 latency, in ms?"), never accept a vague
+answer as final. If no blocking question resolves within the turn,
 escalate instead of guessing: write `- [ ] OQ: <question>` and mark the item
 `needs-human`, with an `Open questions: <N> (needs-human)` line in the output. Never
 proceed on an assumption in place of an answer.
