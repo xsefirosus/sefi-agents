@@ -924,5 +924,142 @@ rm -rf "$PYSHIM"
 
 unset CLAUDE_PLUGIN_ROOT
 
+echo
+echo "=== scan-placeholders.sh (proposal 1: deterministic hallucination-pattern evidence) ==="
+
+SP="$CORE/scripts/scan-placeholders.sh"
+
+clean_out="$(printf 'This function reads the config file and returns its parsed value.\n' | bash "$SP" - 2>&1)"
+case "$clean_out" in
+  *"0 total hit(s)"*) ok "a clean baseline reports zero hits" ;;
+  *) bad "clean baseline reported a hit: $clean_out" ;;
+esac
+expect_code 0 "scan-placeholders always exits 0 on a clean baseline" \
+  bash -c "printf 'clean text here' | bash '$SP' -"
+
+uncertain_out="$(printf 'I believe that this probably works.\n' | bash "$SP" - 2>&1)"
+case "$uncertain_out" in
+  *"uncertain_language: 1 hit"*) ok "uncertain_language category detects a hedge on a claim" ;;
+  *) bad "uncertain_language missed: $uncertain_out" ;;
+esac
+
+incomplete_out="$(printf 'TODO: implement retry logic here.\n' | bash "$SP" - 2>&1)"
+case "$incomplete_out" in
+  *"incomplete_implementation: 1 hit"*) ok "incomplete_implementation category detects an unresolved TODO" ;;
+  *) bad "incomplete_implementation missed: $incomplete_out" ;;
+esac
+
+placeholder_out="$(printf 'This is a placeholder value for now.\n' | bash "$SP" - 2>&1)"
+case "$placeholder_out" in
+  *"placeholder_content: 1 hit"*) ok "placeholder_content category detects unfilled template material" ;;
+  *) bad "placeholder_content missed: $placeholder_out" ;;
+esac
+
+url_out="$(printf 'See http://example.com for the docs.\n' | bash "$SP" - 2>&1)"
+case "$url_out" in
+  *"test_urls: 1 hit"*) ok "test_urls category detects a fixture address in delivered output" ;;
+  *) bad "test_urls missed: $url_out" ;;
+esac
+
+multi_out="$(printf 'TODO: implement this\nFIXME: this is broken\nHACK: workaround for now\n' | bash "$SP" - 2>&1)"
+case "$multi_out" in
+  *"incomplete_implementation: 3 hit(s)"*) ok "multi-hit counting: 3 separate lines in one category counted, not just detected" ;;
+  *) bad "multi-hit count wrong: $multi_out" ;;
+esac
+
+empty_out="$(printf '' | bash "$SP" - 2>&1)"
+case "$empty_out" in
+  *"0 total hit(s)"*) ok "empty input reports zero hits, not an error" ;;
+  *) bad "empty input produced: $empty_out" ;;
+esac
+expect_code 0 "empty input exits 0" bash -c "printf '' | bash '$SP' -"
+
+expect_code 0 "a nonexistent file path exits 0, not an error (evidence-only design)" \
+  bash "$SP" /no/such/file/exists
+
+# Re-break/restore proof, per qa-engineer.md item 6's own rule: temporarily disable the
+# TODO pattern, confirm the assertion that depends on it now fails, then restore and
+# confirm it passes again. This proves the test is actually exercising the pattern, not
+# passing by construction.
+SP_BAK="$(mktemp)"
+cp "$SP" "$SP_BAK"
+sed -i 's/"\*todo: implement\*"/"*NEVER_MATCHES_ANYTHING*"/' "$SP"
+broken_out="$(printf 'TODO: implement retry logic here.\n' | bash "$SP" - 2>&1)"
+case "$broken_out" in
+  *"incomplete_implementation: 1 hit"*) bad "re-break did not disable the pattern -- the test proves nothing" ;;
+  *) ok "re-break proof: disabling the TODO pattern makes the hit disappear as expected" ;;
+esac
+cp "$SP_BAK" "$SP"
+rm -f "$SP_BAK"
+restored_out="$(printf 'TODO: implement retry logic here.\n' | bash "$SP" - 2>&1)"
+case "$restored_out" in
+  *"incomplete_implementation: 1 hit"*) ok "restore proof: the pattern is back and the hit is detected again" ;;
+  *) bad "restore failed -- scan-placeholders.sh was not returned to its working state: $restored_out" ;;
+esac
+
+echo
+echo "=== check-structure-diff.sh (proposal 2: retro-improve's fast deterministic pre-filter) ==="
+
+CSD="$CORE/scripts/check-structure-diff.sh"
+SW="$(mktemp -d)"
+cp "$CORE/agents/software-engineer.md" "$SW/before.md"
+
+cp "$SW/before.md" "$SW/identical.md"
+expect_code 0 "identical files: no structural change flagged" \
+  bash "$CSD" "$SW/before.md" "$SW/identical.md"
+
+sed 's/^managed-by: sefi-agents$/managed-by: sefi-agents\nnew-field: hello/' \
+  "$SW/before.md" > "$SW/added.md"
+expect_code 0 "an addition-only edit (a new frontmatter key) passes clean" \
+  bash "$CSD" "$SW/before.md" "$SW/added.md"
+
+sed 's/^tools: Read, Grep, Glob, Bash, Write, Edit, MultiEdit$/tools: Read, Grep, Glob, Write, Edit, MultiEdit/' \
+  "$SW/before.md" > "$SW/stripped-tool.md"
+diff_out="$(bash "$CSD" "$SW/before.md" "$SW/stripped-tool.md" 2>&1)" || true
+case "$diff_out" in
+  *"tools: Read, Grep, Glob, Bash"*) ok "a removed tools: entry (Bash) is flagged" ;;
+  *) bad "removed tools: entry not flagged: $diff_out" ;;
+esac
+expect_code 1 "a stripped tool exits 1" bash "$CSD" "$SW/before.md" "$SW/stripped-tool.md"
+
+grep -v "anti-hallucination" "$SW/before.md" > "$SW/stripped-ah.md"
+expect_code 1 "a stripped anti-hallucination pointer exits 1" \
+  bash "$CSD" "$SW/before.md" "$SW/stripped-ah.md"
+
+expect_code 2 "check-structure-diff usage error on a missing file" \
+  bash "$CSD" "$SW/before.md" /no/such/file
+rm -rf "$SW"
+
+echo
+echo "=== routing regression re-run (reuses validate-routing.sh / routing-cases.txt, no new mechanism) ==="
+
+VR="$CORE/scripts/ci/validate-routing.sh"
+TABLE="$CORE/skills/sefi-orchestration/references/routing-table.md"
+TABLE_BAK="$(mktemp)"
+cp "$TABLE" "$TABLE_BAK"
+
+# Re-break/restore, applied directly to the live fixture target: validate-routing.sh
+# resolves TABLE relative to its own script location, not a passable argument, so proving
+# it catches a routing regression means mutating the real file and restoring it -- the same
+# discipline as scan-placeholders.sh's re-break/restore test above.
+sed -i 's/| "plan X" \/ goal to spec | product-manager |/| "plan X" \/ goal to spec | knowledge-manager |/' "$TABLE"
+broken_rc=0
+bash "$VR" >/dev/null 2>&1 || broken_rc=$?
+cp "$TABLE_BAK" "$TABLE"
+rm -f "$TABLE_BAK"
+if [ "$broken_rc" -ne 0 ]; then
+  ok "a routing-table edit that breaks the 'plan X' fixture is caught by validate-routing.sh (exit $broken_rc)"
+else
+  bad "validate-routing.sh did not catch a broken 'plan X' fixture -- the re-run this plan reuses is not actually wired"
+fi
+
+restored_rc=0
+bash "$VR" >/dev/null 2>&1 || restored_rc=$?
+if [ "$restored_rc" -eq 0 ]; then
+  ok "restore proof: routing-table.md is back and validate-routing.sh passes again"
+else
+  bad "restore failed -- routing-table.md was not returned to its working state (exit $restored_rc)"
+fi
+
 if [ "$fail" -ne 0 ]; then echo "test-scripts: $fail failed, $pass passed"; exit 1; fi
 echo "test-scripts: OK ($pass passed)"

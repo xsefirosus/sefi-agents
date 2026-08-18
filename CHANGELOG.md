@@ -3,7 +3,7 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
-## [0.3.9] - 2026-08-18
+## [0.3.11] - 2026-08-18
 
 ### Fixed
 
@@ -22,6 +22,72 @@ Changelog; this project adheres to Semantic Versioning.
    force the broken-python3 path deterministically there. 3 new regression cases (94 ->
    97 assertions on this host; counts vary by platform -- timeout/shellcheck/ccusage
    skips differ per machine).
+
+## [0.3.10] - 2026-08-18
+
+### Added
+
+1. **`scripts/check-structure-diff.sh` -- a fast deterministic pre-filter for
+   `retro-improve`, wired ahead of its existing qa-engineer judgment call.** Proposal 2
+   from the sefi-os contribution brief, NOT a port of its actual shape (stored
+   input/expected-output pairs, diffed after running an `executor_func`) -- that does not
+   map onto this repo: sefi-agents' agents are LLM-driven markdown prose, not
+   deterministic functions, so no `executor_func` reproduces byte-identical output for a
+   stored input the way code does. The source doc raised this doubt itself ("may be a
+   deliberate design choice... worth asking, not assuming a gap") rather than assuming a
+   gap; evaluating it against the current repo confirmed the doubt and found the
+   genuinely non-redundant sliver instead: a structural-invariant diff catching a
+   silently stripped `tools:` entry, a changed `tier:`, or a missing anti-hallucination
+   pointer, the same failure shape `validate-config-wired.sh` catches for config keys,
+   applied to agent/skill frontmatter. An addition is never flagged -- this repo's own
+   roster gained `tier:` and `agentic-signals:` mid-project, and that is not a
+   regression.
+
+   For a routing-relevant target, `retro-improve` also re-runs the ALREADY-SHIPPED
+   `validate-routing.sh` / `routing-cases.txt` fixture pair against the proposed edit --
+   no parallel baseline-fixture mechanism was built; the one that already existed is
+   reused. `retro-improve/SKILL.md` states explicitly why this does not replace
+   `state/retro-ledger.md`'s existing revert rule: the ledger's rule is slow and
+   statistical by design (3-5 live qa-engineer verdicts accumulated after the edit
+   ships); this pre-filter is instant and deterministic, catching a regression before
+   the edit is even committed. Neither replaces the other -- same non-duplication
+   discipline already applied when `prompt-engineer` was added against `goal_intake`.
+
+   8 new regression assertions (106 -> 114), including a re-break/restore proof against
+   the LIVE `routing-table.md` (mutated, confirmed `validate-routing.sh` catches the
+   break, restored, confirmed it passes again) -- `validate-routing.sh` resolves its
+   fixture path relative to its own script location rather than accepting one as an
+   argument, so proving the reused mechanism actually catches a regression meant
+   exercising the real file directly, the same discipline already used for
+   `scan-placeholders.sh` in 0.3.9.
+
+## [0.3.9] - 2026-08-18
+
+### Added
+
+1. **`scripts/scan-placeholders.sh` -- deterministic post-hoc hallucination-pattern
+   scanner.** Sourced from a related project's `orchestrator/hallucination_checker.py`
+   after checking it against what already exists here, not assumed: 4 of its 5 pattern
+   categories are portable as-is (`uncertain_language`, `incomplete_implementation`,
+   `placeholder_content`, `test_urls`); the fifth, `code_generation` (matching
+   `def`/`class`/`import`/fenced code blocks), is deliberately excluded, confirmed
+   redundant against `check-reply.sh`'s existing foreign-deliverable check (its check 3
+   already catches a full HTML/plan-skeleton leak from a read-only agent -- the same
+   failure shape `code_generation` was trying to catch more crudely).
+
+   Always exits 0: this is evidence collection for the qa-engineer to judge against a
+   slice's Done Criteria, never an automatic verdict -- the same relationship
+   `check-bar.sh` has to the bar-comparison evidence type. `qa-engineer.md` gains
+   Protocol item 12 pointing at it, in 20 words against a word budget that had ~73 words
+   of headroom left across all 14 agents; the new
+   `skills/anti-hallucination/references/placeholder-scan.md` carries the per-category
+   false-positive guidance a bare hit count cannot (e.g. "probably" inside a sentence
+   explaining why something is UNKNOWN is the discipline working, not a violation).
+
+   12 new regression assertions (94 -> 106), including a re-break/restore proof per
+   `qa-engineer.md` item 6's own rule: the `TODO:` pattern was temporarily disabled,
+   the dependent assertion confirmed to fail, then restored and confirmed to pass again
+   -- proving the test exercises the pattern rather than passing by construction.
 
 ## [0.3.8] - 2026-08-18
 
