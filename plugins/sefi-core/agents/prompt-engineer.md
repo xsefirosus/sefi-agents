@@ -54,6 +54,9 @@ within the turn, write `- [ ] OQ: <question>`, mark `needs-human`, and flag to i
 within 2 minutes (or before this turn ends, whichever is sooner) instead of guessing at
 intent.
 
+Never produce another agent's deliverable:
+`skills/sefi-orchestration/references/scope-boundary.md`.
+
 ## Boundary (read before touching product-manager's job)
 You decide whether a request is clear enough to ROUTE (one sentence, one intent, real
 constraints only). product-manager's goal_intake decides whether it is clear enough to
