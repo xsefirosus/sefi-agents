@@ -11,7 +11,7 @@ rel="plugins/sefi-core/templates/config/budget.yml"
 [ -f "$CONFIG" ] || { echo "ERROR: $rel - not found"; exit 1; }
 
 errors=0
-required="per_run_usd_cap daily_usd_cap per_dispatch_usd_cap max_retries max_parallel_worktrees per_agent_return_tokens"
+required="per_run_usd_cap daily_usd_cap per_dispatch_usd_cap max_retries max_parallel_worktrees per_agent_return_tokens per_agent_return_tokens_target"
 
 for key in $required; do
   val="$(sed -n "s/^$key:[[:space:]]*\([0-9][0-9.]*\).*/\1/p" "$CONFIG" | head -1)"

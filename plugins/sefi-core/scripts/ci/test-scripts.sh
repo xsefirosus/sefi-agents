@@ -476,6 +476,26 @@ expect_code 0 "a 172-word reply (the real qa-engineer incident) passes against t
 expect_code 1 "a 220-word reply is still rejected -- the raise did not remove the ceiling" \
   bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/stilltoolong.txt"
 
+# per_agent_return_tokens_target (150, soft): "aim for 150, 200 only if not possible" --
+# the 172-word reply passes (above) AND must carry a visible, non-blocking NOTE that it
+# missed the target, so the signal to write shorter next time is not silently dropped just
+# because it did not fail. A reply well under target must carry no such NOTE (no false
+# advisory on a reply that is already fine). Captured into a variable rather than piped
+# live into `grep -q`: `grep -q` exits the instant it matches without draining its input,
+# and under this file's own `set -o pipefail`, the writer can get SIGPIPE (exit 141) for
+# writing past a closed pipe -- clobbering the reported status even when the match was
+# real. Same `case` idiom the gate.sh checks above already use for exactly this reason.
+target_note_over="$(bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/onceoverold.txt" 2>&1 >/dev/null)"
+case "$target_note_over" in
+  *"NOTE:"*"over the 150-word target"*) ok "a 172-word reply still gets a non-blocking NOTE that it missed the 150-word target" ;;
+  *) bad "a 172-word reply did not get the target-missed advisory NOTE" ;;
+esac
+target_note_under="$(bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/good.txt" 2>&1 >/dev/null)"
+case "$target_note_under" in
+  *"NOTE:"*"target"*) bad "a well-under-target reply wrongly got the target-missed advisory NOTE" ;;
+  *) ok "a well-under-target reply gets no target advisory (only a real miss should note)" ;;
+esac
+
 grep -v '^SUGGESTED:' "$RTMP/good.txt" > "$RTMP/missing.txt"
 expect_code 1 "a reply omitting a declared label is rejected" \
   bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/missing.txt"

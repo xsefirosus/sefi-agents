@@ -272,7 +272,7 @@ validate-skills: OK (12 SKILL.md validated)
 validate-doc-counts: OK (agents=14 skills=12 commands=5 loops=2, all prose matches disk)
 validate-loops: OK (2 loop spec(s) validated, plus 2 in this project's loops/)
 validate-budget: OK (all caps present and bounded)
-validate-config-wired: OK (11 config keys, all wired)
+validate-config-wired: OK (12 config keys, all wired)
 validate-no-personal-paths: OK (no personal paths in shipped files)
 validate-no-orphans: OK (references, templates, agents all wired)
 validate-links: OK (56 files scanned, all repo-path references resolve; bare script names checked)
@@ -281,7 +281,7 @@ validate-model-map: OK (14 agents, 4 harnesses, 36 scripts parse; 2 warning(s))
 validate-adapters: OK (install-hermes.sh skill list matches disk, adapter doc paths resolve)
 check-unicode-safety: OK (117 files scanned, ASCII-clean)
 validate-token-budget: OK (all within token budgets; agents total 8887 words)
-test-scripts: OK (92 passed)
+test-scripts: OK (94 passed)
 test-integration: OK (30 passed) -- full loop skeleton executed end to end
 CI: all validators passed
 ```
