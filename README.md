@@ -82,6 +82,7 @@ party distinction for every number this repo cites):
 | every mechanism above was gated but had never run in sequence -- unwired by the qa-engineer's own delete-the-line test | v0.3.0: `test-integration.sh` executes the full loop skeleton end to end in a real git repo, 30 assertions across 16 stages |
 | the never-auto-merge rule had zero deterministic enforcement -- confirmed live when a dispatched agent used Bash to write files its own `disallowedTools` forbade, the same gap that would let a push straight to `main` go unstopped | v0.3.5: `/sefi:init` installs a `pre-push` hook refusing a direct push to `main`/`master`; stated honestly as defense-in-depth, not the fix -- a Bash-capable agent can still bypass a local hook, so the real backstop is a remote branch protection rule this hook cannot configure |
 | `disallowedTools: Write, Edit, MultiEdit` does not survive `Bash` -- confirmed live via the engineering-manager's own forensic self-audit of its harness's session log, which found it had used Bash-invoked `Add-Content`/`sed -i` 8 times to write state-file content despite that line | v0.3.6: `scripts/check-bash-write.sh`, a `PreToolUse` hook that reads which agent is running and blocks a write-shaped Bash command only for one whose own frontmatter fully disallows Write/Edit/MultiEdit; `install-opencode.sh` emits the equivalent `bash:` deny-pattern map for OpenCode. Plugin subagents cannot declare their own hooks (Claude Code disables that "for security reasons"), so this registers once in `hooks/hooks.json` and self-scopes per agent instead -- one script, not five files to keep in sync. Pattern-matching, not a sandbox, stated as such; Codex and Hermes have no per-agent equivalent today and their docs now say so plainly instead of leaving it implied |
+| `check-bash-write.sh` trusted `command -v python3` presence, not that the interpreter actually runs -- found live on a host where `python3` was a Microsoft Store alias stub (present on PATH, exits nonzero, prints nothing usable) while a working interpreter sat on PATH as `python`; the gate's JSON parsing failed OPEN instead of blocking | v0.3.12: a health-checked resolver chain (jq -> python3 -> python -> py, smoke-tested before trust, not just checked to exist) used everywhere the gate and CI parse worked-example JSON; the documented fail-open for a host with no working parser at all is preserved and pinned by a regression case |
 
 Full list: [CHANGELOG.md](CHANGELOG.md).
 
@@ -280,8 +281,8 @@ validate-routing: OK (routing-table agents exist, fixtures resolve, no duplicate
 validate-model-map: OK (14 agents, 4 harnesses, 38 scripts parse; 2 warning(s))
 validate-adapters: OK (install-hermes.sh skill list matches disk, adapter doc paths resolve)
 check-unicode-safety: OK (120 files scanned, ASCII-clean)
-validate-token-budget: OK (all within token budgets; agents total 8908 words)
-test-scripts: OK (114 passed)
+validate-token-budget: OK (all within token budgets; agents total 8925 words)
+test-scripts: OK (117 passed)
 test-integration: OK (30 passed) -- full loop skeleton executed end to end
 CI: all validators passed
 ```
