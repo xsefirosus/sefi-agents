@@ -98,11 +98,20 @@ else
   # the source checkout), so it is safe to rewrite the placeholder here without touching
   # the source. Applied to agents/skills/commands only -- scripts/ itself never contains
   # the placeholder, it is what the placeholder resolves to.
-  if [ "$MODE" = "copy" ] && [ "$rc" -eq 0 ]; then
+  #
+  # NOT gated on rc -- live-caught 2026-08-19: a per-target conflict (e.g. an existing
+  # skills/ from a prior run, refused without --force) set rc=1 and skipped this whole
+  # pass, leaving agents/ and commands/ -- which DID copy successfully -- with the
+  # placeholder unresolved even though nothing about resolving it depended on skills/
+  # succeeding. The pass is idempotent (sed on an already-resolved or pre-existing file
+  # is a no-op if the placeholder isn't present), so running it unconditionally in copy
+  # mode is always safe, whichever subdirs actually copied this run.
+  if [ "$MODE" = "copy" ]; then
     for sub in agents skills commands; do
+      [ -d "$DEST/$sub" ] || continue
       find "$DEST/$sub" -type f -name '*.md' -exec sed -i "s#\${CLAUDE_PLUGIN_ROOT}#$DEST#g" {} \;
     done
-    echo "resolved \${CLAUDE_PLUGIN_ROOT} -> $DEST in copied agents/skills/commands"
+    echo "resolved \${CLAUDE_PLUGIN_ROOT} -> $DEST in agents/skills/commands"
   fi
 fi
 

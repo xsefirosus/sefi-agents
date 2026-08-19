@@ -3,6 +3,29 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.14] - 2026-08-19
+
+### Fixed
+
+1. **`install.sh --copy`'s `${CLAUDE_PLUGIN_ROOT}` resolution pass was gated on every
+   subdirectory copying cleanly, so one pre-existing conflict skipped it for everything.**
+   Found live, in this exact repo, installing v0.3.13's own fix into a real `~/.claude`:
+   a pre-existing `skills/` from an earlier install (correctly refused without `--force`,
+   the safe behavior) set `rc=1`, and the substitution pass was conditioned on `rc -eq 0`
+   -- so `agents/` and `commands/`, which copied successfully and had nothing to do with
+   the `skills/` conflict, were left with the literal `${CLAUDE_PLUGIN_ROOT}` placeholder
+   unresolved. The exact bug 0.3.13 shipped to fix, reintroduced by 0.3.13's own gating
+   logic on any partial install.
+
+   Fix: the substitution pass no longer depends on `rc`; it runs unconditionally in copy
+   mode against whichever subdirectories actually exist at the destination (freshly
+   copied this run, or already present from a prior one), guarded only by
+   `[ -d "$DEST/$sub" ]`. It's idempotent -- a no-op sed on content with no placeholder
+   left -- so running it regardless of `rc` is always safe. New regression case in
+   `test-scripts.sh` reproduces the exact conflict shape (a pre-seeded `skills/` dir) and
+   proves `agents`/`commands` still resolve anyway; proven via re-break/restore against
+   the actual fix, not just written to pass. 2 new assertions (123 -> 125).
+
 ## [0.3.13] - 2026-08-18
 
 ### Fixed

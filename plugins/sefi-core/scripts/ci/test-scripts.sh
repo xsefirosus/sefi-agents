@@ -1109,6 +1109,29 @@ else
 fi
 rm -rf "$HERMES_TMP"
 
+# Live-caught 2026-08-19 running this exact install against a real ~/.claude: a
+# pre-existing skills/ (refused without --force, setting rc=1) skipped the WHOLE
+# substitution pass, leaving agents/ and commands/ -- which copied successfully --
+# unresolved even though resolving them never depended on skills/ succeeding. Reproduced
+# here: pre-seed a conflicting skills/ dir, confirm the run reports the conflict (rc<>0),
+# and confirm agents/ still gets resolved anyway.
+PARTIAL_TMP="$(mktemp -d)"
+mkdir -p "$PARTIAL_TMP/skills"
+touch "$PARTIAL_TMP/skills/.pre-existing"
+partial_rc=0
+HERMES_HOME="$PARTIAL_TMP" bash "$ROOT/install.sh" --target hermes --copy >/dev/null 2>&1 || partial_rc=$?
+if [ "$partial_rc" -ne 0 ] && [ -f "$PARTIAL_TMP/skills/.pre-existing" ]; then
+  ok "a pre-existing skills/ is left untouched and reported as a conflict (exit $partial_rc), not silently overwritten"
+else
+  bad "pre-existing skills/ conflict not reproduced as expected (exit $partial_rc)"
+fi
+if grep -rl '${CLAUDE_PLUGIN_ROOT}' "$PARTIAL_TMP/agents" "$PARTIAL_TMP/commands" >/dev/null 2>&1; then
+  bad "a skills/ conflict still skips placeholder resolution for agents/commands that DID copy -- the exact bug this test guards"
+else
+  ok "agents/commands still get \${CLAUDE_PLUGIN_ROOT} resolved even when skills/ conflicts and the run reports an error"
+fi
+rm -rf "$PARTIAL_TMP"
+
 # install-opencode.sh is always-copy (never symlink), so the same two checks apply there.
 OC_TMP="$(mktemp -d)"
 OPENCODE_HOME="$OC_TMP" bash "$CORE/scripts/install-opencode.sh" >/dev/null 2>&1
