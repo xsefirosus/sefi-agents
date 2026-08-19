@@ -58,6 +58,63 @@ fi
 
 mkdir -p "$DEST"
 
+wire_hooks_claude() {
+  # wire_hooks_claude -- merge plugins/sefi-core/hooks/hooks.json into $DEST/settings.json's
+  # own "hooks" key. Neither this script nor install-opencode.sh ever touched hooks/ before
+  # this, at all -- live-caught 2026-08-19: a dispatched agent with
+  # disallowedTools: Write, Edit, MultiEdit ran `git commit` via Bash completely uncaught,
+  # because check-bash-write.sh (the PreToolUse hook meant to block exactly that) was never
+  # registered anywhere Claude Code would read it from on a fallback install. Only Claude
+  # Code's native /plugin install path auto-registers a plugin's hooks.json; this restores
+  # the equivalent for install.sh's own fallback claude target.
+  #
+  # Hermes is deliberately NOT wired here: this repo does not know Hermes's own hook config
+  # format, and inventing one would be a claim this repo cannot back -- same honesty already
+  # applied to Hermes/Codex in README's check-bash-write.sh row. OpenCode does not need this
+  # function at all: install-opencode.sh's own transform already emits an equivalent
+  # bash-deny-pattern permission block per agent (see emit_bash_write_gate() there), because
+  # OpenCode has no separate hooks mechanism to hang this off of the way Claude Code does.
+  #
+  # jq-required: a hand-rolled JSON merge in sed/awk risks corrupting a real user's existing
+  # settings.json (their own unrelated hooks, permissions, etc.). If jq is missing, warn
+  # plainly and skip rather than risk it -- the same fail-open-with-honesty discipline
+  # check-bash-write.sh's own resolver chain uses for a parse, applied here to a merge.
+  if ! command -v jq >/dev/null 2>&1; then
+    echo "install.sh: jq not found -- hooks NOT wired. check-bash-write.sh's disallowedTools" >&2
+    echo "  enforcement and inject-memory.sh's SessionStart injection will not run for this" >&2
+    echo "  install. Install jq and re-run, or merge $CORE/hooks/hooks.json into" >&2
+    echo "  $DEST/settings.json by hand (resolve \${CLAUDE_PLUGIN_ROOT} -> $DEST first)." >&2
+    return 0
+  fi
+  local hooks_src="$CORE/hooks/hooks.json"
+  if [ ! -f "$hooks_src" ]; then
+    echo "install.sh: $hooks_src not found -- hooks not wired" >&2
+    return 0
+  fi
+
+  local resolved settings tmp
+  resolved="$(sed "s#\${CLAUDE_PLUGIN_ROOT}#$DEST#g" "$hooks_src")"
+  settings="$DEST/settings.json"
+  [ -f "$settings" ] || echo '{}' > "$settings"
+
+  tmp="$(mktemp)"
+  jq --argjson new "$(printf '%s' "$resolved" | jq '.hooks')" '
+    .hooks = (
+      (.hooks // {}) as $existing |
+      ($new | keys) as $events |
+      reduce $events[] as $ev
+        ($existing;
+          .[$ev] = (
+            (.[$ev] // []) as $cur |
+            ($new[$ev] // []) as $add |
+            $cur + [ $add[] | select(. as $item | ($cur | index($item)) == null) ]
+          )
+        )
+    )
+  ' "$settings" > "$tmp" && mv "$tmp" "$settings"
+  echo "wired hooks/hooks.json -> $settings (SessionStart + PreToolUse:Bash)"
+}
+
 link_one() {
   # link_one <subdir>
   local sub="$1"
@@ -113,6 +170,10 @@ else
     done
     echo "resolved \${CLAUDE_PLUGIN_ROOT} -> $DEST in agents/skills/commands"
   fi
+  # Hook wiring is independent of MODE (it edits settings.json, not the copied/symlinked
+  # agent files) and independent of rc for the same reason as the substitution pass above:
+  # a skills/ conflict has nothing to do with whether hooks should be wired.
+  [ "$TARGET" = "claude" ] && wire_hooks_claude
 fi
 
 if [ "$rc" -ne 0 ]; then

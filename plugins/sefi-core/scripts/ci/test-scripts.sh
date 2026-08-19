@@ -1147,5 +1147,75 @@ else
 fi
 rm -rf "$OC_TMP"
 
+echo
+echo "=== install.sh --target claude wires hooks/hooks.json (live-caught 2026-08-19) ==="
+
+# Live-caught: neither installer ever touched hooks/ at all -- a dispatched agent with
+# disallowedTools: Write, Edit, MultiEdit ran a Bash write completely uncaught, because
+# check-bash-write.sh (the PreToolUse hook meant to block exactly that) was never
+# registered anywhere Claude Code would read it from on a fallback (non-plugin) install.
+if command -v jq >/dev/null 2>&1; then
+  HOOK_TMP="$(mktemp -d)"
+  HOME="$HOOK_TMP" bash "$ROOT/install.sh" --target claude --copy >/dev/null 2>&1
+  SETTINGS="$HOOK_TMP/.claude/settings.json"
+  if [ -f "$SETTINGS" ] && jq -e '.hooks.PreToolUse[0].hooks[0].command | endswith("scripts/check-bash-write.sh")' "$SETTINGS" >/dev/null 2>&1; then
+    ok "install.sh --target claude wires check-bash-write.sh into settings.json's PreToolUse hook"
+  else
+    bad "install.sh --target claude did not wire check-bash-write.sh into settings.json"
+  fi
+  if jq -e '.hooks.SessionStart[0].hooks[0].command | endswith("scripts/inject-memory.sh")' "$SETTINGS" >/dev/null 2>&1; then
+    ok "install.sh --target claude wires inject-memory.sh into settings.json's SessionStart hook"
+  else
+    bad "install.sh --target claude did not wire inject-memory.sh into settings.json"
+  fi
+  if jq -e '.hooks.PreToolUse[0].hooks[0].command | contains("${CLAUDE_PLUGIN_ROOT}") | not' "$SETTINGS" >/dev/null 2>&1; then
+    ok "the wired hook command is a resolved literal path, not the raw placeholder"
+  else
+    bad "the wired hook command still carries the unresolved \${CLAUDE_PLUGIN_ROOT} placeholder"
+  fi
+
+  # Merge safety: a pre-existing settings.json with unrelated hooks and permissions must
+  # survive untouched, and a second run must not duplicate what the first one wired.
+  mkdir -p "$HOOK_TMP/.claude"
+  cat > "$SETTINGS" <<'PRESEED'
+{
+  "hooks": { "Stop": [ { "matcher": "", "hooks": [ { "type": "command", "command": "~/.claude/some-other-hook.sh" } ] } ] },
+  "permissions": { "allow": ["Skill"] }
+}
+PRESEED
+  HOME="$HOOK_TMP" bash "$ROOT/install.sh" --target claude --copy --force >/dev/null 2>&1
+  HOME="$HOOK_TMP" bash "$ROOT/install.sh" --target claude --copy --force >/dev/null 2>&1
+  stop_count="$(jq '.hooks.Stop | length' "$SETTINGS" 2>/dev/null)"
+  pretool_count="$(jq '.hooks.PreToolUse | length' "$SETTINGS" 2>/dev/null)"
+  perm_kept="$(jq -e '.permissions.allow == ["Skill"]' "$SETTINGS" >/dev/null 2>&1 && echo yes || echo no)"
+  if [ "$stop_count" = "1" ] && [ "$pretool_count" = "1" ] && [ "$perm_kept" = "yes" ]; then
+    ok "a pre-existing unrelated hook and permissions block survive the merge, and re-running twice does not duplicate the wired hook"
+  else
+    bad "hook merge is not safe/idempotent: Stop=$stop_count PreToolUse=$pretool_count permissions-kept=$perm_kept"
+  fi
+  rm -rf "$HOOK_TMP"
+else
+  echo "  SKIPPED (jq not on PATH in this environment) -- install.sh's own jq-missing warning path is exercised next instead"
+fi
+
+# jq-missing must warn plainly, not fail silently or corrupt anything -- same fail-open-
+# with-honesty discipline as check-bash-write.sh's own resolver chain, applied to a
+# skipped merge instead of a parse.
+if command -v jq >/dev/null 2>&1; then
+  JQ_REAL="$(command -v jq)"
+  NOJQ_TMP="$(mktemp -d)"
+  mkdir -p "$NOJQ_TMP/bin"
+  for c in bash sed grep cp mkdir ln rm mv find cat env printf mktemp basename dirname cygpath; do
+    p="$(command -v "$c" 2>/dev/null)" && ln -sf "$p" "$NOJQ_TMP/bin/$c"
+  done
+  NOJQ_HOME="$(mktemp -d)"
+  nojq_out="$(PATH="$NOJQ_TMP/bin" HOME="$NOJQ_HOME" bash "$ROOT/install.sh" --target claude --copy 2>&1)" || true
+  case "$nojq_out" in
+    *"jq not found -- hooks NOT wired"*) ok "jq missing: install.sh warns plainly instead of silently skipping hook wiring" ;;
+    *) bad "jq-missing case did not produce the expected warning: $nojq_out" ;;
+  esac
+  rm -rf "$NOJQ_TMP" "$NOJQ_HOME"
+fi
+
 if [ "$fail" -ne 0 ]; then echo "test-scripts: $fail failed, $pass passed"; exit 1; fi
 echo "test-scripts: OK ($pass passed)"
