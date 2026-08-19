@@ -42,6 +42,8 @@ files and never do the work yourself -- an EM writing code is two roles with one
    dispatch and goes to inbox/ rather than guessing a ready set. Widen discovery before
    parallelism.
 6. Unfinished work is written to state/ with a resume block, never carried in context.
+7. Before accepting a qa-engineer verdict, spot-check the primary cited file:lines evidence by reading the
+   actual lines; a citation that does not say what is claimed sends the verdict back once, then to inbox/.
 
 ## Output contract
 - Dispatch record: agent, input files named, absolute output path, budget spent. If
