@@ -1217,5 +1217,36 @@ if command -v jq >/dev/null 2>&1; then
   rm -rf "$NOJQ_TMP" "$NOJQ_HOME"
 fi
 
+echo
+echo "=== check-citation.sh (ported from a live fabricated-citation finding, 2026-08-19) ==="
+
+CIT="$CORE/scripts/check-citation.sh"
+GATE_LINES="$(wc -l < "$CORE/scripts/gate.sh")"
+
+expect_code 1 "a citation to a nonexistent file is flagged" \
+  bash -c "echo 'verified against $CORE/scripts/nope-not-real.sh:1-5' | bash '$CIT' -"
+
+expect_code 1 "a citation whose line range exceeds the real file's length is flagged" \
+  bash -c "echo 'verified against $CORE/scripts/gate.sh:$((GATE_LINES+50))-$((GATE_LINES+60))' | bash '$CIT' -"
+
+expect_code 0 "a citation to a real, in-bounds file:line-range passes clean" \
+  bash -c "echo 'verified against $CORE/scripts/gate.sh:1-10' | bash '$CIT' -"
+
+expect_code 0 "a single-line citation (path:NN, not just path:NN-NN) is handled" \
+  bash -c "echo 'verified against $CORE/scripts/gate.sh:1' | bash '$CIT' -"
+
+# The exact real-world case this script responds to: gate.sh:91-96 is real and in-bounds,
+# and a qa-engineer verdict elsewhere cited it as proof of pytest-exit-5 tolerance that
+# does not exist anywhere in those lines. This script MUST pass that citation clean --
+# proving the header's honest scope limit (mechanical existence only, not semantic
+# correctness) is real, not just claimed in a comment nobody re-checks.
+real_case_rc=0
+echo "verified against $CORE/scripts/gate.sh:91-96" | bash "$CIT" - >/dev/null 2>&1 || real_case_rc=$?
+if [ "$real_case_rc" -eq 0 ]; then
+  ok "the real fabricated-citation example (gate.sh:91-96, real+in-bounds+semantically wrong) passes this mechanical check -- the honest limit, demonstrated"
+else
+  bad "check-citation.sh flagged a real, in-bounds citation -- it should only catch IMPOSSIBLE citations, not judge semantic content (exit $real_case_rc)"
+fi
+
 if [ "$fail" -ne 0 ]; then echo "test-scripts: $fail failed, $pass passed"; exit 1; fi
 echo "test-scripts: OK ($pass passed)"
