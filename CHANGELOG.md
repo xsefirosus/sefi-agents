@@ -3,6 +3,41 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.15] - 2026-08-19
+
+### Fixed
+
+1. **Neither `install.sh` nor `install-opencode.sh` ever wired `hooks/hooks.json` into an
+   installed destination -- meaning `check-bash-write.sh`'s `disallowedTools`-survives-
+   `Bash` guarantee (README's own v0.3.6 row) was silently inert for every fallback
+   install.** Found live, in this exact session: a dispatched `support-engineer` (which
+   declares `disallowedTools: Write, Edit, MultiEdit`) ran `git commit` via Bash
+   completely uncaught, because the `PreToolUse` hook meant to block exactly that was
+   never registered anywhere Claude Code would read it from -- confirmed by checking this
+   container's real `~/.claude/settings.json`, which had zero mention of
+   `check-bash-write.sh`.
+
+   Fix, scoped honestly to what it can actually guarantee: `install.sh --target claude`
+   now merges `hooks/hooks.json` into `$DEST/settings.json`'s own `hooks` key (both
+   `SessionStart` and `PreToolUse:Bash`), with `${CLAUDE_PLUGIN_ROOT}` resolved to a
+   literal path -- via `jq`, since a hand-rolled JSON merge risks corrupting a real user's
+   existing settings (their own unrelated hooks, permissions). Idempotent (safe to
+   re-run), preserves any pre-existing unrelated hooks/permissions untouched (proven, not
+   assumed), and warns plainly rather than silently skipping if `jq` isn't on PATH.
+
+   Two things this does NOT claim to fix, stated plainly rather than left implied:
+   Hermes is not wired here at all -- this repo does not know Hermes's own hook config
+   format, and inventing one would be an unbacked claim, the same honesty already applied
+   to Hermes/Codex in the existing check-bash-write.sh README row. OpenCode needs no
+   equivalent change -- `install-opencode.sh`'s existing `emit_bash_write_gate()` already
+   generates an equivalent bash-deny-pattern permission block per agent, because OpenCode
+   has no separate hooks mechanism to hang this off of the way Claude Code does.
+
+   5 new regression assertions (125 -> 130), including a real merge-safety proof (a
+   pre-seeded unrelated `Stop` hook and `permissions` block survive two consecutive
+   installs untouched, with no duplication) and a real jq-missing-PATH proof, both
+   verified via re-break/restore against the actual fix.
+
 ## [0.3.14] - 2026-08-19
 
 ### Fixed
