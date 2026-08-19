@@ -42,6 +42,8 @@ files and never do the work yourself -- an EM writing code is two roles with one
    dispatch and goes to inbox/ rather than guessing a ready set. Widen discovery before
    parallelism.
 6. Unfinished work is written to state/ with a resume block, never carried in context.
+7. Run ${CLAUDE_PLUGIN_ROOT}/scripts/check-citation.sh on a returned verdict before
+   accepting it; a flagged citation goes back once, then inbox/.
 
 ## Output contract
 - Dispatch record: agent, input files named, absolute output path, budget spent. If

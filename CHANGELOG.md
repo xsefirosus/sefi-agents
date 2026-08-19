@@ -3,6 +3,35 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.16] - 2026-08-19
+
+### Added
+
+1. **`scripts/check-citation.sh` -- a deterministic pre-filter for a fabricated
+   `verified against <file>:<lines>` citation in a qa-engineer verdict.** Ported from a
+   real, live finding: a separate OpenCode session running this repo's own `main` caught
+   a `qa-engineer` verdict citing `gate.sh` lines 91-96 as proof a pytest exit code was an
+   accepted, documented case -- the lines were real and in-bounds, and said nothing of
+   the sort, and nothing downstream caught it before it reached a human. That session
+   fixed its own local install; this ports the same discipline into the source repo so
+   every future install gets it, not just one checkout.
+
+   Stated honestly, not oversold: this script catches only the mechanical half --a cited
+   file that does not exist, or a line/range beyond the file's actual length. It cannot
+   and does not catch a citation that is real and in-bounds and still semantically wrong
+   -- the exact case that happened. That gap needs a judgment call, not a script;
+   `qa-engineer.md` Protocol item 13 ("re-read a cited file:lines range before writing
+   'verified against' -- an unread citation is fabricated") and
+   `engineering-manager.md` Protocol item 7 (run this script on a returned verdict before
+   accepting it; a flagged citation goes back once, then `inbox/`) close that half.
+   Regression test proves the honest limit is real: the actual `gate.sh:91-96` example
+   passes this script clean, on purpose, with a comment explaining why.
+
+   Both protocol additions are maximally terse (agents' combined word budget had only 35
+   words of headroom across all 14 files, confirmed via `validate-token-budget.sh` before
+   drafting either line, not assumed) -- 8959/8960 words after, 1 word of headroom left.
+   5 new regression assertions (130 -> 135).
+
 ## [0.3.15] - 2026-08-19
 
 ### Fixed

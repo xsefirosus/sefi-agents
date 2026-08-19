@@ -85,6 +85,7 @@ party distinction for every number this repo cites):
 | `check-bash-write.sh` trusted `command -v python3` presence, not that the interpreter actually runs -- found live on a host where `python3` was a Microsoft Store alias stub (present on PATH, exits nonzero, prints nothing usable) while a working interpreter sat on PATH as `python`; the gate's JSON parsing failed OPEN instead of blocking | v0.3.12: a health-checked resolver chain (jq -> python3 -> python -> py, smoke-tested before trust, not just checked to exist) used everywhere the gate and CI parse worked-example JSON; the documented fail-open for a host with no working parser at all is preserved and pinned by a regression case |
 | 24 prose instructions across agent and skill files told an LLM to "run scripts/gate.sh" as a bare relative path with no stated resolution rule, and neither `install.sh` nor `install-opencode.sh` ever copied `scripts/` into an installed destination at all -- found live by another session running this repo's own `main`, then independently verified rather than taken on trust | v0.3.13: every reference now reads `${CLAUDE_PLUGIN_ROOT}/scripts/gate.sh` -- inline-substituted by Claude Code's native plugin loader (confirmed against official docs, the same mechanism `hooks.json` already used), fixing the documented primary install path outright; `install.sh` and `install-opencode.sh` now also copy `scripts/` and resolve that same placeholder to a literal path at install time for their copy-mode targets, stated honestly as incomplete for the DEFAULT symlink-mode fallback install, which cannot rewrite content without mutating the source checkout |
 | Neither installer ever wired `hooks/hooks.json` anywhere -- so `check-bash-write.sh`'s own `disallowedTools`-survives-`Bash` guarantee (the v0.3.6 row above) was silently inert for every fallback install. Found live: a dispatched `support-engineer` (`disallowedTools: Write, Edit, MultiEdit`) ran `git commit` via Bash completely uncaught, in this exact session, on this exact repo | v0.3.15: `install.sh --target claude` now merges `hooks/hooks.json` into `settings.json`'s own `hooks` key via `jq`, resolved to a literal path, proven safe against a pre-existing unrelated hook/permissions block and idempotent on re-run. Hermes is honestly left unwired (this repo does not know its hook config format); OpenCode needs no change, since `install-opencode.sh`'s existing per-agent bash-deny-pattern block already covers it |
+| A `qa-engineer` verdict cited `gate.sh` lines 91-96 as proof a pytest exit code was an accepted, documented case -- the lines were real, in-bounds, and said nothing of the sort, and nothing downstream caught it. Found live by a separate OpenCode session running this repo's own `main`, then ported here rather than left as a one-off local fix | v0.3.16: `scripts/check-citation.sh` catches an impossible citation (file missing, lines out of range) for free; `qa-engineer.md`/`engineering-manager.md` each gain one terse Protocol line closing the semantic half no script can -- re-read before citing, spot-check before accepting. Stated honestly: the actual `gate.sh:91-96` citation still passes the script clean, on purpose -- that gap needs a judgment call, not a mechanical check, and the regression test proves the limit rather than hiding it |
 
 Full list: [CHANGELOG.md](CHANGELOG.md).
 
@@ -281,11 +282,11 @@ validate-no-orphans: OK (references, templates, agents all wired)
 validate-links: OK (57 files scanned, all repo-path references resolve; bare script names checked)
 validate-script-refs: OK (43 files scanned, every scripts/*.sh reference carries ${CLAUDE_PLUGIN_ROOT}/)
 validate-routing: OK (routing-table agents exist, fixtures resolve, no duplicate triggers)
-validate-model-map: OK (14 agents, 4 harnesses, 39 scripts parse; 2 warning(s))
+validate-model-map: OK (14 agents, 4 harnesses, 40 scripts parse; 2 warning(s))
 validate-adapters: OK (install-hermes.sh skill list matches disk, adapter doc paths resolve)
-check-unicode-safety: OK (121 files scanned, ASCII-clean)
+check-unicode-safety: OK (122 files scanned, ASCII-clean)
 validate-token-budget: OK (all within token budgets; agents total 8925 words)
-test-scripts: OK (130 passed)
+test-scripts: OK (135 passed)
 test-integration: OK (30 passed) -- full loop skeleton executed end to end
 CI: all validators passed
 ```

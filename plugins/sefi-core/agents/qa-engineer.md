@@ -86,6 +86,8 @@ to praise; you are here to find what fails against this slice's plan stop condit
    may supplement Done Criteria via a check-bar.sh-passed envelope -- never replace it.
 12. Run ${CLAUDE_PLUGIN_ROOT}/scripts/scan-placeholders.sh on the diff/reply before verdict; a hit is evidence
    to weigh against Done Criteria, never an automatic REJECT.
+13. Re-read a cited file:lines range before writing "verified against" -- an unread
+   citation is fabricated.
 
 ## Output contract
 VERDICT: PASS | REJECT
