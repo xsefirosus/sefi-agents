@@ -1211,10 +1211,79 @@ if command -v jq >/dev/null 2>&1; then
   NOJQ_HOME="$(mktemp -d)"
   nojq_out="$(PATH="$NOJQ_TMP/bin" HOME="$NOJQ_HOME" bash "$ROOT/install.sh" --target claude --copy 2>&1)" || true
   case "$nojq_out" in
-    *"jq not found -- hooks NOT wired"*) ok "jq missing: install.sh warns plainly instead of silently skipping hook wiring" ;;
+    *"jq not found -- hooks/env NOT wired"*) ok "jq missing: install.sh warns plainly instead of silently skipping hooks/env wiring" ;;
     *) bad "jq-missing case did not produce the expected warning: $nojq_out" ;;
   esac
   rm -rf "$NOJQ_TMP" "$NOJQ_HOME"
+fi
+
+echo
+echo "=== install.sh symlink-mode CLAUDE_PLUGIN_ROOT env fix (closes the 0.3.13 stated gap) ==="
+
+# Confirmed via official docs: settings.json's "env" key is exported to every Bash tool
+# call, so a symlinked (default, non-copy) install can resolve ${CLAUDE_PLUGIN_ROOT} via
+# ordinary shell expansion instead of file-content rewriting, which symlink mode can't do
+# without mutating the source checkout.
+if command -v jq >/dev/null 2>&1; then
+  ENV_TMP="$(mktemp -d)"
+  HOME="$ENV_TMP" bash "$ROOT/install.sh" --target claude >/dev/null 2>&1
+  ENV_SETTINGS="$ENV_TMP/.claude/settings.json"
+  if [ -f "$ENV_SETTINGS" ] && jq -e --arg dest "$ENV_TMP/.claude" \
+      '.env.CLAUDE_PLUGIN_ROOT == $dest' "$ENV_SETTINGS" >/dev/null 2>&1; then
+    ok "a default symlink-mode install (no --copy) sets env.CLAUDE_PLUGIN_ROOT to the resolved destination"
+  else
+    bad "symlink-mode install did not set env.CLAUDE_PLUGIN_ROOT correctly"
+  fi
+
+  # Merge safety + idempotency for the env key specifically, mirroring the hooks proof.
+  mkdir -p "$ENV_TMP/.claude"
+  cat > "$ENV_SETTINGS" <<'PRESEED2'
+{
+  "env": { "SOME_OTHER_VAR": "keep-me" },
+  "permissions": { "allow": ["Skill"] }
+}
+PRESEED2
+  HOME="$ENV_TMP" bash "$ROOT/install.sh" --target claude --force >/dev/null 2>&1
+  HOME="$ENV_TMP" bash "$ROOT/install.sh" --target claude --force >/dev/null 2>&1
+  other_kept="$(jq -e '.env.SOME_OTHER_VAR == "keep-me"' "$ENV_SETTINGS" >/dev/null 2>&1 && echo yes || echo no)"
+  plugin_root_set="$(jq -e --arg dest "$ENV_TMP/.claude" '.env.CLAUDE_PLUGIN_ROOT == $dest' "$ENV_SETTINGS" >/dev/null 2>&1 && echo yes || echo no)"
+  if [ "$other_kept" = "yes" ] && [ "$plugin_root_set" = "yes" ]; then
+    ok "a pre-existing unrelated env key survives the merge, and re-running twice does not corrupt env.CLAUDE_PLUGIN_ROOT"
+  else
+    bad "env merge is not safe/idempotent: other-var-kept=$other_kept plugin-root-set=$plugin_root_set"
+  fi
+  rm -rf "$ENV_TMP"
+fi
+
+echo
+echo "=== check-citation.sh (ported from a live fabricated-citation finding, 2026-08-19) ==="
+
+CIT="$CORE/scripts/check-citation.sh"
+GATE_LINES="$(wc -l < "$CORE/scripts/gate.sh")"
+
+expect_code 1 "a citation to a nonexistent file is flagged" \
+  bash -c "echo 'verified against $CORE/scripts/nope-not-real.sh:1-5' | bash '$CIT' -"
+
+expect_code 1 "a citation whose line range exceeds the real file's length is flagged" \
+  bash -c "echo 'verified against $CORE/scripts/gate.sh:$((GATE_LINES+50))-$((GATE_LINES+60))' | bash '$CIT' -"
+
+expect_code 0 "a citation to a real, in-bounds file:line-range passes clean" \
+  bash -c "echo 'verified against $CORE/scripts/gate.sh:1-10' | bash '$CIT' -"
+
+expect_code 0 "a single-line citation (path:NN, not just path:NN-NN) is handled" \
+  bash -c "echo 'verified against $CORE/scripts/gate.sh:1' | bash '$CIT' -"
+
+# The exact real-world case this script responds to: gate.sh:91-96 is real and in-bounds,
+# and a qa-engineer verdict elsewhere cited it as proof of pytest-exit-5 tolerance that
+# does not exist anywhere in those lines. This script MUST pass that citation clean --
+# proving the header's honest scope limit (mechanical existence only, not semantic
+# correctness) is real, not just claimed in a comment nobody re-checks.
+real_case_rc=0
+echo "verified against $CORE/scripts/gate.sh:91-96" | bash "$CIT" - >/dev/null 2>&1 || real_case_rc=$?
+if [ "$real_case_rc" -eq 0 ]; then
+  ok "the real fabricated-citation example (gate.sh:91-96, real+in-bounds+semantically wrong) passes this mechanical check -- the honest limit, demonstrated"
+else
+  bad "check-citation.sh flagged a real, in-bounds citation -- it should only catch IMPOSSIBLE citations, not judge semantic content (exit $real_case_rc)"
 fi
 
 if [ "$fail" -ne 0 ]; then echo "test-scripts: $fail failed, $pass passed"; exit 1; fi

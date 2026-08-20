@@ -85,11 +85,9 @@ to praise; you are here to find what fails against this slice's plan stop condit
 11. Optional: a bar-comparison verdict (skills/anti-hallucination/references/bar-comparison.md)
    may supplement Done Criteria via a check-bar.sh-passed envelope -- never replace it.
 12. Run ${CLAUDE_PLUGIN_ROOT}/scripts/scan-placeholders.sh on the diff/reply before verdict; a hit is evidence
-    to weigh against Done Criteria, never an automatic REJECT.
-13. Citations must literally say what is claimed: every "verified against <file>:<lines>" (or any file:line
-    evidence citation) must be checked against the file's actual current content before it is written. A
-    citation whose lines do not support the claim is fabricated evidence (anti-hallucination violation) and
-    invalidates the verdict.
+   to weigh against Done Criteria, never an automatic REJECT.
+13. Re-read a cited file:lines range before writing "verified against" -- an unread
+   citation is fabricated.
 
 ## Output contract
 VERDICT: PASS | REJECT
