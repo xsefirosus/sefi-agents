@@ -3,6 +3,61 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.17] - 2026-08-19
+
+### Fixed
+
+1. **`install.sh`'s default symlink-mode install left `${CLAUDE_PLUGIN_ROOT}` unresolved in
+   agent/skill prose -- stated as a permanent gap in 0.3.13, turned out not to be.**
+   Confirmed via official Claude Code docs (not assumed): `settings.json` supports a
+   persistent `"env"` key exported to every Bash tool call in a session, not just hook
+   commands. `wire_claude_settings()` (renamed from `wire_hooks_claude()`, since its scope
+   is broader now) now also merges `{"env": {"CLAUDE_PLUGIN_ROOT": "$DEST"}}` into
+   `settings.json` for the `claude` target, in both symlink and copy mode. A symlinked
+   agent file still carries the literal placeholder text, but the shell now resolves it via
+   ordinary variable expansion when a dispatched agent runs the command -- proven against a
+   real temp `$HOME`: the resolved path exists and the referenced script (`gate.sh`) is
+   really there. Same merge-safety and idempotency proof as the existing hooks merge: a
+   pre-existing unrelated `env` key survives untouched, re-running twice does not corrupt
+   it. 2 new regression assertions (135 -> 137).
+
+2. **Honest scope correction, not a fix:** `install.sh`'s header now states plainly that
+   `wire_claude_settings()` only helps a local terminal CLI install. Confirmed via official
+   docs: a cloud/remote ("Claude Code on the web") session does not read
+   `~/.claude/settings.json` at all -- it reads a project-level `.claude/settings.json`
+   instead, which this installer does not create. That gap is stated, not silently
+   implied-fixed; adding project-level install support is a separate, larger feature (this
+   installer has no concept of "the current project" today) and is out of scope here.
+
+## [0.3.16] - 2026-08-19
+
+### Added
+
+1. **`scripts/check-citation.sh` -- a deterministic pre-filter for a fabricated
+   `verified against <file>:<lines>` citation in a qa-engineer verdict.** Ported from a
+   real, live finding: a separate OpenCode session running this repo's own `main` caught
+   a `qa-engineer` verdict citing `gate.sh` lines 91-96 as proof a pytest exit code was an
+   accepted, documented case -- the lines were real and in-bounds, and said nothing of
+   the sort, and nothing downstream caught it before it reached a human. That session
+   fixed its own local install; this ports the same discipline into the source repo so
+   every future install gets it, not just one checkout.
+
+   Stated honestly, not oversold: this script catches only the mechanical half --a cited
+   file that does not exist, or a line/range beyond the file's actual length. It cannot
+   and does not catch a citation that is real and in-bounds and still semantically wrong
+   -- the exact case that happened. That gap needs a judgment call, not a script;
+   `qa-engineer.md` Protocol item 13 ("re-read a cited file:lines range before writing
+   'verified against' -- an unread citation is fabricated") and
+   `engineering-manager.md` Protocol item 7 (run this script on a returned verdict before
+   accepting it; a flagged citation goes back once, then `inbox/`) close that half.
+   Regression test proves the honest limit is real: the actual `gate.sh:91-96` example
+   passes this script clean, on purpose, with a comment explaining why.
+
+   Both protocol additions are maximally terse (agents' combined word budget had only 35
+   words of headroom across all 14 files, confirmed via `validate-token-budget.sh` before
+   drafting either line, not assumed) -- 8959/8960 words after, 1 word of headroom left.
+   5 new regression assertions (130 -> 135).
+
 ## [0.3.15] - 2026-08-19
 
 ### Fixed
