@@ -6,14 +6,20 @@
 #
 # scripts/ is included so agent/skill prose referencing a bundled script (e.g.
 # `${CLAUDE_PLUGIN_ROOT}/scripts/gate.sh`) has something to find at the destination. In
-# --copy mode that placeholder is also resolved to a literal `$DEST` path below, so a
-# copied install needs no runtime understanding of `${CLAUDE_PLUGIN_ROOT}` at all. The
-# DEFAULT symlink mode cannot do that substitution without rewriting the source checkout
-# through the symlink, so it is a stated, known gap: scripts/ becomes reachable, but the
-# placeholder stays literal in a symlinked (non-plugin) install. Only Claude Code's own
-# native `/plugin install` path (this repo's documented primary install method) resolves
-# `${CLAUDE_PLUGIN_ROOT}` unconditionally, via its own plugin loader -- confirmed against
-# official Claude Code docs, not assumed.
+# --copy mode that placeholder is also resolved to a literal `$DEST` path in file content.
+# The DEFAULT symlink mode can't do that (rewriting a symlinked file mutates the source
+# checkout), so for the `claude` target specifically, `wire_claude_settings()` closes it a
+# different way instead: it sets `CLAUDE_PLUGIN_ROOT` as a persistent `env` var in
+# `settings.json`, which Claude Code exports to every Bash tool call -- confirmed via
+# official docs, not assumed -- so the placeholder resolves via ordinary shell expansion
+# with no file rewriting needed. `hermes` and `opencode` still don't get this (see that
+# function's own comment for why).
+#
+# `wire_claude_settings()` only helps a LOCAL TERMINAL CLI install. A cloud/remote
+# ("Claude Code on the web") session does not read `~/.claude/settings.json` at all,
+# confirmed via official docs -- it reads a project-level `.claude/settings.json` instead,
+# which this installer does not create. That's a stated scope boundary: this script's
+# `claude` target was never designed for a cloud session, and doesn't claim to cover one.
 #
 # Usage: ./install.sh --target <claude|hermes|opencode> [--force] [--copy]
 set -euo pipefail
@@ -58,32 +64,51 @@ fi
 
 mkdir -p "$DEST"
 
-wire_hooks_claude() {
-  # wire_hooks_claude -- merge plugins/sefi-core/hooks/hooks.json into $DEST/settings.json's
-  # own "hooks" key. Neither this script nor install-opencode.sh ever touched hooks/ before
-  # this, at all -- live-caught 2026-08-19: a dispatched agent with
-  # disallowedTools: Write, Edit, MultiEdit ran `git commit` via Bash completely uncaught,
-  # because check-bash-write.sh (the PreToolUse hook meant to block exactly that) was never
-  # registered anywhere Claude Code would read it from on a fallback install. Only Claude
-  # Code's native /plugin install path auto-registers a plugin's hooks.json; this restores
-  # the equivalent for install.sh's own fallback claude target.
+wire_claude_settings() {
+  # wire_claude_settings -- two merges into $DEST/settings.json: (1) hooks/hooks.json's own
+  # "hooks" key, and (2) an "env" key setting CLAUDE_PLUGIN_ROOT to the resolved $DEST.
+  # Neither this script nor install-opencode.sh ever touched hooks/ before 0.3.15 --
+  # live-caught 2026-08-19: a dispatched agent with disallowedTools: Write, Edit, MultiEdit
+  # ran `git commit` via Bash completely uncaught, because check-bash-write.sh (the
+  # PreToolUse hook meant to block exactly that) was never registered anywhere Claude Code
+  # would read it from on a fallback install. Only Claude Code's native /plugin install path
+  # auto-registers a plugin's hooks.json; this restores the equivalent for install.sh's own
+  # fallback claude target.
+  #
+  # The env half closes the symlink-mode gap 0.3.13 shipped stated-but-unsolved: a symlinked
+  # (default, non-copy) install can't rewrite ${CLAUDE_PLUGIN_ROOT} in agent/skill prose
+  # without mutating the source checkout, so the placeholder stayed literal. Confirmed via
+  # official Claude Code docs (not assumed): settings.json's "env" key is exported to every
+  # Bash tool call in a session, not just hook commands -- so a bare
+  # ${CLAUDE_PLUGIN_ROOT}/scripts/x.sh in agent/skill prose now resolves via ordinary shell
+  # variable expansion, with zero file-content rewriting required. Written for both symlink
+  # and copy mode; redundant in copy mode (content is already resolved there) but harmless.
+  #
+  # Local terminal CLI only: a cloud/remote ("Claude Code on the web") session does not
+  # read ~/.claude/settings.json at all, confirmed via official docs -- it reads a
+  # project-level .claude/settings.json instead, which this installer does not create. That
+  # is a stated scope boundary, not silently implied-fixed.
   #
   # Hermes is deliberately NOT wired here: this repo does not know Hermes's own hook config
   # format, and inventing one would be a claim this repo cannot back -- same honesty already
-  # applied to Hermes/Codex in README's check-bash-write.sh row. OpenCode does not need this
-  # function at all: install-opencode.sh's own transform already emits an equivalent
-  # bash-deny-pattern permission block per agent (see emit_bash_write_gate() there), because
-  # OpenCode has no separate hooks mechanism to hang this off of the way Claude Code does.
+  # applied to Hermes/Codex in README's check-bash-write.sh row, and already documented in
+  # adapters/HERMES.md and harness-actions.md's hook-event map (UNKNOWN cells, by design).
+  # OpenCode does not need this function at all: install-opencode.sh's own transform already
+  # emits an equivalent bash-deny-pattern permission block per agent (see
+  # emit_bash_write_gate() there), because OpenCode has no separate hooks mechanism to hang
+  # this off of the way Claude Code does.
   #
   # jq-required: a hand-rolled JSON merge in sed/awk risks corrupting a real user's existing
-  # settings.json (their own unrelated hooks, permissions, etc.). If jq is missing, warn
-  # plainly and skip rather than risk it -- the same fail-open-with-honesty discipline
+  # settings.json (their own unrelated hooks, env, permissions, etc.). If jq is missing,
+  # warn plainly and skip rather than risk it -- the same fail-open-with-honesty discipline
   # check-bash-write.sh's own resolver chain uses for a parse, applied here to a merge.
   if ! command -v jq >/dev/null 2>&1; then
-    echo "install.sh: jq not found -- hooks NOT wired. check-bash-write.sh's disallowedTools" >&2
-    echo "  enforcement and inject-memory.sh's SessionStart injection will not run for this" >&2
-    echo "  install. Install jq and re-run, or merge $CORE/hooks/hooks.json into" >&2
-    echo "  $DEST/settings.json by hand (resolve \${CLAUDE_PLUGIN_ROOT} -> $DEST first)." >&2
+    echo "install.sh: jq not found -- hooks/env NOT wired. check-bash-write.sh's" >&2
+    echo "  disallowedTools enforcement, inject-memory.sh's SessionStart injection, and" >&2
+    echo "  \${CLAUDE_PLUGIN_ROOT} resolution in a symlinked install will not work. Install" >&2
+    echo "  jq and re-run, or merge $CORE/hooks/hooks.json into $DEST/settings.json by hand" >&2
+    echo "  (resolve \${CLAUDE_PLUGIN_ROOT} -> $DEST first) and add" >&2
+    echo "  \"env\": {\"CLAUDE_PLUGIN_ROOT\": \"$DEST\"}." >&2
     return 0
   fi
   local hooks_src="$CORE/hooks/hooks.json"
@@ -98,7 +123,8 @@ wire_hooks_claude() {
   [ -f "$settings" ] || echo '{}' > "$settings"
 
   tmp="$(mktemp)"
-  jq --argjson new "$(printf '%s' "$resolved" | jq '.hooks')" '
+  jq --argjson new "$(printf '%s' "$resolved" | jq '.hooks')" \
+     --arg plugin_root "$DEST" '
     .hooks = (
       (.hooks // {}) as $existing |
       ($new | keys) as $events |
@@ -111,8 +137,9 @@ wire_hooks_claude() {
           )
         )
     )
+    | .env = ((.env // {}) + {CLAUDE_PLUGIN_ROOT: $plugin_root})
   ' "$settings" > "$tmp" && mv "$tmp" "$settings"
-  echo "wired hooks/hooks.json -> $settings (SessionStart + PreToolUse:Bash)"
+  echo "wired hooks/hooks.json -> $settings (SessionStart + PreToolUse:Bash), env.CLAUDE_PLUGIN_ROOT=$DEST"
 }
 
 link_one() {
@@ -173,7 +200,7 @@ else
   # Hook wiring is independent of MODE (it edits settings.json, not the copied/symlinked
   # agent files) and independent of rc for the same reason as the substitution pass above:
   # a skills/ conflict has nothing to do with whether hooks should be wired.
-  [ "$TARGET" = "claude" ] && wire_hooks_claude
+  [ "$TARGET" = "claude" ] && wire_claude_settings
 fi
 
 if [ "$rc" -ne 0 ]; then
