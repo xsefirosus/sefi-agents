@@ -3,6 +3,32 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.17] - 2026-08-19
+
+### Fixed
+
+1. **`install.sh`'s default symlink-mode install left `${CLAUDE_PLUGIN_ROOT}` unresolved in
+   agent/skill prose -- stated as a permanent gap in 0.3.13, turned out not to be.**
+   Confirmed via official Claude Code docs (not assumed): `settings.json` supports a
+   persistent `"env"` key exported to every Bash tool call in a session, not just hook
+   commands. `wire_claude_settings()` (renamed from `wire_hooks_claude()`, since its scope
+   is broader now) now also merges `{"env": {"CLAUDE_PLUGIN_ROOT": "$DEST"}}` into
+   `settings.json` for the `claude` target, in both symlink and copy mode. A symlinked
+   agent file still carries the literal placeholder text, but the shell now resolves it via
+   ordinary variable expansion when a dispatched agent runs the command -- proven against a
+   real temp `$HOME`: the resolved path exists and the referenced script (`gate.sh`) is
+   really there. Same merge-safety and idempotency proof as the existing hooks merge: a
+   pre-existing unrelated `env` key survives untouched, re-running twice does not corrupt
+   it. 2 new regression assertions (135 -> 137).
+
+2. **Honest scope correction, not a fix:** `install.sh`'s header now states plainly that
+   `wire_claude_settings()` only helps a local terminal CLI install. Confirmed via official
+   docs: a cloud/remote ("Claude Code on the web") session does not read
+   `~/.claude/settings.json` at all -- it reads a project-level `.claude/settings.json`
+   instead, which this installer does not create. That gap is stated, not silently
+   implied-fixed; adding project-level install support is a separate, larger feature (this
+   installer has no concept of "the current project" today) and is out of scope here.
+
 ## [0.3.16] - 2026-08-19
 
 ### Added
