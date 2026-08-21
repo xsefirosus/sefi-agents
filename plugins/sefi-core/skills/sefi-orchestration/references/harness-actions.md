@@ -17,6 +17,15 @@ the one place the harness mapping lives; adapters point here and never duplicate
 Fallback: a harness with no subagent tool executes the roster sequentially in one context;
 state that explicitly rather than pretending parallelism exists.
 
+Platform constraint (Claude Code, live-verified 2026-08-20): a dispatched subagent has no
+`Agent`/`Task` tool -- a tool absent from a subagent's tool set is never granted even if
+listed in `tools` -- so it cannot itself dispatch. The `engineering-manager` role therefore
+belongs to the top-level session, not a dispatched subagent, on this harness. OpenCode's
+counterpart already covers this: `install-opencode.sh` writes `mode: primary` for
+`engineering-manager` and `mode: subagent` for the other 13 (`adapters/OPENCODE.md`), so
+OpenCode's EM keeps real top-level authority. Hermes and Codex: UNKNOWN -- not yet confirmed
+against `adapters/HERMES.md` / `adapters/CODEX.md`, per this file's own rule above.
+
 ## Tool-name map
 | Abstract | Claude Code | Gemini-style |
 |---|---|---|
