@@ -279,6 +279,37 @@ fi
 rm -rf "$IC" "$IW"
 
 echo
+echo "=== hook script executable bit (inject-memory.sh shipped as 100644, breaking a fresh symlink-mode SessionStart) ==="
+
+# hooks.json invokes its "command" scripts directly -- no "bash"/"sh" interpreter prefix --
+# so Claude Code execs the path itself, which requires the executable bit on POSIX. Every
+# script referenced that way must be tracked in git as 100755, or a fresh clone/install
+# ships a SessionStart (or PreToolUse) hook that fails with "Permission denied" the moment
+# it fires. check-bash-write.sh already carried the bit; inject-memory.sh did not -- the
+# test suite's own invocations always went through an explicit `bash inject-memory.sh`,
+# which masks exactly this failure mode. Assert against the tracked git mode, not just the
+# working-tree file, since the tracked mode is what a fresh clone actually ships.
+HOOKS_JSON="$CORE/hooks/hooks.json"
+if command -v jq >/dev/null 2>&1 && [ -f "$HOOKS_JSON" ]; then
+  hook_cmds="$(jq -r '.. | .command? // empty' "$HOOKS_JSON")"
+  if [ -z "$hook_cmds" ]; then
+    bad "hooks.json yielded no .command entries to check (parser or fixture broke)"
+  fi
+  while IFS= read -r cmd; do
+    [ -n "$cmd" ] || continue
+    rel="plugins/sefi-core/${cmd#\$\{CLAUDE_PLUGIN_ROOT\}/}"
+    mode="$(cd "$ROOT" && git ls-files -s "$rel" 2>/dev/null | awk '{print $1}')"
+    case "$mode" in
+      100755) ok "$rel is tracked executable (100755), matching how hooks.json invokes it" ;;
+      "") bad "$rel referenced by hooks.json is not tracked in git at all" ;;
+      *) bad "$rel is tracked as $mode, not 100755 -- hooks.json execs it with no interpreter prefix, so it will fail with Permission denied" ;;
+    esac
+  done <<< "$hook_cmds"
+else
+  echo "  SKIP: hook script executable-bit check (jq not installed)"
+fi
+
+echo
 echo "=== loop move detection (2026-08-11 audit: prose satisfied the five-move gate) ==="
 
 # validate-loops.sh and loop-readiness.sh both detected the five moves with a bare
