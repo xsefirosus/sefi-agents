@@ -138,14 +138,19 @@ harness-neutral model tier, an output contract, and an escalation path.
 Tiers are the source of truth; `plugins/sefi-core/config/model-map.yml` maps each one to a
 concrete model and reasoning effort per harness, so a new model is an edit to one table
 rather than a pass over 14 files. On Claude Code that is opus/sonnet/haiku; on Codex
-gpt-5.6-sol/terra/luna; on OpenCode and Hermes a single free model.
+gpt-5.6-sol/terra/luna; on OpenCode and Hermes the sentinel `flexible` -- their free-model
+catalogs rotate too fast to hardcode safely (a pinned OpenCode Zen free model, verified real
+on 2026-08-11, was retired by 2026-08-21), so those two harnesses defer entirely to whatever
+model you configure directly in the harness itself, and sefi's orchestration runs on it
+without depending on which one that is.
 
 The load-bearing relationship is `qa-engineer: high` sitting above `software-engineer: mid`.
-That gap IS generator/evaluator separation. Where a harness maps both to one model, CI warns
-that the separation is instructions-only there -- honest on a single-model free window, and
-one line to fix the day a second model exists. The roster is still designed to hold up on a
-small model (see the ~45% row above -- the gates carry the quality), but a harness with two
-models gets a genuinely stronger judge.
+That gap IS generator/evaluator separation. Where a harness maps both to one model -- a
+single free model, or `flexible` resolving to whatever you picked -- CI warns that the
+separation is instructions-only there, and it is one line in `model-map.yml` to fix the day
+you point two tiers at different real identifiers. The roster is still designed to hold up
+on a small model (see the ~45% row above -- the gates carry the quality), but a harness with
+two models gets a genuinely stronger judge.
 
 ### Scaling the roster (future guideline)
 
@@ -287,7 +292,7 @@ validate-model-map: OK (14 agents, 4 harnesses, 40 scripts parse; 2 warning(s))
 validate-adapters: OK (install-hermes.sh skill list matches disk, adapter doc paths resolve)
 check-unicode-safety: OK (122 files scanned, ASCII-clean)
 validate-token-budget: OK (all within token budgets; agents total 8959 words)
-test-scripts: OK (139 passed)
+test-scripts: OK (140 passed)
 test-integration: OK (30 passed) -- full loop skeleton executed end to end
 CI: all validators passed
 ```
