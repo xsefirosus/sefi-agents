@@ -8,9 +8,13 @@ file only names the OpenCode-specific wiring.
 
 Point OpenCode at the Zen provider and select a model:
 - Base URL: `https://opencode.ai/zen/v1`
-- Model: `opencode/deepseek-v4-flash-free` (free window) or `opencode/deepseek-v4-flash`
-  (paid fallback) -- the `opencode/` provider prefix is required; OpenCode resolves a bare
-  model id as a real provider/model identifier and fails (see Troubleshooting).
+- Model: your choice -- run `/models` in OpenCode to see what Zen currently offers, free or
+  paid. Whatever you pick, the `opencode/` provider prefix is required in the value (e.g.
+  `opencode/<model-id>`); OpenCode resolves a bare model id as a real provider/model
+  identifier and fails (see Troubleshooting). Not naming a specific model here on purpose:
+  Zen's free lineup rotates -- `deepseek-v4-flash-free` was verified real on 2026-08-11 and
+  retired by 2026-08-21 -- so this repo's own agent install no longer pins one either (see
+  "Model tiers and reasoning" below).
 
 ## 2. Install
 
@@ -81,12 +85,15 @@ to you, treat that as a second problem worth stopping for: it means the task is 
 running with none of the specialized agent's actual guardrails (tool whitelist, output
 contract, gate requirement), not a harmless retry.
 
-**`Model not found: deepseek-v4-flash-free/`** (or any dispatch silently failing to resolve
-its model) on an install that already has the tier-mapped `model:` line -- live-observed
-2026-08-07: the mapped value itself was missing OpenCode's required `provider/model-id`
-prefix, the exact same failure class as the `sonnet/` case above, just on the replacement
-value rather than the original Claude Code alias. Pull the latest sefi-agents (the map now
-writes `opencode/deepseek-v4-flash-free`) and re-run `install-opencode.sh --force`.
+**`Model not found: <your-model>/`** (or any dispatch silently failing to resolve its
+model) on an install where `config/model-map.yml`'s `opencode:` block has been edited away
+from the shipped `flexible` default to name a real model -- live-observed 2026-08-07 on a
+prior pinned value: the id was missing OpenCode's required `provider/model-id` prefix, the
+exact same failure class as the `sonnet/` case above, just on a hand-supplied replacement
+value rather than the original Claude Code alias. Fix the value in `model-map.yml` itself
+(add the missing `<provider>/` prefix -- `opencode/` for a Zen model) and re-run
+`install-opencode.sh --force`. This cannot happen on the shipped `flexible` default: it
+writes no `model:` line at all, so there is no id for OpenCode to fail to resolve.
 
 ## Credentials
 
@@ -95,33 +102,42 @@ sefi stores no credentials -- rotate at this harness's own config or your CI sec
 
 ## Model tiers and reasoning
 
-`install-opencode.sh` no longer strips `model:`. It resolves each agent's harness-neutral
-`tier:` through `plugins/sefi-core/config/model-map.yml` and writes both the model and
-`options.reasoningEffort`.
+`install-opencode.sh` resolves each agent's harness-neutral `tier:` through
+`plugins/sefi-core/config/model-map.yml`. As of v0.3.18, the shipped map's `opencode:`
+block maps every tier to the sentinel `flexible`, not a concrete model id:
 
 | Tier | Model | reasoningEffort |
 |---|---|---|
-| high | `opencode/deepseek-v4-flash-free` | `max` |
-| mid | `opencode/deepseek-v4-flash-free` | `high` |
-| low | `opencode/deepseek-v4-flash-free` | `medium` |
+| high | `flexible` | (none written) |
+| mid | `flexible` | (none written) |
+| low | `flexible` | (none written) |
 
-Verified 2026-08-11: `deepseek-v4-flash-free` is real on OpenCode Zen -- 200K context, 128K
-output, free tier, no card. DeepSeek V4 Flash supports `reasoning_effort` with `high` and
-`max` variants, and the guidance is "high for quick edits, max for long agent loops". A
-sefi loop cycle is a long agent loop, so the high tier takes `max`. The `opencode/` provider
-prefix is required in the written value, confirmed 2026-08-07 (Troubleshooting below).
+**Why not a pinned free model.** `deepseek-v4-flash-free` was web-verified real on Zen on
+2026-08-11 and confirmed retired from Zen entirely by 2026-08-21 -- ten days later. OpenCode
+Zen's free lineup rotates (observed cycling through Big Pickle, MiniMax M2.5 Free, Mimo V2
+Pro/Omni Free, Nemotron 3 Super/Ultra Free, North Mini Code, and others); hardcoding
+whatever happens to be free this week just means this repo breaks again on the next
+rotation, exactly as it just did. `flexible` means: `install-opencode.sh` writes no
+`model:` line and no `options.reasoningEffort` block at all, for that tier. Every converted
+agent then falls back to whatever model YOU have configured directly in OpenCode (section 1
+above -- run `/models` in OpenCode to see what Zen currently offers, free or paid, and pick
+one). sefi-agents' orchestration does not depend on which model that is.
 
-`options.reasoningEffort` is written per agent rather than assumed, because some OpenCode
-versions exclude DeepSeek models from the reasoning-effort system entirely.
+**Cost, stated plainly:** with every tier `flexible`, all agents inherit the one model you
+picked, so the qa-engineer judges the software-engineer on the identical model --
+generator/evaluator separation collapses to instructions-only. That is not a new cost this
+change introduces: the previous pinned-to-one-free-model setup paid the exact same price,
+just silently. To restore a real adversary, edit `config/model-map.yml`'s `opencode:` block
+yourself and name two different real identifiers on `high` and `mid` (the `opencode/`
+provider prefix is required on any real value you supply, confirmed 2026-08-07 --
+Troubleshooting below); `install-opencode.sh` will write both, and pin `options.reasoningEffort`
+too if you also fill in the matching `_reasoning` key with anything other than `none`.
+`validate-model-map.sh` warns (never fails) when a harness resolves high and mid to the
+same value, `flexible` included, so this is never silently missed.
 
-**All three tiers currently resolve to one model**, because it is the only free model here.
-That collapses generator/evaluator separation to instructions-only: the qa-engineer judges
-on the same model it is judging. `validate-model-map.sh` warns about this rather than
-failing, since on a free window it is an honest constraint. Point `opencode.high` at a
-stronger model the moment one is available -- that single line restores a real adversary.
-
-**Privacy:** during the free period, submitted data may be used to improve the model. Never
-run client or proprietary code through it.
+**Privacy:** if you pick a free model still in its free window, submitted data may be used
+to improve it -- check whichever model you choose. Never run client or proprietary code
+through a free-window model.
 
 Override the whole table with `--model-map <path>` or by editing the `opencode:` block.
 

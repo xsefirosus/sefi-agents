@@ -357,13 +357,13 @@ if OPENCODE_HOME="$OC" bash "$CORE/scripts/install-opencode.sh" >/dev/null 2>&1;
   for f in "$OC"/agents/*.md; do
     oc_n=$((oc_n + 1))
     grep -q '^permission:' "$f" || oc_bad=1
-    grep -qE '^model: (opus|sonnet|haiku)$' "$f" && oc_bad=1     # no Claude alias may survive
+    grep -q '^model:' "$f" && oc_bad=1                           # shipped map is "flexible": no model: at all
     grep -q '^tier:' "$f" && oc_bad=1                            # our field must not leak
   done
   # A hardcoded agent count here would drift the moment the roster grows again -- the
   # same class of bug this asserts against, just in the test's own prose. Count what was
   # actually converted instead.
-  [ "$oc_bad" -eq 0 ] && ok "all $oc_n OpenCode agents carry permission + a mapped model, no leaked tier"     || bad "an OpenCode agent is malformed after conversion"
+  [ "$oc_bad" -eq 0 ] && ok "all $oc_n OpenCode agents carry permission, no model: (shipped map is flexible), no leaked tier"     || bad "an OpenCode agent is malformed after conversion"
 else
   bad "install-opencode.sh failed"
 fi

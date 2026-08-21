@@ -6,17 +6,19 @@ them. The narrow action map is `skills/sefi-orchestration/references/harness-act
 
 ## 1. Point Hermes at OpenCode Zen (OpenAI-compatible)
 - Base URL: `https://opencode.ai/zen/v1`
-- Model: `deepseek-v4-flash-free` (200K context, 128K output, $0 during the free window)
-- Paid fallback: `deepseek-v4-flash` (~$0.14 / $0.28 per M input/output)
+- Model: your choice -- OpenCode Zen's free lineup rotates (`deepseek-v4-flash-free` was
+  verified real on 2026-08-11 and retired by 2026-08-21, ten days later), so this doc no
+  longer names one. Check Zen's current model list and pick a free or paid model yourself.
 
 ```sh
 hermes config set provider.base_url https://opencode.ai/zen/v1
-hermes config set provider.model    deepseek-v4-flash-free
+hermes config set provider.model    <your-chosen-model>
 hermes config set provider.api_key  "$OPENCODE_ZEN_API_KEY"
 ```
 
 Precedent: a predecessor system already ran Hermes on an OpenCode Zen free model
-(`mimo-v2.5-free`), so this pairing is proven, not speculative.
+(`mimo-v2.5-free`), so this pairing is proven, not speculative -- just not tied to any one
+model, since Zen's own free catalog has already turned over more than once.
 
 ## 2. Caveats (the caps and the qa-engineer are load-bearing here, not garnish)
 - Free-window models may train on submitted data -- never run client or proprietary code
@@ -142,25 +144,32 @@ sefi stores no credentials -- rotate at this harness's own config or your CI sec
 
 ## Model tiers and reasoning
 
-Hermes takes its model from the global `provider.model` setting and treats per-agent
-`model:` as advisory, so tiers are resolved at DISPATCH time rather than baked into a file.
-When building a `delegate_task(...)` payload:
+Hermes takes its model from the global `provider.model` setting (section 1) and treats
+per-agent `model:` as advisory, so tiers are resolved at DISPATCH time rather than baked
+into a file. As of v0.3.18, `config/model-map.yml`'s `hermes:` block maps every tier to the
+sentinel `flexible`, not a concrete model id -- Hermes was already the least-hardcoded
+harness (it never wrote a model into an installed file to begin with), so this just stops
+`model-for.sh` from handing back an id that might already be dead by the time it's read:
 
 ```sh
-bash plugins/sefi-core/scripts/model-for.sh hermes high              # -> deepseek-v4-flash-free
-bash plugins/sefi-core/scripts/model-for.sh hermes high --reasoning  # -> max
+bash plugins/sefi-core/scripts/model-for.sh hermes high              # -> flexible
+bash plugins/sefi-core/scripts/model-for.sh hermes high --reasoning  # -> none
 ```
 
 | Tier | Model | Reasoning |
 |---|---|---|
-| high | `deepseek-v4-flash-free` | `max` |
-| mid | `deepseek-v4-flash-free` | `high` |
-| low | `deepseek-v4-flash-free` | `medium` |
+| high | `flexible` | (unset) |
+| mid | `flexible` | (unset) |
+| low | `flexible` | (unset) |
 
-`max` on the high tier follows the DeepSeek V4 Flash guidance -- high for quick edits, max
-for long agent loops -- and a loop cycle is the latter.
+`flexible` means: don't pass a tier-specific model into `delegate_task(...)` at all --
+every dispatch runs on whatever you set `provider.model` to in section 1. Reasoning effort
+is likewise left to you to tune, since a hardcoded value (`max`/`high`/`medium`, DeepSeek V4
+Flash's own dial) may not exist or mean the same thing on whatever model you pick.
 
 All three tiers share one model here, so the qa-engineer judges on the model it is judging.
-That is honest for a single-model free window, but weaker than a different judge; point
-`hermes.high` at a stronger model when one is available. The free-window training caveat in
-section 2 applies unchanged.
+That is not new: the previous pinned-to-one-free-model setup paid the identical price,
+just silently. Point `hermes.high` at a different, stronger real model in `model-map.yml`
+the moment you have two you can name -- `delegate_task(...)` will then get a real per-tier
+id again instead of `flexible`. The free-window training caveat in section 2 applies
+unchanged to whatever model you choose.

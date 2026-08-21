@@ -3,6 +3,56 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.18] - 2026-08-21
+
+### Fixed
+
+1. **`inject-memory.sh` shipped tracked in git as `100644` (non-executable), breaking the
+   SessionStart hook on a fresh clone.** `hooks/hooks.json` invokes its `command` scripts
+   directly -- `${CLAUDE_PLUGIN_ROOT}/scripts/inject-memory.sh`, no `bash`/`sh` interpreter
+   prefix -- so Claude Code execs the path itself, which requires the executable bit on
+   POSIX. `check-bash-write.sh` (the other hook-invoked script, on `PreToolUse`) already
+   carried the bit; `inject-memory.sh` did not, so a fresh symlink-mode install shipped a
+   `SessionStart` hook that failed with `Permission denied` the moment a session started --
+   silently dropping memory injection every time, with no error surfaced to the user. The
+   existing test suite never caught this because its own inject-memory.sh assertions always
+   ran through an explicit `bash "$CORE/scripts/inject-memory.sh"`, which sidesteps the
+   exec-bit requirement entirely and masked the exact failure mode the real hook hits.
+   Fixed with `chmod +x` (git now tracks it as `100755`). New regression test reads every
+   `command` in `hooks/hooks.json` and asserts the referenced script is tracked executable in
+   git -- generic against future hook additions, not just this one file. 2 new assertions
+   (137 -> 139).
+
+2. **`config/model-map.yml` hardcoded `opencode/deepseek-v4-flash-free` (OpenCode) and
+   `deepseek-v4-flash-free` (Hermes) as THE model for every tier -- verified real on
+   OpenCode Zen on 2026-08-11, confirmed retired from Zen entirely by 2026-08-21, ten days
+   later.** OpenCode Zen's free-model catalog rotates on its own schedule (observed cycling
+   through Big Pickle, MiniMax M2.5 Free, Mimo V2 Pro/Omni Free, Nemotron 3 Super/Ultra
+   Free, North Mini Code, and others); pinning whatever happened to be free at verification
+   time just meant this repo broke again on the next rotation, exactly as it did.
+   `opencode:` and `hermes:` in the map now resolve every tier to the literal sentinel
+   `flexible` instead of a model id. `install-opencode.sh` recognizes it and writes no
+   `model:` line and no `options.reasoningEffort` block at all for that tier -- every
+   converted agent falls back to whichever model the human has actually configured directly
+   in OpenCode (`adapters/OPENCODE.md` section 1). Hermes was already the less-hardcoded
+   harness (it never wrote a model into an installed file; `model-for.sh hermes <tier>` was
+   only ever advisory guidance for a manual `hermes config set provider.model`), so the
+   Hermes-side fix is mainly `adapters/HERMES.md` no longer naming a model that might
+   already be dead by the time someone reads it. sefi-agents' own orchestration does not
+   depend on which model either harness ends up running -- the roster, gates, and dispatch
+   logic are unchanged; only the model identifier is now the human's choice instead of this
+   repo's guess. Stated plainly, not hidden: this still costs generator/evaluator
+   separation on both harnesses (the qa-engineer and software-engineer inherit the one
+   model picked), same as the single-free-model setup already cost silently --
+   `validate-model-map.sh`'s existing high-equals-mid WARN still fires and is unchanged.
+   Point either harness's `high`/`mid` at two different real identifiers in `model-map.yml`
+   any time to restore a real adversary; `install-opencode.sh` still supports that path
+   end-to-end (regression-tested: a custom `--model-map` with real per-tier values still
+   produces distinct, correctly-prefixed `model:` lines). 1 new assertion in
+   `test-scripts.sh` (139 -> 140); `test-integration.sh`'s OpenCode-install assertion
+   rewritten to check for the ABSENCE of `model:`/`options:` on the shipped default map,
+   since writing one there would now be the bug.
+
 ## [0.3.17] - 2026-08-19
 
 ### Fixed
