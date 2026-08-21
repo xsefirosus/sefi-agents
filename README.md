@@ -279,7 +279,7 @@ command:
 $ bash plugins/sefi-core/scripts/ci/run-all.sh
 validate-agents: OK (14 agent files validated)
 validate-skills: OK (12 SKILL.md validated)
-validate-doc-counts: OK (agents=14 skills=12 commands=5 loops=2, all prose matches disk)
+validate-doc-counts: OK (agents=14 skills=12 commands=6 loops=2, all prose matches disk)
 validate-loops: OK (2 loop spec(s) validated, plus 2 in this project's loops/)
 validate-budget: OK (all caps present and bounded)
 validate-config-wired: OK (12 config keys, all wired)

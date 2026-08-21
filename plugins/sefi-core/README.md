@@ -17,7 +17,8 @@ describes the package layout.
   security-review, technical-writing, n8n-workflow-design, strategy-gate. Deep material
   lives in each skill's `references/`, read on demand.
 - `commands/` -- `/sefi:init`, `/sefi:triage`, `/sefi:retro`, `/sefi:status`,
-  `/sefi:loop-new`.
+  `/sefi:loop-new`, `/sefi:route` (deterministic sefi-orchestration load, for when the
+  auto-trigger doesn't fire).
 - `hooks/hooks.json` -- a SessionStart hook that injects the memory router. Auto-loaded;
   do NOT also declare hooks in `plugin.json`.
 - `config/model-map.yml` -- the ONE place a model identifier is written down. Agents

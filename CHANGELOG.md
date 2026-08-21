@@ -3,6 +3,24 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.19] - 2026-08-21
+
+### Added
+
+1. **`/sefi:route` -- a deterministic way to load `sefi-orchestration` when the
+   auto-trigger doesn't fire.** `sefi-orchestration` is model-invoked: Claude Code loads it
+   only when its own judgment matches the message against the skill's description, and
+   that judgment can miss even on a task that plainly needs routing -- live-observed in
+   this exact repo's own session history: an entire conversation did textbook
+   engineering-manager work (reading a plan, dispatching subagents, deciding what needed a
+   human call) without the skill ever firing. `commands/route.md` names the skill
+   explicitly rather than leaving it to inference, so invoking `/sefi:route [task]`
+   guarantees the routing skill loads and dispatches -- no auto-trigger judgment call
+   involved. Takes an optional `$ARGUMENTS` task description; asks one `goal_intake`
+   question rather than guessing if none is given. Sixth shipped command (`commands=6`,
+   up from 5); `plugins/sefi-core/README.md`'s command list and the top-level README's CI
+   proof block updated to match.
+
 ## [0.3.18] - 2026-08-21
 
 ### Fixed
