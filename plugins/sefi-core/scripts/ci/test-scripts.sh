@@ -687,40 +687,33 @@ fi
 rm -rf "$PV"
 
 echo
-echo "=== install-opencode.sh (live bug, 2026-07-19: OpenCode hard-fails resolving a Claude Code model alias) ==="
+echo "=== install-opencode.sh (flexible-model mode, v0.3.18: OpenCode Zen's free catalog rotates -- deepseek-v4-flash-free was verified real 2026-08-11, retired by 2026-08-21) ==="
 
-# Live-observed: model: sonnet (a Claude Code tier alias) made OpenCode's own subagent
-# dispatch fail hard with "Model not found: sonnet/" -- OpenCode tries to resolve the
-# value as a real provider/model identifier and does not silently ignore it the way
-# Claude Code treats "sonnet" as a native alias. Every one of this repo's 13 agents
-# carries a model: line, so this broke every subagent dispatch on OpenCode, not one.
+# The shipped default map now resolves opencode's high/mid/low to the literal sentinel
+# "flexible", not a concrete model id -- hardcoding whatever is free on Zen this week
+# breaks again the next time the free lineup turns over, which just happened. With
+# "flexible", install-opencode.sh must write NO model: line and NO options: block at all,
+# so every converted agent falls back to whatever model the human has actually configured
+# in OpenCode itself (adapters/OPENCODE.md section 1) -- functional regardless of which
+# model Zen is giving away for free on any given day.
 TMP_OC="$(mktemp -d)"
 OPENCODE_HOME="$TMP_OC" bash "$CORE/scripts/install-opencode.sh" >/dev/null 2>&1
 
-# The original guard, unchanged in intent: no bare Claude Code tier alias may survive into
-# an OpenCode agent file, because OpenCode resolves the value as a real provider/model id
-# and fails hard on "sonnet". v0.2.3 satisfies this by REPLACING the alias via
-# config/model-map.yml rather than deleting the field -- deleting it fixed the crash but
-# made every agent inherit one session model, so the qa-engineer judged the
-# software-engineer on the identical model and generator/evaluator separation went with it.
 oc_model="$(sed -n 's/^model:[[:space:]]*//p' "$TMP_OC/agents/software-engineer.md" 2>/dev/null | head -1)"
 case "$oc_model" in
   opus|sonnet|haiku)
     bad "a bare Claude Code alias ('$oc_model') survived into the OpenCode agent file" ;;
   "")
-    bad "install-opencode.sh emitted no model: at all (every agent falls back to one session model)" ;;
+    ok "shipped default map ('flexible') writes no model: line -- the human's own OpenCode model selection governs" ;;
   *)
-    ok "install-opencode.sh emits a mapped OpenCode model ('$oc_model'), not a Claude alias" ;;
+    bad "install-opencode.sh emitted a hardcoded model ('$oc_model') from the shipped default map -- exactly the fragility that broke when deepseek-v4-flash-free was retired" ;;
 esac
 
-# Live-observed 2026-08-07: the mapped value itself must carry OpenCode's required
-# provider/model-id prefix, or dispatch fails the exact same way as a bare Claude alias --
-# the fix above closed the alias case but not this one, on the replacement value.
-case "$oc_model" in
-  */*) ok "OpenCode model '$oc_model' carries a provider/model-id prefix" ;;
-  "") : ;;  # already reported as a failure above
-  *) bad "OpenCode model '$oc_model' has no provider prefix -- dispatch will fail to resolve it" ;;
-esac
+if grep -q '^options:' "$TMP_OC/agents/software-engineer.md" 2>/dev/null; then
+  bad "install-opencode.sh wrote an options: block from the shipped 'flexible' default map"
+else
+  ok "no options.reasoningEffort written for the shipped 'flexible' default map either"
+fi
 
 # The tier is this repo's own field and must not leak into a harness file.
 if grep -q '^tier:' "$TMP_OC/agents/software-engineer.md" 2>/dev/null; then
@@ -729,19 +722,26 @@ else
   ok "install-opencode.sh consumes tier: without leaking it"
 fi
 
-# Tier differentiation must actually work: with a map that gives distinct models per tier,
-# the high-tier judge and the mid-tier generator must NOT resolve to the same model.
+# The mechanism must still work when a real map (a user override, or Zen offering a
+# non-free model later) supplies concrete values: distinct per-tier models must survive,
+# and must carry their own provider/model-id prefix or OpenCode dispatch fails hard --
+# live-observed 2026-08-07, the same failure class as a bare Claude Code alias.
 OC_MAP="$(mktemp)"
-printf 'opencode:\n  high: judge-model\n  mid: build-model\n  low: cheap-model\n' > "$OC_MAP"
+printf 'opencode:\n  high: opencode/judge-model\n  mid: opencode/build-model\n  low: opencode/cheap-model\n' > "$OC_MAP"
 TMP_OC2="$(mktemp -d)"
 OPENCODE_HOME="$TMP_OC2" bash "$CORE/scripts/install-opencode.sh" --model-map "$OC_MAP" >/dev/null 2>&1
 qa_m="$(sed -n 's/^model:[[:space:]]*//p' "$TMP_OC2/agents/qa-engineer.md" 2>/dev/null | head -1)"
 se_m="$(sed -n 's/^model:[[:space:]]*//p' "$TMP_OC2/agents/software-engineer.md" 2>/dev/null | head -1)"
-if [ "$qa_m" = "judge-model" ] && [ "$se_m" = "build-model" ]; then
-  ok "tiers differentiate on OpenCode (qa=$qa_m vs engineer=$se_m), restoring generator/evaluator separation"
+if [ "$qa_m" = "opencode/judge-model" ] && [ "$se_m" = "opencode/build-model" ]; then
+  ok "tiers still differentiate on OpenCode when a real map supplies models (qa=$qa_m vs engineer=$se_m), restoring generator/evaluator separation"
 else
-  bad "tier differentiation broken on OpenCode (qa='$qa_m' engineer='$se_m')"
+  bad "tier differentiation broken on OpenCode with a real map (qa='$qa_m' engineer='$se_m')"
 fi
+case "$qa_m" in
+  */*) ok "a real OpenCode model ('$qa_m') carries a provider/model-id prefix" ;;
+  "") bad "install-opencode.sh emitted no model: for a map that supplied a real value" ;;
+  *) bad "OpenCode model '$qa_m' has no provider prefix -- dispatch will fail to resolve it" ;;
+esac
 rm -rf "$TMP_OC2" "$OC_MAP"
 # Everything else must still survive byte-for-byte: pick one field per source line kind.
 if grep -q '^disallowedTools: WebFetch, WebSearch$' "$TMP_OC/agents/software-engineer.md" 2>/dev/null \

@@ -34,8 +34,20 @@
 # v0.2.4 maps the tier to a real OpenCode model instead: the crash stays fixed and
 # the separation comes back the moment the map names two different models.
 #
+# v0.3.18: config/model-map.yml can map a tier to the literal sentinel "flexible" instead
+# of a real model id -- OpenCode Zen's free catalog rotates (deepseek-v4-flash-free, the
+# model v0.2.4 pinned, was retired from Zen entirely ten days after being verified real),
+# so hardcoding whatever is free this week just breaks again on the next rotation. When a
+# tier resolves to "flexible" this script writes NO `model:` line at all for that agent,
+# same effect as the v0.2.2 drop -- deliberately, this time, and only for that harness/
+# tier, not as a global fallback for every unresolvable value. The human picks a real model
+# in OpenCode itself (section 1 of adapters/OPENCODE.md) and every agent inherits it.
+#
 # `options.reasoningEffort` is written per agent because some OpenCode versions
-# exclude DeepSeek models from the reasoning-effort system entirely.
+# exclude DeepSeek models from the reasoning-effort system entirely. It is likewise not
+# written when the resolved reasoning is "none" or the model itself is "flexible" -- a
+# hardcoded effort value tuned for one specific model's dial is meaningless on a model the
+# human chose that this file has no knowledge of.
 #
 # Live-observed (2026-08-18): with no `mode:` field, OpenCode defaults every agent to
 # `mode: all` -- primary (Tab-cycle switchable, a direct human entry point) AND subagent
@@ -205,12 +217,18 @@ transform_agent() {
         # collapses generator/evaluator separation: the qa-engineer and the
         # software-engineer it judges ran on the identical model, so the routing
         # table rule "different model where possible" was never possible here.
-        if (MODEL != "") { print "model: " MODEL }
+        #
+        # EXCEPT when the map itself says "flexible" (v0.3.18): that is a deliberate
+        # per-tier choice, not a missing/unresolvable value, so the drop below is by
+        # design -- the users own OpenCode model selection governs instead.
+        if (MODEL != "" && MODEL != "flexible") { print "model: " MODEL }
         # Some OpenCode versions exclude DeepSeek models from the reasoning-effort system
         # and need options.reasoningEffort set per agent, so it is written here rather than
         # assumed. Effort scales with tier: the high tier is the adversarial judge and the
-        # long agent loop, which is where more reasoning actually pays for itself.
-        if (REASONING != "" && REASONING != "none") {
+        # long agent loop, which is where more reasoning actually pays for itself. Not
+        # written for "flexible" either: an effort value tuned for one models own dial is
+        # meaningless (or rejected) on a model this file has no knowledge of.
+        if (REASONING != "" && REASONING != "none" && MODEL != "flexible") {
           print "options:"
           print "  reasoningEffort: " REASONING
         }
