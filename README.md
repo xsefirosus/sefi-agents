@@ -286,8 +286,8 @@ validate-routing: OK (routing-table agents exist, fixtures resolve, no duplicate
 validate-model-map: OK (14 agents, 4 harnesses, 40 scripts parse; 2 warning(s))
 validate-adapters: OK (install-hermes.sh skill list matches disk, adapter doc paths resolve)
 check-unicode-safety: OK (122 files scanned, ASCII-clean)
-validate-token-budget: OK (all within token budgets; agents total 8925 words)
-test-scripts: OK (137 passed)
+validate-token-budget: OK (all within token budgets; agents total 8959 words)
+test-scripts: OK (139 passed)
 test-integration: OK (30 passed) -- full loop skeleton executed end to end
 CI: all validators passed
 ```

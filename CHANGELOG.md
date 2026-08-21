@@ -3,6 +3,26 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.18] - 2026-08-21
+
+### Fixed
+
+1. **`inject-memory.sh` shipped tracked in git as `100644` (non-executable), breaking the
+   SessionStart hook on a fresh clone.** `hooks/hooks.json` invokes its `command` scripts
+   directly -- `${CLAUDE_PLUGIN_ROOT}/scripts/inject-memory.sh`, no `bash`/`sh` interpreter
+   prefix -- so Claude Code execs the path itself, which requires the executable bit on
+   POSIX. `check-bash-write.sh` (the other hook-invoked script, on `PreToolUse`) already
+   carried the bit; `inject-memory.sh` did not, so a fresh symlink-mode install shipped a
+   `SessionStart` hook that failed with `Permission denied` the moment a session started --
+   silently dropping memory injection every time, with no error surfaced to the user. The
+   existing test suite never caught this because its own inject-memory.sh assertions always
+   ran through an explicit `bash "$CORE/scripts/inject-memory.sh"`, which sidesteps the
+   exec-bit requirement entirely and masked the exact failure mode the real hook hits.
+   Fixed with `chmod +x` (git now tracks it as `100755`). New regression test reads every
+   `command` in `hooks/hooks.json` and asserts the referenced script is tracked executable in
+   git -- generic against future hook additions, not just this one file. 2 new assertions
+   (137 -> 139).
+
 ## [0.3.17] - 2026-08-19
 
 ### Fixed
