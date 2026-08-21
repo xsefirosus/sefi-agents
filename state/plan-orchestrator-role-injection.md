@@ -41,7 +41,7 @@ of this can run (step 1).
   `/sefi:init` to create or edit a file this plugin does not own.
 
 ## Steps
-- [ ] 1. Quote the placeholder in both `hooks/hooks.json` command strings. (needs: -)
+- [x] 1. Quote the placeholder in both `hooks/hooks.json` command strings. (needs: -)
   Each becomes `"\"${CLAUDE_PLUGIN_ROOT}/scripts/<name>.sh\""` (embedded literal quotes)
   instead of bare. Prerequisite, not a nice-to-have: live-reproduced 2026-08-20 on a Windows
   profile path containing a space, where the harness substitutes the resolved path into the
@@ -53,7 +53,7 @@ of this can run (step 1).
   `install.sh`'s `sed "s#\${CLAUDE_PLUGIN_ROOT}#$DEST#g"` resolution (install.sh:121) passes
   the added quotes through untouched, so the fallback install path gets the same fix for
   free -- confirm that rather than assume it.
-- [ ] 2. Write `plugins/sefi-core/scripts/inject-orchestrator-role.sh`. (needs: -)
+- [x] 2. Write `plugins/sefi-core/scripts/inject-orchestrator-role.sh`. (needs: -)
   A `SessionStart` hook that prints the orchestrator directive to stdout. Guard first,
   exactly as `inject-memory.sh` guards on a missing vault index --
   `[ -f config/sefi.config.yml ] || exit 0` -- so it stays silent in any project that is not
@@ -67,7 +67,7 @@ of this can run (step 1).
   before acting; dispatch specialists via the `Agent` tool; never write the implementation
   yourself -- route edits through a dispatched `software-engineer`, which keeps its own
   worktree isolation and tool restrictions.
-- [ ] 3. Add the new script as a SECOND `SessionStart` entry in `hooks.json`. (needs: 1, 2)
+- [x] 3. Add the new script as a SECOND `SessionStart` entry in `hooks.json`. (needs: 1, 2)
   Alongside `inject-memory.sh`, not replacing it, carrying the same quoting from step 1.
   Keep it `SessionStart` specifically: `test-scripts.sh:589` asserts `hooks.json` declares
   no `Stop`/`SessionEnd`/`PostToolUse` hook, because a write-side hook cannot run the
@@ -75,7 +75,7 @@ of this can run (step 1).
   assertion. `install.sh`'s `wire_claude_settings()` merges `.hooks` wholesale
   (install.sh:126-141), so the fallback claude target picks the new entry up with no
   installer change; verify that against a real temp `$HOME` rather than assuming it.
-- [ ] 4. Add at least 6 regression assertions to `scripts/ci/test-scripts.sh`. (needs: 3)
+- [x] 4. Add at least 6 regression assertions to `scripts/ci/test-scripts.sh`. (needs: 3)
   (a) every command string in `hooks.json` is quote-wrapped -- the step-1 fix, asserted so
   it cannot silently regress; (b) a resolved command whose path contains a space executes
   cleanly, proving the fix against the actual failure shape rather than the quoting
@@ -84,14 +84,14 @@ of this can run (step 1).
   (e) its output stays within the 600-character cap; (f) after `install.sh --target claude`
   against a temp `$HOME`, `settings.json`'s `SessionStart` array carries BOTH hooks and the
   pre-existing `inject-memory.sh` entry survives the merge.
-- [ ] 5. Record the platform constraint in `references/harness-actions.md`. (needs: 3)
+- [x] 5. Record the platform constraint in `references/harness-actions.md`. (needs: 3)
   Add a row, or a stated note under the existing "Dispatch a subagent" row, saying that on
   Claude Code a dispatched subagent cannot itself dispatch -- so the EM role belongs to the
   top-level session -- with the same fact's OpenCode counterpart (`mode: primary`) named,
   and Hermes/Codex left UNKNOWN per that file's own rule. Update `engineering-manager.md`
   only if it fits inside the agents' word budget (`validate-token-budget.sh`); if it does
   not, say so and leave the agent file alone rather than trading away a Protocol line.
-- [ ] 6. Docs and release: CHANGELOG, README row, version bump to 0.3.18. (needs: 4, 5)
+- [x] 6. Docs and release: CHANGELOG, README row, version bump to 0.3.18. (needs: 4, 5)
   CHANGELOG entry naming both the fix and the honest scope (Claude Code only; OpenCode
   already covered; Hermes/Codex unwired); a README known-limits-table row in the established
   two-column shape; version bump in `.claude-plugin/marketplace.json` (both
@@ -99,7 +99,14 @@ of this can run (step 1).
   `plugins/sefi-core/.claude-plugin/plugin.json`. If README's sample CI output block quotes
   a script count, re-run the validator and take the number from real output rather than
   incrementing it by hand.
-- [ ] 7. Run `bash plugins/sefi-core/scripts/ci/run-all.sh` in full. (needs: 6)
+  DONE, with two corrections against the plan's original assumptions: this branch had gone
+  stale against `main` (two releases landed independently while this PR sat open: 0.3.18
+  `inject-memory.sh` exec-bit fix + OpenCode/Hermes `flexible`-model change, 0.3.19
+  `/sefi:route`), so the version bump landed as 0.3.20, not 0.3.18 as originally planned --
+  and the README row was initially merged still labeled `v0.3.18` (a rebase-conflict-
+  resolution miss), caught and corrected afterward, along with adding the three README rows
+  those two independent 0.3.18/0.3.19 releases had never gotten themselves.
+- [x] 7. Run `bash plugins/sefi-core/scripts/ci/run-all.sh` in full. (needs: 6)
   Paste the real tail of its output into the final report, including the updated
   `test-scripts` count. A run that was not executed is PENDING, never assumed.
 
