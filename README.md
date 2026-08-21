@@ -87,6 +87,7 @@ party distinction for every number this repo cites):
 | Neither installer ever wired `hooks/hooks.json` anywhere -- so `check-bash-write.sh`'s own `disallowedTools`-survives-`Bash` guarantee (the v0.3.6 row above) was silently inert for every fallback install. Found live: a dispatched `support-engineer` (`disallowedTools: Write, Edit, MultiEdit`) ran `git commit` via Bash completely uncaught, in this exact session, on this exact repo | v0.3.15: `install.sh --target claude` now merges `hooks/hooks.json` into `settings.json`'s own `hooks` key via `jq`, resolved to a literal path, proven safe against a pre-existing unrelated hook/permissions block and idempotent on re-run. Hermes is honestly left unwired (this repo does not know its hook config format); OpenCode needs no change, since `install-opencode.sh`'s existing per-agent bash-deny-pattern block already covers it |
 | A `qa-engineer` verdict cited `gate.sh` lines 91-96 as proof a pytest exit code was an accepted, documented case -- the lines were real, in-bounds, and said nothing of the sort, and nothing downstream caught it. Found live by a separate OpenCode session running this repo's own `main`, then ported here rather than left as a one-off local fix | v0.3.16: `scripts/check-citation.sh` catches an impossible citation (file missing, lines out of range) for free; `qa-engineer.md`/`engineering-manager.md` each gain one terse Protocol line closing the semantic half no script can -- re-read before citing, spot-check before accepting. Stated honestly: the actual `gate.sh:91-96` citation still passes the script clean, on purpose -- that gap needs a judgment call, not a mechanical check, and the regression test proves the limit rather than hiding it |
 | The v0.3.13 row above stated the symlink-mode `${CLAUDE_PLUGIN_ROOT}` gap as unsolvable short of rewriting a symlinked file's content -- turned out to be wrong. Re-checked against official docs rather than left standing on the earlier assumption | v0.3.17: `settings.json`'s `env` key is exported to every Bash tool call in a session, confirmed via official docs, not assumed -- `install.sh --target claude` now sets `CLAUDE_PLUGIN_ROOT` there, so a symlinked agent file's literal placeholder resolves via ordinary shell expansion with zero file rewriting. Proven against a real temp `$HOME`: the resolved script genuinely exists at the expanded path. Still honestly scoped: this only helps a local terminal CLI install -- a cloud/remote session doesn't read `~/.claude/settings.json` at all, confirmed via official docs, and this installer still doesn't create the project-level file such a session would need |
+| A dispatched `engineering-manager` structurally cannot drive the `product-manager` -> `software-engineer` -> `qa-engineer` chain on Claude Code -- confirmed against official docs: the `Agent`/`Task` tool is outside a subagent's tool set and is never granted, even if listed. Live-reproduced: a dispatched `engineering-manager` returned BLOCKED with zero artifacts, no dispatch mechanism available to it | v0.3.18: a second `SessionStart` hook (`inject-orchestrator-role.sh`) delivers the orchestrator role to the top-level session only -- mechanically scoped, live-verified to fire once for the top-level session and never for a dispatched subagent. Also fixes a prerequisite: `hooks.json` command strings now quote-wrapped, closing a Windows space-in-path failure that silently disabled `check-bash-write.sh`'s enforcement. Honestly scoped: Claude Code only -- OpenCode already covers this (`mode: primary` for the EM); Hermes and Codex are UNKNOWN and unwired |
 
 Full list: [CHANGELOG.md](CHANGELOG.md).
 
@@ -285,14 +286,14 @@ validate-budget: OK (all caps present and bounded)
 validate-config-wired: OK (12 config keys, all wired)
 validate-no-personal-paths: OK (no personal paths in shipped files)
 validate-no-orphans: OK (references, templates, agents all wired)
-validate-links: OK (57 files scanned, all repo-path references resolve; bare script names checked)
+validate-links: OK (58 files scanned, all repo-path references resolve; bare script names checked)
 validate-script-refs: OK (43 files scanned, every scripts/*.sh reference carries ${CLAUDE_PLUGIN_ROOT}/)
 validate-routing: OK (routing-table agents exist, fixtures resolve, no duplicate triggers)
-validate-model-map: OK (14 agents, 4 harnesses, 40 scripts parse; 2 warning(s))
+validate-model-map: OK (14 agents, 4 harnesses, 41 scripts parse; 2 warning(s))
 validate-adapters: OK (install-hermes.sh skill list matches disk, adapter doc paths resolve)
-check-unicode-safety: OK (122 files scanned, ASCII-clean)
+check-unicode-safety: OK (124 files scanned, ASCII-clean)
 validate-token-budget: OK (all within token budgets; agents total 8959 words)
-test-scripts: OK (140 passed)
+test-scripts: OK (147 passed)
 test-integration: OK (30 passed) -- full loop skeleton executed end to end
 CI: all validators passed
 ```

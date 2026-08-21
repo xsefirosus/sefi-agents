@@ -3,6 +3,50 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.20] - 2026-08-21
+
+### Added
+
+1. **A dispatched `engineering-manager` subagent structurally cannot drive the
+   `product-manager` -> `software-engineer` -> `qa-engineer` chain on Claude Code.**
+   Confirmed against official Claude Code docs, not assumed: the `Agent`/`Task` tool is
+   outside the tool set available to subagents, and a tool absent from a subagent's tool
+   set is never granted even when listed in `tools`. Live-reproduced 2026-08-20: a
+   dispatched `engineering-manager` resolved the routing table correctly, then returned
+   BLOCKED with zero artifacts because it had no dispatch mechanism. Fixed by delivering
+   the orchestrator role through a second `SessionStart` hook
+   (`inject-orchestrator-role.sh`), which is mechanically scoped to the top-level session
+   and never reaches a dispatched subagent -- live-verified to fire exactly once for the
+   top-level session and not at all for a subagent dispatched mid-session. Honest scope:
+   Claude Code only. OpenCode already covers this (`install-opencode.sh` writes `mode:
+   primary` for `engineering-manager`, `mode: subagent` for the rest); Hermes and Codex
+   are UNKNOWN and unwired, stated as such in `harness-actions.md` rather than assumed.
+   This is a complementary, not competing, fix to `/sefi:route` below: that command
+   guarantees `sefi-orchestration` loads when explicitly invoked; this hook additionally
+   nudges the top-level session toward the orchestrator role on every session start,
+   without requiring the human to invoke anything. New regression assertions land this
+   feature and its prerequisite below (item 2); the count crossed a rebase-time
+   compatibility break too -- see item 3.
+
+2. **Prerequisite: `hooks/hooks.json` command strings broke on a Windows profile path
+   containing a space.** The harness substitutes the resolved path into the command
+   string unquoted and the shell then splits it, surfaced as a non-blocking hook error
+   that silently disabled `check-bash-write.sh`'s `disallowedTools` enforcement for that
+   session. All three command strings (including `/sefi:route`'s unrelated changes above)
+   are now quote-wrapped (`"\"${CLAUDE_PLUGIN_ROOT}/scripts/<name>.sh\""`); verified against
+   the actual failure shape (a resolved path containing a space executes cleanly quoted,
+   fails with exit 127 unquoted), not just the quoting cosmetics.
+
+3. **Rebase-time fallout from item 2's quoting fix: the 0.3.18 executable-bit test
+   (`hooks.json`'s command scripts must be tracked `100755`) stopped matching its own
+   targets.** The test stripped a literal `${CLAUDE_PLUGIN_ROOT}/` prefix off each
+   `.command` string to resolve a repo-relative path; once item 2 wrapped every command in
+   a literal `"..."`, the leading quote character broke that match and all three hook
+   scripts read as "not tracked in git at all" -- a false failure, caught rebasing this PR
+   onto `main`, not shipped. Fixed by stripping a surrounding `"..."` before the prefix
+   match. Full count after this rebase, item 2's third hook entry, and this fix:
+   140 -> 147.
+
 ## [0.3.19] - 2026-08-21
 
 ### Added
