@@ -5,7 +5,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/inject-memory.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/inject-memory.sh\""
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/inject-orchestrator-role.sh\""
           }
         ]
       }
@@ -16,7 +24,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-bash-write.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/check-bash-write.sh\""
           }
         ]
       }
