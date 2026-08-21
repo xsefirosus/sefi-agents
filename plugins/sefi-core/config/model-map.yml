@@ -8,11 +8,24 @@
 # scripts/ci/validate-model-map.sh. Override with --model-map <path> on any installer.
 #
 # Keys per harness:
-#   <tier>            the model identifier
+#   <tier>            the model identifier, OR the sentinel "flexible" (see below)
 #   <tier>_reasoning  the reasoning effort for that tier ("none" where the harness has no
-#                     such dial). Effort scales with tier on purpose: the high tier is the
-#                     adversarial judge and the long agent loop, which is exactly where
-#                     more reasoning pays for itself.
+#                     such dial, or where <tier> is "flexible" -- see below). Effort scales
+#                     with tier on purpose: the high tier is the adversarial judge and the
+#                     long agent loop, which is exactly where more reasoning pays for itself.
+#
+# THE "flexible" SENTINEL. A harness whose provider's free-model catalog rotates (OpenCode
+# Zen, and Hermes when it is pointed at the same Zen catalog) cannot have a specific free
+# model id hardcoded here safely: deepseek-v4-flash-free was verified real on 2026-08-11 and
+# confirmed retired from Zen entirely by 2026-08-21, ten days later. Hardcoding whatever is
+# free THIS WEEK just means this file breaks again the next time the catalog turns over.
+# "flexible" is a literal value (not empty, not a placeholder left unfinished) meaning: no
+# model is written into that harness's installed agent files at all, so every agent falls
+# back to whatever model the human has actually configured directly in that harness --
+# install-opencode.sh's transform recognizes it and skips the `model:`/`options:` lines
+# entirely (adapters/OPENCODE.md section 1 is where the human makes that choice). Point a
+# tier at a real identifier instead the moment you want it pinned -- that is still a
+# single-line edit here, same as always.
 #
 # WHY TIERS ARE NOT COSMETIC. The qa-engineer is `high` and the software-engineer it judges
 # is `mid`. That gap IS generator/evaluator separation -- the first design principle in this
@@ -55,44 +68,44 @@ codex:
   low_reasoning: medium
 
 opencode:
-  # Web-verified 2026-08-11: deepseek-v4-flash-free is real on OpenCode Zen (200K context,
-  # 128K output, free tier, no card). All three tiers resolve to it because it is currently
-  # the only free model here -- which collapses generator/evaluator separation to
-  # instructions-only. Point `high` at a stronger model the moment one is available; that
-  # single line is what restores a real adversary.
+  # deepseek-v4-flash-free was web-verified real on OpenCode Zen on 2026-08-11 (200K
+  # context, 128K output, free tier, no card) and confirmed retired from Zen entirely by
+  # 2026-08-21. That is the whole argument against hardcoding a free-catalog model here:
+  # Zen's free lineup rotates (observed cycling through Big Pickle, MiniMax M2.5 Free, Mimo
+  # V2 Pro/Omni Free, Nemotron 3 Super/Ultra Free, North Mini Code, and others), so any id
+  # pinned here has an unknown, possibly short, shelf life. "flexible" (see the sentinel
+  # note above) hands the choice to the human instead: pick a model in OpenCode Zen
+  # yourself (adapters/OPENCODE.md section 1, `/models` in OpenCode lists what is current
+  # right now) and every agent inherits it via OpenCode's own session-model fallback --
+  # install-opencode.sh writes no `model:` line at all when a tier resolves to "flexible".
   #
-  # Live-observed 2026-08-07: a bare model id (no provider prefix) makes OpenCode's own
-  # subagent dispatch fail to resolve the model, on every agent -- the exact same failure
-  # class the v0.2.2/v0.2.4 fix already diagnosed and fixed for the Claude Code alias
-  # (`model: sonnet`), just not carried through to the replacement value written here.
-  # OpenCode's own model field format is `provider/model-id`; `opencode` is the provider
-  # segment for every OpenCode Zen model, confirmed against OpenCode's own agent-frontmatter
-  # spec ("don't use bare model names... without the preceding provider designation").
-  #
-  # PRIVACY: during the free period, submitted data may be used to improve the model. Never
-  # run client or proprietary code through it (adapters/HERMES.md carries the same warning).
-  high: opencode/deepseek-v4-flash-free
-  mid: opencode/deepseek-v4-flash-free
-  low: opencode/deepseek-v4-flash-free
-  # DeepSeek V4 Flash supports reasoning_effort, with high and max variants; the guidance is
-  # "high for quick edits, max for long agent loops". A sefi loop cycle IS a long agent
-  # loop, so the high tier takes max.
-  # CAVEAT: some OpenCode versions exclude DeepSeek models from the reasoning-effort system
-  # entirely, and need options.reasoningEffort set per agent -- which is what
-  # install-opencode.sh now writes into each converted agent file.
-  high_reasoning: max
-  mid_reasoning: high
-  low_reasoning: medium
+  # This does still cost generator/evaluator separation on this harness (the qa-engineer
+  # and the software-engineer both inherit the one model you picked) -- the same cost a
+  # single shared free model already paid here, just now honestly a consequence of your own
+  # choice rather than an id this file silently prescribed. Naming two DIFFERENT real
+  # identifiers on high/mid restores a real adversary and is still a single-line edit here.
+  high: flexible
+  mid: flexible
+  low: flexible
+  # Left "none": a hardcoded reasoning_effort value (DeepSeek V4 Flash's own dial accepted
+  # high/max) is meaningless, or may be rejected, on whatever model the human actually
+  # picks. Tune options.reasoningEffort yourself in the installed agent file if your chosen
+  # model supports the field and you want the high tier to reason harder.
+  high_reasoning: none
+  mid_reasoning: none
+  low_reasoning: none
 
 hermes:
-  # Same model and same free-window privacy caveat as opencode above; `deepseek-v4-flash-free`
-  # is also what adapters/HERMES.md already documents (`hermes config set provider.model`).
-  # Hermes takes its model from that global setting and treats per-agent `model:` as
-  # advisory, so these values are consumed at DISPATCH time -- resolve a tier with
-  # `scripts/model-for.sh hermes <tier>` and pass it in the delegate_task payload.
-  high: deepseek-v4-flash-free
-  mid: deepseek-v4-flash-free
-  low: deepseek-v4-flash-free
-  high_reasoning: max
-  mid_reasoning: high
-  low_reasoning: medium
+  # Same rotating-free-catalog problem as opencode above, and the same fix: "flexible"
+  # instead of a pinned id. Hermes already takes its model from a global
+  # `provider.model` setting the human sets directly (`hermes config set provider.model
+  # <your-choice>`, adapters/HERMES.md) and treats per-agent `model:` as advisory, so this
+  # was already the least-hardcoded harness -- the map's job here is just to stop
+  # `scripts/model-for.sh hermes <tier>` from handing back a model id that might already be
+  # dead by the time it's read.
+  high: flexible
+  mid: flexible
+  low: flexible
+  high_reasoning: none
+  mid_reasoning: none
+  low_reasoning: none
