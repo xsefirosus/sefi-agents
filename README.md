@@ -65,7 +65,16 @@ number in this README is invented -- that discipline is itself a shipped skill
 The table above is inherited history. These are first-party: found in this exact system's
 own runtime by a direct audit, fixed and CI-gated the same day
 ([docs/METRICS-PROVENANCE.md](docs/METRICS-PROVENANCE.md) tracks the predecessor-vs-first-
-party distinction for every number this repo cites):
+party distinction for every number this repo cites). Three that stick:
+
+| What a fresh audit found, live in this repo | What ships because of it |
+|---|---|
+| The never-auto-merge rule had zero deterministic enforcement -- confirmed live when a dispatched agent used Bash to write files its own `disallowedTools` forbade, the same gap that would let a push straight to `main` go unstopped | v0.3.5: `/sefi:init` installs a `pre-push` hook refusing a direct push to `main`/`master`, stated honestly as defense-in-depth, not the fix -- the real backstop is a remote branch protection rule this hook cannot configure |
+| `disallowedTools: Write, Edit, MultiEdit` does not survive `Bash` -- confirmed live via the engineering-manager's own forensic self-audit of its harness's session log, which found it had used Bash-invoked `sed -i` 8 times to write state-file content despite that line | v0.3.6: `check-bash-write.sh`, a `PreToolUse` hook that blocks a write-shaped Bash command for an agent whose own frontmatter fully disallows Write/Edit/MultiEdit -- pattern-matching, not a sandbox, stated as such |
+| A `qa-engineer` verdict cited real, in-bounds lines as proof of something they said nothing of the sort about -- and nothing downstream caught it | v0.3.16: `check-citation.sh` catches an impossible citation (file missing, lines out of range) for free; the semantic half still needs a judgment call, and the regression test proves that limit rather than hiding it |
+
+<details>
+<summary>12 more first-party findings, chronological (click to expand)</summary>
 
 | What a fresh audit found, live in this repo | What ships because of it |
 |---|---|
@@ -75,29 +84,44 @@ party distinction for every number this repo cites):
 | the same gate still failed OPEN one branch over -- a `ccusage` that was present but returned `null` became `0` under `awk`, certifying every cap as within budget | v0.3.0: figures validated before any arithmetic, and exit 3 (CANNOT MEASURE) separated from exit 1 (EXCEEDED) |
 | `gate.sh` enforced no timeout at all, while `loop-engineering` shipped the per-operation-timeout rule as a predecessor-earned lesson | v0.3.0: two timeout classes; a hung suite is killed and named instead of hanging the loop forever |
 | the five-move loop gate was satisfiable by prose -- `grep -q Discovery` matched the word anywhere, so a spec with no such section passed | v0.3.0: anchored to the `## <Move>` heading; a prose-only spec drops from 80/100 to 40/100 |
-| the README claimed tools were probed before a loop could grant them; no probe existed anywhere in the repo | v0.3.0: `probe-tools.sh` ships, loops declare `requires-tools:`, and the claim was rewritten to what the code does |
 | the memory vault had a consumer and no producer -- the weekly distill read `memory/daily/`, and nothing ever wrote there | v0.3.0: `close_out` defined and bound to a knowledge-manager dispatch; CI asserts a producer exists |
-| stripping `model:` for OpenCode left every agent on one session model, so the qa-engineer judged the software-engineer on the identical model | v0.3.0: a harness-neutral `tier:` plus `config/model-map.yml`; the installer writes a mapped model, restoring a genuinely different judge |
-| the loop declared a cron workflow that was never installed, deadlocking the whole feedback chain: no scheduler, so no verdict, so no metrics, so `improvement.enabled` was unreachable by construction | v0.3.0: the workflow ships manual-trigger-only, and CI fails a loop whose declared workflow does not exist |
 | every mechanism above was gated but had never run in sequence -- unwired by the qa-engineer's own delete-the-line test | v0.3.0: `test-integration.sh` executes the full loop skeleton end to end in a real git repo, 30 assertions across 16 stages |
-| the never-auto-merge rule had zero deterministic enforcement -- confirmed live when a dispatched agent used Bash to write files its own `disallowedTools` forbade, the same gap that would let a push straight to `main` go unstopped | v0.3.5: `/sefi:init` installs a `pre-push` hook refusing a direct push to `main`/`master`; stated honestly as defense-in-depth, not the fix -- a Bash-capable agent can still bypass a local hook, so the real backstop is a remote branch protection rule this hook cannot configure |
-| `disallowedTools: Write, Edit, MultiEdit` does not survive `Bash` -- confirmed live via the engineering-manager's own forensic self-audit of its harness's session log, which found it had used Bash-invoked `Add-Content`/`sed -i` 8 times to write state-file content despite that line | v0.3.6: `scripts/check-bash-write.sh`, a `PreToolUse` hook that reads which agent is running and blocks a write-shaped Bash command only for one whose own frontmatter fully disallows Write/Edit/MultiEdit; `install-opencode.sh` emits the equivalent `bash:` deny-pattern map for OpenCode. Plugin subagents cannot declare their own hooks (Claude Code disables that "for security reasons"), so this registers once in `hooks/hooks.json` and self-scopes per agent instead -- one script, not five files to keep in sync. Pattern-matching, not a sandbox, stated as such; Codex and Hermes have no per-agent equivalent today and their docs now say so plainly instead of leaving it implied |
-| `check-bash-write.sh` trusted `command -v python3` presence, not that the interpreter actually runs -- found live on a host where `python3` was a Microsoft Store alias stub (present on PATH, exits nonzero, prints nothing usable) while a working interpreter sat on PATH as `python`; the gate's JSON parsing failed OPEN instead of blocking | v0.3.12: a health-checked resolver chain (jq -> python3 -> python -> py, smoke-tested before trust, not just checked to exist) used everywhere the gate and CI parse worked-example JSON; the documented fail-open for a host with no working parser at all is preserved and pinned by a regression case |
-| 24 prose instructions across agent and skill files told an LLM to "run scripts/gate.sh" as a bare relative path with no stated resolution rule, and neither `install.sh` nor `install-opencode.sh` ever copied `scripts/` into an installed destination at all -- found live by another session running this repo's own `main`, then independently verified rather than taken on trust | v0.3.13: every reference now reads `${CLAUDE_PLUGIN_ROOT}/scripts/gate.sh` -- inline-substituted by Claude Code's native plugin loader (confirmed against official docs, the same mechanism `hooks.json` already used), fixing the documented primary install path outright; `install.sh` and `install-opencode.sh` now also copy `scripts/` and resolve that same placeholder to a literal path at install time for their copy-mode targets, stated honestly as incomplete for the DEFAULT symlink-mode fallback install, which cannot rewrite content without mutating the source checkout |
-| Neither installer ever wired `hooks/hooks.json` anywhere -- so `check-bash-write.sh`'s own `disallowedTools`-survives-`Bash` guarantee (the v0.3.6 row above) was silently inert for every fallback install. Found live: a dispatched `support-engineer` (`disallowedTools: Write, Edit, MultiEdit`) ran `git commit` via Bash completely uncaught, in this exact session, on this exact repo | v0.3.15: `install.sh --target claude` now merges `hooks/hooks.json` into `settings.json`'s own `hooks` key via `jq`, resolved to a literal path, proven safe against a pre-existing unrelated hook/permissions block and idempotent on re-run. Hermes is honestly left unwired (this repo does not know its hook config format); OpenCode needs no change, since `install-opencode.sh`'s existing per-agent bash-deny-pattern block already covers it |
-| A `qa-engineer` verdict cited `gate.sh` lines 91-96 as proof a pytest exit code was an accepted, documented case -- the lines were real, in-bounds, and said nothing of the sort, and nothing downstream caught it. Found live by a separate OpenCode session running this repo's own `main`, then ported here rather than left as a one-off local fix | v0.3.16: `scripts/check-citation.sh` catches an impossible citation (file missing, lines out of range) for free; `qa-engineer.md`/`engineering-manager.md` each gain one terse Protocol line closing the semantic half no script can -- re-read before citing, spot-check before accepting. Stated honestly: the actual `gate.sh:91-96` citation still passes the script clean, on purpose -- that gap needs a judgment call, not a mechanical check, and the regression test proves the limit rather than hiding it |
-| The v0.3.13 row above stated the symlink-mode `${CLAUDE_PLUGIN_ROOT}` gap as unsolvable short of rewriting a symlinked file's content -- turned out to be wrong. Re-checked against official docs rather than left standing on the earlier assumption | v0.3.17: `settings.json`'s `env` key is exported to every Bash tool call in a session, confirmed via official docs, not assumed -- `install.sh --target claude` now sets `CLAUDE_PLUGIN_ROOT` there, so a symlinked agent file's literal placeholder resolves via ordinary shell expansion with zero file rewriting. Proven against a real temp `$HOME`: the resolved script genuinely exists at the expanded path. Still honestly scoped: this only helps a local terminal CLI install -- a cloud/remote session doesn't read `~/.claude/settings.json` at all, confirmed via official docs, and this installer still doesn't create the project-level file such a session would need |
-| `inject-memory.sh` shipped tracked in git as `100644` (non-executable) -- `hooks.json` execs its command scripts directly, no interpreter prefix, so a fresh symlink-mode install shipped a `SessionStart` hook that failed with `Permission denied` on every session start, silently dropping memory injection. The test suite's own assertions always ran the script through an explicit `bash`, masking the exact failure mode the real hook hits | v0.3.18: fixed with `chmod +x`; a new regression test reads every `command` in `hooks.json` and asserts the referenced script is tracked executable in git, generic against future hook additions, not just this file |
-| `config/model-map.yml` hardcoded one OpenCode Zen free model (`deepseek-v4-flash-free`) for every tier -- verified real on 2026-08-11, confirmed retired from Zen entirely by 2026-08-21, ten days later, since Zen's free catalog rotates on its own schedule | v0.3.18: `opencode:`/`hermes:` now resolve every tier to the sentinel `flexible` instead of a model id; `install-opencode.sh` writes no `model:`/`options:` line for it, so every agent runs on whatever model the human actually configured in the harness -- sefi's own orchestration doesn't depend on which one that is |
+| `check-bash-write.sh` trusted `command -v python3` presence, not that the interpreter actually runs -- found live on a host where it was a Microsoft Store alias stub while a working interpreter sat on PATH as `python`; the gate's JSON parsing failed OPEN instead of blocking | v0.3.12: a health-checked resolver chain (jq -> python3 -> python -> py, smoke-tested before trust) used everywhere the gate and CI parse worked-example JSON |
+| Neither installer ever wired `hooks/hooks.json` anywhere -- a dispatched `support-engineer` ran `git commit` via Bash completely uncaught, in this exact session, on this exact repo | v0.3.15: `install.sh --target claude` now merges `hooks/hooks.json` into `settings.json` via `jq`, proven safe against a pre-existing unrelated hook block and idempotent on re-run |
+| `inject-memory.sh` shipped tracked in git as `100644` (non-executable) -- a fresh symlink-mode install shipped a `SessionStart` hook that failed with `Permission denied` on every session start, silently dropping memory injection | v0.3.18: fixed with `chmod +x`; a regression test reads every `command` in `hooks.json` and asserts the referenced script is tracked executable in git |
 | `sefi-orchestration` is model-invoked -- Claude Code loads it only when its own judgment matches a message against the skill's description, and that judgment can miss even on a task that plainly needed routing. Live-observed in this exact repo's own session history: an entire conversation did textbook engineering-manager work without the skill ever firing once | v0.3.19: `/sefi:route [task]` names the skill explicitly rather than leaving it to inference, guaranteeing it loads and dispatches with no auto-trigger judgment call involved |
-| A dispatched `engineering-manager` structurally cannot drive the `product-manager` -> `software-engineer` -> `qa-engineer` chain on Claude Code -- confirmed against official docs: the `Agent`/`Task` tool is outside a subagent's tool set and is never granted, even if listed. Live-reproduced: a dispatched `engineering-manager` returned BLOCKED with zero artifacts, no dispatch mechanism available to it | v0.3.20: a second `SessionStart` hook (`inject-orchestrator-role.sh`) delivers the orchestrator role to the top-level session only -- mechanically scoped, live-verified to fire once for the top-level session and never for a dispatched subagent. Also fixes a prerequisite: `hooks.json` command strings now quote-wrapped, closing a Windows space-in-path failure that silently disabled `check-bash-write.sh`'s enforcement. Honestly scoped: Claude Code only -- OpenCode already covers this (`mode: primary` for the EM); Hermes and Codex are UNKNOWN and unwired |
+| A dispatched `engineering-manager` structurally cannot drive the `product-manager` -> `software-engineer` -> `qa-engineer` chain on Claude Code -- the `Agent`/`Task` tool is outside a subagent's tool set and is never granted, even if listed. Live-reproduced: a dispatched `engineering-manager` returned BLOCKED with zero artifacts | v0.3.20: a second `SessionStart` hook delivers the orchestrator role to the top-level session only -- mechanically scoped, never reachable by a dispatched subagent |
+
+</details>
 
 Full list: [CHANGELOG.md](CHANGELOG.md).
 
 ## How it compares
 
-An honest comparison, no names -- check any framework you are evaluating against these
-rows yourself:
+Three real incidents from the receipts above, and the mechanism that now closes each one --
+not invented "after" numbers, since half of this README's pitch is refusing to make those up:
+
+```mermaid
+flowchart TB
+    subgraph W["Without a gate like this"]
+        direction TB
+        W1["Cost: one runaway dispatch burned 1.36M tokens -- nothing capped it"]
+        W2["Quality: 184 green tests, but half the new modules had zero call sites"]
+        W3["Overhead: ~324K tokens lost re-asking for JSON that was already in the reply"]
+    end
+    subgraph S["With sefi-agents"]
+        direction TB
+        S1["Hard per-dispatch cap ($0.15 default) trips long before real money burns"]
+        S2["qa-engineer's wired-not-just-written check catches an unwired module before ship"]
+        S3["3-rung parse ladder accepts structured output anywhere in the reply"]
+    end
+    W1 -.->|closed by| S1
+    W2 -.->|closed by| S2
+    W3 -.->|closed by| S3
+```
+
+Beyond those three, an honest comparison with no names -- check any framework you are
+evaluating against these rows yourself:
 
 | | sefi-agents | typical agent framework |
 |---|---|---|
@@ -155,18 +179,6 @@ separation is instructions-only there, and it is one line in `model-map.yml` to 
 you point two tiers at different real identifiers. The roster is still designed to hold up
 on a small model (see the ~45% row above -- the gates carry the quality), but a harness with
 two models gets a genuinely stronger judge.
-
-### Scaling the roster (future guideline)
-
-At 14 agents, the flat folder and bare names work fine. When the roster grows into the
-high teens: (a) introduce a consistent naming prefix (pick one scheme and stick with
-it so grepping by prefix is fast), and (b) introduce domain subfolders
-(`agents/core/`, `agents/specialized/`) to keep the folder browsable. Document this
-rule before adding the next few agents, not after the folder is already crowded --
-retrofitting naming across many files is tedious. Also maintain the mandatory YAML
-frontmatter schema (`name`, `description`, `model`, `tools`, `keywords`) on every agent
-file so a script can later programmatically generate roster tables or dispatch rules
-without manual sync.
 
 ## The skills (12)
 
