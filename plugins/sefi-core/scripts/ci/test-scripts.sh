@@ -297,6 +297,10 @@ if command -v jq >/dev/null 2>&1 && [ -f "$HOOKS_JSON" ]; then
   fi
   while IFS= read -r cmd; do
     [ -n "$cmd" ] || continue
+    # v0.3.20 quote-wrapped every command (Windows path-with-space fix), so strip a
+    # surrounding literal `"..."` before matching the placeholder prefix -- otherwise the
+    # leading quote character makes every entry look untracked.
+    cmd="${cmd#\"}"; cmd="${cmd%\"}"
     rel="plugins/sefi-core/${cmd#\$\{CLAUDE_PLUGIN_ROOT\}/}"
     mode="$(cd "$ROOT" && git ls-files -s "$rel" 2>/dev/null | awk '{print $1}')"
     case "$mode" in
@@ -1189,12 +1193,15 @@ if command -v jq >/dev/null 2>&1; then
   HOOK_TMP="$(mktemp -d)"
   HOME="$HOOK_TMP" bash "$ROOT/install.sh" --target claude --copy >/dev/null 2>&1
   SETTINGS="$HOOK_TMP/.claude/settings.json"
-  if [ -f "$SETTINGS" ] && jq -e '.hooks.PreToolUse[0].hooks[0].command | endswith("scripts/check-bash-write.sh")' "$SETTINGS" >/dev/null 2>&1; then
+  # Commands are quote-wrapped (step-1 fix for a space-containing resolved path), so strip
+  # the embedded literal quotes before matching the suffix rather than asserting the raw
+  # (now-quoted) string.
+  if [ -f "$SETTINGS" ] && jq -e '.hooks.PreToolUse[0].hooks[0].command | gsub("\"";"") | endswith("scripts/check-bash-write.sh")' "$SETTINGS" >/dev/null 2>&1; then
     ok "install.sh --target claude wires check-bash-write.sh into settings.json's PreToolUse hook"
   else
     bad "install.sh --target claude did not wire check-bash-write.sh into settings.json"
   fi
-  if jq -e '.hooks.SessionStart[0].hooks[0].command | endswith("scripts/inject-memory.sh")' "$SETTINGS" >/dev/null 2>&1; then
+  if jq -e '.hooks.SessionStart[].hooks[] | select(.command | gsub("\"";"") | endswith("scripts/inject-memory.sh"))' "$SETTINGS" >/dev/null 2>&1; then
     ok "install.sh --target claude wires inject-memory.sh into settings.json's SessionStart hook"
   else
     bad "install.sh --target claude did not wire inject-memory.sh into settings.json"
@@ -1315,6 +1322,92 @@ if [ "$real_case_rc" -eq 0 ]; then
   ok "the real fabricated-citation example (gate.sh:91-96, real+in-bounds+semantically wrong) passes this mechanical check -- the honest limit, demonstrated"
 else
   bad "check-citation.sh flagged a real, in-bounds citation -- it should only catch IMPOSSIBLE citations, not judge semantic content (exit $real_case_rc)"
+fi
+
+echo
+echo "=== inject-orchestrator-role.sh + hooks.json quoting (orchestrator-role-injection plan) ==="
+
+HOOKS_JSON="$CORE/hooks/hooks.json"
+ORCH_HOOK="$CORE/scripts/inject-orchestrator-role.sh"
+
+# (a) every command string in hooks.json is quote-wrapped -- the step-1 fix, asserted so it
+# cannot silently regress back to a bare ${CLAUDE_PLUGIN_ROOT}/... string that a harness
+# substituting an unquoted path with a space would split.
+all_cmds="$(jq -r '[.. | .command? // empty] | .[]' "$HOOKS_JSON" 2>/dev/null)"
+unquoted="$(printf '%s\n' "$all_cmds" | grep -vE '^".*"$' || true)"
+if [ -n "$all_cmds" ] && [ -z "$unquoted" ]; then
+  ok "every command string in hooks.json is quote-wrapped"
+else
+  bad "a command string in hooks.json is not quote-wrapped: $unquoted"
+fi
+
+# (b) a resolved command whose path contains a space executes cleanly -- proves the fix
+# against the actual failure shape (the harness substituting a space-containing path
+# unquoted, which the shell then splits), not just the quoting cosmetics.
+SPACE_TMP="$(mktemp -d)"
+SPACE_DEST="$SPACE_TMP/first word/scripts"
+mkdir -p "$SPACE_DEST"
+cp "$CORE/scripts/inject-memory.sh" "$SPACE_DEST/inject-memory.sh"
+chmod +x "$SPACE_DEST/inject-memory.sh"
+space_resolved="$(sed "s#\${CLAUDE_PLUGIN_ROOT}#$SPACE_TMP/first word#g" "$HOOKS_JSON" \
+  | jq -r '.hooks.SessionStart[0].hooks[0].command')"
+expect_code 0 "a resolved command whose path contains a space executes cleanly (quoted)" \
+  bash -c "$space_resolved"
+rm -rf "$SPACE_TMP"
+
+# (c) inject-orchestrator-role.sh prints nothing and exits 0 when config/sefi.config.yml is
+# absent -- an unrelated (non-sefi-scaffolded) project must never be told it is running
+# this chain.
+NOCFG_TMP="$(mktemp -d)"
+nocfg_out="$(cd "$NOCFG_TMP" && bash "$ORCH_HOOK" 2>&1)"
+nocfg_rc=0
+( cd "$NOCFG_TMP" && bash "$ORCH_HOOK" >/dev/null 2>&1 ) || nocfg_rc=$?
+if [ -z "$nocfg_out" ] && [ "$nocfg_rc" -eq 0 ]; then
+  ok "inject-orchestrator-role.sh prints nothing and exits 0 with no config/sefi.config.yml"
+else
+  bad "inject-orchestrator-role.sh should be silent+exit 0 with no config (got rc=$nocfg_rc, output=$nocfg_out)"
+fi
+rm -rf "$NOCFG_TMP"
+
+# (d) it prints the directive when config/sefi.config.yml is present.
+CFG_TMP="$(mktemp -d)"
+mkdir -p "$CFG_TMP/config"
+echo "memory:" > "$CFG_TMP/config/sefi.config.yml"
+cfg_out="$(cd "$CFG_TMP" && bash "$ORCH_HOOK" 2>&1)"
+if printf '%s' "$cfg_out" | grep -q "SEFI ORCHESTRATOR ROLE"; then
+  ok "inject-orchestrator-role.sh prints the directive when config/sefi.config.yml is present"
+else
+  bad "inject-orchestrator-role.sh did not print the directive with config present"
+fi
+
+# (e) its output stays within the 600-character cap.
+cfg_len="$(printf '%s' "$cfg_out" | wc -c | tr -d ' ')"
+if [ "$cfg_len" -le 600 ]; then
+  ok "inject-orchestrator-role.sh output stays within the 600-character cap ($cfg_len chars)"
+else
+  bad "inject-orchestrator-role.sh output exceeds the 600-character cap ($cfg_len chars)"
+fi
+rm -rf "$CFG_TMP"
+
+# (f) after install.sh --target claude against a temp $HOME, settings.json's SessionStart
+# array carries BOTH hooks, and the pre-existing inject-memory.sh entry survives the merge.
+if command -v jq >/dev/null 2>&1; then
+  BOTH_TMP="$(mktemp -d)"
+  HOME="$BOTH_TMP" bash "$ROOT/install.sh" --target claude --copy >/dev/null 2>&1
+  BOTH_SETTINGS="$BOTH_TMP/.claude/settings.json"
+  has_memory="no"; has_orch="no"
+  if [ -f "$BOTH_SETTINGS" ]; then
+    jq -e '.hooks.SessionStart[].hooks[] | select(.command | gsub("\"";"") | endswith("scripts/inject-memory.sh"))' "$BOTH_SETTINGS" >/dev/null 2>&1 && has_memory="yes"
+    jq -e '.hooks.SessionStart[].hooks[] | select(.command | gsub("\"";"") | endswith("scripts/inject-orchestrator-role.sh"))' "$BOTH_SETTINGS" >/dev/null 2>&1 && has_orch="yes"
+  fi
+  if [ "$has_memory" = "yes" ] && [ "$has_orch" = "yes" ]; then
+    ok "settings.json's SessionStart array carries both inject-memory.sh and inject-orchestrator-role.sh after install.sh --target claude"
+  else
+    bad "settings.json's SessionStart array is missing a hook after install.sh --target claude (memory=$has_memory orchestrator=$has_orch)"
+  fi
+  rm -rf "$BOTH_TMP"
+else
+  echo "  SKIPPED (jq not on PATH)"
 fi
 
 if [ "$fail" -ne 0 ]; then echo "test-scripts: $fail failed, $pass passed"; exit 1; fi
