@@ -1380,6 +1380,16 @@ else
   bad "inject-orchestrator-role.sh did not print the directive with config present"
 fi
 
+# (d2) the directive also carries a close_out reminder -- added so a session gets nudged
+# toward saving durable memory at least once, without the cost of a Stop-hook reengage
+# (Claude Code's Stop hook is invisible to the model on plain stdout; forcing a reminder
+# through would mean interrupting every session, however trivial, for one more turn).
+if printf '%s' "$cfg_out" | grep -q "close_out"; then
+  ok "inject-orchestrator-role.sh's directive also reminds toward close_out"
+else
+  bad "inject-orchestrator-role.sh's directive dropped the close_out reminder"
+fi
+
 # (e) its output stays within the 600-character cap.
 cfg_len="$(printf '%s' "$cfg_out" | wc -c | tr -d ' ')"
 if [ "$cfg_len" -le 600 ]; then

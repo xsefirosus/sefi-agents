@@ -10,12 +10,14 @@
 <a href="#works-with-your-harness"><img src="https://img.shields.io/badge/runs%20on-Claude%20Code%20%7C%20Hermes%20%7C%20OpenCode%20%7C%20Codex-555.svg" alt="runs on"></a>
 </p>
 
-Thirteen AI helpers -- a planner, a builder, a reviewer, a security checker, a writer,
+Thirteen AI agents -- a planner, a builder, a reviewer, a security checker, a writer,
 and more -- that work as a team: plan, build, check, and remember, with spending limits
 and a human approving every merge.
 
 One install, no separate setup: no database, no server to run, nothing else to
 download. Just this plugin, plus the AI tool you already use.
+
+**Install for Claude Code:**
 
 ```
 /plugin marketplace add xsefirosus/sefi-agents
@@ -23,7 +25,11 @@ download. Just this plugin, plus the AI tool you already use.
 /sefi:init
 ```
 
-Or hand the setup to any coding agent:
+Using OpenCode, Hermes Agent, or Codex instead? The install steps are different for each
+-- see [Where it runs](#works-with-your-harness) below, don't run the commands above.
+
+Or hand the setup to any coding agent -- this one detects which tool you're using and
+installs the right way for it, Claude Code or otherwise:
 
 > Help me set up sefi-agents by following
 > https://raw.githubusercontent.com/xsefirosus/sefi-agents/main/Install.md
@@ -77,14 +83,14 @@ considering against these rows yourself:
 
 ## The team (13 agents)
 
-Thirteen AI helpers, each with one job and a written contract for what it may touch, run,
+Thirteen AI agents, each with one job and a written contract for what it may touch, run,
 and change.
 
-| Helper | What it does | Cost |
+| Agent | What it does | Cost |
 |---|---|---|
 | qa-engineer | reviews finished work; approves or rejects with evidence | high |
 | security-engineer | checks changes that touch sensitive code (logins, secrets, external input) | high |
-| engineering-manager | routes work to the right helper, never writes code itself | medium |
+| engineering-manager | routes work to the right agent, never writes code itself | medium |
 | product-manager | turns a goal into a checkable, step-by-step plan | medium |
 | software-engineer | builds one planned piece at a time, in its own workspace | medium |
 | ui-ux-designer | designs, checks, or redesigns a user interface | medium |
@@ -94,9 +100,9 @@ and change.
 | support-engineer | sorts incoming issues and routes them | low |
 | knowledge-manager | keeps the project's memory tidy, never deletes anything | low |
 | technical-writer | writes docs and guides, every claim double-checked | low |
-| prompt-engineer | clarifies a raw request before it's routed to a helper | low |
+| prompt-engineer | clarifies a raw request before it's routed to an agent | low |
 
-- Each helper's "cost" maps to a real AI model, listed once in `config/model-map.yml`. To
+- Each agent's "cost" maps to a real AI model, listed once in `config/model-map.yml`. To
   change models later, you edit one file, not 13.
 - On OpenCode and Hermes, that setting is left open (`flexible`) on purpose -- their free
   model options change too often to lock one in, so you just pick a model yourself in
@@ -107,10 +113,10 @@ and change.
 
 ## The skills (11)
 
-Beyond the 13 helpers, "skills" are shared playbooks a helper loads only when the task
+Beyond the 13 agents, "skills" are shared playbooks an agent loads only when the task
 needs it:
 
-- **sefi-orchestration** -- decides which helper handles a request.
+- **sefi-orchestration** -- decides which agent handles a request.
 - **anti-hallucination** -- the core honesty rule: say "unknown" instead of guessing, and
   back up every claim with a real source.
 - **frontend-design** -- keeps generated user interfaces from looking generic or AI-made.
@@ -119,14 +125,14 @@ needs it:
 - **security-review** -- checks for secrets, unsafe code, and access-control mistakes.
 - **memory-protocol** -- the rules for how the project's memory is read and written.
 - **loop-engineering** -- the five-step pattern every automated cycle follows.
-- **retro-improve** -- small, self-review-based improvements to the helpers themselves,
+- **retro-improve** -- small, self-review-based improvements to the agents themselves,
   always in tiny, reversible steps.
 - **technical-writing** -- how to write docs where every claim was actually checked.
 - **n8n-workflow-design** -- best practices for building client automations.
 - **terse-mode** -- keeps the AI's own status updates short.
 
 Some skills you can call by name (typing `/skill-name`); others load automatically when
-a helper needs them. A skill you call by name can use an automatic one, but never call
+an agent needs them. A skill you call by name can use an automatic one, but never call
 another named one directly -- so it can't accidentally chain commands on its own.
 
 ## The loops (2 shipped, template for more)
@@ -158,9 +164,9 @@ Every loop must name all five steps and who approves it, or it's rejected automa
   pull requests. No database, no external service.
 - **Reading:** every new session automatically loads a short index (capped at 1,500
   characters) so it knows what's already been decided.
-- **Writing:** at the end of a work cycle, the knowledge-manager helper -- and only that
-  helper -- writes down what's worth remembering, or notes that there was nothing new.
-- Nothing is written down automatically by a script: only a helper can decide what's safe
+- **Writing:** at the end of a work cycle, the knowledge-manager agent -- and only that
+  agent -- writes down what's worth remembering, or notes that there was nothing new.
+- Nothing is written down automatically by a script: only an agent can decide what's safe
   to save, after removing anything that looks like a password or secret.
 - This project uses its own memory system on itself, but a fresh install of the plugin
   starts with an empty one -- your project's memory is always separate from this repo's.
@@ -176,11 +182,11 @@ Every loop must name all five steps and who approves it, or it's rejected automa
 
 ## Safety rails (all of them, in one place)
 
-- The helper that writes code never approves its own work -- a separate reviewer checks
+- The agent that writes code never approves its own work -- a separate reviewer checks
   it with real evidence.
 - A security checker reviews any change touching sensitive code.
 - Automated checks the AI can't skip: tests and linting, plan structure, handoffs between
-  helpers, and tool availability before a job starts.
+  agents, and tool availability before a job starts.
 - Spending limits: per task, per day, and overall. If spending can't be measured, the
   system stops and says so instead of assuming it's fine.
 - Anything the system isn't sure about goes to a review folder (`inbox/`) for you to
@@ -210,7 +216,7 @@ validate-model-map: OK (13 agents, 4 harnesses, 41 scripts parse; 2 warning(s))
 validate-adapters: OK (install-hermes.sh skill list matches disk, adapter doc paths resolve)
 check-unicode-safety: OK (124 files scanned, ASCII-clean)
 validate-token-budget: OK (all within token budgets; agents total 8316 words)
-test-scripts: OK (147 passed)
+test-scripts: OK (148 passed)
 test-integration: OK (30 passed) -- full loop skeleton executed end to end
 CI: all validators passed
 ```
@@ -219,8 +225,8 @@ CI: all validators passed
   proves the whole cycle works together, end to end, in a real test project -- with a real
   check that nothing merged itself.
 - This proves the machinery works, not that the AI always makes good calls -- every
-  helper's part in that test is scripted, not judged.
-- Every helper and skill has a length limit, and going over it fails the build. Exact
+  agent's part in that test is scripted, not judged.
+- Every agent and skill has a length limit, and going over it fails the build. Exact
   numbers change as the project grows -- run the command yourself instead of trusting this
   snapshot.
 
@@ -241,7 +247,7 @@ run private code through a model that might learn from your input.
 every time -- that rule is checked automatically, not just written down.
 
 **What happens when the AI doesn't know something?** It says so, instead of guessing.
-That rule is enforced automatically across every helper and skill.
+That rule is enforced automatically across every agent and skill.
 
 **Why didn't every skill install automatically on Hermes?** Hermes scans skills for
 risky-looking content, and two of ours get flagged by mistake -- they *describe* risky
@@ -261,7 +267,7 @@ bash plugins/sefi-core/scripts/ci/run-all.sh
 ```
 
 Those checks are the actual contribution guide: length limits, short descriptions,
-nothing broken or unused, and the honesty rule present in every helper and skill.
+nothing broken or unused, and the honesty rule present in every agent and skill.
 
 ## License
 

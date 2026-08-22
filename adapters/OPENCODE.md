@@ -58,6 +58,22 @@ the memory injection here, wire `scripts/inject-memory.sh` to `session.created` 
 Skipping it costs an optimization, not correctness -- the memory-protocol READ ladder still
 retrieves vault content on demand.
 
+When you wire `session.created`, also have it print a one-line reminder: before ending,
+if this session found something worth remembering, dispatch `knowledge-manager` (the
+`close_out` behavior, `skills/sefi-orchestration/references/close-out.md`) rather than
+letting the session end without saving anything. Matches the same line Claude Code's
+`inject-orchestrator-role.sh` injects at session start.
+
+**Why not `session.idle` (the closer analog to "remind right as the session ends"):**
+checked and rejected, not just skipped. `session.idle` is not a shell-command hook like
+the rest of this table -- it requires an actual OpenCode plugin (TypeScript/JavaScript),
+which this project has never needed and does not want to start requiring (the whole
+pitch is markdown plus POSIX shell, zero runtime deps). It also fires only after the
+agent loop has already ended (live-confirmed via OpenCode's own issue tracker,
+2026), so by the time it runs there is no turn left to inject a reminder into anyway. A
+`session.created` reminder is the honest, buildable equivalent -- a nudge at the start,
+same limitation as Claude Code's version: advisory only, nothing enforces it.
+
 ## Troubleshooting
 
 OpenCode does not have a single all-in-one `doctor` command (the way Hermes has
