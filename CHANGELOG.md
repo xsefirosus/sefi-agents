@@ -3,6 +3,74 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.25] - 2026-08-22
+
+### Added
+
+1. **Cross-project memory mirror -- additive, fail-closed by default.** Today's vault
+   (`memory/`, project-local, git-committed) is unchanged and remains the source of
+   truth. New: on a real local machine only, the knowledge-manager's close_out write is
+   additionally mirrored to a per-OS-user shared folder (`resolve-shared-memory-path.sh`
+   -- Windows: `/d` then `/c`; Linux: a real secondary mount, else `$HOME`), one
+   subfolder per project (`write-shared-memory-mirror.sh`, project-slug sanitized from
+   `git remote get-url origin`), so a *different* project's session can later read it.
+   Fails closed on any detected ephemeral/cloud environment (`CI`, `GITHUB_ACTIONS`,
+   `CODESPACES`, `IS_SANDBOX`, `/.dockerenv`, or `systemd-detect-virt` reporting anything
+   other than `none`) or on `memory.cross_project_enabled: false` -- the project-local
+   write is never blocked either way. Live-caught during testing: this repo's own cloud
+   sandbox has none of the CI-specific env markers set, so without the
+   `systemd-detect-virt` check it resolved as "local" and would have written a mirror
+   into a container that gets reclaimed on exit, silently losing it.
+2. **Cross-project reads are explicit-relevance-gated, never a scan.** A session may open
+   another project's mirrored note only when the current request names or clearly
+   implies that project -- never a background or session-start scan of the shared
+   folder's other subfolders. Extends memory-protocol's existing "never bulk-load" rule
+   across projects instead of loosening it.
+3. **`/sefi:init` now writes `.sefi/harness`** -- a one-line, gitignored, machine-local
+   fact naming which harness ran init (the agent executing the command states it
+   directly; never inferred from an environment variable). `write-shared-memory-mirror.sh`
+   reads it to name mirrored files, falling back to `unknown-harness` if absent. Works
+   identically on Claude Code, OpenCode, Hermes, and Codex -- no per-harness install code,
+   since it is the same agent-known fact regardless of which harness is asking.
+4. Two new config keys, `memory.cross_project_enabled` and
+   `memory.cross_project_folder_name`, in `config/sefi.config.yml` and the shipped
+   template.
+5. 7 new regression assertions in `test-scripts.sh` covering both new scripts: ephemeral-
+   environment detection, the opt-out flag, idempotent resolution, an unrecognized-OS
+   fail-closed path, project-slug sanitization, and the harness-marker fallback.
+
+### Changed
+
+6. **README, several sections, following from the mirror above and a redundancy pass.**
+   Memory section rewritten to describe the real mirror mechanism instead of the old "no
+   automatic sharing... no filter today" claim, which the mirror makes inaccurate.
+   "Why this exists" gained a "Where these ideas come from" note naming graph engineering
+   (a direct match to `docs/ANTIPATTERNS.md`'s own "diamond pattern"), Gauntlet Loop (same
+   blind-critic idea, explicitly capped rather than uncapped -- the divergence stated, not
+   glossed over), and Kanban + CI/CD. Two paragraphs cut as fully redundant with Safety
+   rails and the tier labels immediately above them ("How it compares"'s "Beyond those
+   three," and "The team"'s reviewer-tier paragraph). "The skills" intro rephrased to carry
+   the load-bearing fact its old trailing paragraph stated (a named skill can never chain
+   another named one) instead of stating it twice. New FAQ entry naming the deploy/
+   maintenance-role question directly: `devops-engineer` already covers deploy to the PR
+   boundary; a `dependency-upkeep` loop is the proposed (not yet built) answer for
+   maintenance; an SRE role is not planned, since it needs a running production system and
+   live telemetry this plugin has neither.
+7. **`docs/assets/how-it-works.svg` redrawn as a 3-column diagram** -- the interactive
+   request cycle, the daily morning-triage loop (previously absent from this diagram
+   despite being one of only two shipped loops), and weekly self-improvement, with the two
+   scheduled loops' connectors back to the request-cycle track routed through the gutters
+   and a channel below all box content instead of across it. Also fixes 3 real label/arrow
+   collisions found on inspection of the previous version (a scorecard-feed label running
+   into its own arrowhead, an "improves the agent" label colliding with its target box, and
+   a rotated "rejected" label clipped at the canvas edge) and one genuine rendering bug
+   caught only by pixel-scanning the headless screenshot rather than eyeballing it: the
+   `<img>` embed silently clipped the bottom of the SVG when the browser viewport wasn't
+   taller than the canvas, fixed by giving the `<svg>` root explicit `width`/`height`
+   attributes. "The loops" section removed as a section -- its two shipped loops and the
+   five-required-elements/`/sefi:loop-new` rule folded into a closing paragraph in "How a
+   request actually gets done" instead, next to the diagram that now shows them.
+
 ## [0.3.24] - 2026-08-22
 
 ### Changed

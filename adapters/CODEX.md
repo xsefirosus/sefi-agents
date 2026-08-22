@@ -44,6 +44,16 @@ Hooks: the Codex marketplace path installs hooks with the plugin, but `install.s
 `scripts/inject-memory.sh` to a session-start event yourself, or accept that the
 memory-protocol READ ladder retrieves vault content without it.
 
+The cross-project memory mirror (`memory-protocol/SKILL.md` WRITE step 4) needs none of
+the hook wiring above -- `resolve-shared-memory-path.sh` and `write-shared-memory-mirror.sh`
+are plain bash the knowledge-manager runs directly at close_out, so they work identically
+on Codex with no per-harness code. `/sefi:init`'s harness marker (`.sefi/harness`) is
+written by whichever agent runs `/sefi:init`, so Codex writes `codex` there itself, the same
+way Claude Code writes `claude` -- no install-time step or Codex-specific gap. One real
+caveat, not Codex-specific: a sandbox that disallows writes outside the project directory
+makes the mirror fail closed by design, same as a detected ephemeral environment -- the
+project-local vault write is never affected either way.
+
 ## 4. Worktrees
 
 Codex may create its own sandbox worktree. The worktree procedure in `docs/LOOPS.md` is

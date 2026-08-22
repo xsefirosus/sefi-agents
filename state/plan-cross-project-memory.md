@@ -40,12 +40,12 @@ it cannot be trusted:
   show in PR diffs or travel with a repo clone. Explicitly rejected in favor of the hybrid.
 
 ## Steps
-- [ ] 1. Add `memory.cross_project.enabled` and `memory.cross_project.folder_name` config keys. (needs: -)
+- [x] 1. Add `memory.cross_project.enabled` and `memory.cross_project.folder_name` config keys. (needs: -)
   `true` / `sefi-memory` defaults, in `plugins/sefi-core/templates/config/sefi.config.yml`
   and `config/sefi.config.yml`, with a comment naming the fail-safe default: ephemeral
   environments skip the mirror regardless of this flag; the flag only lets a user opt out
   entirely.
-- [ ] 2. Write `plugins/sefi-core/scripts/resolve-shared-memory-path.sh`. (needs: 1)
+- [x] 2. Write `plugins/sefi-core/scripts/resolve-shared-memory-path.sh`. (needs: 1)
   Prints the resolved shared-mirror root to stdout and exits 0, or prints nothing and exits
   1 when the mirror should not run. Logic, in order: (a) read
   `memory.cross_project.enabled`; if false, exit 1. (b) Ephemeral-environment check FIRST
@@ -59,7 +59,7 @@ it cannot be trusted:
   `<drive>/<folder_name>/<os-username>/`, using `memory.cross_project.folder_name` from step
   1, and print it. Read-only probing throughout; this script never creates a directory
   itself -- the caller in step 4 does, only once it actually has content to write.
-- [ ] 3. Wire a `.sefi/harness` install-time marker. (needs: -)
+- [x] 3. Wire a `.sefi/harness` install-time marker. (needs: -)
   `install.sh` writes it for `--target claude|hermes|opencode` (one line: the target name),
   and `plugins/sefi-core/scripts/install-hermes.sh` writes it too, since `adapters/HERMES.md`
   documents that as the separately-tested real Hermes install path. Add `.sefi/` to
@@ -67,7 +67,7 @@ it cannot be trusted:
   belong in `state/` (which is git-committed) or the vault. Codex has no install script this
   repo controls (`adapters/CODEX.md`: marketplace path only) -- document the marker as
   UNKNOWN/absent there rather than inventing a Codex-side write.
-- [ ] 4. Extend `memory-protocol/SKILL.md` WRITE section with a mirror step. (needs: 2, 3)
+- [x] 4. Extend `memory-protocol/SKILL.md` WRITE section with a mirror step. (needs: 2, 3)
   After the existing privacy-filtered daily-note append (current step 2), call
   `resolve-shared-memory-path.sh`. On success, mirror the *same already-filtered* entry --
   never a second privacy pass on different content -- to
@@ -80,7 +80,7 @@ it cannot be trusted:
   any failure to resolve or write the mirror (missing tool, permission denied, a sandbox
   that blocks writes outside the project directory), log one line and continue -- the
   project-local write already happened and is never blocked by this addition.
-- [ ] 5. Extend `memory-protocol/SKILL.md` READ section with an explicit-relevance rung. (needs: 2)
+- [x] 5. Extend `memory-protocol/SKILL.md` READ section with an explicit-relevance rung. (needs: 2)
   A session may resolve another project's slug (same derivation as step 4) under the shared
   root and open a specific matching note, but only when the current request names or
   clearly implies that other project by name -- never a scan of the shared folder's other
@@ -88,17 +88,17 @@ it cannot be trusted:
   lacks an answer. State this as a hard rule next to the existing "never bulk-load" line,
   not a separate policy. Same 2-wikilink-equivalent budget as local reads applies once
   inside the other project's note.
-- [ ] 6. Update close-out.md to name the optional mirror step. (needs: 4)
+- [x] 6. Update close-out.md to name the optional mirror step. (needs: 4)
   `skills/sefi-orchestration/references/close-out.md` so the close_out contract stays
   accurate about what the knowledge-manager's dispatch can now do.
-- [ ] 7. Add 5 regression assertions to `test-scripts.sh`. (needs: 2, 3, 4)
+- [x] 7. Add 5 regression assertions to `test-scripts.sh`. (needs: 2, 3, 4)
   (a) with a CI-marker env var set, `resolve-shared-memory-path.sh` prints nothing and exits
   non-zero; (b) with no ephemeral markers and a fake writable drive path substituted in a
   temp `$HOME`/config, it resolves and is idempotent across two calls; (c) a fake git remote
   URL sanitizes to the expected project-slug with no path-unsafe characters; (d) a missing
   `.sefi/harness` falls back to `unknown-harness` without a nonzero exit; (e)
   `validate-config-wired.sh` passes with the 2 new keys from step 1.
-- [ ] 8. Update the 3 adapter docs with the mirror's harness-neutral note. (needs: 4)
+- [x] 8. Update the 3 adapter docs with the mirror's harness-neutral note. (needs: 4)
   `adapters/OPENCODE.md`, `adapters/HERMES.md`, `adapters/CODEX.md`: the mirror step is
   plain bash the knowledge-manager runs directly, so it needs no per-harness code -- state
   that once, and name the one real caveat: a harness or sandbox that disallows writes
@@ -106,32 +106,32 @@ it cannot be trusted:
   under investigation, not assumed) must make step 4's mirror fail closed, which it already
   does by design. Codex's entry additionally notes the harness marker is UNKNOWN there per
   step 3.
-- [ ] 9. CHANGELOG entry and version bump. (needs: 4, 5, 7)
+- [x] 9. CHANGELOG entry and version bump. (needs: 4, 5, 7)
   Name the mirror, its fail-safe default, and the explicit-relevance-only read rule; version
   bump in `.claude-plugin/marketplace.json` (`metadata.version` and the `sefi-core` entry)
   and `plugins/sefi-core/.claude-plugin/plugin.json`.
-- [ ] 10. README Memory section: rewrite to ~4 bullets. (needs: 9)
+- [x] 10. README Memory section: rewrite to ~4 bullets. (needs: 9)
   Reflect the real mechanism -- project-local vault unchanged and still the source of
   truth; an optional per-OS-user mirror on real local machines only (never on cloud/CI);
   cross-project reads happen only when a request explicitly names the other project, never
   a background scan; the current "no automatic sharing... no filter today" claim is now
   inaccurate and must be replaced, not merely trimmed.
-- [ ] 11. README "Why this exists": add a "Where these ideas come from" note. (needs: -)
+- [x] 11. README "Why this exists": add a "Where these ideas come from" note. (needs: -)
   Graph engineering: direct match, cite `docs/ANTIPATTERNS.md`'s own "diamond pattern" line
   (split -> parallel workers -> a separate verifier node -> merge). Gauntlet Loop: same
   blind-critic/named-bar idea, but capped -- state the divergence (`bar-comparison.md`:
   PASS/REJECT under `max_retries`, never "loop until the critic is wowed") rather than a
   flat similarity claim. Kanban + CI/CD: one sentence (`max_parallel_worktrees` as a WIP
   limit, `state/`/`inbox/` as a pull board, CI with CD cut off at the PR on purpose).
-- [ ] 12. README "How it compares": remove the "Beyond those three..." paragraph. (needs: -)
+- [x] 12. README "How it compares": remove the "Beyond those three..." paragraph. (needs: -)
   Fully redundant with Safety rails bullets 1, 4, and 6.
-- [ ] 13. README "The team": remove the reviewer-tier paragraph in full. (needs: -)
+- [x] 13. README "The team": remove the reviewer-tier paragraph in full. (needs: -)
   Owner's explicit call -- including the `config/model-map.yml` sentence.
-- [ ] 14. README "The skills": rephrase the section intro, drop the trailing paragraph. (needs: -)
+- [x] 14. README "The skills": rephrase the section intro, drop the trailing paragraph. (needs: -)
   Fold in the current last paragraph's idea (some skills load automatically, some are
   called by name, and a named skill can never chain another named one -- so it cannot
   silently escalate commands), then delete that trailing paragraph.
-- [ ] 15. Redraw `docs/assets/how-it-works.svg`. (needs: -)
+- [x] 15. Redraw `docs/assets/how-it-works.svg`. (needs: -)
   Fix the 3 confirmed label/arrow collisions ("results feed the scorecard" running into its
   arrowhead, "improves the agent above" colliding with the Applied box, "rejected" clipped
   off the left edge), and add the daily morning-triage loop as a column or row alongside the
@@ -139,19 +139,19 @@ it cannot be trusted:
   being one of only two shipped loops. Render headlessly (Chromium `--screenshot`, as done
   for the current version) and visually inspect the PNG for overlap before treating this
   step as done -- an unverified render is PENDING, not passing.
-- [ ] 16. README: add a closing paragraph summarizing both loops. (needs: 15)
+- [x] 16. README: add a closing paragraph summarizing both loops. (needs: 15)
   In "How a request actually gets done," sourced from `loops/morning-triage.loop.md` and
   `loops/weekly-retro.loop.md` (not written from memory), in the same section as the
   redrawn diagram.
-- [ ] 17. README: delete "The loops" section, fold its unique content forward. (needs: 16)
+- [x] 17. README: delete "The loops" section, fold its unique content forward. (needs: 16)
   Delete "The loops (2 shipped, template for more)" and its Contents anchor entry, folding
   its two pieces of unique content into step 16's new paragraph: the five-required-elements
   rule and the `/sefi:loop-new` pointer.
-- [ ] 18. README: add one sentence naming a proposed dependency-upkeep loop. (needs: -)
+- [x] 18. README: add one sentence naming a proposed dependency-upkeep loop. (needs: -)
   support-engineer -> software-engineer -> qa-engineer, same PR-only pattern as the two
   shipped loops, as the answer to "what maintenance role is missing" -- prose only, not
   built in this plan.
-- [ ] 19. Run full CI, paste the real tail into the final report. (needs: 7, 8, 9, 10, 11, 12, 13, 14, 17, 18)
+- [x] 19. Run full CI, paste the real tail into the final report. (needs: 7, 8, 9, 10, 11, 12, 13, 14, 17, 18)
   `bash plugins/sefi-core/scripts/ci/run-all.sh`, including the updated `test-scripts` count.
 
 ## Files Touched

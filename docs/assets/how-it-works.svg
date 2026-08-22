@@ -1,7 +1,8 @@
-<svg viewBox="0 0 1000 660" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="How sefi-agents works: the request cycle on the left, the weekly self-improvement loop on the right, feeding back into the same agents">
+<svg width="1460" height="700" viewBox="0 0 1460 700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="How sefi-agents works: the interactive request cycle on the left, the daily morning-triage loop in the middle, and the weekly self-improvement loop on the right, feeding back into the same agents">
   <style>
     .bg { fill: #ffffff; }
     .colhead { font: 700 14px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; letter-spacing: 0.04em; fill: #57606a; }
+    .colsub { font: 400 11px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #6e7681; }
     .boxtext { font: 500 13px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; }
     .box { fill: #eef1f4; stroke: #c9d1d9; }
     .box.you { fill: #eaf1fb; stroke: #7aa7d9; }
@@ -13,9 +14,11 @@
     .dashed { stroke: #8b949e; stroke-width: 1.6; fill: none; stroke-dasharray: 5 4; }
     .caption { font: 400 12px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #57606a; }
     .label { font: 500 11px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #57606a; }
+    .labelbg { fill: #ffffff; opacity: 0.9; }
     @media (prefers-color-scheme: dark) {
       .bg { fill: #0d1117; }
       .colhead { fill: #9198a1; }
+      .colsub { fill: #7d8590; }
       .box { fill: #161b22; stroke: #30363d; }
       .box.you { fill: #0d2a4a; stroke: #4d8fd6; }
       .box.gate { fill: #0f2818; stroke: #2a6e3f; }
@@ -26,97 +29,143 @@
       .dashed { stroke: #6e7681; }
       .caption { fill: #9198a1; }
       .label { fill: #9198a1; }
+      .labelbg { fill: #0d1117; }
     }
   </style>
 
-  <rect class="bg" x="0" y="0" width="1000" height="660" />
+  <rect class="bg" x="0" y="0" width="1460" height="700" />
 
-  <text class="colhead" x="20" y="28">EVERY REQUEST</text>
-  <text class="colhead" x="580" y="28">EVERY WEEK, SEPARATELY</text>
+  <text class="colhead" x="40" y="28">EVERY REQUEST</text>
+  <text class="colhead" x="520" y="28">EVERY DAY</text>
+  <text class="colsub"  x="520" y="42">06:00 UTC, unattended</text>
+  <text class="colhead" x="1000" y="28">EVERY WEEK, SEPARATELY</text>
 
-  <!-- Left column: the request cycle -->
-  <rect class="box you" x="20" y="42" width="420" height="46" rx="9" />
-  <text class="boxtext" x="38" y="70">You type a request</text>
+  <!-- ===================== Left column: the request cycle ===================== -->
+  <rect class="box you" x="40" y="56" width="440" height="46" rx="9" />
+  <text class="boxtext" x="58" y="84">You type a request</text>
 
-  <path class="arrow" d="M230 88 V106" /><path class="arrowhead" d="M230 106 L225 96 L235 96 Z" />
+  <path class="arrow" d="M260 102 V120" /><path class="arrowhead" d="M260 120 L255 110 L265 110 Z" />
 
-  <rect class="box" x="20" y="106" width="420" height="46" rx="9" />
-  <text class="boxtext" x="38" y="134">prompt-engineer clarifies what you actually mean</text>
+  <rect class="box" x="40" y="120" width="440" height="46" rx="9" />
+  <text class="boxtext" x="58" y="148">prompt-engineer clarifies what you actually mean</text>
 
-  <path class="arrow" d="M230 152 V170" /><path class="arrowhead" d="M230 170 L225 160 L235 160 Z" />
+  <path class="arrow" d="M260 166 V184" /><path class="arrowhead" d="M260 184 L255 174 L265 174 Z" />
 
-  <rect class="box" x="20" y="170" width="420" height="46" rx="9" />
-  <text class="boxtext" x="38" y="198">engineering-manager picks the right agent</text>
+  <rect class="box" x="40" y="184" width="440" height="46" rx="9" />
+  <text class="boxtext" x="58" y="212">engineering-manager picks the right agent</text>
 
-  <path class="arrow" d="M230 216 V234" /><path class="arrowhead" d="M230 234 L225 224 L235 224 Z" />
+  <path class="arrow" d="M260 230 V248" /><path class="arrowhead" d="M260 248 L255 238 L265 238 Z" />
 
-  <rect class="box" x="20" y="234" width="420" height="46" rx="9" />
-  <text class="boxtext" x="38" y="262">product-manager writes steps + how to check "done"</text>
+  <rect class="box" x="40" y="248" width="440" height="46" rx="9" />
+  <text class="boxtext" x="58" y="276">product-manager writes steps + how to check "done"</text>
 
-  <path class="arrow" d="M230 280 V298" /><path class="arrowhead" d="M230 298 L225 288 L235 288 Z" />
+  <path class="arrow" d="M260 294 V312" /><path class="arrowhead" d="M260 312 L255 302 L265 302 Z" />
 
-  <rect class="box" x="20" y="298" width="420" height="46" rx="9" />
-  <text class="boxtext" x="38" y="326">software-engineer builds it, in its own workspace</text>
+  <rect class="box" x="40" y="312" width="440" height="46" rx="9" />
+  <text class="boxtext" x="58" y="340">software-engineer builds it, in its own workspace</text>
 
-  <path class="arrow" d="M230 344 V362" /><path class="arrowhead" d="M230 362 L225 352 L235 352 Z" />
+  <path class="arrow" d="M260 358 V376" /><path class="arrowhead" d="M260 376 L255 366 L265 366 Z" />
 
-  <rect class="box gate" x="20" y="362" width="420" height="46" rx="9" />
-  <text class="boxtext" x="38" y="390">qa-engineer checks it against real, run evidence</text>
+  <rect class="box gate" x="40" y="376" width="440" height="46" rx="9" />
+  <text class="boxtext" x="58" y="404">qa-engineer checks it against real, run evidence</text>
 
-  <!-- reject loop back -->
-  <path class="arrow" d="M20 385 H2 V320 H20" />
-  <path class="arrowhead" d="M20 320 L10 315 L10 325 Z" />
-  <text class="label" x="4" y="352" transform="rotate(-90 4 352)">rejected</text>
+  <!-- reject loop back, kept clear of the canvas edge -->
+  <path class="arrow" d="M40 399 H22 V334 H40" />
+  <path class="arrowhead" d="M40 334 L30 329 L30 339 Z" />
+  <rect class="labelbg" x="8" y="352" width="16" height="46" />
+  <text class="label" x="18" y="352" transform="rotate(-90 18 352)">rejected</text>
 
-  <path class="arrow" d="M230 408 V426" /><path class="arrowhead" d="M230 426 L225 416 L235 416 Z" />
-  <text class="label" x="245" y="420">approved</text>
+  <path class="arrow" d="M260 422 V440" /><path class="arrowhead" d="M260 440 L255 430 L265 430 Z" />
+  <rect class="labelbg" x="272" y="425" width="60" height="14" />
+  <text class="label" x="275" y="435">approved</text>
 
-  <rect class="box" x="20" y="426" width="420" height="46" rx="9" />
-  <text class="boxtext" x="38" y="454">A pull request opens</text>
+  <rect class="box" x="40" y="440" width="440" height="46" rx="9" />
+  <text class="boxtext" x="58" y="468">A pull request opens</text>
 
-  <path class="arrow" d="M230 472 V490" /><path class="arrowhead" d="M230 490 L225 480 L235 480 Z" />
+  <path class="arrow" d="M260 486 V504" /><path class="arrowhead" d="M260 504 L255 494 L265 494 Z" />
 
-  <rect class="box you" x="20" y="490" width="420" height="46" rx="9" />
-  <text class="boxtext" x="38" y="518">You review and merge -- nothing merges by itself</text>
+  <rect class="box you" x="40" y="504" width="440" height="46" rx="9" />
+  <text class="boxtext" x="58" y="532">You review and merge -- nothing merges by itself</text>
 
-  <path class="arrow" d="M230 536 V554" /><path class="arrowhead" d="M230 554 L225 544 L235 544 Z" />
+  <path class="arrow" d="M260 550 V568" /><path class="arrowhead" d="M260 568 L255 558 L265 558 Z" />
 
-  <rect class="box" x="20" y="554" width="420" height="46" rx="9" />
-  <text class="boxtext" x="38" y="582">knowledge-manager saves anything worth remembering</text>
+  <rect class="box" x="40" y="568" width="440" height="46" rx="9" />
+  <text class="boxtext" x="58" y="596">knowledge-manager saves anything worth remembering</text>
 
-  <text class="caption" x="20" y="615">Spending limits and tool checks apply at every arrow above,</text>
-  <text class="caption" x="20" y="632">not shown as separate boxes -- see Safety rails.</text>
+  <text class="caption" x="40" y="632">Spending limits and tool checks apply at every arrow above,</text>
+  <text class="caption" x="40" y="649">not shown as separate boxes -- see Safety rails.</text>
 
-  <!-- Right column: weekly self-improvement -->
-  <rect class="box" x="580" y="170" width="400" height="46" rx="9" />
-  <text class="boxtext" x="598" y="198">state/metrics.md -- pass/fail history per agent</text>
+  <!-- ===================== Middle column: daily morning-triage ===================== -->
+  <rect class="box" x="520" y="56" width="420" height="46" rx="9" />
+  <text class="boxtext" x="538" y="84">support-engineer scans failed CI, issues, commits</text>
 
-  <path class="arrow" d="M780 216 V234" /><path class="arrowhead" d="M780 234 L775 224 L785 224 Z" />
+  <path class="arrow" d="M730 102 V120" /><path class="arrowhead" d="M730 120 L725 110 L735 110 Z" />
 
-  <rect class="box retro" x="580" y="234" width="400" height="46" rx="9" />
-  <text class="boxtext" x="598" y="262">weekly-retro finds the worst-performing agent</text>
+  <rect class="box" x="520" y="120" width="420" height="46" rx="9" />
+  <text class="boxtext" x="538" y="148">one worktree per finding, capped at 3 parallel</text>
 
-  <path class="arrow" d="M780 280 V298" /><path class="arrowhead" d="M780 298 L775 288 L785 288 Z" />
+  <path class="arrow" d="M730 166 V184" /><path class="arrowhead" d="M730 184 L725 174 L735 174 Z" />
 
-  <rect class="box retro" x="580" y="298" width="400" height="46" rx="9" />
-  <text class="boxtext" x="598" y="326">proposes a small, bounded fix (3 sentences max)</text>
+  <rect class="box" x="520" y="184" width="420" height="46" rx="9" />
+  <text class="boxtext" x="538" y="212">software-engineer builds the fix, in its own worktree</text>
 
-  <path class="arrow" d="M780 344 V362" /><path class="arrowhead" d="M780 362 L775 352 L785 352 Z" />
+  <path class="arrow" d="M730 230 V248" /><path class="arrowhead" d="M730 248 L725 238 L735 238 Z" />
 
-  <rect class="box gate" x="580" y="362" width="400" height="46" rx="9" />
-  <text class="boxtext" x="598" y="390">qa-engineer checks the fix BEFORE it ships</text>
+  <rect class="box gate" x="520" y="248" width="420" height="46" rx="9" />
+  <text class="boxtext" x="538" y="276">qa-engineer checks it, same as the left track</text>
 
-  <path class="arrow" d="M780 408 V426" /><path class="arrowhead" d="M780 426 L775 416 L785 416 Z" />
+  <path class="arrow" d="M730 294 V312" /><path class="arrowhead" d="M730 312 L725 302 L735 302 Z" />
 
-  <rect class="box" x="580" y="426" width="400" height="46" rx="9" />
-  <text class="boxtext" x="598" y="454">Applied -- tracked and revertible by commit</text>
+  <rect class="box" x="520" y="312" width="420" height="46" rx="9" />
+  <text class="boxtext" x="538" y="340">A pull request opens</text>
 
-  <!-- connecting arrows between the two tracks -->
-  <path class="dashed" d="M440 385 H560 V193 H578" />
-  <path class="arrowhead" d="M578 193 L568 188 L568 198 Z" />
-  <text class="label" x="450" y="200">results feed the scorecard</text>
+  <path class="arrow" d="M730 358 V376" /><path class="arrowhead" d="M730 376 L725 366 L735 366 Z" />
 
-  <path class="dashed" d="M580 449 H500 V325 H442" />
-  <path class="arrowhead" d="M442 325 L452 320 L452 330 Z" />
-  <text class="label" x="452" y="460">improves the agent above</text>
+  <rect class="box" x="520" y="376" width="420" height="46" rx="9" />
+  <text class="boxtext" x="538" y="404">knowledge-manager files this cycle's findings, or SKIP</text>
+
+  <text class="caption" x="520" y="440">Runs unattended; still stops at a pull request, same as</text>
+  <text class="caption" x="520" y="457">every other loop -- see Safety rails.</text>
+  <text class="caption" x="520" y="480">qa-engineer verdicts append to state/metrics.md too,</text>
+  <text class="caption" x="520" y="497">the same file the weekly track reads on the right.</text>
+
+  <!-- ===================== Right column: weekly self-improvement ===================== -->
+  <rect class="box" x="1000" y="184" width="420" height="46" rx="9" />
+  <text class="boxtext" x="1018" y="212">state/metrics.md -- pass/fail history per agent</text>
+
+  <path class="arrow" d="M1210 230 V248" /><path class="arrowhead" d="M1210 248 L1205 238 L1215 238 Z" />
+
+  <rect class="box retro" x="1000" y="248" width="420" height="46" rx="9" />
+  <text class="boxtext" x="1018" y="276">weekly-retro finds the worst-performing agent</text>
+
+  <path class="arrow" d="M1210 294 V312" /><path class="arrowhead" d="M1210 312 L1205 302 L1215 302 Z" />
+
+  <rect class="box retro" x="1000" y="312" width="420" height="46" rx="9" />
+  <text class="boxtext" x="1018" y="340">proposes a small, bounded fix (3 sentences max)</text>
+
+  <path class="arrow" d="M1210 358 V376" /><path class="arrowhead" d="M1210 376 L1205 366 L1215 366 Z" />
+
+  <rect class="box gate" x="1000" y="376" width="420" height="46" rx="9" />
+  <text class="boxtext" x="1018" y="404">qa-engineer checks the fix BEFORE it ships</text>
+
+  <path class="arrow" d="M1210 422 V440" /><path class="arrowhead" d="M1210 440 L1205 430 L1215 430 Z" />
+
+  <rect class="box" x="1000" y="440" width="420" height="46" rx="9" />
+  <text class="boxtext" x="1018" y="468">Applied -- tracked and revertible by commit</text>
+
+  <!-- ===================== Cross-column connectors ===================== -->
+  <!-- Both routed AROUND the middle column, through the gutters and a channel below all
+       box/caption content (middle column's own text ends at y=497), never across it. -->
+
+  <!-- left qa-engineer's verdicts feed the weekly scorecard -->
+  <path class="dashed" d="M480 399 H500 V530 H960 V207 H998" />
+  <path class="arrowhead" d="M998 207 L988 202 L988 212 Z" />
+  <rect class="labelbg" x="560" y="522" width="290" height="16" />
+  <text class="label" x="565" y="534">left track's qa-engineer verdicts feed the scorecard</text>
+
+  <!-- weekly-retro's applied fix improves the shared agent definitions both tracks use -->
+  <path class="dashed" d="M1000 463 H950 V565 H505 V335 H480" />
+  <path class="arrowhead" d="M480 335 L490 330 L490 340 Z" />
+  <rect class="labelbg" x="560" y="557" width="330" height="16" />
+  <text class="label" x="565" y="569">improves the agent definitions both tracks share</text>
 </svg>
