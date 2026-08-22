@@ -3,6 +3,38 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.23] - 2026-08-22
+
+### Changed
+
+1. **README further compressed and made visual, no new images added.** "How it
+   compares" dropped its 9-row abstract feature table (redundant with the SVG diagram
+   above it, which already carries the concrete evidence) down to one summary sentence.
+   The team and skills sections regrouped from flat lists into tiered/purpose groups
+   (Reviewers/Builders/Support crew; Always relevant/Building & reviewing/Memory &
+   process/Specialized) -- deliberately kept as text, not a picture: `validate-doc-counts.sh`
+   checks the README's claimed agent/skill counts against what's actually on disk, a
+   check that only works against real prose, not an image.
+2. **New section: "How a request actually gets done"** -- a concrete, verified
+   `prompt-engineer -> engineering-manager -> product-manager -> software-engineer ->
+   qa-engineer -> pull request -> knowledge-manager` flowchart, replacing the previous
+   abstract five-move diagram at the top of the loops section. Traced against this
+   repo's own `test-integration.sh` stage sequence (the actual tested order: plan gate,
+   handoff gate, budget preflight, worktree build, gate.sh, qa-engineer verification,
+   close_out), not invented from a general description.
+3. **Memory section: two concrete facts added, both previously unstated.** Where the
+   vault actually lives (the project's own folder, `memory/` -- not Claude Code's or
+   OpenCode's settings folder -- and committed to the project's git repo by default,
+   confirmed against `config/sefi.config.yml`'s `vault_dir: memory` and `commands/init.md`'s
+   gitignore policy). And the honest state of cross-project memory: no automatic sharing
+   between two related projects today -- pointing both at the same folder is possible
+   but explicitly warned against in `commands/init.md` as merging notes with no way to
+   tell which project a note came from; there is no "show me only what's relevant" filter.
+4. **"Works with your harness" table: OpenCode moved to the second row**, ahead of
+   Hermes Agent.
+
+Full CI green throughout.
+
 ## [0.3.22] - 2026-08-22
 
 ### Added
