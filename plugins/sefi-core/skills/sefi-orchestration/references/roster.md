@@ -12,17 +12,16 @@ agent file under `agents/`. Every agent additionally follows the anti-hallucinat
 | `product-manager.md` | sonnet | loop-engineering | fixed heading skeleton; grep-countable steps | mid |
 | `ui-ux-designer.md` | sonnet | frontend-design | four verbs (build/audit/redesign/study); direction-first; never pixel-clones | mid |
 | `software-engineer.md` | sonnet | loop-engineering, backend-design, frontend-design | gate.sh before done; minimization ladder; vertical slices | mid |
-| `qa-engineer.md` | opus | strategy-gate (rigor) | adversarial; executes to verify | high |
+| `qa-engineer.md` | opus | anti-hallucination (bar-comparison) | adversarial; executes to verify | high |
 | `security-engineer.md` | opus | security-review | trust-boundary gate; read-only findings | high |
 | `devops-engineer.md` | sonnet | loop-engineering | worktree procedure; honest telemetry; timeout classes | mid |
 | `support-engineer.md` | haiku | loop-engineering | triage classes; consume-before-act | cheap |
 | `knowledge-manager.md` | haiku | memory-protocol | append-only; single writer for `memory/` | cheap |
 | `technical-writer.md` | haiku | technical-writing | verify-before-cite; honest claims only | cheap |
 | `solutions-architect.md` | sonnet | n8n-workflow-design | locked ROI review; recommends only | mid |
-| `quant-analyst.md` | sonnet | strategy-gate | hard gates; never loosens | mid |
 
 ## Growth
-At 14 agents (`prompt-engineer` added flat -- narrow scope, no restructuring implied) this
+At 13 agents (`prompt-engineer` added flat -- narrow scope, no restructuring implied) this
 roster sits past the ~10-12 flat-folder boundary named here previously. It stays flat for
 now; the NEXT addition introduces a consistent file-name prefix (e.g. `build-*`,
 `quality-*`) or domain subfolders under `agents/` -- do not defer that decision a second

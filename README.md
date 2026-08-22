@@ -10,12 +10,12 @@
 <a href="#works-with-your-harness"><img src="https://img.shields.io/badge/runs%20on-Claude%20Code%20%7C%20Hermes%20%7C%20OpenCode%20%7C%20Codex-555.svg" alt="runs on"></a>
 </p>
 
-Fourteen markdown-defined agents -- product manager, full-stack engineer, QA, security,
-DevOps, design, and more -- that plan, build, judge, and remember as a team, with hard
-budget caps and a human holding the merge button.
+Thirteen AI helpers -- a planner, a builder, a reviewer, a security checker, a writer,
+and more -- that work as a team: plan, build, check, and remember, with spending limits
+and a human approving every merge.
 
-One install, no separate runtime: no database, no hosted service, no dependency tree --
-markdown and POSIX shell underneath, nothing phoning home.
+One install, no separate setup: no database, no server to run, nothing else to
+download. Just this plugin, plus the AI tool you already use.
 
 ```
 /plugin marketplace add xsefirosus/sefi-agents
@@ -29,177 +29,175 @@ Or hand the setup to any coding agent:
 > https://raw.githubusercontent.com/xsefirosus/sefi-agents/main/Install.md
 
 **Contents:** [Why this exists](#why-this-exists) -- [How it compares](#how-it-compares) --
-[The team](#the-team-14-agents) -- [The skills](#the-skills-12) --
+[The team](#the-team-13-agents) -- [The skills](#the-skills-11) --
 [The loops](#the-loops-2-shipped-template-for-more) --
-[Memory](#memory-that-survives-the-session) -- [Harness support](#works-with-your-harness) --
-[Safety rails](#safety-rails-all-of-them-in-one-place) -- [Proof](#proof) -- [FAQ](#faq) --
+[Memory](#memory-that-survives-the-session) -- [Where it runs](#works-with-your-harness) --
+[Safety rules](#safety-rails-all-of-them-in-one-place) -- [Proof](#proof) -- [FAQ](#faq) --
 [Contributing](#contributing) -- [License](#license)
 
 ## Why this exists
 
-Most agent setups fail the same three ways:
+Most AI coding setups fail the same three ways:
 
-- **The writer grades its own homework.** Same model writes the code and reviews it.
-- **Tokens blow out.** Nothing bounds a runaway loop.
-- **Every session starts amnesiac.** State lives in a context window that evaporates.
+- **The AI grades its own homework.** The same model that writes the code also reviews
+  it, so it rarely catches its own mistakes.
+- **Spending gets out of control.** Nothing stops a task from running (and costing money)
+  far longer than it should.
+- **Every conversation starts from zero.** Whatever the AI learned yesterday is gone
+  today, because nothing wrote it down.
 
-We shipped all three failures first, in the author's previous agent system (Python/
-FastAPI). The post-mortem is public, not hidden: [docs/ANTIPATTERNS.md](docs/ANTIPATTERNS.md)
-maps every failure to the mechanism here that now prevents it.
+We hit all three problems first, in the author's earlier version of this project. That
+post-mortem is public, not hidden: [docs/ANTIPATTERNS.md](docs/ANTIPATTERNS.md) lists each
+failure next to the fix that now prevents it.
 
 ## How it compares
 
-Three real incidents, no invented "after" numbers -- full history in [CHANGELOG.md](CHANGELOG.md):
+Three real incidents from this project's own history, no made-up "after" numbers -- full
+history in [CHANGELOG.md](CHANGELOG.md):
 
-<img src="docs/assets/comparison.svg" alt="Three real incidents, without a gate versus with sefi-agents" width="100%">
+<img src="docs/assets/comparison.svg" alt="Three real incidents, without sefi-agents versus with sefi-agents" width="100%">
 
-No names beyond that -- check any framework you're evaluating against these rows yourself:
+(Usage is measured in "tokens" -- small chunks of text, roughly three-quarters of a word
+each, that AI providers use to price and limit how much a task can do.)
 
-| | sefi-agents | typical agent framework |
+Beyond those three, an honest comparison -- no competitor named, check any tool you're
+considering against these rows yourself:
+
+| | sefi-agents | a typical AI coding setup |
 |---|---|---|
-| Who judges the work | a separate adversarial qa-engineer, different model where possible | the model that wrote it reviews itself |
-| Verdict basis | executed evidence: re-run commands, before/after pairs | "the code looks right" |
-| Runtime | markdown + POSIX shell | a language runtime + dependency tree |
-| Cost control | hard caps: per-run, daily, AND per-dispatch | rarely built in |
-| Memory | a human-readable Obsidian-style vault, in your git repo | opaque state or a hosted service |
-| Autonomy boundary | opens PRs, never merges | often merge- or deploy-capable by default |
-| Hallucination policy | UNKNOWN/PENDING instead of guesses, CI-enforced | unstated |
-| Self-improvement | bounded, ledgered, revertible by commit SHA, propose-only | unbounded, absent, or can't undo itself |
-| Portability | Claude Code, Hermes, OpenCode, Codex | usually locked to its own runner |
+| Who checks the work | a separate reviewer, often a different, stronger model | the same AI that wrote it |
+| How it proves something works | it runs the code and shows before/after results | it just says "looks good" |
+| What you need to install | this one plugin | often a database, a server, or extra software |
+| Spending limits | per task, per day, and overall -- all built in | usually none |
+| Memory | plain text files in your own project, you can read them | often hidden, or on someone else's server |
+| Can it merge or deploy by itself | no -- it opens a pull request and stops | often yes, by default |
+| What it does when it doesn't know something | says so, plainly -- never guesses | usually guesses and sounds confident |
+| Self-improvement | small, tracked changes you approve; easy to undo | often unbounded, or can't be undone |
+| Works with | Claude Code, Hermes, OpenCode, Codex | usually locked to one tool |
 
-## The team (14 agents)
+## The team (13 agents)
 
-An org chart, not a swarm. Each agent is a markdown file with a tool whitelist, a
-harness-neutral model tier, an output contract, and an escalation path.
+Thirteen AI helpers, each with one job and a written contract for what it may touch, run,
+and change.
 
-| Agent | Use for | Tier |
+| Helper | What it does | Cost |
 |---|---|---|
-| qa-engineer | adversarial PASS/REJECT against executed evidence | high |
-| security-engineer | trust-boundary review: secrets, injection, deps | high |
-| engineering-manager | routes work, enforces contracts and budgets, never codes | mid |
-| product-manager | goal -> checkable plan with grep-countable steps | mid |
-| software-engineer | full-stack vertical slices in isolated worktrees | mid |
-| ui-ux-designer | build, audit, redesign, or study a UI, direction-first | mid |
-| devops-engineer | CI/CD, worktrees, scheduling, budget plumbing | mid |
-| solutions-architect | n8n / Make / GoHighLevel / RAG / Vapi specs | mid |
-| quant-analyst | trading-strategy gates and tier promotion | mid |
-| research-analyst | web/repo/doc context, returned as a bounded digest | low |
-| support-engineer | inbox and issue triage, consume-before-act | low |
-| knowledge-manager | memory vault curation, append-only | low |
-| technical-writer | READMEs, changelogs, guides -- verified claims only | low |
-| prompt-engineer | Stage 0 -- restates a raw human message into single-intent asks | low |
+| qa-engineer | reviews finished work; approves or rejects with evidence | high |
+| security-engineer | checks changes that touch sensitive code (logins, secrets, external input) | high |
+| engineering-manager | routes work to the right helper, never writes code itself | medium |
+| product-manager | turns a goal into a checkable, step-by-step plan | medium |
+| software-engineer | builds one planned piece at a time, in its own workspace | medium |
+| ui-ux-designer | designs, checks, or redesigns a user interface | medium |
+| devops-engineer | handles CI/CD, scheduling, and spending limits | medium |
+| solutions-architect | designs automations (n8n, Make, GoHighLevel, and similar) | medium |
+| research-analyst | gathers web or codebase context into a short summary | low |
+| support-engineer | sorts incoming issues and routes them | low |
+| knowledge-manager | keeps the project's memory tidy, never deletes anything | low |
+| technical-writer | writes docs and guides, every claim double-checked | low |
+| prompt-engineer | clarifies a raw request before it's routed to a helper | low |
 
-- Tiers map to a real model per harness in one file: `config/model-map.yml`. A new model is
-  an edit there, not a pass over 14 agent files.
-- Claude Code: opus/sonnet/haiku. Codex: gpt-5.6-sol/terra/luna. OpenCode + Hermes:
-  `flexible` -- their free-model catalogs rotate too fast to hardcode (one pinned model was
-  retired 10 days after being verified real), so both defer to whatever model you pick.
-- `qa-engineer: high` above `software-engineer: mid` is the point: a different, stronger
-  judge. CI warns when a harness collapses both to one model instead (see FAQ for why a
-  small model is still enough on its own).
+- Each helper's "cost" maps to a real AI model, listed once in `config/model-map.yml`. To
+  change models later, you edit one file, not 13.
+- On OpenCode and Hermes, that setting is left open (`flexible`) on purpose -- their free
+  model options change too often to lock one in, so you just pick a model yourself in
+  that tool.
+- The reviewer (qa-engineer) is set to a stronger tier than the builder
+  (software-engineer) by design, so the review is a genuine second opinion, not the same
+  model checking its own work.
 
-## The skills (12)
+## The skills (11)
 
-The always-loaded router stays thin; craft lives in skills that load on demand:
+Beyond the 13 helpers, "skills" are shared playbooks a helper loads only when the task
+needs it:
 
-- **sefi-orchestration** -- routing, handoffs with pinned output paths, the parse ladder.
-- **anti-hallucination** -- the canonical no-invention rule: UNKNOWN and PENDING instead
-  of plausible guesses; every claim traces to a file, a command, or a named source.
-  CI rejects any agent or skill missing its pointer to this rule.
-- **frontend-design** -- anti-slop UI across build/audit/redesign/study: one committed
-  direction from a named lane catalog, typography-first, WCAG AA as a gate, plus
-  illustrative domain heuristics and a two-tier slop-tells checklist.
-- **backend-design** -- contract-first APIs, trust-boundary validation, idempotent
-  mutations, reversible migrations, an explicit error taxonomy.
-- **security-review** -- the six-surface gate: secrets, injection, unsafe constructs,
-  dependencies, authorization, data handling.
-- **memory-protocol** -- the vault contract: router reads, privacy-filtered writes,
-  tiered promotion (trace -> policy -> fact).
-- **loop-engineering** -- the five moves every loop implements: discovery, handoff,
-  verification, persistence, scheduling.
-- **retro-improve** -- bounded self-improvement: edits only its own files, 3 sentences
-  per file per run, new skills require human approval.
-- **technical-writing** -- audience-first docs where every command was actually run.
-- **strategy-gate** -- hard trading gates (PF >= 1.30, DD <= 5%, expectancy >= 0.20R,
-  CoV <= 0.25) with a promotion ladder.
-- **n8n-workflow-design** -- client automation specs with idempotency, retries, webhook
-  security, and cost-per-run.
-- **terse-mode** -- output compression for narration, config-gated (ships enabled).
+- **sefi-orchestration** -- decides which helper handles a request.
+- **anti-hallucination** -- the core honesty rule: say "unknown" instead of guessing, and
+  back up every claim with a real source.
+- **frontend-design** -- keeps generated user interfaces from looking generic or AI-made.
+- **backend-design** -- API and data-handling best practices: safe inputs, no half-done
+  changes, clear error handling.
+- **security-review** -- checks for secrets, unsafe code, and access-control mistakes.
+- **memory-protocol** -- the rules for how the project's memory is read and written.
+- **loop-engineering** -- the five-step pattern every automated cycle follows.
+- **retro-improve** -- small, self-review-based improvements to the helpers themselves,
+  always in tiny, reversible steps.
+- **technical-writing** -- how to write docs where every claim was actually checked.
+- **n8n-workflow-design** -- best practices for building client automations.
+- **terse-mode** -- keeps the AI's own status updates short.
 
-Skills are either user-invoked (typed as `/skill-name`, like Commands) or model-invoked
-(loaded automatically during a loop). A user-invoked skill may call a model-invoked one,
-never another user-invoked one -- so agents can't chain interactive commands by accident.
+Some skills you can call by name (typing `/skill-name`); others load automatically when
+a helper needs them. A skill you call by name can use an automatic one, but never call
+another named one directly -- so it can't accidentally chain commands on its own.
 
 ## The loops (2 shipped, template for more)
 
-Every loop is the same five-move cycle -- a loop spec that skips one doesn't ship; CI
-rejects it:
+A "loop" is a repeating job (like a daily check) that always follows the same five steps:
 
 ```mermaid
 flowchart LR
-    A[Discovery] --> B[Handoff]
-    B --> C[Verification]
-    C --> D[Persistence]
-    D --> E[Scheduling]
-    E -.->|next cycle| A
+    A[Look for work] --> B[Hand it off]
+    B --> C[Check it]
+    C --> D[Remember it]
+    D --> E[Schedule the next run]
+    E -.->|repeats| A
 ```
 
-- **morning-triage** -- daily: support-engineer discovers (failed CI, new issues),
-  software-engineer drafts in isolated worktrees, qa-engineer judges, PRs open for you.
-- **weekly-retro** -- weekly: reads the metrics ledger, proposes bounded skill
-  improvements, logs SKIP with a reason when the data says nothing needs changing.
+- **morning-triage** -- daily: checks for failed builds and new issues, drafts fixes, has
+  them reviewed, and opens pull requests for you.
+- **weekly-retro** -- weekly: looks at what went wrong recently and proposes small,
+  approved-by-you improvements.
 
-Every loop names all five moves plus its human checkpoint, and CI rejects one that does
-not. `/sefi:loop-new` scaffolds your own.
+Every loop must name all five steps and who approves it, or it's rejected automatically.
+`/sefi:loop-new` helps you build your own.
 
 ## Memory that survives the session
 
-- `/sefi:init` scaffolds an Obsidian-compatible vault: daily notes, decisions (supersede,
-  never delete), a generated router.
-- Plain markdown in your repo -- open it in Obsidian, grep it, diff it in PRs. No database,
-  no service, no vendor.
-- **Read:** a `SessionStart` hook injects the router (capped at 1,500 chars) every session.
-- **Write:** at `close_out` -- end of a loop cycle -- the knowledge-manager files that
-  cycle's durable observations, or logs SKIP. It's the vault's only writer.
-- Nothing is captured by a raw hook: a deterministic script can't judge what's a credential,
-  so only an agent dispatch (running the privacy filter first) writes to the vault.
-- This repo dogfoods itself: `memory/`, `state/`, `loops/`, `config/` here are `/sefi:init`
-  run against sefi-agents. The shipped plugin carries only `agents/`, `skills/`,
-  `commands/`, `hooks/` -- installing it never pulls in this repo's own vault.
+- `/sefi:init` sets up a folder of plain text notes in your project: daily notes and
+  decisions, plus an index that links them together.
+- It's just markdown files in your own repo -- readable, searchable, and visible in your
+  pull requests. No database, no external service.
+- **Reading:** every new session automatically loads a short index (capped at 1,500
+  characters) so it knows what's already been decided.
+- **Writing:** at the end of a work cycle, the knowledge-manager helper -- and only that
+  helper -- writes down what's worth remembering, or notes that there was nothing new.
+- Nothing is written down automatically by a script: only a helper can decide what's safe
+  to save, after removing anything that looks like a password or secret.
+- This project uses its own memory system on itself, but a fresh install of the plugin
+  starts with an empty one -- your project's memory is always separate from this repo's.
 
 ## Works with your harness
 
-| Harness | How | Notes |
+| Tool | How to install | Notes |
 |---|---|---|
-| Claude Code | plugin install (above) | full hook + subagent support |
-| Hermes Agent | [adapters/HERMES.md](adapters/HERMES.md) | one-command skill install (`install-hermes.sh`); 10 of 12 install automatically, 2 print a verified manual fix inline -- see FAQ |
-| OpenCode | [adapters/OPENCODE.md](adapters/OPENCODE.md) | headless `opencode run` for CI loops |
-| Codex | [adapters/CODEX.md](adapters/CODEX.md) | plugin marketplace install; `multi_agent` enabled by default |
+| Claude Code | plugin install (above) | full support |
+| Hermes Agent | [adapters/HERMES.md](adapters/HERMES.md) | one command; 11 of 13 skills install automatically, 2 need one manual step (see FAQ) |
+| OpenCode | [adapters/OPENCODE.md](adapters/OPENCODE.md) | can run unattended for scheduled jobs |
+| Codex | [adapters/CODEX.md](adapters/CODEX.md) | plugin marketplace install |
 
 ## Safety rails (all of them, in one place)
 
-- The writer never grades its own work; a separate qa-engineer judges executed evidence.
-- A security-engineer gates diffs that touch trust boundaries.
-- Deterministic gates the model cannot skip: `gate.sh` (lint/typecheck/tests, with
-  per-operation timeout classes), `validate-plan-structure.sh` on every plan,
-  `check-handoff.sh` on every dispatch, and `probe-tools.sh` before a loop's first move.
-- Hard budget caps: per-run, daily, per-dispatch; retries capped and counted on disk. The
-  budget gate fails CLOSED -- it exits distinctly when it cannot measure, rather than
-  passing a check it never performed.
-- Anything uncertain lands in `inbox/` for you, with a fixed confirm/change/exit contract.
-- Loops open PRs; merging is yours. One canonical rule, linked from every agent that
-  could reach a destructive action.
+- The helper that writes code never approves its own work -- a separate reviewer checks
+  it with real evidence.
+- A security checker reviews any change touching sensitive code.
+- Automated checks the AI can't skip: tests and linting, plan structure, handoffs between
+  helpers, and tool availability before a job starts.
+- Spending limits: per task, per day, and overall. If spending can't be measured, the
+  system stops and says so instead of assuming it's fine.
+- Anything the system isn't sure about goes to a review folder (`inbox/`) for you to
+  decide.
+- Nothing merges or deploys by itself. Every automated job stops at a pull request and
+  waits for you.
 
 ## Proof
 
-The repo lints itself. This suite runs on every push (badge above), and locally in one
-command:
+This project checks itself. The same checks run on every push (badge above), and you can
+run them yourself, in one command:
 
 ```
 $ bash plugins/sefi-core/scripts/ci/run-all.sh
-validate-agents: OK (14 agent files validated)
-validate-skills: OK (12 SKILL.md validated)
-validate-doc-counts: OK (agents=14 skills=12 commands=6 loops=2, all prose matches disk)
+validate-agents: OK (13 agent files validated)
+validate-skills: OK (11 SKILL.md validated)
+validate-doc-counts: OK (agents=13 skills=11 commands=6 loops=2, all prose matches disk)
 validate-loops: OK (2 loop spec(s) validated, plus 2 in this project's loops/)
 validate-budget: OK (all caps present and bounded)
 validate-config-wired: OK (12 config keys, all wired)
@@ -208,65 +206,62 @@ validate-no-orphans: OK (references, templates, agents all wired)
 validate-links: OK (58 files scanned, all repo-path references resolve; bare script names checked)
 validate-script-refs: OK (43 files scanned, every scripts/*.sh reference carries ${CLAUDE_PLUGIN_ROOT}/)
 validate-routing: OK (routing-table agents exist, fixtures resolve, no duplicate triggers)
-validate-model-map: OK (14 agents, 4 harnesses, 41 scripts parse; 2 warning(s))
+validate-model-map: OK (13 agents, 4 harnesses, 41 scripts parse; 2 warning(s))
 validate-adapters: OK (install-hermes.sh skill list matches disk, adapter doc paths resolve)
 check-unicode-safety: OK (124 files scanned, ASCII-clean)
-validate-token-budget: OK (all within token budgets; agents total 8959 words)
+validate-token-budget: OK (all within token budgets; agents total 8316 words)
 test-scripts: OK (147 passed)
 test-integration: OK (30 passed) -- full loop skeleton executed end to end
 CI: all validators passed
 ```
 
-- `test-scripts.sh` proves each script alone. `test-integration.sh` runs the whole loop
-  end to end in a real throwaway repo: worktree, `gate.sh`, Done Criteria, metrics row, a
-  `close_out` note that survives into the next session, a revertible ledger SHA, and a
+- The last two lines matter most: one proves every script works by itself, the other
+  proves the whole cycle works together, end to end, in a real test project -- with a real
   check that nothing merged itself.
-- It proves the machinery, not the judgment -- every dispatch inside it is scripted, so it
-  says nothing about whether a model decides well, only that the seams hold.
-- Agents have word budgets, skills have line caps -- prose that bloats fails the build.
-  Counts drift as the repo grows; run the command yourself rather than trust this snapshot.
+- This proves the machinery works, not that the AI always makes good calls -- every
+  helper's part in that test is scripted, not judged.
+- Every helper and skill has a length limit, and going over it fails the build. Exact
+  numbers change as the project grows -- run the command yourself instead of trusting this
+  snapshot.
 
 ## FAQ
 
-**Do I need expensive models?** No. Model tiers are advisory, and the architecture
-assumes a cheap model: deterministic scripts assemble context and enforce gates, the LLM
-only does the creative step between them. The predecessor ran at ~45% dispatch success on
-a free model and still delivered, because the gates caught the other half.
+**Do I need an expensive AI model?** No. Cheap models are fine -- scripts handle the
+repetitive checking, so the AI is only doing the creative part. In earlier testing, a
+free model only succeeded on its own about 45% of the time, and the review step still
+caught the rest.
 
-**Does it work on Windows?** Yes -- the scripts are POSIX-friendly and this repo is built
-and CI-validated via Git Bash on Windows as well as Linux CI.
+**Does it work on Windows?** Yes -- it's tested on both Windows (Git Bash) and Linux.
 
-**Where does my data go?** Nowhere. There is no runtime, no telemetry, and no network
-call in the plugin. If you use a free-window model via an adapter, read the caveat in
-[adapters/HERMES.md](adapters/HERMES.md) first: never run client or proprietary code
-through models that may train on inputs.
+**Where does my data go?** Nowhere. Nothing here calls home or tracks you. If you use a
+free trial of some AI model, check [adapters/HERMES.md](adapters/HERMES.md) first: don't
+run private code through a model that might learn from your input.
 
-**Can it merge or deploy something by itself?** No. Loops open PRs and stop. The rule is
-stated once, linked everywhere, and CI checks every loop names its human checkpoint.
+**Can it merge or deploy something by itself?** No. It opens a pull request and stops,
+every time -- that rule is checked automatically, not just written down.
 
-**What happens when the model does not know something?** It says so: unknown lookups
-come back as UNKNOWN and uncomputed values as PENDING -- never a plausible guess. That
-rule is a skill, and CI fails any agent or skill that drops its pointer to it.
+**What happens when the AI doesn't know something?** It says so, instead of guessing.
+That rule is enforced automatically across every helper and skill.
 
-**Why didn't all the skills install automatically on Hermes?** Its security scanner
-false-flags two skills (`sefi-orchestration`, `security-review`) because they *name*
-dangerous patterns to guard against, and the scanner can't tell "warns about" from
-"does." The other 10 install fine; `install-hermes.sh` prints the exact manual fix for
-these two inline. See [adapters/HERMES.md](adapters/HERMES.md) section 8.
+**Why didn't every skill install automatically on Hermes?** Hermes scans skills for
+risky-looking content, and two of ours get flagged by mistake -- they *describe* risky
+patterns in order to guard against them, and the scanner can't yet tell the difference.
+The other 11 skills install fine; the installer prints the two-step manual fix for the
+rest. See [adapters/HERMES.md](adapters/HERMES.md) section 8.
 
-**Do I need Obsidian?** No. The vault is plain markdown; Obsidian just makes it nicer.
+**Do I need Obsidian?** No. The memory notes are plain text files; Obsidian just makes
+them nicer to browse.
 
 ## Contributing
 
-Run the suite before a PR:
+Run the full check before opening a pull request:
 
 ```
 bash plugins/sefi-core/scripts/ci/run-all.sh
 ```
 
-The validators are the contribution guide in executable form: budgets, single-line
-descriptions, wired references, ASCII-clean text, and the anti-hallucination pointer in
-every agent and skill.
+Those checks are the actual contribution guide: length limits, short descriptions,
+nothing broken or unused, and the honesty rule present in every helper and skill.
 
 ## License
 

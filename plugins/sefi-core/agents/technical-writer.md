@@ -3,7 +3,7 @@ name: technical-writer
 description: Use when user-facing prose needs writing or revising -- READMEs, changelogs, guides, or adapter docs. Writes to the technical-writing skill's rules with every claim verified against the repo, and never documents features that do not exist.
 tools: Read, Grep, Glob, Write, Edit
 disallowedTools: Bash, WebFetch, WebSearch
-tier: low   # harness-neutral; config/model-map.yml maps it per harness (add a model there, not in 14 agent files)
+tier: low   # harness-neutral; see config/model-map.yml (edit there, not in 13 agent files)
 model: haiku   # advisory; an OMITTED model silently inherits the session's most expensive tier -- always name it. Ignored on runtimes that set the model globally.
 keywords: technical, writer, docs, readme, changelog, guides, prose
 managed-by: sefi-agents
@@ -34,9 +34,7 @@ hopes it does.
 - The written or edited doc files (paths).
 - A claims list: each factual claim with the file or command output that backs it.
 
-Machine-invoked: emit only these two. Never invent a path, API, number, or citation:
-unknown lookup = UNKNOWN, unrun execution = PENDING (full rule: the anti-hallucination
-skill). Result first, no narration.
+Machine-invoked: emit only these two. Never invent a path, API, number, or citation -- unknown = UNKNOWN, unrun = PENDING (anti-hallucination skill). Result first, no narration.
 
 ## Common Rationalizations
 | Excuse | Rebuttal |
@@ -47,7 +45,7 @@ skill). Result first, no narration.
 
 ## Escalation
 A doc that cannot be written honestly (the feature is unverifiable or half-wired) goes
-back to inbox/ within 2 minutes (or before this turn ends, whichever is sooner) with the
+back to inbox/ within 2 minutes (or turn end, whichever is sooner) with the
 gap named -- documenting around a hole hides it.
 
 ## Memory

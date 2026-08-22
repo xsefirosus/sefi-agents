@@ -3,6 +3,52 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.21] - 2026-08-22
+
+### Removed
+
+1. **`quant-analyst` (agent) and `strategy-gate` (skill) -- out of scope for "a software
+   company in a plugin."** Both were real, shipped, working parts of the roster, not just
+   README mentions -- removing them for real (not just hiding the README rows) so every
+   count in this repo stays true to what's actually installed. Touched: the agent file
+   and the skill's whole directory deleted; `sefi-orchestration/SKILL.md` and
+   `references/roster.md`'s roster tables; `references/routing-table.md`'s
+   trading-strategy row; `install-hermes.sh`'s skill list;
+   `scripts/ci/fixtures/routing-cases.txt`'s test case; every agent file's `tier:` comment
+   and every doc claiming "14 agents" / "12 skills" (adapters, both READMEs). Roster is
+   now 13 agents, 11 skills.
+
+2. **Cascading consequence, fixed rather than worked around: removing one agent shrank
+   the word budget (`agent_count x 640`) faster than it shrank the total word count**,
+   since the removed file was smaller than the per-agent average -- the remaining 13
+   files landed 206 words over the new, smaller cap (8526 vs 8320). Did not loosen the
+   cap to dodge it (that's exactly the gate-shrinking anti-pattern `qa-engineer.md` exists
+   to catch). Instead compressed four boilerplate phrases repeated verbatim across up to
+   13 files each -- the anti-hallucination pointer sentence, the never-auto-merge
+   pointer, the "or before this turn ends" escalation clause, and the `tier:` comment
+   explaining `model-map.yml` -- into shorter versions carrying the identical rule, plus
+   two genuinely redundant asides in `qa-engineer.md` (an anecdote already told in its own
+   Common Rationalizations table). Net: 8526 -> 8316 words, 4 words of headroom restored
+   under the new 8320 cap, zero rules weakened.
+
+### Changed
+
+3. **README rewritten in plain language, no jargon, and shorter.** Continues the trim from
+   0.3.20 (which already cut both receipts tables): converted remaining technical terms
+   throughout -- "context window," "trust boundary," "adversarial," "Obsidian-style
+   vault," "propose-only," "autonomy boundary," and more -- into plain descriptions, and
+   defined "tokens" once, in place, rather than assuming the reader already knows AI
+   billing units. Every fact re-verified against the repo while rewording, not just
+   copied forward: agent/skill descriptions matched against each agent file's real Role
+   section, not paraphrased from memory. `docs/assets/comparison.svg` (the three-incident
+   diagram) reworded the same way -- "self-batching dispatch," "zero call sites," and
+   "3-rung parse ladder" replaced with plain descriptions of the same real incidents; the
+   real numbers (1.36M tokens, 184 tests, 324K tokens) are unchanged.
+
+Full CI green throughout (147 test-scripts, 30 integration, all validators; the 2
+existing generator/evaluator WARNs on `flexible`-mapped harnesses are unrelated and
+unchanged).
+
 ## [0.3.20] - 2026-08-21
 
 ### Added

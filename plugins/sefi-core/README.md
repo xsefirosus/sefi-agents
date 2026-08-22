@@ -6,15 +6,15 @@ discipline. See the repository root `README.md` for install and the tour; this f
 describes the package layout.
 
 ## What ships here
-- `agents/` -- 14 agents: engineering-manager, prompt-engineer, research-analyst,
+- `agents/` -- 13 agents: engineering-manager, prompt-engineer, research-analyst,
   product-manager, ui-ux-designer, software-engineer, qa-engineer, security-engineer,
   devops-engineer, support-engineer, knowledge-manager, technical-writer,
-  solutions-architect, quant-analyst. Each carries a `tools`/`disallowedTools` contract, a
+  solutions-architect. Each carries a `tools`/`disallowedTools` contract, a
   named model tier, and the anti-hallucination pointer (CI-enforced).
-- `skills/` -- 12 skills: sefi-orchestration (the always-loaded router),
+- `skills/` -- 11 skills: sefi-orchestration (the always-loaded router),
   anti-hallucination (the canonical no-invention rule), memory-protocol,
   loop-engineering, retro-improve, terse-mode, frontend-design, backend-design,
-  security-review, technical-writing, n8n-workflow-design, strategy-gate. Deep material
+  security-review, technical-writing, n8n-workflow-design. Deep material
   lives in each skill's `references/`, read on demand.
 - `commands/` -- `/sefi:init`, `/sefi:triage`, `/sefi:retro`, `/sefi:status`,
   `/sefi:loop-new`, `/sefi:route` (deterministic sefi-orchestration load, for when the
@@ -23,7 +23,7 @@ describes the package layout.
   do NOT also declare hooks in `plugin.json`.
 - `config/model-map.yml` -- the ONE place a model identifier is written down. Agents
   declare a harness-neutral `tier:` (high/mid/low); this maps each tier to a concrete model
-  per harness. A new model is an edit here, never a pass over 14 agent files.
+  per harness. A new model is an edit here, never a pass over 13 agent files.
 - `scripts/` -- `gate.sh`, `compress-output.sh`, `inject-memory.sh`, `budget-check.sh`,
   `gen-router.sh`, `probe-tools.sh`, `check-handoff.sh`, `model-for.sh`,
   `apply-model-map.sh`, plus the `ci/` validation suite (`run-all.sh` is the entry point).

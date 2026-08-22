@@ -1,4 +1,4 @@
-<svg viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three real incidents, without a gate versus with sefi-agents">
+<svg viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three real incidents, without sefi-agents versus with sefi-agents">
   <style>
     .bg { fill: #ffffff; }
     .header { font: 700 20px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #1f2328; }
@@ -28,14 +28,14 @@
 
   <rect class="bg" x="0" y="0" width="900" height="400" />
 
-  <text class="colhead without" x="30" y="42">WITHOUT A GATE LIKE THIS</text>
+  <text class="colhead without" x="30" y="42">WITHOUT SEFI-AGENTS</text>
   <text class="colhead with" x="500" y="42">WITH SEFI-AGENTS</text>
 
   <!-- Row 1: cost -->
   <rect class="box without" x="20" y="62" width="380" height="88" rx="10" />
   <text class="boxtext without" x="40" y="94">
-    <tspan x="40" dy="0">1.36M tokens burned by one</tspan>
-    <tspan x="40" dy="20">uncapped, self-batching dispatch</tspan>
+    <tspan x="40" dy="0">One task ran wild and used 1.36</tspan>
+    <tspan x="40" dy="20">million tokens -- nothing stopped it</tspan>
   </text>
 
   <path class="arrow" d="M410 106 H488" />
@@ -43,15 +43,15 @@
 
   <rect class="box with" x="498" y="62" width="382" height="88" rx="10" />
   <text class="boxtext with" x="518" y="94">
-    <tspan x="518" dy="0">Hard per-dispatch cap</tspan>
-    <tspan x="518" dy="20">($0.15 default) trips early</tspan>
+    <tspan x="518" dy="0">Every task has a spending limit</tspan>
+    <tspan x="518" dy="20">($0.15 by default)</tspan>
   </text>
 
   <!-- Row 2: quality -->
   <rect class="box without" x="20" y="164" width="380" height="88" rx="10" />
   <text class="boxtext without" x="40" y="196">
-    <tspan x="40" dy="0">184 green tests, while half the</tspan>
-    <tspan x="40" dy="20">new modules had zero call sites</tspan>
+    <tspan x="40" dy="0">184 tests passed, but half the new</tspan>
+    <tspan x="40" dy="20">code was never actually used</tspan>
   </text>
 
   <path class="arrow" d="M410 208 H488" />
@@ -59,15 +59,15 @@
 
   <rect class="box with" x="498" y="164" width="382" height="88" rx="10" />
   <text class="boxtext with" x="518" y="196">
-    <tspan x="518" dy="0">qa-engineer's wired-not-just-</tspan>
-    <tspan x="518" dy="20">written check catches it first</tspan>
+    <tspan x="518" dy="0">A separate reviewer checks the</tspan>
+    <tspan x="518" dy="20">code is really connected, not just written</tspan>
   </text>
 
   <!-- Row 3: overhead -->
   <rect class="box without" x="20" y="266" width="380" height="88" rx="10" />
   <text class="boxtext without" x="40" y="298">
-    <tspan x="40" dy="0">~324K tokens lost re-asking for</tspan>
-    <tspan x="40" dy="20">JSON that was already in the reply</tspan>
+    <tspan x="40" dy="0">324,000 tokens wasted asking twice</tspan>
+    <tspan x="40" dy="20">for an answer already given</tspan>
   </text>
 
   <path class="arrow" d="M410 310 H488" />
@@ -75,9 +75,9 @@
 
   <rect class="box with" x="498" y="266" width="382" height="88" rx="10" />
   <text class="boxtext with" x="518" y="298">
-    <tspan x="518" dy="0">3-rung parse ladder accepts</tspan>
-    <tspan x="518" dy="20">structured output anywhere</tspan>
+    <tspan x="518" dy="0">It finds the answer wherever it is</tspan>
+    <tspan x="518" dy="20">in the reply -- no need to ask again</tspan>
   </text>
 
-  <text class="header" x="20" y="386" style="font-size:12px; font-weight:400; opacity:0.6;">Real, first-party incidents -- no invented "after" numbers. Full history: CHANGELOG.md.</text>
+  <text class="header" x="20" y="386" style="font-size:12px; font-weight:400; opacity:0.6;">Real incidents from this project's own history -- no made-up numbers. Full history: CHANGELOG.md.</text>
 </svg>

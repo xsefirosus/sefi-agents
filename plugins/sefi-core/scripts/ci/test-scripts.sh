@@ -762,8 +762,8 @@ fi
 primary_n="$(grep -l '^mode: primary$' "$TMP_OC"/agents/*.md 2>/dev/null | wc -l | tr -d ' ')"
 primary_file="$(grep -l '^mode: primary$' "$TMP_OC"/agents/*.md 2>/dev/null | xargs -n1 basename)"
 subagent_n="$(grep -l '^mode: subagent$' "$TMP_OC"/agents/*.md 2>/dev/null | wc -l | tr -d ' ')"
-if [ "$primary_n" = "1" ] && [ "$primary_file" = "engineering-manager.md" ] && [ "$subagent_n" = "13" ]; then
-  ok "exactly engineering-manager is mode: primary; the other 13 are mode: subagent"
+if [ "$primary_n" = "1" ] && [ "$primary_file" = "engineering-manager.md" ] && [ "$subagent_n" = "12" ]; then
+  ok "exactly engineering-manager is mode: primary; the other 12 are mode: subagent"
 else
   bad "mode: split is wrong (primary_n=$primary_n primary_file='$primary_file' subagent_n=$subagent_n)"
 fi

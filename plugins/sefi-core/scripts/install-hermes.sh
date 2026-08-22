@@ -21,7 +21,7 @@ set -euo pipefail
 
 REPO="xsefirosus/sefi-agents"
 BASE_PATH="plugins/sefi-core/skills"
-SKILLS="sefi-orchestration anti-hallucination memory-protocol loop-engineering retro-improve terse-mode frontend-design backend-design security-review technical-writing n8n-workflow-design strategy-gate"
+SKILLS="sefi-orchestration anti-hallucination memory-protocol loop-engineering retro-improve terse-mode frontend-design backend-design security-review technical-writing n8n-workflow-design"
 # Known scanner false positives; see comment above.
 FORCE_SKILLS="sefi-orchestration security-review"
 
