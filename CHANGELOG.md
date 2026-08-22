@@ -3,6 +3,31 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.22] - 2026-08-22
+
+### Added
+
+1. **A close_out reminder, added to the same session-start nudge that already exists on
+   both harnesses, not a new mechanism.** Memory only ever gets saved when something
+   explicitly dispatches `knowledge-manager` -- confirmed live against this repo's own
+   vault: a full session's worth of real work (multiple merged PRs, two README rewrites,
+   an agent/skill removal) left no daily note, because nothing asked for one. A Stop hook
+   was considered for Claude Code and rejected: verified against official docs that a
+   Stop hook's plain stdout is invisible to the model on exit 0 -- the only way to
+   actually surface a reminder is to exit 2 or return a `"reengage"` decision, which
+   forces every session, however trivial, to take one extra turn. Not worth the cost for
+   a nudge. Instead extended `inject-orchestrator-role.sh`'s existing `SessionStart`
+   output with one line (497 -> 573 chars, still under the 600-char cap) reminding the
+   top-level session to dispatch `knowledge-manager` before ending if anything is worth
+   remembering. Same free ride as the rest of that injection -- no added session cost.
+   OpenCode's equivalent (`session.created`, documented in `adapters/OPENCODE.md`) gets
+   the identical line. `session.idle` (the closer analog to "right as the session ends")
+   was checked and rejected there too: it requires an actual TypeScript/JavaScript
+   plugin, which this project has never needed and does not want to start requiring, and
+   live OpenCode issue reports confirm it fires only after the agent loop has already
+   ended -- too late to inject anything. 1 new regression assertion (147 -> 148),
+   confirming the reminder text survives in the injected output.
+
 ## [0.3.21] - 2026-08-22
 
 ### Removed
