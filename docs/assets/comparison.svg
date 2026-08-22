@@ -1,0 +1,83 @@
+<svg viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three real incidents, without a gate versus with sefi-agents">
+  <style>
+    .bg { fill: #ffffff; }
+    .header { font: 700 20px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #1f2328; }
+    .colhead { font: 700 14px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; letter-spacing: 0.04em; }
+    .colhead.without { fill: #b3261e; }
+    .colhead.with { fill: #1a7f37; }
+    .boxtext { font: 500 14px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; }
+    .box.without { fill: #fdeceb; stroke: #e8998f; }
+    .box.with { fill: #eaf6ec; stroke: #7fc794; }
+    .boxtext.without { fill: #7a221c; }
+    .boxtext.with { fill: #1a5c2e; }
+    .arrow { stroke: #8b949e; stroke-width: 2; fill: none; }
+    .arrowhead { fill: #8b949e; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .header { fill: #e6edf3; }
+      .colhead.without { fill: #ff7b72; }
+      .colhead.with { fill: #56d364; }
+      .box.without { fill: #2d1614; stroke: #7d2620; }
+      .box.with { fill: #0f2818; stroke: #2a6e3f; }
+      .boxtext.without { fill: #ffb4ab; }
+      .boxtext.with { fill: #7ee2a8; }
+      .arrow { stroke: #6e7681; }
+      .arrowhead { fill: #6e7681; }
+    }
+  </style>
+
+  <rect class="bg" x="0" y="0" width="900" height="400" />
+
+  <text class="colhead without" x="30" y="42">WITHOUT A GATE LIKE THIS</text>
+  <text class="colhead with" x="500" y="42">WITH SEFI-AGENTS</text>
+
+  <!-- Row 1: cost -->
+  <rect class="box without" x="20" y="62" width="380" height="88" rx="10" />
+  <text class="boxtext without" x="40" y="94">
+    <tspan x="40" dy="0">1.36M tokens burned by one</tspan>
+    <tspan x="40" dy="20">uncapped, self-batching dispatch</tspan>
+  </text>
+
+  <path class="arrow" d="M410 106 H488" />
+  <path class="arrowhead" d="M488 106 L478 101 L478 111 Z" />
+
+  <rect class="box with" x="498" y="62" width="382" height="88" rx="10" />
+  <text class="boxtext with" x="518" y="94">
+    <tspan x="518" dy="0">Hard per-dispatch cap</tspan>
+    <tspan x="518" dy="20">($0.15 default) trips early</tspan>
+  </text>
+
+  <!-- Row 2: quality -->
+  <rect class="box without" x="20" y="164" width="380" height="88" rx="10" />
+  <text class="boxtext without" x="40" y="196">
+    <tspan x="40" dy="0">184 green tests, while half the</tspan>
+    <tspan x="40" dy="20">new modules had zero call sites</tspan>
+  </text>
+
+  <path class="arrow" d="M410 208 H488" />
+  <path class="arrowhead" d="M488 208 L478 203 L478 213 Z" />
+
+  <rect class="box with" x="498" y="164" width="382" height="88" rx="10" />
+  <text class="boxtext with" x="518" y="196">
+    <tspan x="518" dy="0">qa-engineer's wired-not-just-</tspan>
+    <tspan x="518" dy="20">written check catches it first</tspan>
+  </text>
+
+  <!-- Row 3: overhead -->
+  <rect class="box without" x="20" y="266" width="380" height="88" rx="10" />
+  <text class="boxtext without" x="40" y="298">
+    <tspan x="40" dy="0">~324K tokens lost re-asking for</tspan>
+    <tspan x="40" dy="20">JSON that was already in the reply</tspan>
+  </text>
+
+  <path class="arrow" d="M410 310 H488" />
+  <path class="arrowhead" d="M488 310 L478 305 L478 315 Z" />
+
+  <rect class="box with" x="498" y="266" width="382" height="88" rx="10" />
+  <text class="boxtext with" x="518" y="298">
+    <tspan x="518" dy="0">3-rung parse ladder accepts</tspan>
+    <tspan x="518" dy="20">structured output anywhere</tspan>
+  </text>
+
+  <text class="header" x="20" y="386" style="font-size:12px; font-weight:400; opacity:0.6;">Real, first-party incidents -- no invented "after" numbers. Full history: CHANGELOG.md.</text>
+</svg>
