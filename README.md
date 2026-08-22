@@ -36,6 +36,7 @@ installs the right way for it, Claude Code or otherwise:
 
 **Contents:** [Why this exists](#why-this-exists) -- [How it compares](#how-it-compares) --
 [The team](#the-team-13-agents) -- [The skills](#the-skills-11) --
+[How a request gets done](#how-a-request-actually-gets-done) --
 [The loops](#the-loops-2-shipped-template-for-more) --
 [Memory](#memory-that-survives-the-session) -- [Where it runs](#works-with-your-harness) --
 [Safety rules](#safety-rails-all-of-them-in-one-place) -- [Proof](#proof) -- [FAQ](#faq) --
@@ -63,111 +64,111 @@ history in [CHANGELOG.md](CHANGELOG.md):
 
 <img src="docs/assets/comparison.svg" alt="Three real incidents, without sefi-agents versus with sefi-agents" width="100%">
 
-(Usage is measured in "tokens" -- small chunks of text, roughly three-quarters of a word
-each, that AI providers use to price and limit how much a task can do.)
+(Usage is measured in "tokens" -- small chunks of text AI providers use to price and
+limit how much a task can do.)
 
-Beyond those three, an honest comparison -- no competitor named, check any tool you're
-considering against these rows yourself:
-
-| | sefi-agents | a typical AI coding setup |
-|---|---|---|
-| Who checks the work | a separate reviewer, often a different, stronger model | the same AI that wrote it |
-| How it proves something works | it runs the code and shows before/after results | it just says "looks good" |
-| What you need to install | this one plugin | often a database, a server, or extra software |
-| Spending limits | per task, per day, and overall -- all built in | usually none |
-| Memory | plain text files in your own project, you can read them | often hidden, or on someone else's server |
-| Can it merge or deploy by itself | no -- it opens a pull request and stops | often yes, by default |
-| What it does when it doesn't know something | says so, plainly -- never guesses | usually guesses and sounds confident |
-| Self-improvement | small, tracked changes you approve; easy to undo | often unbounded, or can't be undone |
-| Works with | Claude Code, Hermes, OpenCode, Codex | usually locked to one tool |
+Beyond those three, in short: a separate reviewer checks the work instead of the same AI
+grading itself, spending has a hard limit instead of none, and nothing merges or deploys
+on its own -- ever.
 
 ## The team (13 agents)
 
 Thirteen AI agents, each with one job and a written contract for what it may touch, run,
-and change.
+and change -- grouped by how strong a model each one gets:
 
-| Agent | What it does | Cost |
-|---|---|---|
-| qa-engineer | reviews finished work; approves or rejects with evidence | high |
-| security-engineer | checks changes that touch sensitive code (logins, secrets, external input) | high |
-| engineering-manager | routes work to the right agent, never writes code itself | medium |
-| product-manager | turns a goal into a checkable, step-by-step plan | medium |
-| software-engineer | builds one planned piece at a time, in its own workspace | medium |
-| ui-ux-designer | designs, checks, or redesigns a user interface | medium |
-| devops-engineer | handles CI/CD, scheduling, and spending limits | medium |
-| solutions-architect | designs automations (n8n, Make, GoHighLevel, and similar) | medium |
-| research-analyst | gathers web or codebase context into a short summary | low |
-| support-engineer | sorts incoming issues and routes them | low |
-| knowledge-manager | keeps the project's memory tidy, never deletes anything | low |
-| technical-writer | writes docs and guides, every claim double-checked | low |
-| prompt-engineer | clarifies a raw request before it's routed to an agent | low |
+**Reviewers (strongest model):** `qa-engineer` approves or rejects finished work with
+evidence -- `security-engineer` checks anything touching logins, secrets, or outside
+input.
 
-- Each agent's "cost" maps to a real AI model, listed once in `config/model-map.yml`. To
-  change models later, you edit one file, not 13.
-- On OpenCode and Hermes, that setting is left open (`flexible`) on purpose -- their free
-  model options change too often to lock one in, so you just pick a model yourself in
-  that tool.
-- The reviewer (qa-engineer) is set to a stronger tier than the builder
-  (software-engineer) by design, so the review is a genuine second opinion, not the same
-  model checking its own work.
+**Builders (mid-strength model):** `engineering-manager` routes work and never codes --
+`product-manager` turns a goal into a checkable plan -- `software-engineer` builds one
+piece at a time, in its own workspace -- `ui-ux-designer` handles interface work --
+`devops-engineer` runs CI/CD and scheduling -- `solutions-architect` designs automations
+(n8n, Make, GoHighLevel).
+
+**Support crew (cheapest model):** `research-analyst` gathers context -- `support-engineer`
+sorts incoming issues -- `knowledge-manager` tends the memory, never deletes -- `technical-writer`
+writes docs, claims double-checked -- `prompt-engineer` clarifies a raw request first.
+
+The reviewer tier is deliberately stronger than the builder tier, so the review is a real
+second opinion, not the same model grading itself. Every model maps from one file,
+`config/model-map.yml` -- change models later by editing that, not 13 agent files. (On
+OpenCode and Hermes it's left open on purpose: their free-model options change too often
+to lock one in, so you pick a model yourself in that tool.)
 
 ## The skills (11)
 
-Beyond the 13 agents, "skills" are shared playbooks an agent loads only when the task
-needs it:
+Playbooks an agent loads only when the task needs it -- not a 14th agent, just shared
+know-how:
 
-- **sefi-orchestration** -- decides which agent handles a request.
-- **anti-hallucination** -- the core honesty rule: say "unknown" instead of guessing, and
-  back up every claim with a real source.
-- **frontend-design** -- keeps generated user interfaces from looking generic or AI-made.
-- **backend-design** -- API and data-handling best practices: safe inputs, no half-done
-  changes, clear error handling.
-- **security-review** -- checks for secrets, unsafe code, and access-control mistakes.
-- **memory-protocol** -- the rules for how the project's memory is read and written.
-- **loop-engineering** -- the five-step pattern every automated cycle follows.
-- **retro-improve** -- small, self-review-based improvements to the agents themselves,
-  always in tiny, reversible steps.
-- **technical-writing** -- how to write docs where every claim was actually checked.
-- **n8n-workflow-design** -- best practices for building client automations.
-- **terse-mode** -- keeps the AI's own status updates short.
+**Always relevant:** `sefi-orchestration` (routes every request) -- `anti-hallucination`
+(the core honesty rule: say "unknown" instead of guessing, CI-enforced everywhere).
+
+**Building & reviewing:** `frontend-design`, `backend-design`, `security-review` --
+interface, API, and security best practices.
+
+**Memory & process:** `memory-protocol`, `loop-engineering`, `retro-improve` -- how
+memory is read and written, the five-step loop pattern, and small self-improvements.
+
+**Specialized:** `technical-writing`, `n8n-workflow-design`, `terse-mode`.
 
 Some skills you can call by name (typing `/skill-name`); others load automatically when
 an agent needs them. A skill you call by name can use an automatic one, but never call
 another named one directly -- so it can't accidentally chain commands on its own.
 
-## The loops (2 shipped, template for more)
+## How a request actually gets done
 
-A "loop" is a repeating job (like a daily check) that always follows the same five steps:
+From your prompt to a finished, human-approved change -- every step is a named agent,
+not a black box:
 
 ```mermaid
-flowchart LR
-    A[Look for work] --> B[Hand it off]
-    B --> C[Check it]
-    C --> D[Remember it]
-    D --> E[Schedule the next run]
-    E -.->|repeats| A
+flowchart TD
+    U[You type a request] --> PE[prompt-engineer clarifies it]
+    PE --> EM[engineering-manager picks the right agent]
+    EM --> PM[product-manager writes a plan: steps + a way to check done]
+    PM --> SE[software-engineer builds it, in its own workspace, tests included]
+    SE --> QA{qa-engineer checks it against real evidence}
+    QA -->|rejected| SE
+    QA -->|approved| PR[A pull request opens]
+    PR --> H[You review and merge -- nothing merges by itself]
+    H --> KM[knowledge-manager saves anything worth remembering]
 ```
+
+Spending and tool checks happen before every build step, not just at the end -- see
+[Safety rails](#safety-rails-all-of-them-in-one-place).
+
+## The loops (2 shipped, template for more)
+
+A "loop" is this same chain, run automatically on a schedule instead of by you typing a
+request:
 
 - **morning-triage** -- daily: checks for failed builds and new issues, drafts fixes, has
   them reviewed, and opens pull requests for you.
 - **weekly-retro** -- weekly: looks at what went wrong recently and proposes small,
   approved-by-you improvements.
 
-Every loop must name all five steps and who approves it, or it's rejected automatically.
-`/sefi:loop-new` helps you build your own.
+Every loop must declare five things -- how it finds work, hands it off, checks it,
+remembers it, and reschedules -- or it's rejected automatically. `/sefi:loop-new` helps
+you build your own.
 
 ## Memory that survives the session
 
-- `/sefi:init` sets up a folder of plain text notes in your project: daily notes and
-  decisions, plus an index that links them together.
-- It's just markdown files in your own repo -- readable, searchable, and visible in your
-  pull requests. No database, no external service.
+- `/sefi:init` sets up a folder of plain text notes **in your project's own folder**
+  (`memory/`), not in Claude Code's or OpenCode's own settings folder. It's committed to
+  your project's git repo by default, right alongside your code.
+- It's just markdown files -- readable, searchable, and visible in your pull requests.
+  No database, no external service.
 - **Reading:** every new session automatically loads a short index (capped at 1,500
   characters) so it knows what's already been decided.
 - **Writing:** at the end of a work cycle, the knowledge-manager agent -- and only that
   agent -- writes down what's worth remembering, or notes that there was nothing new.
 - Nothing is written down automatically by a script: only an agent can decide what's safe
   to save, after removing anything that looks like a password or secret.
+- **Each project's memory is separate by default -- there's no automatic sharing between
+  two related projects.** You can point two projects at the same memory folder to share
+  notes, but the install step warns you first: doing that mixes both projects' decisions
+  together, with no way to tell which project a note came from. It's a real option, not a
+  clean one -- there's no "only show me what's relevant" filter today.
 - This project uses its own memory system on itself, but a fresh install of the plugin
   starts with an empty one -- your project's memory is always separate from this repo's.
 
@@ -176,8 +177,8 @@ Every loop must name all five steps and who approves it, or it's rejected automa
 | Tool | How to install | Notes |
 |---|---|---|
 | Claude Code | plugin install (above) | full support |
-| Hermes Agent | [adapters/HERMES.md](adapters/HERMES.md) | one command; 11 of 13 skills install automatically, 2 need one manual step (see FAQ) |
 | OpenCode | [adapters/OPENCODE.md](adapters/OPENCODE.md) | can run unattended for scheduled jobs |
+| Hermes Agent | [adapters/HERMES.md](adapters/HERMES.md) | one command; 11 of 13 skills install automatically, 2 need one manual step (see FAQ) |
 | Codex | [adapters/CODEX.md](adapters/CODEX.md) | plugin marketplace install |
 
 ## Safety rails (all of them, in one place)
