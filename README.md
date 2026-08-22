@@ -12,8 +12,10 @@
 
 Fourteen markdown-defined agents -- product manager, full-stack engineer, QA, security,
 DevOps, design, and more -- that plan, build, judge, and remember as a team, with hard
-budget caps and a human holding the merge button. Plain markdown plus POSIX shell.
-Nothing to install, nothing phoning home.
+budget caps and a human holding the merge button.
+
+One install, no separate runtime: no database, no hosted service, no dependency tree --
+markdown and POSIX shell underneath, nothing phoning home.
 
 ```
 /plugin marketplace add xsefirosus/sefi-agents
@@ -26,120 +28,44 @@ Or hand the setup to any coding agent:
 > Help me set up sefi-agents by following
 > https://raw.githubusercontent.com/xsefirosus/sefi-agents/main/Install.md
 
-**Contents:** [Why this exists](#why-this-exists) -- [The receipts](#the-receipts-real-numbers-first-party)
--- [How it compares](#how-it-compares) -- [The team](#the-team-14-agents) --
-[The skills](#the-skills-12) -- [The loops](#the-loops-2-shipped-template-for-more) --
+**Contents:** [Why this exists](#why-this-exists) -- [How it compares](#how-it-compares) --
+[The team](#the-team-14-agents) -- [The skills](#the-skills-12) --
+[The loops](#the-loops-2-shipped-template-for-more) --
 [Memory](#memory-that-survives-the-session) -- [Harness support](#works-with-your-harness) --
 [Safety rails](#safety-rails-all-of-them-in-one-place) -- [Proof](#proof) -- [FAQ](#faq) --
 [Contributing](#contributing) -- [License](#license)
 
 ## Why this exists
 
-Most agent setups fail the same three ways: **the writer grades its own homework** and
-calls broken work done; **tokens blow out** because nothing bounds a runaway loop; and
-**every session starts amnesiac** because state lives in a context window that evaporates.
+Most agent setups fail the same three ways:
 
-We know because we shipped all three failures first. sefi-agents is the rebuild of the
-author's previous agent system (a Python/FastAPI build), after an independent
-audit of it -- and instead of hiding the post-mortem, this repo ships it as
-[docs/ANTIPATTERNS.md](docs/ANTIPATTERNS.md), with every failure mapped to the mechanism
-here that prevents it.
+- **The writer grades its own homework.** Same model writes the code and reviews it.
+- **Tokens blow out.** Nothing bounds a runaway loop.
+- **Every session starts amnesiac.** State lives in a context window that evaporates.
 
-## The receipts (real numbers, first-party)
-
-Every figure below comes from the predecessor's audit, documented in
-[docs/ANTIPATTERNS.md](docs/ANTIPATTERNS.md) and [docs/BUDGET.md](docs/BUDGET.md). No
-number in this README is invented -- that discipline is itself a shipped skill
-(anti-hallucination).
-
-| What happened (live, in the predecessor) | What ships here because of it |
-|---|---|
-| 184 green tests while half the new modules had zero call sites | the qa-engineer's wired-not-just-written check + an unwired-artifact linter in CI |
-| one self-batching dispatch burned 1.36M tokens | a hard per-dispatch cap ($0.15 default) that trips long before the daily cap |
-| ~324K tokens lost re-asking for JSON that was present but not at position 0 | a 3-rung parse ladder that accepts structured output anywhere in a reply |
-| a broken browser tool silently ate a 50-iteration retry budget | each loop declares the external commands it needs and `probe-tools.sh` checks they run, not just that they exist, before the loop's first move |
-| free-model dispatch succeeded ~45% of the time -- and still delivered | gates and human checkpoints are load-bearing, so a cheap model is enough |
-
-### First-party receipts (this repo, not the predecessor)
-
-The table above is inherited history. These are first-party: found in this exact system's
-own runtime by a direct audit, fixed and CI-gated the same day
-([docs/METRICS-PROVENANCE.md](docs/METRICS-PROVENANCE.md) tracks the predecessor-vs-first-
-party distinction for every number this repo cites). Three that stick:
-
-| What a fresh audit found, live in this repo | What ships because of it |
-|---|---|
-| The never-auto-merge rule had zero deterministic enforcement -- confirmed live when a dispatched agent used Bash to write files its own `disallowedTools` forbade, the same gap that would let a push straight to `main` go unstopped | v0.3.5: `/sefi:init` installs a `pre-push` hook refusing a direct push to `main`/`master`, stated honestly as defense-in-depth, not the fix -- the real backstop is a remote branch protection rule this hook cannot configure |
-| `disallowedTools: Write, Edit, MultiEdit` does not survive `Bash` -- confirmed live via the engineering-manager's own forensic self-audit of its harness's session log, which found it had used Bash-invoked `sed -i` 8 times to write state-file content despite that line | v0.3.6: `check-bash-write.sh`, a `PreToolUse` hook that blocks a write-shaped Bash command for an agent whose own frontmatter fully disallows Write/Edit/MultiEdit -- pattern-matching, not a sandbox, stated as such |
-| A `qa-engineer` verdict cited real, in-bounds lines as proof of something they said nothing of the sort about -- and nothing downstream caught it | v0.3.16: `check-citation.sh` catches an impossible citation (file missing, lines out of range) for free; the semantic half still needs a judgment call, and the regression test proves that limit rather than hiding it |
-
-<details>
-<summary>12 more first-party findings, chronological (click to expand)</summary>
-
-| What a fresh audit found, live in this repo | What ships because of it |
-|---|---|
-| 5 config keys declared but never read or named as a rule -- one implied auto-merge was a toggle it never was | v0.2.1: `validate-config-wired.sh`, a permanent CI gate; the misleading key deleted, the rest genuinely wired |
-| 6 shipped files pointed at paths that resolve to nothing | v0.2.1: `validate-links.sh`, a permanent CI gate closing the one direction the existing orphan-check cannot see |
-| the budget-enforcement gate silently passed with no spend data, confirmed live (no `ccusage` on the build machine) | v0.2.1: `budget-check.sh` fails closed; proven by an executed regression test, not just read |
-| the same gate still failed OPEN one branch over -- a `ccusage` that was present but returned `null` became `0` under `awk`, certifying every cap as within budget | v0.3.0: figures validated before any arithmetic, and exit 3 (CANNOT MEASURE) separated from exit 1 (EXCEEDED) |
-| `gate.sh` enforced no timeout at all, while `loop-engineering` shipped the per-operation-timeout rule as a predecessor-earned lesson | v0.3.0: two timeout classes; a hung suite is killed and named instead of hanging the loop forever |
-| the five-move loop gate was satisfiable by prose -- `grep -q Discovery` matched the word anywhere, so a spec with no such section passed | v0.3.0: anchored to the `## <Move>` heading; a prose-only spec drops from 80/100 to 40/100 |
-| the memory vault had a consumer and no producer -- the weekly distill read `memory/daily/`, and nothing ever wrote there | v0.3.0: `close_out` defined and bound to a knowledge-manager dispatch; CI asserts a producer exists |
-| every mechanism above was gated but had never run in sequence -- unwired by the qa-engineer's own delete-the-line test | v0.3.0: `test-integration.sh` executes the full loop skeleton end to end in a real git repo, 30 assertions across 16 stages |
-| `check-bash-write.sh` trusted `command -v python3` presence, not that the interpreter actually runs -- found live on a host where it was a Microsoft Store alias stub while a working interpreter sat on PATH as `python`; the gate's JSON parsing failed OPEN instead of blocking | v0.3.12: a health-checked resolver chain (jq -> python3 -> python -> py, smoke-tested before trust) used everywhere the gate and CI parse worked-example JSON |
-| Neither installer ever wired `hooks/hooks.json` anywhere -- a dispatched `support-engineer` ran `git commit` via Bash completely uncaught, in this exact session, on this exact repo | v0.3.15: `install.sh --target claude` now merges `hooks/hooks.json` into `settings.json` via `jq`, proven safe against a pre-existing unrelated hook block and idempotent on re-run |
-| `inject-memory.sh` shipped tracked in git as `100644` (non-executable) -- a fresh symlink-mode install shipped a `SessionStart` hook that failed with `Permission denied` on every session start, silently dropping memory injection | v0.3.18: fixed with `chmod +x`; a regression test reads every `command` in `hooks.json` and asserts the referenced script is tracked executable in git |
-| `sefi-orchestration` is model-invoked -- Claude Code loads it only when its own judgment matches a message against the skill's description, and that judgment can miss even on a task that plainly needed routing. Live-observed in this exact repo's own session history: an entire conversation did textbook engineering-manager work without the skill ever firing once | v0.3.19: `/sefi:route [task]` names the skill explicitly rather than leaving it to inference, guaranteeing it loads and dispatches with no auto-trigger judgment call involved |
-| A dispatched `engineering-manager` structurally cannot drive the `product-manager` -> `software-engineer` -> `qa-engineer` chain on Claude Code -- the `Agent`/`Task` tool is outside a subagent's tool set and is never granted, even if listed. Live-reproduced: a dispatched `engineering-manager` returned BLOCKED with zero artifacts | v0.3.20: a second `SessionStart` hook delivers the orchestrator role to the top-level session only -- mechanically scoped, never reachable by a dispatched subagent |
-
-</details>
-
-Full list: [CHANGELOG.md](CHANGELOG.md).
+We shipped all three failures first, in the author's previous agent system (Python/
+FastAPI). The post-mortem is public, not hidden: [docs/ANTIPATTERNS.md](docs/ANTIPATTERNS.md)
+maps every failure to the mechanism here that now prevents it.
 
 ## How it compares
 
-Three real incidents from the receipts above, and the mechanism that now closes each one --
-not invented "after" numbers, since half of this README's pitch is refusing to make those up:
+Three real incidents, no invented "after" numbers -- full history in [CHANGELOG.md](CHANGELOG.md):
 
-```mermaid
-flowchart TB
-    subgraph W["Without a gate like this"]
-        direction TB
-        W1["Cost: one runaway dispatch burned 1.36M tokens -- nothing capped it"]
-        W2["Quality: 184 green tests, but half the new modules had zero call sites"]
-        W3["Overhead: ~324K tokens lost re-asking for JSON that was already in the reply"]
-    end
-    subgraph S["With sefi-agents"]
-        direction TB
-        S1["Hard per-dispatch cap ($0.15 default) trips long before real money burns"]
-        S2["qa-engineer's wired-not-just-written check catches an unwired module before ship"]
-        S3["3-rung parse ladder accepts structured output anywhere in the reply"]
-    end
-    W1 -.->|closed by| S1
-    W2 -.->|closed by| S2
-    W3 -.->|closed by| S3
-```
+<img src="docs/assets/comparison.svg" alt="Three real incidents, without a gate versus with sefi-agents" width="100%">
 
-Beyond those three, an honest comparison with no names -- check any framework you are
-evaluating against these rows yourself:
+No names beyond that -- check any framework you're evaluating against these rows yourself:
 
 | | sefi-agents | typical agent framework |
 |---|---|---|
-| Who judges the work | a separate adversarial qa-engineer, different instructions, different model where possible | the model that wrote it reviews itself |
+| Who judges the work | a separate adversarial qa-engineer, different model where possible | the model that wrote it reviews itself |
 | Verdict basis | executed evidence: re-run commands, before/after pairs | "the code looks right" |
-| Runtime | markdown + POSIX shell (git, rg, coreutils) | a language runtime + dependency tree |
+| Runtime | markdown + POSIX shell | a language runtime + dependency tree |
 | Cost control | hard caps: per-run, daily, AND per-dispatch | rarely built in |
 | Memory | a human-readable Obsidian-style vault, in your git repo | opaque state or a hosted service |
-| Autonomy boundary | opens PRs, never merges -- one canonical never-auto-merge rule | often merge- or deploy-capable by default |
-| Hallucination policy | UNKNOWN/PENDING instead of plausible guesses, CI-enforced in every agent and skill | unstated |
-| Self-improvement | bounded (3 sentences/file/run), single-writer, ledgered and revertible by commit SHA, propose-only by default | unbounded, or absent, or unable to undo itself |
+| Autonomy boundary | opens PRs, never merges | often merge- or deploy-capable by default |
+| Hallucination policy | UNKNOWN/PENDING instead of guesses, CI-enforced | unstated |
+| Self-improvement | bounded, ledgered, revertible by commit SHA, propose-only | unbounded, absent, or can't undo itself |
 | Portability | Claude Code, Hermes, OpenCode, Codex | usually locked to its own runner |
-
-The edges, spelled out: the work is judged by an adversary, not its author; the whole
-thing runs where a shell runs, with nothing to pip-install; a runaway dispatch hits a cap
-in cents, not dollars; your team's memory is markdown you can open, diff, and grep; and
-nothing irreversible happens without a human. If a framework you are considering can say
-all five, use whichever you like.
 
 ## The team (14 agents)
 
@@ -163,22 +89,14 @@ harness-neutral model tier, an output contract, and an escalation path.
 | technical-writer | READMEs, changelogs, guides -- verified claims only | low |
 | prompt-engineer | Stage 0 -- restates a raw human message into single-intent asks | low |
 
-Tiers are the source of truth; `plugins/sefi-core/config/model-map.yml` maps each one to a
-concrete model and reasoning effort per harness, so a new model is an edit to one table
-rather than a pass over 14 files. On Claude Code that is opus/sonnet/haiku; on Codex
-gpt-5.6-sol/terra/luna; on OpenCode and Hermes the sentinel `flexible` -- their free-model
-catalogs rotate too fast to hardcode safely (a pinned OpenCode Zen free model, verified real
-on 2026-08-11, was retired by 2026-08-21), so those two harnesses defer entirely to whatever
-model you configure directly in the harness itself, and sefi's orchestration runs on it
-without depending on which one that is.
-
-The load-bearing relationship is `qa-engineer: high` sitting above `software-engineer: mid`.
-That gap IS generator/evaluator separation. Where a harness maps both to one model -- a
-single free model, or `flexible` resolving to whatever you picked -- CI warns that the
-separation is instructions-only there, and it is one line in `model-map.yml` to fix the day
-you point two tiers at different real identifiers. The roster is still designed to hold up
-on a small model (see the ~45% row above -- the gates carry the quality), but a harness with
-two models gets a genuinely stronger judge.
+- Tiers map to a real model per harness in one file: `config/model-map.yml`. A new model is
+  an edit there, not a pass over 14 agent files.
+- Claude Code: opus/sonnet/haiku. Codex: gpt-5.6-sol/terra/luna. OpenCode + Hermes:
+  `flexible` -- their free-model catalogs rotate too fast to hardcode (one pinned model was
+  retired 10 days after being verified real), so both defer to whatever model you pick.
+- `qa-engineer: high` above `software-engineer: mid` is the point: a different, stronger
+  judge. CI warns when a harness collapses both to one model instead (see FAQ for why a
+  small model is still enough on its own).
 
 ## The skills (12)
 
@@ -208,11 +126,9 @@ The always-loaded router stays thin; craft lives in skills that load on demand:
   security, and cost-per-run.
 - **terse-mode** -- output compression for narration, config-gated (ships enabled).
 
-**User-invoked vs model-invoked:** Skills are either user-invoked (callable only when you
-type `/skill-name`; Commands are all user-invoked) or model-invoked (callable by agents
-during a loop, or by a user-invoked skill). A user-invoked skill may invoke model-invoked
-skills; never another user-invoked one. This distinction ensures agents can't inadvertently
-chain interactive commands or load conflicting instruction contexts.
+Skills are either user-invoked (typed as `/skill-name`, like Commands) or model-invoked
+(loaded automatically during a loop). A user-invoked skill may call a model-invoked one,
+never another user-invoked one -- so agents can't chain interactive commands by accident.
 
 ## The loops (2 shipped, template for more)
 
@@ -238,30 +154,18 @@ not. `/sefi:loop-new` scaffolds your own.
 
 ## Memory that survives the session
 
-`/sefi:init` scaffolds an Obsidian-compatible vault in your project: daily notes,
-decisions with supersede-never-delete semantics, and a generated router injected (capped
-at 1,500 chars) at session start. It is markdown in your repo -- open it in Obsidian,
-grep it, diff it in PRs. No database, no service, no vendor.
-
-Both halves are wired, which is worth stating plainly because until v0.2.3 only one was.
-**Read:** a SessionStart hook injects the generated router block -- the routing lines
-themselves, not the head of the file, so the cap buys routing signal instead of re-sending
-the same folder headers every session. **Write:** at `close_out` -- the end of a loop cycle
-or a chunk of work -- the knowledge-manager is dispatched to file that cycle's durable
-observations, or to log SKIP when there were none. It is the vault's only writer and now
-its only producer.
-
-Nothing is captured by a hook, deliberately. Persisting session content has to run the
-memory-protocol privacy filter first, and a deterministic shell hook cannot judge which
-bytes are a credential or a client name. That judgment is why the producer is an agent
-dispatch. It also means capture is per cycle, not per turn: the vault holds decisions and
-hard-won constraints, not a transcript.
-
-This repo dogfoods its own tooling: the `memory/`, `state/`, `loops/`, and `config/`
-folders at this repo's own root are `/sefi:init` run against sefi-agents itself, not part
-of what a fresh install gets. `plugin.json` and `marketplace.json` ship only `agents/`,
-`skills/`, `commands/`, and `hooks/` under `plugins/sefi-core/` -- installing the plugin
-never pulls in this repo's own vault.
+- `/sefi:init` scaffolds an Obsidian-compatible vault: daily notes, decisions (supersede,
+  never delete), a generated router.
+- Plain markdown in your repo -- open it in Obsidian, grep it, diff it in PRs. No database,
+  no service, no vendor.
+- **Read:** a `SessionStart` hook injects the router (capped at 1,500 chars) every session.
+- **Write:** at `close_out` -- end of a loop cycle -- the knowledge-manager files that
+  cycle's durable observations, or logs SKIP. It's the vault's only writer.
+- Nothing is captured by a raw hook: a deterministic script can't judge what's a credential,
+  so only an agent dispatch (running the privacy filter first) writes to the vault.
+- This repo dogfoods itself: `memory/`, `state/`, `loops/`, `config/` here are `/sefi:init`
+  run against sefi-agents. The shipped plugin carries only `agents/`, `skills/`,
+  `commands/`, `hooks/` -- installing it never pulls in this repo's own vault.
 
 ## Works with your harness
 
@@ -313,20 +217,14 @@ test-integration: OK (30 passed) -- full loop skeleton executed end to end
 CI: all validators passed
 ```
 
-The last two matter most. `test-scripts.sh` proves each script works alone;
-`test-integration.sh` executes the whole loop skeleton end to end in a real throwaway git
-repo -- scaffold, tool probe, plan gate, handoff gate, budget preflight, a real worktree, a
-real `gate.sh` run, an executed Done Criteria, a metrics row, a `close_out` note that comes
-back out of the next session's injection, and a revertible ledger SHA. It also asserts the
-human checkpoint held: no merge commit exists at the end of a cycle.
-
-It proves the machinery, not the judgment. Every agent dispatch inside it is performed by
-the test harness, so it says nothing about whether a model decides well at those seams --
-only that the seams themselves hold.
-
-The word-budget validator is real too: agents have word budgets, skills have line caps, and
-prose that bloats fails the build. Exact counts drift as the repo grows -- run the command
-yourself rather than trust this snapshot.
+- `test-scripts.sh` proves each script alone. `test-integration.sh` runs the whole loop
+  end to end in a real throwaway repo: worktree, `gate.sh`, Done Criteria, metrics row, a
+  `close_out` note that survives into the next session, a revertible ledger SHA, and a
+  check that nothing merged itself.
+- It proves the machinery, not the judgment -- every dispatch inside it is scripted, so it
+  says nothing about whether a model decides well, only that the seams hold.
+- Agents have word budgets, skills have line caps -- prose that bloats fails the build.
+  Counts drift as the repo grows; run the command yourself rather than trust this snapshot.
 
 ## FAQ
 
@@ -350,20 +248,13 @@ stated once, linked everywhere, and CI checks every loop names its human checkpo
 come back as UNKNOWN and uncomputed values as PENDING -- never a plausible guess. That
 rule is a skill, and CI fails any agent or skill that drops its pointer to it.
 
-**Why didn't all the skills install automatically on Hermes?** Hermes runs its own
-community-skill security scanner, and two skills -- `sefi-orchestration` and
-`security-review` -- trip it as false positives: their content *names* dangerous
-patterns (subagent dispatch, eval/exec, unpinned downloads) specifically to guard
-against them, and the scanner can't yet tell "warns about" from "does."
-`install-hermes.sh` still installs the other 10 automatically, and the moment it
-detects either of the two missing, it prints the exact fix inline: a direct copy that
-bypasses the scanner entirely, verified to work and shown as `Source=local, enabled` in
-`hermes skills list` afterward. See [adapters/HERMES.md](adapters/HERMES.md) section 8.
+**Why didn't all the skills install automatically on Hermes?** Its security scanner
+false-flags two skills (`sefi-orchestration`, `security-review`) because they *name*
+dangerous patterns to guard against, and the scanner can't tell "warns about" from
+"does." The other 10 install fine; `install-hermes.sh` prints the exact manual fix for
+these two inline. See [adapters/HERMES.md](adapters/HERMES.md) section 8.
 
 **Do I need Obsidian?** No. The vault is plain markdown; Obsidian just makes it nicer.
-
-**A skill or user-invoked command calling another?** A user-invoked skill may invoke
-model-invoked skills, never another user-invoked one.
 
 ## Contributing
 
