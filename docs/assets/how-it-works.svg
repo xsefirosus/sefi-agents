@@ -1,0 +1,122 @@
+<svg viewBox="0 0 1000 660" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="How sefi-agents works: the request cycle on the left, the weekly self-improvement loop on the right, feeding back into the same agents">
+  <style>
+    .bg { fill: #ffffff; }
+    .colhead { font: 700 14px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; letter-spacing: 0.04em; fill: #57606a; }
+    .boxtext { font: 500 13px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; }
+    .box { fill: #eef1f4; stroke: #c9d1d9; }
+    .box.you { fill: #eaf1fb; stroke: #7aa7d9; }
+    .box.gate { fill: #eaf6ec; stroke: #7fc794; }
+    .box.retro { fill: #fdf3e3; stroke: #e0b155; }
+    .boxtext { fill: #1f2328; }
+    .arrow { stroke: #8b949e; stroke-width: 2; fill: none; }
+    .arrowhead { fill: #8b949e; }
+    .dashed { stroke: #8b949e; stroke-width: 1.6; fill: none; stroke-dasharray: 5 4; }
+    .caption { font: 400 12px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #57606a; }
+    .label { font: 500 11px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #57606a; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .colhead { fill: #9198a1; }
+      .box { fill: #161b22; stroke: #30363d; }
+      .box.you { fill: #0d2a4a; stroke: #4d8fd6; }
+      .box.gate { fill: #0f2818; stroke: #2a6e3f; }
+      .box.retro { fill: #2b210a; stroke: #a67a2e; }
+      .boxtext { fill: #e6edf3; }
+      .arrow { stroke: #6e7681; }
+      .arrowhead { fill: #6e7681; }
+      .dashed { stroke: #6e7681; }
+      .caption { fill: #9198a1; }
+      .label { fill: #9198a1; }
+    }
+  </style>
+
+  <rect class="bg" x="0" y="0" width="1000" height="660" />
+
+  <text class="colhead" x="20" y="28">EVERY REQUEST</text>
+  <text class="colhead" x="580" y="28">EVERY WEEK, SEPARATELY</text>
+
+  <!-- Left column: the request cycle -->
+  <rect class="box you" x="20" y="42" width="420" height="46" rx="9" />
+  <text class="boxtext" x="38" y="70">You type a request</text>
+
+  <path class="arrow" d="M230 88 V106" /><path class="arrowhead" d="M230 106 L225 96 L235 96 Z" />
+
+  <rect class="box" x="20" y="106" width="420" height="46" rx="9" />
+  <text class="boxtext" x="38" y="134">prompt-engineer clarifies what you actually mean</text>
+
+  <path class="arrow" d="M230 152 V170" /><path class="arrowhead" d="M230 170 L225 160 L235 160 Z" />
+
+  <rect class="box" x="20" y="170" width="420" height="46" rx="9" />
+  <text class="boxtext" x="38" y="198">engineering-manager picks the right agent</text>
+
+  <path class="arrow" d="M230 216 V234" /><path class="arrowhead" d="M230 234 L225 224 L235 224 Z" />
+
+  <rect class="box" x="20" y="234" width="420" height="46" rx="9" />
+  <text class="boxtext" x="38" y="262">product-manager writes steps + how to check "done"</text>
+
+  <path class="arrow" d="M230 280 V298" /><path class="arrowhead" d="M230 298 L225 288 L235 288 Z" />
+
+  <rect class="box" x="20" y="298" width="420" height="46" rx="9" />
+  <text class="boxtext" x="38" y="326">software-engineer builds it, in its own workspace</text>
+
+  <path class="arrow" d="M230 344 V362" /><path class="arrowhead" d="M230 362 L225 352 L235 352 Z" />
+
+  <rect class="box gate" x="20" y="362" width="420" height="46" rx="9" />
+  <text class="boxtext" x="38" y="390">qa-engineer checks it against real, run evidence</text>
+
+  <!-- reject loop back -->
+  <path class="arrow" d="M20 385 H2 V320 H20" />
+  <path class="arrowhead" d="M20 320 L10 315 L10 325 Z" />
+  <text class="label" x="4" y="352" transform="rotate(-90 4 352)">rejected</text>
+
+  <path class="arrow" d="M230 408 V426" /><path class="arrowhead" d="M230 426 L225 416 L235 416 Z" />
+  <text class="label" x="245" y="420">approved</text>
+
+  <rect class="box" x="20" y="426" width="420" height="46" rx="9" />
+  <text class="boxtext" x="38" y="454">A pull request opens</text>
+
+  <path class="arrow" d="M230 472 V490" /><path class="arrowhead" d="M230 490 L225 480 L235 480 Z" />
+
+  <rect class="box you" x="20" y="490" width="420" height="46" rx="9" />
+  <text class="boxtext" x="38" y="518">You review and merge -- nothing merges by itself</text>
+
+  <path class="arrow" d="M230 536 V554" /><path class="arrowhead" d="M230 554 L225 544 L235 544 Z" />
+
+  <rect class="box" x="20" y="554" width="420" height="46" rx="9" />
+  <text class="boxtext" x="38" y="582">knowledge-manager saves anything worth remembering</text>
+
+  <text class="caption" x="20" y="615">Spending limits and tool checks apply at every arrow above,</text>
+  <text class="caption" x="20" y="632">not shown as separate boxes -- see Safety rails.</text>
+
+  <!-- Right column: weekly self-improvement -->
+  <rect class="box" x="580" y="170" width="400" height="46" rx="9" />
+  <text class="boxtext" x="598" y="198">state/metrics.md -- pass/fail history per agent</text>
+
+  <path class="arrow" d="M780 216 V234" /><path class="arrowhead" d="M780 234 L775 224 L785 224 Z" />
+
+  <rect class="box retro" x="580" y="234" width="400" height="46" rx="9" />
+  <text class="boxtext" x="598" y="262">weekly-retro finds the worst-performing agent</text>
+
+  <path class="arrow" d="M780 280 V298" /><path class="arrowhead" d="M780 298 L775 288 L785 288 Z" />
+
+  <rect class="box retro" x="580" y="298" width="400" height="46" rx="9" />
+  <text class="boxtext" x="598" y="326">proposes a small, bounded fix (3 sentences max)</text>
+
+  <path class="arrow" d="M780 344 V362" /><path class="arrowhead" d="M780 362 L775 352 L785 352 Z" />
+
+  <rect class="box gate" x="580" y="362" width="400" height="46" rx="9" />
+  <text class="boxtext" x="598" y="390">qa-engineer checks the fix BEFORE it ships</text>
+
+  <path class="arrow" d="M780 408 V426" /><path class="arrowhead" d="M780 426 L775 416 L785 416 Z" />
+
+  <rect class="box" x="580" y="426" width="400" height="46" rx="9" />
+  <text class="boxtext" x="598" y="454">Applied -- tracked and revertible by commit</text>
+
+  <!-- connecting arrows between the two tracks -->
+  <path class="dashed" d="M440 385 H560 V193 H578" />
+  <path class="arrowhead" d="M578 193 L568 188 L568 198 Z" />
+  <text class="label" x="450" y="200">results feed the scorecard</text>
+
+  <path class="dashed" d="M580 449 H500 V325 H442" />
+  <path class="arrowhead" d="M442 325 L452 320 L452 330 Z" />
+  <text class="label" x="452" y="460">improves the agent above</text>
+</svg>

@@ -3,6 +3,24 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.24] - 2026-08-22
+
+### Changed
+
+1. **"How a request actually gets done" was only the build path -- now shows the whole
+   picture.** Replaced the Mermaid flowchart with `docs/assets/how-it-works.svg`, which
+   adds what was missing: the weekly self-improvement loop (`state/metrics.md` ->
+   `weekly-retro` finds the worst performer -> a bounded (<=3 sentences) fix ->
+   `qa-engineer` checks it before it ships -> applied, revertible by commit), shown
+   feeding back into the same agents the request cycle uses. Verified against
+   `skills/retro-improve/SKILL.md` before drawing it, not described from memory. Added
+   prose noting token-efficiency mechanisms (bounded research digests, reading a reply
+   wherever the answer lands instead of re-asking, `terse-mode`) are built into how each
+   agent works rather than a separate step -- so they were never going to show as a box
+   in the diagram, but they're real and now named.
+2. Rendered the new SVG headless (Chromium screenshot, not just eyeballed the markup) to
+   catch a text-overflow risk in three box labels before publishing, not after.
+
 ## [0.3.23] - 2026-08-22
 
 ### Changed
