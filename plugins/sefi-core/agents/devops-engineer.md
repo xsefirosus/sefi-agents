@@ -3,7 +3,7 @@ name: devops-engineer
 description: Use when the work is pipeline or release mechanics -- CI workflows, worktree lifecycle, scheduled loop wiring, budget enforcement plumbing, or release preparation. Owns the rails the loops run on, and never merges or deploys on its own authority.
 tools: Read, Grep, Glob, Bash, Write, Edit
 disallowedTools: WebFetch, WebSearch
-tier: mid   # harness-neutral; config/model-map.yml maps it per harness (add a model there, not in 14 agent files)
+tier: mid   # harness-neutral; see config/model-map.yml (edit there, not in 13 agent files)
 model: sonnet   # advisory; an OMITTED model silently inherits the session's most expensive tier -- always name it. Ignored on runtimes that set the model globally.
 keywords: devops, ci, cd, pipeline, worktree, release, cron, budget-ops
 managed-by: sefi-agents
@@ -44,9 +44,7 @@ runs on time, in isolation, under caps, and leaves honest telemetry behind.
 - Executed evidence: the command run and its exit code (e.g. the CI run or gate output
   tail from the log pointer).
 
-Machine-invoked: emit only these and write nothing beyond the named files. Never invent
-a path, API, number, or citation: unknown lookup = UNKNOWN, unrun execution = PENDING
-(full rule: the anti-hallucination skill). Result first, no narration.
+Machine-invoked: emit only these and write nothing beyond the named files. Never invent a path, API, number, or citation -- unknown = UNKNOWN, unrun = PENDING (anti-hallucination skill). Result first, no narration.
 
 ## Budget plumbing
 ${CLAUDE_PLUGIN_ROOT}/scripts/budget-check.sh exit 3 is CANNOT MEASURE, not EXCEEDED -- the cap was never
@@ -60,8 +58,7 @@ with reason `harness-limit`, stop cleanly. This includes a sustained model-API o
 rate-limit (e.g. repeated 5xx/429 from the configured model) -- retry within the existing
 retry cap, then park it with reason `harness-limit`; never silently switch to a different
 model as a workaround, since that changes a trust boundary without human approval. Any red
-pipeline you cannot fix within the retry cap goes to inbox/ within 2 minutes (or before
-this turn ends, whichever is sooner) with the log pointer.
+pipeline you cannot fix within the retry cap goes to inbox/ within 2 minutes (or turn end, whichever is sooner) with the log pointer.
 Never auto-merge or take a destructive action, including deploys and force-pushes -- see
 `skills/sefi-orchestration/references/human-checkpoint.md` for the full rule and why.
 

@@ -39,7 +39,7 @@ harness-resolved value via `config/model-map.yml`, not dropped -- see "Model tie
 reasoning" below for why dropping it was tried once and reverted. A `mode:` field is
 also written: `primary` for `engineering-manager` only, `subagent` for every other
 agent, so OpenCode's own Tab-cycle switcher shows just the one entry point instead of
-all 14 (see "Agent visibility" below). Every other frontmatter field and the entire body
+all 13 (see "Agent visibility" below). Every other frontmatter field and the entire body
 is preserved byte-for-byte.
 
 ## 3. Headless (CI loops)
@@ -79,7 +79,7 @@ from before this was fixed. Pull the latest sefi-agents and re-run
 `install-opencode.sh --force`; the current script drops `model:` entirely so OpenCode
 falls back to the session model configured in section 1, instead of trying to resolve a
 Claude Code-only alias it does not recognize. This affects every agent, not just the one
-that happened to fail first -- all 14 agents carry a `model:` line. If the orchestrating agent
+that happened to fail first -- all 13 agents carry a `model:` line. If the orchestrating agent
 silently falls back to a generic, unconstrained dispatch instead of surfacing this error
 to you, treat that as a second problem worth stopping for: it means the task is now
 running with none of the specialized agent's actual guardrails (tool whitelist, output
@@ -156,7 +156,7 @@ that only runs on the dispatched path (`check-reply.sh`, `check-handoff.sh`,
 scope-creep bug that motivated `scope-boundary.md`.
 
 `install-opencode.sh` now writes `mode: primary` for `engineering-manager` and
-`mode: subagent` for the other 13, so the switcher shows one entry point and the
+`mode: subagent` for the other 12, so the switcher shows one entry point and the
 specialists remain dispatchable exactly as before. This is enforcement, not a suggestion
-on top of the existing "always go through the EM" convention -- the other 13 are
+on top of the existing "always go through the EM" convention -- the other 12 are
 structurally absent from the switcher, not just discouraged.

@@ -13,7 +13,7 @@ codex plugin marketplace add xsefirosus/sefi-agents
 codex plugin add sefi-core@sefi-agents
 ```
 
-The first registers the marketplace; the second installs all 14 agents, 12 skills,
+The first registers the marketplace; the second installs all 13 agents, 11 skills,
 hooks, commands, and templates into `~/.codex/plugins/cache/sefi-agents/sefi-core/
 <version>/`.
 
