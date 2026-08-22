@@ -6,3 +6,7 @@ docs/master-prompt-v4-provenance.md
 
 # Loop worktrees (docs/LOOPS.md worktree procedure) -- project-local, never global.
 .worktrees/
+
+# /sefi:init's harness marker -- a machine-local install fact (which harness ran init),
+# never a vault note or a state ledger entry.
+.sefi/

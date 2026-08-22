@@ -54,6 +54,14 @@ for machine-only markers (invisible in reading view, greppable by the knowledge-
 2. Open `memory/index.md`.
 3. Follow at most 2 wikilinks. The budget counts `[[wikilinks]]` (in-vault) only;
    external references stay `[text](url)` Markdown links and never count against it.
+4. Cross-project (explicit-relevance only, never a scan): only when the current request
+   names or clearly implies another project by name may you resolve that project's slug
+   (same derivation as WRITE step 4) under `resolve-shared-memory-path.sh`'s path and open
+   the one matching note. No background or session-start scan of that shared folder's other
+   project subfolders, ever, and never as a fallback when the local vault simply lacks an
+   answer -- this holds to rule 1's "never bulk-load," extended across projects instead of
+   within one. The same 2-link budget from step 3 applies once inside the other project's
+   note.
 
 Use `rg` for anything else. Never open a file > 100 KB without a stated need.
 
@@ -70,6 +78,17 @@ judge which bytes are a credential. Every other agent nominates candidates only.
 2. Append a structured entry to the daily note: `## HH:MM -- <topic>`, 3 lines max, plus
    `[[links]]`. Default `tier: trace` / `scope: session`.
 3. Decisions get the schema above. When a write is also a handoff, set `handoff-to:`.
+4. Cross-project mirror (additive, best-effort, never a replacement for step 2): write the
+   *same already-filtered* step-2 entry to a temp file and call
+   `${CLAUDE_PLUGIN_ROOT}/scripts/write-shared-memory-mirror.sh <topic> <temp-file>`. That
+   script is the deterministic half -- it resolves the shared path (skipping silently on any
+   detected ephemeral/cloud environment or `memory.cross_project_enabled: false`), derives
+   the project slug from the git remote, reads `.sefi/harness` (falling back to
+   `unknown-harness`), and writes the mirror file. Never a second privacy pass on different
+   content -- the filter in step 1 already ran once. Any nonzero exit (mirror disabled,
+   environment not confirmed local, permission denied, a sandbox that blocks writes outside
+   the project directory) is logged in one line and otherwise ignored; step 2 already ran
+   and is never blocked by it.
 
 ## ROUTER
 `memory/index.md` carries a generated block between `<!-- GENERATED:router -->` and

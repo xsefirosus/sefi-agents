@@ -37,7 +37,6 @@ installs the right way for it, Claude Code or otherwise:
 **Contents:** [Why this exists](#why-this-exists) -- [How it compares](#how-it-compares) --
 [The team](#the-team-13-agents) -- [The skills](#the-skills-11) --
 [How a request gets done](#how-a-request-actually-gets-done) --
-[The loops](#the-loops-2-shipped-template-for-more) --
 [Memory](#memory-that-survives-the-session) -- [Where it runs](#works-with-your-harness) --
 [Safety rules](#safety-rails-all-of-them-in-one-place) -- [Proof](#proof) -- [FAQ](#faq) --
 [Contributing](#contributing) -- [License](#license)
@@ -57,6 +56,15 @@ We hit all three problems first, in the author's earlier version of this project
 post-mortem is public, not hidden: [docs/ANTIPATTERNS.md](docs/ANTIPATTERNS.md) lists each
 failure next to the fix that now prevents it.
 
+**Where these ideas come from.** The generator/verifier split matches current
+graph-engineering practice's "diamond pattern" -- split, parallel workers, a separate
+verifier node, merge, never a worker verifying its own branch. The qa-engineer's blind,
+named-bar review is the same idea Matt Shumer's "Gauntlet Loop" popularized, with one
+deliberate difference: this repo caps it (PASS/REJECT under a fixed retry limit), rather
+than looping until a critic is satisfied. And the whole shape -- a WIP limit on parallel
+work, a pull-based `state/`/`inbox/` board, CI that stops at a pull request instead of
+deploying -- is Kanban and CI/CD, with the CD half cut off on purpose.
+
 ## How it compares
 
 Three real incidents from this project's own history, no made-up "after" numbers -- full
@@ -66,10 +74,6 @@ history in [CHANGELOG.md](CHANGELOG.md):
 
 (Usage is measured in "tokens" -- small chunks of text AI providers use to price and
 limit how much a task can do.)
-
-Beyond those three, in short: a separate reviewer checks the work instead of the same AI
-grading itself, spending has a hard limit instead of none, and nothing merges or deploys
-on its own -- ever.
 
 ## The team (13 agents)
 
@@ -90,16 +94,12 @@ piece at a time, in its own workspace -- `ui-ux-designer` handles interface work
 sorts incoming issues -- `knowledge-manager` tends the memory, never deletes -- `technical-writer`
 writes docs, claims double-checked -- `prompt-engineer` clarifies a raw request first.
 
-The reviewer tier is deliberately stronger than the builder tier, so the review is a real
-second opinion, not the same model grading itself. Every model maps from one file,
-`config/model-map.yml` -- change models later by editing that, not 13 agent files. (On
-OpenCode and Hermes it's left open on purpose: their free-model options change too often
-to lock one in, so you pick a model yourself in that tool.)
-
 ## The skills (11)
 
 Playbooks an agent loads only when the task needs it -- not a 14th agent, just shared
-know-how:
+know-how. Most load automatically when an agent needs them; a few you can also call
+directly by name (typing `/skill-name`) -- but a named skill can never chain another named
+one on its own, so it can't silently escalate into commands you didn't ask for:
 
 **Always relevant:** `sefi-orchestration` (routes every request) -- `anti-hallucination`
 (the core honesty rule: say "unknown" instead of guessing, CI-enforced everywhere).
@@ -112,17 +112,14 @@ memory is read and written, the five-step loop pattern, and small self-improveme
 
 **Specialized:** `technical-writing`, `n8n-workflow-design`, `terse-mode`.
 
-Some skills you can call by name (typing `/skill-name`); others load automatically when
-an agent needs them. A skill you call by name can use an automatic one, but never call
-another named one directly -- so it can't accidentally chain commands on its own.
-
 ## How a request actually gets done
 
-Two things happen, not one: every request runs the left side below, and completely
-separately, once a week, the right side looks at how things went and proposes small
-fixes to the agents themselves:
+Three things happen, not one: every request runs the left track below by you typing it;
+completely separately and unattended, the middle track runs the same build-and-check chain
+once a day against failed builds and new issues; and once a week, the right track looks at
+how things went and proposes small fixes to the agents themselves:
 
-<img src="docs/assets/how-it-works.svg" alt="How sefi-agents works: the request cycle on the left, the weekly self-improvement loop on the right, feeding back into the same agents" width="100%">
+<img src="docs/assets/how-it-works.svg" alt="How sefi-agents works: the interactive request cycle on the left, the daily morning-triage loop in the middle, and the weekly self-improvement loop on the right, feeding back into the same agents" width="100%">
 
 - Spending limits and tool checks apply at every step on the left, not just at the end --
   see [Safety rails](#safety-rails-all-of-them-in-one-place).
@@ -130,45 +127,31 @@ fixes to the agents themselves:
   research is done in one throwaway window and only a short summary crosses back, replies
   are read wherever the answer appears instead of re-asking, and status updates stay
   short by default (`terse-mode`).
-- The right side is bounded on purpose: at most 3 sentences changed per file per week,
+- The right track is bounded on purpose: at most 3 sentences changed per file per week,
   every fix checked by qa-engineer *before* it ships, and every change undoable by its
   commit id. It only fires when there's real evidence something is worth fixing --
   otherwise it logs "nothing to change" and stops.
-
-## The loops (2 shipped, template for more)
-
-A "loop" is this same chain, run automatically on a schedule instead of by you typing a
-request:
-
-- **morning-triage** -- daily: checks for failed builds and new issues, drafts fixes, has
-  them reviewed, and opens pull requests for you.
-- **weekly-retro** -- weekly: looks at what went wrong recently and proposes small,
-  approved-by-you improvements.
-
-Every loop must declare five things -- how it finds work, hands it off, checks it,
-remembers it, and reschedules -- or it's rejected automatically. `/sefi:loop-new` helps
-you build your own.
+- A "loop" is this same chain, run automatically on a schedule instead of by you typing a
+  request: **morning-triage** (daily) checks failed builds and new issues, drafts fixes,
+  has them reviewed, and opens pull requests; **weekly-retro** (weekly) is the right track
+  above. Both stop at a pull request, same as everything else here. Every loop must declare
+  five things -- how it finds work, hands it off, checks it, remembers it, and reschedules
+  -- or it's rejected automatically; `/sefi:loop-new` helps you build your own.
 
 ## Memory that survives the session
 
-- `/sefi:init` sets up a folder of plain text notes **in your project's own folder**
-  (`memory/`), not in Claude Code's or OpenCode's own settings folder. It's committed to
-  your project's git repo by default, right alongside your code.
-- It's just markdown files -- readable, searchable, and visible in your pull requests.
-  No database, no external service.
-- **Reading:** every new session automatically loads a short index (capped at 1,500
-  characters) so it knows what's already been decided.
-- **Writing:** at the end of a work cycle, the knowledge-manager agent -- and only that
-  agent -- writes down what's worth remembering, or notes that there was nothing new.
-- Nothing is written down automatically by a script: only an agent can decide what's safe
-  to save, after removing anything that looks like a password or secret.
-- **Each project's memory is separate by default -- there's no automatic sharing between
-  two related projects.** You can point two projects at the same memory folder to share
-  notes, but the install step warns you first: doing that mixes both projects' decisions
-  together, with no way to tell which project a note came from. It's a real option, not a
-  clean one -- there's no "only show me what's relevant" filter today.
-- This project uses its own memory system on itself, but a fresh install of the plugin
-  starts with an empty one -- your project's memory is always separate from this repo's.
+Plain markdown notes in your project's own `memory/` folder, git-committed by default --
+readable, searchable, and visible in your pull requests. No database, no external
+service. A new session loads a short index automatically (capped at 1,500 characters);
+only the knowledge-manager writes, at the end of a work cycle, after stripping anything
+that looks like a password or secret.
+
+Related projects can now see each other's notes, without merging them: on a real local
+machine (never on a cloud/CI session), each project's saved notes are additionally
+mirrored to one shared, per-user folder outside any repo, kept separate by project. A
+session only opens another project's notes when you explicitly reference that project --
+never a background scan -- so nothing gets pulled in you didn't ask for. This project uses
+its own memory system on itself, but a fresh install starts empty.
 
 ## Works with your harness
 
@@ -256,6 +239,15 @@ rest. See [adapters/HERMES.md](adapters/HERMES.md) section 8.
 
 **Do I need Obsidian?** No. The memory notes are plain text files; Obsidian just makes
 them nicer to browse.
+
+**What about deploy and maintenance roles, like a real software company has?**
+`devops-engineer` already covers deploy (CI/CD, scheduling) up to the pull-request
+boundary -- it never merges or deploys itself, same as everything else here. A
+maintenance role (dependency upgrades, deprecations, flaky tests) is a real gap; the
+proposed fix is a `dependency-upkeep` loop chaining `support-engineer` -> `software-engineer`
+-> `qa-engineer`, the same PR-only pattern as the two shipped loops -- not built yet. An
+SRE-style role is not planned: it needs a running production system and live telemetry to
+watch, and this plugin has neither.
 
 ## Contributing
 

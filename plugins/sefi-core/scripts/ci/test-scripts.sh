@@ -279,6 +279,97 @@ fi
 rm -rf "$IC" "$IW"
 
 echo
+echo "=== resolve-shared-memory-path.sh (cross-project memory mirror: fail-closed on any uncertainty) ==="
+
+RSM="$(mktemp -d)"
+mkdir -p "$RSM/config"
+printf 'memory:\n  cross_project_enabled: true\n  cross_project_folder_name: sefi-memory\n' > "$RSM/config/sefi.config.yml"
+
+# A known CI/cloud marker must skip the mirror outright: no output, nonzero exit. Real CI
+# runners already set GITHUB_ACTIONS/CI themselves, so this assertion holds under the
+# suite's own real environment with no extra stubbing needed.
+out="$( cd "$RSM" && CI=true bash "$CORE/scripts/resolve-shared-memory-path.sh" 2>/dev/null )"
+rc=0; ( cd "$RSM" && CI=true bash "$CORE/scripts/resolve-shared-memory-path.sh" >/dev/null 2>&1 ) || rc=$?
+if [ -z "$out" ] && [ "$rc" -ne 0 ]; then
+  ok "a CI-marker env var skips the mirror (no output, exit $rc)"
+else
+  bad "CI marker did not skip the mirror (output='$out' exit=$rc)"
+fi
+
+# cross_project_enabled: false must skip regardless of environment.
+printf 'memory:\n  cross_project_enabled: false\n' > "$RSM/config/sefi.config.yml"
+expect_code 1 "cross_project_enabled: false skips the mirror" \
+  env -u CI -u GITHUB_ACTIONS -u CODESPACES -u IS_SANDBOX bash "$CORE/scripts/resolve-shared-memory-path.sh"
+printf 'memory:\n  cross_project_enabled: true\n  cross_project_folder_name: sefi-memory\n' > "$RSM/config/sefi.config.yml"
+
+# The positive path: stub systemd-detect-virt to report "none" (a real local machine) and
+# strip every ephemeral env marker, since the suite's own CI runner is itself a container
+# and would otherwise make this branch untestable. Two calls must agree -- idempotent
+# resolution, not a path that drifts between invocations.
+RVBIN="$(mktemp -d)"
+printf '#!/bin/sh\necho none\n' > "$RVBIN/systemd-detect-virt"; chmod +x "$RVBIN/systemd-detect-virt"
+mkdir -p "$RSM/fakehome"
+p1="$( cd "$RSM" && env -u CI -u GITHUB_ACTIONS -u CODESPACES -u IS_SANDBOX PATH="$RVBIN:$PATH" HOME="$RSM/fakehome" bash "$CORE/scripts/resolve-shared-memory-path.sh" 2>/dev/null )"
+p2="$( cd "$RSM" && env -u CI -u GITHUB_ACTIONS -u CODESPACES -u IS_SANDBOX PATH="$RVBIN:$PATH" HOME="$RSM/fakehome" bash "$CORE/scripts/resolve-shared-memory-path.sh" 2>/dev/null )"
+if [ -n "$p1" ] && [ "$p1" = "$p2" ]; then
+  ok "a non-ephemeral environment resolves a path, identically on a second call ($p1)"
+else
+  bad "resolution was not idempotent or empty (p1='$p1' p2='$p2')"
+fi
+rm -rf "$RVBIN"
+
+# An unknown platform (uname reports something this script has no branch for) fails closed
+# rather than guessing a path shape. Also stub systemd-detect-virt to "none" so this
+# specifically exercises the unknown-OS branch, not the (also-passing) ephemeral check --
+# the suite's own CI runner would otherwise satisfy exit 1 for the wrong reason.
+UVBIN="$(mktemp -d)"
+printf '#!/bin/sh\n[ "$1" = "-s" ] && echo PlanNine || echo unknown\n' > "$UVBIN/uname"; chmod +x "$UVBIN/uname"
+printf '#!/bin/sh\necho none\n' > "$UVBIN/systemd-detect-virt"; chmod +x "$UVBIN/systemd-detect-virt"
+expect_code 1 "an unrecognized OS fails closed rather than guessing a path" \
+  env -u CI -u GITHUB_ACTIONS -u CODESPACES -u IS_SANDBOX PATH="$UVBIN:$PATH" bash "$CORE/scripts/resolve-shared-memory-path.sh"
+rm -rf "$UVBIN"
+
+rm -rf "$RSM"
+
+echo
+echo "=== write-shared-memory-mirror.sh (project-slug sanitization and harness fallback) ==="
+
+WSM="$(mktemp -d)"
+mkdir -p "$WSM/config" "$WSM/fakehome"
+printf 'memory:\n  cross_project_enabled: true\n  cross_project_folder_name: sefi-memory\n' > "$WSM/config/sefi.config.yml"
+printf 'quick test note\n' > "$WSM/note.md"
+git -C "$WSM" init -q
+git -C "$WSM" remote add origin "git@github.com:Some-Owner/My.Repo.git"
+
+WVBIN="$(mktemp -d)"
+printf '#!/bin/sh\necho none\n' > "$WVBIN/systemd-detect-virt"; chmod +x "$WVBIN/systemd-detect-virt"
+
+# A remote URL with mixed case and punctuation must sanitize to a lowercase, path-safe
+# slug -- no "/", no leftover ":" or ".git", so it can never be misread as a path
+# separator or escape the project subfolder it names.
+dest1="$( cd "$WSM" && env -u CI -u GITHUB_ACTIONS -u CODESPACES -u IS_SANDBOX PATH="$WVBIN:$PATH" HOME="$WSM/fakehome" bash "$CORE/scripts/write-shared-memory-mirror.sh" "My Topic" note.md 2>/dev/null )"
+case "$dest1" in
+  *"/github.com-some-owner-my.repo/"*) ok "git remote URL sanitizes to a lowercase, path-safe project slug" ;;
+  *) bad "project-slug sanitization produced: $dest1" ;;
+esac
+
+# No .sefi/harness marker: falls back to the literal unknown-harness, never erroring.
+case "$dest1" in
+  *"/unknown-harness-"*) ok "a missing .sefi/harness marker falls back to unknown-harness" ;;
+  *) bad "harness fallback produced: $dest1" ;;
+esac
+
+# With a real marker present, the mirror filename carries it instead of the fallback.
+mkdir -p "$WSM/.sefi"; echo claude > "$WSM/.sefi/harness"
+dest2="$( cd "$WSM" && env -u CI -u GITHUB_ACTIONS -u CODESPACES -u IS_SANDBOX PATH="$WVBIN:$PATH" HOME="$WSM/fakehome" bash "$CORE/scripts/write-shared-memory-mirror.sh" "My Topic" note.md 2>/dev/null )"
+case "$dest2" in
+  *"/claude-"*) ok "a present .sefi/harness marker names the mirror file" ;;
+  *) bad "harness marker was not picked up: $dest2" ;;
+esac
+
+rm -rf "$WSM" "$WVBIN"
+
+echo
 echo "=== hook script executable bit (inject-memory.sh shipped as 100644, breaking a fresh symlink-mode SessionStart) ==="
 
 # hooks.json invokes its "command" scripts directly -- no "bash"/"sh" interpreter prefix --

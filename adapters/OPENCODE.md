@@ -64,6 +64,13 @@ if this session found something worth remembering, dispatch `knowledge-manager` 
 letting the session end without saving anything. Matches the same line Claude Code's
 `inject-orchestrator-role.sh` injects at session start.
 
+The cross-project memory mirror (`memory-protocol/SKILL.md` WRITE step 4) needs none of
+this wiring -- `resolve-shared-memory-path.sh` and `write-shared-memory-mirror.sh` are
+plain bash the knowledge-manager runs directly at close_out, so they work identically here.
+One real caveat, not OpenCode-specific: a sandbox that disallows writes outside the project
+directory makes the mirror fail closed by design, same as a detected ephemeral environment
+-- the project-local vault write is never affected either way.
+
 **Why not `session.idle` (the closer analog to "remind right as the session ends"):**
 checked and rejected, not just skipped. `session.idle` is not a shell-command hook like
 the rest of this table -- it requires an actual OpenCode plugin (TypeScript/JavaScript),

@@ -50,6 +50,9 @@ Through the existing memory-protocol WRITE path, unchanged:
 2. Append to today's `memory/daily/YYYY-MM-DD.md` as `## HH:MM -- <topic>`, 3 lines max,
    plus `[[links]]`. Default `tier: trace`, `scope: session`.
 3. Regenerate the router (`${CLAUDE_PLUGIN_ROOT}/scripts/gen-router.sh`) so the next session's injection sees it.
+4. Optional cross-project mirror: memory-protocol WRITE step 4. Best-effort and silent-skip
+   on any ephemeral/cloud environment or an opted-out config -- never a second producer,
+   never a required step. See `memory-protocol/SKILL.md` for the full mechanism.
 
 close_out produces `tier: trace` daily notes and nothing else. It never writes to
 `decisions/` directly and never promotes a tier. Promotion stays the knowledge-manager's

@@ -38,8 +38,18 @@ the project root, never overwriting existing files, and report what was skipped.
    ignored, append it to `.gitignore` and commit before any loop creates a worktree. Create
    `.worktrees/logs/`.
 6. `.gitignore` policy: `state/` and `inbox/` are committed by default; append them to
-   `.gitignore` only if the user asks. `.worktrees/logs/` is always ignored.
-7. Shared-install check: ask whether this install serves more than one project. `managed-by:
+   `.gitignore` only if the user asks. `.worktrees/logs/` and `.sefi/` (step 7) are always
+   ignored -- append `.sefi/` to `.gitignore` if it is not already covered.
+7. Harness marker: write one line naming the harness you are running as right now (e.g.
+   `claude`, `opencode`, `hermes`, `codex`) to `.sefi/harness` in the project root, creating
+   the directory if needed. You already know this fact with certainty -- you are that
+   harness's own agent executing this command -- so state it directly; never infer it from
+   an environment variable or shell out to detect it. This is a machine-local install fact,
+   not a vault note, which is why it lives outside `memory/` and `state/` and is always
+   gitignored (step 6): `resolve-shared-memory-path.sh`'s caller reads it to name the
+   cross-project memory mirror's files, falling back to `unknown-harness` if this step was
+   ever skipped rather than failing.
+8. Shared-install check: ask whether this install serves more than one project. `managed-by:
    sefi-agents` files (agents, skills) are installed once per user, not per project, so a
    retro loop in this project edits files every other project also loads. If the answer is
    yes -- or if this run is non-interactive and cannot ask -- set `improvement.enabled:
@@ -47,7 +57,7 @@ the project root, never overwriting existing files, and report what was skipped.
    runs and still writes its proposed diff to `state/retro-<date>.md`, but a human applies it,
    so one project cannot silently rewrite another's agents. Leave `true` only when the user
    confirms this install serves this project alone.
-8. Print next steps: open `memory/` in Obsidian; review `config/budget.yml`; try
+9. Print next steps: open `memory/` in Obsidian; review `config/budget.yml`; try
    `/sefi:triage`.
 
 ## Guardrails
