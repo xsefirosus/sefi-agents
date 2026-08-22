@@ -118,24 +118,22 @@ another named one directly -- so it can't accidentally chain commands on its own
 
 ## How a request actually gets done
 
-From your prompt to a finished, human-approved change -- every step is a named agent,
-not a black box:
+Two things happen, not one: every request runs the left side below, and completely
+separately, once a week, the right side looks at how things went and proposes small
+fixes to the agents themselves:
 
-```mermaid
-flowchart TD
-    U[You type a request] --> PE[prompt-engineer clarifies it]
-    PE --> EM[engineering-manager picks the right agent]
-    EM --> PM[product-manager writes a plan: steps + a way to check done]
-    PM --> SE[software-engineer builds it, in its own workspace, tests included]
-    SE --> QA{qa-engineer checks it against real evidence}
-    QA -->|rejected| SE
-    QA -->|approved| PR[A pull request opens]
-    PR --> H[You review and merge -- nothing merges by itself]
-    H --> KM[knowledge-manager saves anything worth remembering]
-```
+<img src="docs/assets/how-it-works.svg" alt="How sefi-agents works: the request cycle on the left, the weekly self-improvement loop on the right, feeding back into the same agents" width="100%">
 
-Spending and tool checks happen before every build step, not just at the end -- see
-[Safety rails](#safety-rails-all-of-them-in-one-place).
+- Spending limits and tool checks apply at every step on the left, not just at the end --
+  see [Safety rails](#safety-rails-all-of-them-in-one-place).
+- Token efficiency isn't a separate step either -- it's built into how each agent works:
+  research is done in one throwaway window and only a short summary crosses back, replies
+  are read wherever the answer appears instead of re-asking, and status updates stay
+  short by default (`terse-mode`).
+- The right side is bounded on purpose: at most 3 sentences changed per file per week,
+  every fix checked by qa-engineer *before* it ships, and every change undoable by its
+  commit id. It only fires when there's real evidence something is worth fixing --
+  otherwise it logs "nothing to change" and stops.
 
 ## The loops (2 shipped, template for more)
 
