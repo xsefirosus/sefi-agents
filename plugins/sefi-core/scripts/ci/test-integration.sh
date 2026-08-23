@@ -58,6 +58,7 @@ cp "$CORE/templates/config/budget.yml"            config/budget.yml
 cp "$CORE/templates/config/sefi.config.yml"       config/sefi.config.yml
 cp "$CORE/templates/loops/morning-triage.loop.md" loops/morning-triage.loop.md
 cp "$CORE/templates/loops/weekly-retro.loop.md"   loops/weekly-retro.loop.md
+cp "$CORE/templates/loops/sync.loop.md"           loops/sync.loop.md
 
 # init.md step 4: the worktree check-ignore gate must pass BEFORE any loop opens one.
 printf '.worktrees/\n' > .gitignore
@@ -249,6 +250,34 @@ else
   ok "no credential-shaped content in the vault (privacy filter clean)"
 fi
 
+# The cross-project mirror (memory-protocol WRITE step 4) was shipped with unit coverage
+# in test-scripts.sh but never exercised inside a full cycle -- exactly the "written, not
+# wired" gap qa-engineer.md item 3 exists to catch. A real container (this test's own host)
+# is ephemeral, so the non-ephemeral branch is only reachable by stubbing
+# systemd-detect-virt and clearing the CI/sandbox env markers, same technique
+# test-scripts.sh already uses. This proves the mirror writes correctly once a real local
+# machine is confirmed; it cannot prove real-machine DETECTION from inside a container --
+# that limit is inherent, not a gap in this test.
+MIRROR_STUB="$(mktemp -d)"
+printf '#!/bin/sh\necho none\n' > "$MIRROR_STUB/systemd-detect-virt"
+chmod +x "$MIRROR_STUB/systemd-detect-virt"
+MIRROR_HOME="$WS/mirror-home"
+mkdir -p "$MIRROR_HOME"
+mirror_dest="$(env -u CI -u GITHUB_ACTIONS -u CODESPACES -u IS_SANDBOX \
+  PATH="$MIRROR_STUB:$PATH" HOME="$MIRROR_HOME" \
+  bash "$CORE/scripts/write-shared-memory-mirror.sh" "version-flag" "memory/daily/$TODAY.md" 2>/dev/null)"
+if [ -n "$mirror_dest" ] && [ -f "$mirror_dest" ]; then
+  ok "cross-project mirror wrote a real file: $mirror_dest"
+else
+  bad "cross-project mirror produced no file on a confirmed non-ephemeral environment"
+fi
+if [ -f "$mirror_dest" ] && diff -q "$mirror_dest" "memory/daily/$TODAY.md" >/dev/null 2>&1; then
+  ok "mirrored content matches the same privacy-filtered daily note byte for byte"
+else
+  bad "mirrored content diverged from the daily note it was supposed to copy"
+fi
+rm -rf "$MIRROR_STUB"
+
 echo
 echo "=== stage 11: router regen, and the note survives into the next session ==="
 bash "$CORE/scripts/gen-router.sh" >/dev/null 2>&1
@@ -312,6 +341,12 @@ readiness="$(bash "$CORE/scripts/loop-readiness.sh" 2>/dev/null | grep morning-t
 case "$readiness" in
   *"/100"*) ok "loop-readiness scores the live loop: $readiness" ;;
   *) bad "loop-readiness produced no score" ;;
+esac
+
+sync_readiness="$(bash "$CORE/scripts/loop-readiness.sh" 2>/dev/null | grep '^sync:')"
+case "$sync_readiness" in
+  *"/100"*) ok "loop-readiness scores the sync loop too: $sync_readiness" ;;
+  *) bad "sync.loop.md was copied in stage 1 but loop-readiness never scored it" ;;
 esac
 
 echo

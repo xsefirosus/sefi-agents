@@ -3,6 +3,56 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.4.1] - 2026-08-23
+
+### Changed
+
+1. **Audit remediation -- all eight findings from the 2026-08-23 full-repo audit closed
+   or explicitly deferred**, per four decisions the owner made before implementation:
+   - **Codex `approval_policy` softened `never` -> `on-failure`** (`.codex/config.toml`).
+     `never` traded away Codex's only interactive checkpoint on the one harness with no
+     per-command deny list; `on-failure` keeps unattended runs for routine work while
+     surfacing an actual failure instead of passing it silently.
+   - **OpenCode and Hermes enforcement gaps moved into the README harness table**
+     (Notes column, not just the FAQ/adapter docs): both collapse generator/evaluator
+     separation to the same model by default, and Hermes does not enforce
+     `disallowedTools` at all.
+   - **`morning-triage`, `weekly-retro`, and `sync` are all live on a schedule now.**
+     Two new workflow files (`retro.yml`, `sync.yml`) close a real gap:
+     `weekly-retro.loop.md` and `sync.loop.md` both declared "via a workflow file" with
+     no file actually existing, which `validate-loops.sh`'s existence check only catches
+     when a path is *named* -- vague prose slipped past it. Both loop specs now name
+     their real path, arming that check. `morning-triage`'s schedule, previously
+     commented out ("this repo's loops have never completed a cycle end to end"), is
+     uncommented. Scheduled runs are NOT dry runs -- a `schedule` trigger has no
+     `inputs`, so the `dry_run` default only ever protected manual dispatch -- left
+     unpatched deliberately: a dry scheduled run produces no qa-engineer verdict and no
+     `state/metrics.md` row, leaving the audit's two Critical findings exactly as
+     blocked as before.
+   - **`terse-mode` left entirely as-is**, by explicit owner choice, recorded here so it
+     is not re-litigated as an oversight later.
+2. **`validate-comment-safety.sh`** (new, wired into `run-all.sh`) -- a `--` inside an
+   XML/HTML comment body is illegal XML and silently breaks the whole document's parse,
+   live-hit in 0.3.27 when an em-dash in an SVG comment blanked a diagram with no error
+   anywhere. Implemented in awk with `RS="-->"`, not a line-based read loop: an earlier
+   draft of this exact validator used `read` on ripgrep's multiline output, which
+   silently truncates at the first embedded newline and would NOT have caught the real
+   multi-line comment that motivated writing it -- caught by testing the draft against a
+   synthetic fixture before shipping it.
+3. **`test-integration.sh` now exercises the cross-project memory mirror and the `sync`
+   loop**, both shipped in earlier versions with only isolated unit coverage -- exactly
+   the "written, not wired" gap `qa-engineer.md` item 3 exists to catch. The mirror
+   assertion stubs `systemd-detect-virt` to reach its non-ephemeral branch (a real CI
+   container is itself ephemeral) and confirms the mirrored file matches the daily note
+   byte for byte; this proves the write path, not real-machine detection, which cannot
+   be proven from inside a container. `sync.loop.md` is now copied into the test
+   project's `loops/` alongside the other two and asserted readiness-eligible.
+   `test-integration` count: 30 -> 33.
+
+Not one of the audit's Critical findings is fully closed by this release -- both need a
+real scheduled cycle to actually fire and be watched, which is now possible but has not
+yet happened as of this entry.
+
 ## [0.3.28] - 2026-08-23
 
 ### Changed

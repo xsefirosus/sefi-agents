@@ -1,14 +1,21 @@
 # sefi-morning-triage -- the morning-triage loop, running against this repo.
 #
-# MANUAL TRIGGER ONLY, deliberately. The cron line below is present and commented out.
+# SCHEDULED, as of the 2026-08-23 audit remediation. Previously manual-trigger-only: this
+# repo's loops had never completed a cycle end to end, state/metrics.md had zero real
+# rows, and retro-improve had no target to select -- a deadlock, since improvement.enabled's
+# flip condition in config/sefi.config.yml is "once weekly-retro has run a few cycles",
+# which itself could never happen while nothing ran on a schedule. The owner accepted that
+# risk explicitly and enabled all three loop schedules together (this file, retro.yml,
+# sync.yml) rather than staying manual-only indefinitely.
 #
-# Why: this repo's loops have never completed a cycle end to end. state/metrics.md has zero
-# rows, which is why retro-improve has no target to select and why improvement.enabled is
-# still false -- a deadlock, since the flip condition in config/sefi.config.yml is "once
-# weekly-retro has run a few cycles". Manual dispatch breaks that deadlock and produces the
-# first real verdicts, without committing to unattended spend or unattended PRs on a
-# mechanism nobody has watched run yet. Uncomment the schedule once a few dispatched runs
-# have landed clean; that is a one-line change by design.
+# A `schedule` trigger carries no `inputs`, so `DRY_RUN: ${{ inputs.dry_run }}` below
+# resolves empty on every scheduled firing -- the dry_run default only protects a manual
+# `workflow_dispatch`. Scheduled runs open real PRs from the first firing; this is
+# intentional, not an oversight to patch, because a dry scheduled run would produce no
+# qa-engineer verdict and leave state/metrics.md exactly as empty as before.
+#
+# To go back to manual-only: comment out the `schedule:` block below, no other change
+# needed.
 name: sefi-morning-triage
 
 on:
@@ -18,8 +25,8 @@ on:
         description: "Discovery only -- report findings, open no PR"
         type: boolean
         default: true
-  # schedule:
-  #   - cron: "0 6 * * *"   # daily 06:00 UTC. Enable only after supervised runs look right.
+  schedule:
+    - cron: "0 6 * * *"   # daily 06:00 UTC
 
 permissions:
   contents: write
