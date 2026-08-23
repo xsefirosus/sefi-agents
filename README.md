@@ -96,10 +96,9 @@ writes docs, claims double-checked -- `prompt-engineer` clarifies a raw request 
 
 ## The skills (11)
 
-Playbooks an agent loads only when the task needs it -- not a 14th agent, just shared
-know-how. Most load automatically when an agent needs them; a few you can also call
-directly by name (typing `/skill-name`) -- but a named skill can never chain another named
-one on its own, so it can't silently escalate into commands you didn't ask for:
+Playbooks an agent loads only when the task needs it, not a 14th agent -- most load
+automatically, a few you call by name, and a named skill can never chain another one, so
+it can't silently escalate on its own:
 
 **Always relevant:** `sefi-orchestration` (routes every request) -- `anti-hallucination`
 (the core honesty rule: say "unknown" instead of guessing, CI-enforced everywhere).
@@ -121,22 +120,17 @@ how things went and proposes small fixes to the agents themselves:
 
 <img src="docs/assets/how-it-works.svg" alt="How sefi-agents works: the interactive request cycle on the left, the daily morning-triage loop in the middle, and the weekly self-improvement loop on the right, feeding back into the same agents" width="100%">
 
-- Spending limits and tool checks apply at every step on the left, not just at the end --
-  see [Safety rails](#safety-rails-all-of-them-in-one-place).
-- Token efficiency isn't a separate step either -- it's built into how each agent works:
-  research is done in one throwaway window and only a short summary crosses back, replies
-  are read wherever the answer appears instead of re-asking, and status updates stay
-  short by default (`terse-mode`).
-- The right track is bounded on purpose: at most 3 sentences changed per file per week,
-  every fix checked by qa-engineer *before* it ships, and every change undoable by its
-  commit id. It only fires when there's real evidence something is worth fixing --
-  otherwise it logs "nothing to change" and stops.
-- A "loop" is this same chain, run automatically on a schedule instead of by you typing a
-  request: **morning-triage** (daily) checks failed builds and new issues, drafts fixes,
-  has them reviewed, and opens pull requests; **weekly-retro** (weekly) is the right track
-  above. Both stop at a pull request, same as everything else here. Every loop must declare
-  five things -- how it finds work, hands it off, checks it, remembers it, and reschedules
-  -- or it's rejected automatically; `/sefi:loop-new` helps you build your own.
+- Spending limits and tool checks apply at every step, not just at the end (see
+  [Safety rails](#safety-rails-all-of-them-in-one-place)) -- and token efficiency is built
+  into how each agent works: one-shot research windows, replies read wherever the answer
+  lands instead of re-asking, short status updates by default (`terse-mode`).
+- The right track stays bounded on purpose -- at most 3 sentences changed per file per
+  week, every fix checked by qa-engineer *before* it ships -- and logs "nothing to change"
+  rather than fire without real evidence.
+- A "loop" is this same chain on a schedule instead of typed by you: **morning-triage**
+  (daily) and **weekly-retro** (weekly, the right track above) both still stop at a pull
+  request. Every loop must declare five things -- find work, hand off, check, remember,
+  reschedule -- or it's rejected automatically; `/sefi:loop-new` builds your own.
 
 ## Memory that survives the session
 
@@ -245,9 +239,7 @@ them nicer to browse.
 boundary -- it never merges or deploys itself, same as everything else here. A
 maintenance role (dependency upgrades, deprecations, flaky tests) is a real gap; the
 proposed fix is a `dependency-upkeep` loop chaining `support-engineer` -> `software-engineer`
--> `qa-engineer`, the same PR-only pattern as the two shipped loops -- not built yet. An
-SRE-style role is not planned: it needs a running production system and live telemetry to
-watch, and this plugin has neither.
+-> `qa-engineer`, the same PR-only pattern as the two shipped loops -- not built yet.
 
 ## Contributing
 
