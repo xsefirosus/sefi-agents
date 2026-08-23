@@ -43,8 +43,8 @@
 
   <rect class="box with" x="498" y="62" width="382" height="88" rx="10" />
   <text class="boxtext with" x="518" y="94">
-    <tspan x="518" dy="0">Every task has a spending limit</tspan>
-    <tspan x="518" dy="20">($0.15 by default)</tspan>
+    <tspan x="518" dy="0">That exact runaway gets stopped at</tspan>
+    <tspan x="518" dy="20">$0.15 -- nowhere near 1.36 million tokens</tspan>
   </text>
 
   <!-- Row 2: quality -->
