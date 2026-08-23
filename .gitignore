@@ -10,3 +10,12 @@ docs/master-prompt-v4-provenance.md
 # /sefi:init's harness marker -- a machine-local install fact (which harness ran init),
 # never a vault note or a state ledger entry.
 .sefi/
+
+# Personal, per-harness permission/approval config -- broad auto-allow with a deny list
+# for the dangerous ops (force-push, hard reset, branch delete, rm -rf, credential
+# files), never shared with the team. Claude Code's own settings.local.json is already
+# gitignored by its own convention elsewhere, but this repo tracks .claude/ itself, so
+# it needs an explicit entry here too.
+.claude/settings.local.json
+opencode.json
+.codex/
