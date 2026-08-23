@@ -260,6 +260,13 @@ bash plugins/sefi-core/scripts/ci/run-all.sh
 Those checks are the actual contribution guide: length limits, short descriptions,
 nothing broken or unused, and the honesty rule present in every agent and skill.
 
+This repo ships broad-auto-allow permission defaults for Claude Code, OpenCode, and Codex
+(`.claude/settings.json`, `opencode.json`, `.codex/config.toml`) so an unattended session
+doesn't stall on a routine prompt -- with a deny list for force-push, hard resets, branch
+deletion, `rm -rf`, and credential files. Known gaps stated in those files themselves, not
+hidden: Codex has no per-command deny list, and Hermes gets no config at all since it
+doesn't read one.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
