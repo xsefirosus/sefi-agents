@@ -3,6 +3,40 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.26] - 2026-08-22
+
+### Added
+
+1. **Shipped, harness-level permission defaults -- broad auto-allow, deny only the
+   genuinely dangerous ops.** The problem this closes: an unattended/auto-mode session
+   hits a routine permission prompt nobody is there to answer, stalls silently, and the
+   person returns believing the work finished when it actually stopped hours earlier.
+   `.claude/settings.json` (`defaultMode: dontAsk`), `opencode.json`
+   (`permission.bash: {"*": "allow", ...}`, verified against OpenCode's own permission
+   schema -- pattern rules match in order, last wins), and `.codex/config.toml`
+   (`approval_policy = "never"`, `sandbox_mode = "workspace-write"` -- Codex's own
+   documented `--full-auto` shortcut) now ship with the repo, applying to anyone who
+   clones or forks it, not just this machine.
+2. Each carries the same deny list for the ops this repo's own system-level git-safety
+   guidance already singles out as needing a human: force-push (every form), `git reset
+   --hard`, branch deletion (local and remote), `rm -rf`/`rm -fr`, and reading credential-
+   shaped files (`.env`, `.pem`, `.key`, SSH private keys, `credentials.json`, AWS
+   credentials). A denied action fails fast with an error Claude can see and report,
+   rather than prompting and waiting -- the correct shape for unattended use, distinct
+   from just widening what gets asked.
+3. **Codex's real gap, stated rather than hidden.** Codex has no per-command allow/deny
+   list the way Claude Code and OpenCode do -- `sandbox_mode = workspace-write` contains
+   *where* writes can happen, not *which* commands are dangerous within that scope, so
+   none of the five named-dangerous ops trigger an approval prompt on Codex under any
+   policy value. `.codex/config.toml`'s own comments say so. The one backstop that does
+   not depend on this file: `templates/hooks/pre-push` (installed by `/sefi:init` step 4),
+   which refuses a direct push to `main`/`master` -- real, though bypassable with
+   `--no-verify`.
+4. **Hermes deliberately gets no config file.** `adapters/HERMES.md` already documents
+   that `disallowedTools` is advisory and not read by Hermes at all; a permission file
+   there would be decorative, not functional, and this repo does not ship decorative
+   config.
+
 ## [0.3.25] - 2026-08-22
 
 ### Added
