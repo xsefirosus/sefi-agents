@@ -10,6 +10,14 @@ concrete model where the interactive adapter deliberately does not.
 Owner decision taken as given (asked and answered before this plan was written): use
 `Muse Spark 1.2 Contributor Free` as the pinned model for these three workflows.
 
+**Hard guard, restated after an owner correction mid-planning:** `config/model-map.yml` is
+NOT touched by this plan, for any of its four harness blocks. `opencode:` and `hermes:` stay
+`flexible` on all three tiers; `claude-code:` and `codex:` stay exactly as currently shipped.
+The Muse Spark pin lives ONLY inside the three new `*-opencode.yml` workflow files' own
+invocation/env -- nowhere else, and never as an edit to this file. If any step below seems to
+call for touching `config/model-map.yml`, stop and treat that as a plan defect, not a step to
+carry out.
+
 Why this does NOT touch `config/model-map.yml`'s shipped `opencode:` block (still `flexible`
 on all three tiers): that file's own comment explains the sentinel exists because Zen's free
 catalog rotates and a prior pin (`deepseek-v4-flash-free`) died ten days after being verified.
