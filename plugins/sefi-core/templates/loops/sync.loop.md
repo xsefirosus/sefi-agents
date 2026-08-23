@@ -10,7 +10,7 @@ Discovery when present and skipped, not required, when absent. -->
 
 ## Trigger (SCHEDULING)
 cloud: cron `0 8 * * 1` (Mondays, offset an hour from weekly-retro's 07:00 slot so the two
-never contend for the same worktree budget) via a workflow file   |   local: weekly interval
+never contend for the same worktree budget) via `.github/workflows/sync.yml`   |   local: weekly interval
 invoking the headless agent
 
 ## Discovery

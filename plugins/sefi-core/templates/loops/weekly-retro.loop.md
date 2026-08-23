@@ -6,7 +6,7 @@ requires-tools: git, rg
 <!-- probed by scripts/probe-tools.sh --loop before the Discovery move runs. rg drives the scorecard scan in the Discovery move; without it the retro reports UNKNOWN rather than an empty finding set. -->
 
 ## Trigger (SCHEDULING)
-cloud: cron `0 7 * * 1` (Mondays) via a workflow file   |   local: weekly interval invoking the headless agent
+cloud: cron `0 7 * * 1` (Mondays) via `.github/workflows/retro.yml`   |   local: weekly interval invoking the headless agent
 
 ## Discovery
 skill: retro-improve (discovery move)   inputs read: qa-engineer REJECTs, gate failures, and knowledge-manager `## Possible contradiction` flags from `state/`, plus `state/metrics.md` (worst success rate first). Also consult `docs/METRICS-PROVENANCE.md`: if accumulated metrics now satisfy a promotion condition, propose that doc update too (subject to the same effectiveness gate).

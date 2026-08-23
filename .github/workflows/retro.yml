@@ -1,0 +1,96 @@
+# sefi-weekly-retro -- the weekly-retro loop, running against this repo.
+#
+# Scheduled per the owner's decision (2026-08-23 audit remediation): enabled alongside
+# morning-triage and sync rather than dispatched-only first. loops/weekly-retro.loop.md
+# declared "cloud: cron 0 7 * * 1 via a workflow file" with no such file existing --
+# validate-loops.sh's workflow-existence check only fires on a *named* path, so a vaguely
+# worded declaration slipped past it. This file, plus loop-spec step 9 naming it, closes
+# that gap.
+#
+# improvement.enabled is false in config/sefi.config.yml, deliberately (commands/init.md's
+# shared-install guardrail). This loop therefore writes PROPOSALS to
+# state/retro-<date>.md, never applies an edit itself -- a human reviews the proposal and
+# flips the flag or applies it by hand. That is unchanged by this workflow existing.
+name: sefi-weekly-retro
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 7 * * 1"   # Monday 07:00 UTC. An hour before sync's 08:00 slot on
+                           # purpose, so the two never contend for the same worktree
+                           # budget (max_parallel_worktrees, config/budget.yml).
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sefi-weekly-retro
+  cancel-in-progress: false
+
+jobs:
+  retro:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # Discovery reads state/metrics.md and the retro ledger history
+
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
+      - name: Probe declared tools before the loop runs
+        # requires-tools: git, rg. rg drives the scorecard scan in Discovery; without it
+        # the retro reports UNKNOWN rather than an empty finding set.
+        continue-on-error: true
+        run: bash plugins/sefi-core/scripts/probe-tools.sh --loop loops/weekly-retro.loop.md
+
+      - name: Install the headless agent CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run the retro loop
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          [ -n "${ANTHROPIC_API_KEY:-}" ] || {
+            echo "ANTHROPIC_API_KEY is not set. Add it under Settings > Secrets > Actions." >&2
+            exit 1
+          }
+          # Prompt via stdin, never an inline argument -- same Windows argument-length
+          # rationale as triage.yml.
+          {
+            echo "Run /sefi:retro against this repository."
+            echo "Follow loops/weekly-retro.loop.md exactly, including its human checkpoint."
+          } | claude --print --dangerously-skip-permissions --add-dir "$PWD"
+
+      - name: Enforce budget caps
+        if: always()
+        run: bash plugins/sefi-core/scripts/budget-check.sh --scope run --spent 0
+
+      - name: Commit state (never auto-merge, never applies its own edit)
+        # weekly-retro's own Human checkpoint: "New skills require inbox approval; no
+        # skill is created autonomously, and no host-runtime file is edited [without
+        # improvement.enabled: true, which is false here]." Same never-auto-merge rule as
+        # every other loop either way.
+        if: always()
+        run: |
+          set -euo pipefail
+          git config user.name  "sefi-retro[bot]"
+          git config user.email "sefi-retro[bot]@users.noreply.github.com"
+          if git diff --quiet -- state/ memory/ inbox/; then
+            echo "no state changes to commit"
+            exit 0
+          fi
+          BRANCH="retro/$(date +%Y-%m-%d-%H%M)"
+          git checkout -b "$BRANCH"
+          git add state/ memory/ inbox/
+          git commit -m "chore(retro): weekly-retro cycle $(date +%Y-%m-%d)"
+          git push -u origin "$BRANCH"
+          gh pr create --fill --base main --head "$BRANCH" \
+            --title "retro: weekly-retro cycle $(date +%Y-%m-%d)" \
+            --body "Automated weekly-retro cycle. Proposal (if any) in \`state/retro-$(date +%Y-%m-%d).md\`. Never auto-applied, never auto-merged -- a human reviews and decides."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

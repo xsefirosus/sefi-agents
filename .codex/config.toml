@@ -2,21 +2,23 @@
 # forks it, once they trust the project in Codex (Codex skips this whole file for an
 # untrusted project; that trust step is the one confirmation this file cannot bypass).
 #
-# approval_policy = "never" + sandbox_mode = "workspace-write" is Codex's own documented
-# shortcut (--full-auto) for exactly the failure mode this is meant to prevent: an
-# unattended session stalls on an approval prompt nobody is there to answer, and the
-# person comes back assuming it finished when it actually stopped hours ago. sandbox_mode
-# still contains writes to this repo -- no reach outside it, no network unless separately
-# allowed.
+# approval_policy = "on-failure": routine commands run unattended, same as before, but a
+# command that actually fails or needs escalation surfaces for a decision instead of
+# passing silently. Softened from "never" (0.3.26) after an audit named the real trade-off
+# plainly: Codex has no per-command allow/deny list the way Claude Code and OpenCode do --
+# sandbox_mode constrains WHERE writes can happen, not WHICH commands are dangerous within
+# that scope -- so "never" removed the one interactive checkpoint Codex had left, on the
+# harness with the weakest per-command safety net of the four this repo supports.
+# sandbox_mode = "workspace-write" still contains writes to this repo -- no reach outside
+# it, no network unless separately allowed.
 #
-# Known gap, stated honestly rather than hidden (this repo's own adapters/CODEX.md already
-# documents it): Codex has no per-command allow/deny list the way Claude Code and OpenCode
-# do. A force-push, git reset --hard, branch delete, or rm -rf all succeed silently within
-# workspace-write scope -- none of them require an escalation, so none of them would have
-# triggered a prompt under the previous "on-request" policy either. This file cannot close
-# that gap by itself. The repo-level backstop that does not depend on this file is
-# templates/hooks/pre-push (installed by /sefi:init step 4), which refuses a direct push
-# to main/master -- real protection for the force-push/branch-delete family specifically,
-# though it can still be bypassed with --no-verify by a Bash-capable agent.
-approval_policy = "never"
+# Known gap, unchanged by this setting and stated honestly rather than hidden (this repo's
+# own adapters/CODEX.md already documents it): a force-push, git reset --hard, branch
+# delete, or rm -rf all succeed silently within workspace-write scope -- none of them
+# require an escalation, so none of them trigger a prompt under "on-failure" either. This
+# file cannot close that gap by itself. The repo-level backstop that does not depend on
+# this file is templates/hooks/pre-push (installed by /sefi:init step 4), which refuses a
+# direct push to main/master -- real protection for the force-push/branch-delete family
+# specifically, though it can still be bypassed with --no-verify by a Bash-capable agent.
+approval_policy = "on-failure"
 sandbox_mode = "workspace-write"

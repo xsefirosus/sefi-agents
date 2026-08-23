@@ -154,8 +154,8 @@ its own memory system on itself, but a fresh install starts empty.
 | Tool | How to install | Notes |
 |---|---|---|
 | Claude Code | plugin install (above) | full support |
-| OpenCode | [adapters/OPENCODE.md](adapters/OPENCODE.md) | can run unattended for scheduled jobs |
-| Hermes Agent | [adapters/HERMES.md](adapters/HERMES.md) | one command; 11 of 13 skills install automatically, 2 need one manual step (see FAQ) |
+| OpenCode | [adapters/OPENCODE.md](adapters/OPENCODE.md) | can run unattended for scheduled jobs; reviewer and builder tiers both resolve to the same model by default, so the review is a second pass, not yet a second opinion |
+| Hermes Agent | [adapters/HERMES.md](adapters/HERMES.md) | one command; 11 of 13 skills install automatically, 2 need one manual step (see FAQ); same model-tier caveat as OpenCode, and tool restrictions are advisory only -- Hermes doesn't enforce them |
 | Codex | [adapters/CODEX.md](adapters/CODEX.md) | plugin marketplace install |
 
 ## Safety rails (all of them, in one place)
@@ -190,12 +190,13 @@ validate-no-orphans: OK (references, templates, agents all wired)
 validate-links: OK (55 files scanned, all repo-path references resolve; bare script names checked)
 validate-script-refs: OK (40 files scanned, every scripts/*.sh reference carries ${CLAUDE_PLUGIN_ROOT}/)
 validate-routing: OK (routing-table agents exist, fixtures resolve, no duplicate triggers)
-validate-model-map: OK (13 agents, 4 harnesses, 43 scripts parse; 2 warning(s))
+validate-model-map: OK (13 agents, 4 harnesses, 44 scripts parse; 2 warning(s))
 validate-adapters: OK (install-hermes.sh skill list matches disk, adapter doc paths resolve)
-check-unicode-safety: OK (124 files scanned, ASCII-clean)
+check-unicode-safety: OK (125 files scanned, ASCII-clean)
+validate-comment-safety: OK (2 file(s) scanned)
 validate-token-budget: OK (all within token budgets; agents total 8316 words)
 test-scripts: OK (157 passed)
-test-integration: OK (30 passed) -- full loop skeleton executed end to end
+test-integration: OK (33 passed) -- full loop skeleton executed end to end
 CI: all validators passed
 ```
 

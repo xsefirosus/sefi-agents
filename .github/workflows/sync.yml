@@ -1,0 +1,88 @@
+# sefi-sync -- the sync loop (dependency upkeep), running against this repo.
+#
+# Scheduled per the owner's decision (2026-08-23 audit remediation). No dedicated slash
+# command exists for this loop (unlike /sefi:triage and /sefi:retro) -- the prompt
+# instructs the agent to follow loops/sync.loop.md directly rather than inventing a
+# /sefi:sync command that isn't shipped.
+name: sefi-sync
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 8 * * 1"   # Monday 08:00 UTC -- an hour after weekly-retro's 07:00 slot,
+                           # per sync.loop.md's own Trigger section, so the two never
+                           # contend for the same worktree budget.
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sefi-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
+      - name: Probe declared tools before the loop runs
+        # requires-tools: git, rg. Deliberately minimal -- this loop targets whichever
+        # package manager the project itself uses (npm outdated, pip list --outdated, ...)
+        # opportunistically in Discovery, never a hardcoded one, so no manager-specific
+        # tool belongs in this preflight.
+        continue-on-error: true
+        run: bash plugins/sefi-core/scripts/probe-tools.sh --loop loops/sync.loop.md
+
+      - name: Install the headless agent CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run the sync loop
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          [ -n "${ANTHROPIC_API_KEY:-}" ] || {
+            echo "ANTHROPIC_API_KEY is not set. Add it under Settings > Secrets > Actions." >&2
+            exit 1
+          }
+          {
+            echo "Run the sync loop against this repository."
+            echo "Follow loops/sync.loop.md exactly, including its human checkpoint."
+            echo "This is the dependency-upkeep loop: Discovery finds outdated or"
+            echo "vulnerable dependencies via whichever package manager this repo uses,"
+            echo "if any -- skip that check rather than assume one, per the loop spec."
+          } | claude --print --dangerously-skip-permissions --add-dir "$PWD"
+
+      - name: Enforce budget caps
+        if: always()
+        run: bash plugins/sefi-core/scripts/budget-check.sh --scope run --spent 0
+
+      - name: Commit state (never auto-merge)
+        if: always()
+        run: |
+          set -euo pipefail
+          git config user.name  "sefi-sync[bot]"
+          git config user.email "sefi-sync[bot]@users.noreply.github.com"
+          if git diff --quiet -- state/ memory/ inbox/; then
+            echo "no state changes to commit"
+            exit 0
+          fi
+          BRANCH="sync/$(date +%Y-%m-%d-%H%M)"
+          git checkout -b "$BRANCH"
+          git add state/ memory/ inbox/
+          git commit -m "chore(sync): dependency-upkeep cycle $(date +%Y-%m-%d)"
+          git push -u origin "$BRANCH"
+          gh pr create --fill --base main --head "$BRANCH" \
+            --title "sync: dependency-upkeep cycle $(date +%Y-%m-%d)" \
+            --body "Automated sync cycle. Findings in \`state/sync.md\`. Never auto-merged -- a human reviews and merges."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
