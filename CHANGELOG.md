@@ -3,6 +3,29 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.27] - 2026-08-23
+
+### Added
+
+1. **`dependency-upkeep` -- the third shipped loop.** Weekly, same PR-only chain as
+   `morning-triage` and `weekly-retro`: `support-engineer` finds outdated or vulnerable
+   dependencies (via whichever package manager's outdated-check the project provides, or
+   skips that check entirely rather than assuming npm), `software-engineer` bumps them
+   one at a time in its own worktree, `qa-engineer` checks the project's existing test
+   suite still passes. A major-version or otherwise breaking bump routes to `inbox/`
+   instead of a direct PR, the same escalation the other two loops use for uncertainty.
+   Scheduled an hour offset from `weekly-retro`'s Monday slot so the two never contend
+   for the same worktree budget. Shipped as both
+   `plugins/sefi-core/templates/loops/dependency-upkeep.loop.md` (what `/sefi:init`
+   copies into a fresh project) and this repo's own `loops/dependency-upkeep.loop.md`
+   (dogfooded, byte-identical to the template, matching the other two loops).
+2. `docs/assets/how-it-works.svg`: added as a compact summary box under the daily
+   morning-triage column rather than a redrawn six-box pipeline, since it is the
+   identical chain -- only Discovery's input and the schedule differ.
+3. README: FAQ's deploy/maintenance answer rewritten from "proposed, not built yet" to
+   describe the real loop; the loop-summary bullet after the diagram now names all three
+   shipped loops.
+
 ## [0.3.26] - 2026-08-22
 
 ### Added

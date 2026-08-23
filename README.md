@@ -118,7 +118,7 @@ completely separately and unattended, the middle track runs the same build-and-c
 once a day against failed builds and new issues; and once a week, the right track looks at
 how things went and proposes small fixes to the agents themselves:
 
-<img src="docs/assets/how-it-works.svg" alt="How sefi-agents works: the interactive request cycle on the left, the daily morning-triage loop in the middle, and the weekly self-improvement loop on the right, feeding back into the same agents" width="100%">
+<img src="docs/assets/how-it-works.svg" alt="How sefi-agents works: the interactive request cycle on the left, the daily morning-triage loop in the middle (with the weekly dependency-upkeep loop noted below it as the same chain), and the weekly self-improvement loop on the right, feeding back into the same agents" width="100%">
 
 - Spending limits and tool checks apply at every step, not just at the end (see
   [Safety rails](#safety-rails-all-of-them-in-one-place)) -- and token efficiency is built
@@ -128,9 +128,11 @@ how things went and proposes small fixes to the agents themselves:
   week, every fix checked by qa-engineer *before* it ships -- and logs "nothing to change"
   rather than fire without real evidence.
 - A "loop" is this same chain on a schedule instead of typed by you: **morning-triage**
-  (daily) and **weekly-retro** (weekly, the right track above) both still stop at a pull
-  request. Every loop must declare five things -- find work, hand off, check, remember,
-  reschedule -- or it's rejected automatically; `/sefi:loop-new` builds your own.
+  (daily), **dependency-upkeep** (weekly -- same chain, finds outdated or vulnerable
+  dependencies instead of failed CI), and **weekly-retro** (weekly, the right track above).
+  All three still stop at a pull request. Every loop must declare five things -- find work,
+  hand off, check, remember, reschedule -- or it's rejected automatically; `/sefi:loop-new`
+  builds your own.
 
 ## Memory that survives the session
 
@@ -179,20 +181,20 @@ run them yourself, in one command:
 $ bash plugins/sefi-core/scripts/ci/run-all.sh
 validate-agents: OK (13 agent files validated)
 validate-skills: OK (11 SKILL.md validated)
-validate-doc-counts: OK (agents=13 skills=11 commands=6 loops=2, all prose matches disk)
-validate-loops: OK (2 loop spec(s) validated, plus 2 in this project's loops/)
+validate-doc-counts: OK (agents=13 skills=11 commands=6 loops=3, all prose matches disk)
+validate-loops: OK (3 loop spec(s) validated, plus 3 in this project's loops/)
 validate-budget: OK (all caps present and bounded)
-validate-config-wired: OK (12 config keys, all wired)
+validate-config-wired: OK (14 config keys, all wired)
 validate-no-personal-paths: OK (no personal paths in shipped files)
 validate-no-orphans: OK (references, templates, agents all wired)
-validate-links: OK (58 files scanned, all repo-path references resolve; bare script names checked)
-validate-script-refs: OK (43 files scanned, every scripts/*.sh reference carries ${CLAUDE_PLUGIN_ROOT}/)
+validate-links: OK (55 files scanned, all repo-path references resolve; bare script names checked)
+validate-script-refs: OK (40 files scanned, every scripts/*.sh reference carries ${CLAUDE_PLUGIN_ROOT}/)
 validate-routing: OK (routing-table agents exist, fixtures resolve, no duplicate triggers)
-validate-model-map: OK (13 agents, 4 harnesses, 41 scripts parse; 2 warning(s))
+validate-model-map: OK (13 agents, 4 harnesses, 43 scripts parse; 2 warning(s))
 validate-adapters: OK (install-hermes.sh skill list matches disk, adapter doc paths resolve)
 check-unicode-safety: OK (124 files scanned, ASCII-clean)
 validate-token-budget: OK (all within token budgets; agents total 8316 words)
-test-scripts: OK (148 passed)
+test-scripts: OK (157 passed)
 test-integration: OK (30 passed) -- full loop skeleton executed end to end
 CI: all validators passed
 ```
@@ -236,10 +238,10 @@ them nicer to browse.
 
 **What about deploy and maintenance roles, like a real software company has?**
 `devops-engineer` already covers deploy (CI/CD, scheduling) up to the pull-request
-boundary -- it never merges or deploys itself, same as everything else here. A
-maintenance role (dependency upgrades, deprecations, flaky tests) is a real gap; the
-proposed fix is a `dependency-upkeep` loop chaining `support-engineer` -> `software-engineer`
--> `qa-engineer`, the same PR-only pattern as the two shipped loops -- not built yet.
+boundary -- it never merges or deploys itself, same as everything else here. Maintenance
+is the `dependency-upkeep` loop (weekly): `support-engineer` finds outdated or vulnerable
+dependencies, `software-engineer` bumps them, `qa-engineer` checks the existing test suite
+still passes -- the same PR-only pattern as the other two shipped loops.
 
 ## Contributing
 
