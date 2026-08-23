@@ -169,14 +169,14 @@
   <rect class="labelbg" x="560" y="557" width="330" height="16" />
   <text class="label" x="565" y="569">improves the agent definitions both tracks share</text>
 
-  <!-- Third loop: dependency-upkeep. Not drawn as a full parallel pipeline: it is the
-       identical support-engineer to software-engineer to qa-engineer to PR chain shown
-       above it, just weekly and with a different Discovery input, so one summary box says
-       that plainly instead of redrawing six boxes twice. -->
+  <!-- Third loop: sync. Not drawn as a full parallel pipeline: it is the identical
+       support-engineer to software-engineer to qa-engineer to PR chain shown above it,
+       just weekly and with a different Discovery input, so one summary box says that
+       plainly instead of redrawing six boxes twice. -->
   <text class="colsub" x="520" y="600">ALSO WEEKLY, SAME CHAIN AS ABOVE</text>
   <rect class="box" x="520" y="608" width="420" height="58" rx="9" />
   <text class="boxtext" x="538" y="630">
-    <tspan x="538" dy="0">dependency-upkeep: Discovery finds outdated or</tspan>
-    <tspan x="538" dy="18">vulnerable deps instead of failed CI, same PR-only stop</tspan>
+    <tspan x="538" dy="0">sync: Discovery finds outdated or vulnerable</tspan>
+    <tspan x="538" dy="18">deps instead of failed CI, same PR-only stop</tspan>
   </text>
 </svg>

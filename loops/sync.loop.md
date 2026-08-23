@@ -1,4 +1,4 @@
-# Loop: dependency-upkeep
+# Loop: sync
 managed-by: sefi-agents
 
 agentic-signals: goal_intake, refusal_gate, verification, loop_discipline, close_out
@@ -18,11 +18,11 @@ skill: loop-engineering (discovery move)   agent: support-engineer   inputs read
 project's own manifest/lockfile for outdated or deprecated packages (via whichever
 manager's outdated-check the project provides -- `npm outdated`, `pip list --outdated`, or
 equivalent; skipped, not failed, when none applies), CI failures attributable to a
-dependency, and the prior `state/dependency-upkeep.md`. Judge each finding's actionability:
+dependency, and the prior `state/sync.md`. Judge each finding's actionability:
 a patch bump with no CHANGELOG signal ranks below a failing build or a security advisory.
 
 ## Handoff
-one worktree per upgrade: branch `deps/<slug>` under `.worktrees/`. Once a finding is
+one worktree per upgrade: branch `sync/<slug>` under `.worktrees/`. Once a finding is
 planned, `scripts/ready-steps.sh` computes that plan's dispatch set, capped at max
 parallel: 3 (`config/budget.yml` max_parallel_worktrees) -- never reasoned about in prose.
 Each dispatched task names its absolute worktree output path. Before opening it, grep
@@ -37,8 +37,8 @@ passing against the bumped dependency (executed, judged separately from the gene
 never a CHANGELOG read as if it were a test result).
 
 ## Persistence
-state file: `state/dependency-upkeep.md` (committed, carries the 6-field resume block;
-one row per upgrade)
+state file: `state/sync.md` (committed, carries the 6-field resume block; one row
+per upgrade)
 metrics: append one row per qa-engineer verdict to `state/metrics.md` (target-path keyed)
 outputs: PRs + `inbox/` for uncertainty (a major-version or otherwise breaking bump goes to
 `inbox/` instead of a direct PR)

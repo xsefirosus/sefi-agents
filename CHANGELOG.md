@@ -3,6 +3,21 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.3.28] - 2026-08-23
+
+### Changed
+
+1. **`dependency-upkeep` renamed to `sync`.** Same loop, same behavior -- the name was
+   the only change, at the owner's request, to a single word matching the other two
+   loops' brevity. Renamed throughout: both loop-spec files (`git mv`, still
+   byte-identical between the template and this repo's own copy), the branch prefix
+   (`deps/<slug>` -> `sync/<slug>`, matching `triage/` and `retro/`'s pattern of a short
+   loop-derived prefix), the state file path (`state/dependency-upkeep.md` ->
+   `state/sync.md`), `/sefi:init`'s copy list, `docs/assets/how-it-works.svg`'s summary
+   box (re-rendered and visually confirmed), and every README mention. The 0.3.27 entry
+   above is left as written -- it accurately records what shipped under that version's
+   name at the time.
+
 ## [0.3.27] - 2026-08-23
 
 ### Added
