@@ -118,7 +118,7 @@ completely separately and unattended, the middle track runs the same build-and-c
 once a day against failed builds and new issues; and once a week, the right track looks at
 how things went and proposes small fixes to the agents themselves:
 
-<img src="docs/assets/how-it-works.svg" alt="How sefi-agents works: the interactive request cycle on the left, the daily morning-triage loop in the middle (with the weekly dependency-upkeep loop noted below it as the same chain), and the weekly self-improvement loop on the right, feeding back into the same agents" width="100%">
+<img src="docs/assets/how-it-works.svg" alt="How sefi-agents works: the interactive request cycle on the left, the daily morning-triage loop in the middle (with the weekly sync loop noted below it as the same chain), and the weekly self-improvement loop on the right, feeding back into the same agents" width="100%">
 
 - Spending limits and tool checks apply at every step, not just at the end (see
   [Safety rails](#safety-rails-all-of-them-in-one-place)) -- and token efficiency is built
@@ -128,9 +128,9 @@ how things went and proposes small fixes to the agents themselves:
   week, every fix checked by qa-engineer *before* it ships -- and logs "nothing to change"
   rather than fire without real evidence.
 - A "loop" is this same chain on a schedule instead of typed by you: **morning-triage**
-  (daily), **dependency-upkeep** (weekly -- same chain, finds outdated or vulnerable
-  dependencies instead of failed CI), and **weekly-retro** (weekly, the right track above).
-  All three still stop at a pull request. Every loop must declare five things -- find work,
+  (daily), **sync** (weekly -- same chain, finds outdated or vulnerable dependencies
+  instead of failed CI), and **weekly-retro** (weekly, the right track above). All three
+  still stop at a pull request. Every loop must declare five things -- find work,
   hand off, check, remember, reschedule -- or it's rejected automatically; `/sefi:loop-new`
   builds your own.
 
@@ -239,7 +239,7 @@ them nicer to browse.
 **What about deploy and maintenance roles, like a real software company has?**
 `devops-engineer` already covers deploy (CI/CD, scheduling) up to the pull-request
 boundary -- it never merges or deploys itself, same as everything else here. Maintenance
-is the `dependency-upkeep` loop (weekly): `support-engineer` finds outdated or vulnerable
+is the `sync` loop (weekly): `support-engineer` finds outdated or vulnerable
 dependencies, `software-engineer` bumps them, `qa-engineer` checks the existing test suite
 still passes -- the same PR-only pattern as the other two shipped loops.
 

@@ -23,7 +23,7 @@ the project root, never overwriting existing files, and report what was skipped.
    - `templates/inbox/` -> `inbox/`
    - `templates/loops/morning-triage.loop.md` -> `loops/morning-triage.loop.md`
    - `templates/loops/weekly-retro.loop.md` -> `loops/weekly-retro.loop.md`
-   - `templates/loops/dependency-upkeep.loop.md` -> `loops/dependency-upkeep.loop.md`
+   - `templates/loops/sync.loop.md` -> `loops/sync.loop.md`
    - `templates/config/sefi.config.yml` -> `config/sefi.config.yml`
    - `templates/config/budget.yml` -> `config/budget.yml`
 3. Copy `templates/workflows/triage.yml` -> `.github/workflows/triage.yml` ONLY if the user
