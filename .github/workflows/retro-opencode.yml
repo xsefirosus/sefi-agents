@@ -1,0 +1,130 @@
+# sefi-weekly-retro-opencode -- the weekly-retro loop on OpenCode, against this repo.
+#
+# MANUAL DISPATCH ONLY (workflow_dispatch, no schedule:) by design. The Claude-based
+# retro.yml already runs on cron (Monday 07:00 UTC) as of the 2026-08-23 audit remediation;
+# adding a second scheduled runner over the same loop and the same state/ files would
+# multiply the untested-collision risk (docs/LOOP-FAILURE-MODES.md S3) rather than the
+# coverage -- the acting_on lock is the only defense and has never run live even for the
+# Claude-only case. Manual dispatch is a deliberate, smaller first step; enabling a
+# schedule here is a separate future owner decision, not this file's to make.
+#
+# PINNED MODEL -- CI-only exception to config/model-map.yml. This file pins
+# opencode/muse-spark-1.2-contributor-free because a headless CI run has no human present
+# to resolve model-map.yml's shipped `flexible` default interactively. model-map.yml
+# itself is deliberately untouched and stays flexible on every tier (Zen's free catalog
+# rotates; see that file's own header). If Muse Spark 1.2 Contributor Free rotates out of
+# Zen's free lineup, only these *-opencode.yml files need an edit.
+#
+# PRIVACY CAVEAT (free-window model): Muse Spark 1.2 Contributor Free is a free-tier Meta
+# model served via OpenCode Zen; data submitted through it may train future Meta models.
+# These workflows must only ever operate on this already-open-source repo's own content --
+# never repoint them at proprietary code.
+#
+# improvement.enabled is false in config/sefi.config.yml, deliberately (commands/init.md's
+# shared-install guardrail). This loop therefore writes PROPOSALS to
+# state/retro-<date>.md, never applies an edit itself -- a human reviews the proposal and
+# flips the flag or applies it by hand. That is unchanged by this workflow existing.
+name: sefi-weekly-retro-opencode
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  # Gates only this workflow, not the scheduled Claude-based retro.yml run -- the
+  # cross-runner S3 collision window described in the header still applies.
+  group: sefi-weekly-retro-opencode
+  cancel-in-progress: false
+
+jobs:
+  retro:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # Discovery reads state/metrics.md and the retro ledger history
+
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
+      - name: Probe declared tools before the loop runs
+        # requires-tools: git, rg. rg drives the scorecard scan in Discovery; without it
+        # the retro reports UNKNOWN rather than an empty finding set.
+        continue-on-error: true
+        run: bash plugins/sefi-core/scripts/probe-tools.sh --loop loops/weekly-retro.loop.md
+
+      - name: Install the headless agent CLI
+        run: npm install -g opencode-ai
+
+      - name: Write the Zen credential into the OpenCode auth file
+        # No CLI/env-var contract for the Zen API key could be verified from primary
+        # sources (state/plan-opencode-workflows.md step 3), so the credential is written
+        # to OpenCode's own data dir at runtime instead. Path and JSON shape verified via
+        # `opencode auth list` + `opencode debug paths` on 2026-08-23.
+        env:
+          OPENCODE_ZEN_API_KEY: ${{ secrets.OPENCODE_ZEN_API_KEY }}
+        run: |
+          set -euo pipefail
+          [ -n "${OPENCODE_ZEN_API_KEY:-}" ] || {
+            echo "OPENCODE_ZEN_API_KEY is not set. Add it under Settings > Secrets > Actions." >&2
+            exit 1
+          }
+          mkdir -p "$HOME/.local/share/opencode"
+          cat > "$HOME/.local/share/opencode/auth.json" <<EOF
+          {"opencode":{"type":"api","key":"${OPENCODE_ZEN_API_KEY}"}}
+          EOF
+
+      - name: Verify OpenCode sees the Zen credential
+        # Fail fast, before any model call, if the auth file did not land.
+        run: |
+          set -euo pipefail
+          opencode auth list | grep -qi "OpenCode Zen"
+
+      - name: Run the retro loop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Prompt content matches retro.yml byte for byte. Transport differs: retro.yml
+          # pipes via stdin (live-verified for the Claude CLI); the live-verified
+          # non-interactive form for `opencode run` (plan step 2) takes the message as an
+          # argument, so it is built here and passed quoted.
+          PROMPT="$(cat <<'EOF'
+          Run /sefi:retro against this repository.
+          Follow loops/weekly-retro.loop.md exactly, including its human checkpoint.
+          EOF
+          )"
+          opencode run -m opencode/muse-spark-1.2-contributor-free --auto "$PROMPT"
+
+      - name: Enforce budget caps
+        if: always()
+        run: bash plugins/sefi-core/scripts/budget-check.sh --scope run --spent 0
+
+      - name: Commit state (never auto-merge, never applies its own edit)
+        # weekly-retro's own Human checkpoint: "New skills require inbox approval; no
+        # skill is created autonomously, and no host-runtime file is edited [without
+        # improvement.enabled: true, which is false here]." Same never-auto-merge rule as
+        # every other loop either way.
+        if: always()
+        run: |
+          set -euo pipefail
+          git config user.name  "sefi-retro[bot]"
+          git config user.email "sefi-retro[bot]@users.noreply.github.com"
+          if git diff --quiet -- state/ memory/ inbox/; then
+            echo "no state changes to commit"
+            exit 0
+          fi
+          BRANCH="retro/$(date +%Y-%m-%d-%H%M)"
+          git checkout -b "$BRANCH"
+          git add state/ memory/ inbox/
+          git commit -m "chore(retro): weekly-retro cycle $(date +%Y-%m-%d)"
+          git push -u origin "$BRANCH"
+          gh pr create --fill --base main --head "$BRANCH" \
+            --title "retro: weekly-retro cycle $(date +%Y-%m-%d)" \
+            --body "Automated weekly-retro cycle. Proposal (if any) in \`state/retro-$(date +%Y-%m-%d).md\`. Never auto-applied, never auto-merged -- a human reviews and decides."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

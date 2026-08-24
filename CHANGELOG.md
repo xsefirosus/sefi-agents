@@ -3,6 +3,31 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.5.0] - 2026-08-24
+
+### Added
+
+1. **Three headless OpenCode CI workflows** -- `.github/workflows/triage-opencode.yml`,
+   `.github/workflows/retro-opencode.yml`, and `.github/workflows/sync-opencode.yml`,
+   mirroring `triage.yml`/`retro.yml`/`sync.yml` so the morning-triage, weekly-retro, and
+   sync loops can each also run on the OpenCode CLI against this repo.
+   **Manual dispatch only** (`workflow_dispatch`, no schedule trigger), deliberately: the
+   Claude-based workflows already run on cron as of the 2026-08-23 audit remediation, and
+   a second scheduled runner over the same loop and the same `state/` files would multiply
+   untested collision risk (`docs/LOOP-FAILURE-MODES.md` S3) rather than coverage.
+   **CI-only pinned-model exception**: all three pin
+   `opencode/muse-spark-1.2-contributor-free`, an exception to `config/model-map.yml`'s
+   shipped `flexible` default -- a headless CI run has no human present to pick a model
+   interactively; the map itself is untouched and stays flexible on every tier.
+   **Secret prerequisite**: add `OPENCODE_ZEN_API_KEY` under Settings > Secrets > Actions
+   before the first dispatch -- no CLI env-var contract for the Zen API key could be
+   verified from primary sources, so the workflows write
+   `$HOME/.local/share/opencode/auth.json` from that secret at runtime, then fail fast via
+   `opencode auth list`. Free-window privacy caveat applies: submitted data may train
+   future Meta models, so these workflows must only ever operate on this already-public
+   repo's own content. Plan and verification trail: `state/plan-opencode-workflows.md`;
+   doc coverage in "CI loop workflows (manual dispatch)" in `adapters/OPENCODE.md`.
+
 ## [0.4.1] - 2026-08-23
 
 ### Changed

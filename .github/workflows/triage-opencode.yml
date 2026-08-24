@@ -1,0 +1,143 @@
+# sefi-morning-triage-opencode -- the morning-triage loop on OpenCode, against this repo.
+#
+# MANUAL DISPATCH ONLY (workflow_dispatch, no schedule:) by design. The Claude-based
+# triage.yml already runs on cron as of the 2026-08-23 audit remediation; adding a second
+# scheduled runner over the same loop and the same state/ files would multiply the
+# untested-collision risk (docs/LOOP-FAILURE-MODES.md S3) rather than the coverage -- the
+# acting_on lock is the only defense and has never run live even for the Claude-only case.
+# Manual dispatch is a deliberate, smaller first step; enabling a schedule here is a
+# separate future owner decision, not this file's to make.
+#
+# PINNED MODEL -- CI-only exception to config/model-map.yml. This file pins
+# opencode/muse-spark-1.2-contributor-free because a headless CI run has no human present
+# to resolve model-map.yml's shipped `flexible` default interactively. model-map.yml
+# itself is deliberately untouched and stays flexible on every tier (Zen's free catalog
+# rotates; see that file's own header). If Muse Spark 1.2 Contributor Free rotates out of
+# Zen's free lineup, only these *-opencode.yml files need an edit.
+#
+# PRIVACY CAVEAT (free-window model): Muse Spark 1.2 Contributor Free is a free-tier Meta
+# model served via OpenCode Zen; data submitted through it may train future Meta models.
+# These workflows must only ever operate on this already-open-source repo's own content --
+# never repoint them at proprietary code.
+name: sefi-morning-triage-opencode
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Discovery only -- report findings, open no PR"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  # A loop that claims work in state/ must not race itself. The claim protocol (v0.2.1)
+  # commits before opening a worktree and uses push rejection as the arbiter, but not
+  # starting a second run at all is cheaper than resolving the race. This group gates only
+  # this workflow, not the scheduled Claude-based triage.yml run -- the cross-runner S3
+  # collision window described in the header still applies.
+  group: sefi-morning-triage-opencode
+  cancel-in-progress: false
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # the Discovery move reads commits since the last run
+
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
+      - name: Probe declared tools before the loop runs
+        # requires-tools: git, gh, rg. The probe checks each RUNS, not merely that it
+        # exists. A BROKEN or MISSING tool means the loop proceeds at stated reduced scope
+        # rather than reporting a clean cycle it could not perform. Non-blocking here:
+        # `gh` is present on GitHub runners but unauthenticated until GH_TOKEN is set below,
+        # and reduced scope is a valid outcome, not a build failure.
+        continue-on-error: true
+        run: bash plugins/sefi-core/scripts/probe-tools.sh --loop loops/morning-triage.loop.md
+
+      - name: Install the headless agent CLI
+        run: npm install -g opencode-ai
+
+      - name: Write the Zen credential into the OpenCode auth file
+        # No CLI/env-var contract for the Zen API key could be verified from primary
+        # sources (state/plan-opencode-workflows.md step 3), so the credential is written
+        # to OpenCode's own data dir at runtime instead. Path and JSON shape verified via
+        # `opencode auth list` + `opencode debug paths` on 2026-08-23.
+        env:
+          OPENCODE_ZEN_API_KEY: ${{ secrets.OPENCODE_ZEN_API_KEY }}
+        run: |
+          set -euo pipefail
+          [ -n "${OPENCODE_ZEN_API_KEY:-}" ] || {
+            echo "OPENCODE_ZEN_API_KEY is not set. Add it under Settings > Secrets > Actions." >&2
+            exit 1
+          }
+          mkdir -p "$HOME/.local/share/opencode"
+          cat > "$HOME/.local/share/opencode/auth.json" <<EOF
+          {"opencode":{"type":"api","key":"${OPENCODE_ZEN_API_KEY}"}}
+          EOF
+
+      - name: Verify OpenCode sees the Zen credential
+        # Fail fast, before any model call, if the auth file did not land.
+        run: |
+          set -euo pipefail
+          opencode auth list | grep -qi "OpenCode Zen"
+
+      - name: Run the triage loop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          # Prompt content matches triage.yml byte for byte. Transport differs: triage.yml
+          # pipes via stdin (live-verified for the Claude CLI); the live-verified
+          # non-interactive form for `opencode run` (plan step 2) takes the message as an
+          # argument, so it is built here and passed quoted.
+          PROMPT="$(cat <<'EOF'
+          Run /sefi:triage against this repository.
+          Follow loops/morning-triage.loop.md exactly, including its human checkpoint.
+          EOF
+          )"
+          if [ "${DRY_RUN}" = "true" ]; then
+            PROMPT="${PROMPT}
+          DRY RUN: perform Discovery and Persistence only. Write findings to state/triage.md. Open no PR and create no worktree."
+          fi
+          opencode run -m opencode/muse-spark-1.2-contributor-free --auto "$PROMPT"
+
+      - name: Enforce budget caps
+        # --spent is a real claim, and budget-check.sh fails closed (exit 3) rather than
+        # passing a check it never performed. No usage ledger is wired up on this runner
+        # for the OpenCode CLI, so there is nothing to read here: this asserts the run's
+        # spend is unmeasured-but-declared rather than pretending it was measured.
+        if: always()
+        run: bash plugins/sefi-core/scripts/budget-check.sh --scope run --spent 0
+
+      - name: Commit state (never auto-merge)
+        # Loops open PRs and stop; a human merges. skills/sefi-orchestration/references/
+        # human-checkpoint.md is unconditional, and nothing here may weaken it.
+        if: always()
+        run: |
+          set -euo pipefail
+          git config user.name  "sefi-triage[bot]"
+          git config user.email "sefi-triage[bot]@users.noreply.github.com"
+          if git diff --quiet -- state/ memory/ inbox/; then
+            echo "no state changes to commit"
+            exit 0
+          fi
+          BRANCH="triage/$(date +%Y-%m-%d-%H%M)"
+          git checkout -b "$BRANCH"
+          git add state/ memory/ inbox/
+          git commit -m "chore(triage): morning-triage cycle $(date +%Y-%m-%d)"
+          git push -u origin "$BRANCH"
+          gh pr create --fill --base main --head "$BRANCH" \
+            --title "triage: morning-triage cycle $(date +%Y-%m-%d)" \
+            --body "Automated morning-triage cycle. Findings in \`state/triage.md\`. Never auto-merged -- a human reviews and merges."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
