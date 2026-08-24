@@ -298,8 +298,9 @@ fi
 
 # cross_project_enabled: false must skip regardless of environment.
 printf 'memory:\n  cross_project_enabled: false\n' > "$RSM/config/sefi.config.yml"
-expect_code 1 "cross_project_enabled: false skips the mirror" \
-  env -u CI -u GITHUB_ACTIONS -u CODESPACES -u IS_SANDBOX bash "$CORE/scripts/resolve-shared-memory-path.sh"
+# cd into $RSM first so CONFIG resolves against the scratch dir like the sibling cases.
+( cd "$RSM" && expect_code 1 "cross_project_enabled: false skips the mirror" \
+  env -u CI -u GITHUB_ACTIONS -u CODESPACES -u IS_SANDBOX bash "$CORE/scripts/resolve-shared-memory-path.sh" )
 printf 'memory:\n  cross_project_enabled: true\n  cross_project_folder_name: sefi-memory\n' > "$RSM/config/sefi.config.yml"
 
 # The positive path: stub systemd-detect-virt to report "none" (a real local machine) and
@@ -388,6 +389,8 @@ if command -v jq >/dev/null 2>&1 && [ -f "$HOOKS_JSON" ]; then
   fi
   while IFS= read -r cmd; do
     [ -n "$cmd" ] || continue
+    # CRLF checkouts make jq echo a trailing carriage return, which would defeat the quote stripping below.
+    cmd="${cmd%$'\r'}"
     # v0.3.20 quote-wrapped every command (Windows path-with-space fix), so strip a
     # surrounding literal `"..."` before matching the placeholder prefix -- otherwise the
     # leading quote character makes every entry look untracked.
@@ -1334,9 +1337,14 @@ if command -v jq >/dev/null 2>&1; then
   JQ_REAL="$(command -v jq)"
   NOJQ_TMP="$(mktemp -d)"
   mkdir -p "$NOJQ_TMP/bin"
-  for c in bash sed grep cp mkdir ln rm mv find cat env printf mktemp basename dirname cygpath; do
-    p="$(command -v "$c" 2>/dev/null)" && ln -sf "$p" "$NOJQ_TMP/bin/$c"
+  for c in bash sed grep cp mkdir ln rm mv find cat env git printf mktemp basename dirname cygpath; do
+    # Git Bash cannot always create symlinks, so cp is the fallback.
+    p="$(command -v "$c" 2>/dev/null)" && { ln -sf "$p" "$NOJQ_TMP/bin/$c" 2>/dev/null || cp "$p" "$NOJQ_TMP/bin/$c"; }
   done
+  # The sentinel exists because Git Bash builtin resolution and host-specific tool gaps
+  # make the stub PATH unfaithful -- skip honestly rather than assert against an
+  # environment that was never constructed.
+  if PATH="$NOJQ_TMP/bin" bash -c 'command -v sed >/dev/null 2>&1 && command -v git >/dev/null 2>&1'; then
   NOJQ_HOME="$(mktemp -d)"
   nojq_out="$(PATH="$NOJQ_TMP/bin" HOME="$NOJQ_HOME" bash "$ROOT/install.sh" --target claude --copy 2>&1)" || true
   case "$nojq_out" in
@@ -1344,6 +1352,9 @@ if command -v jq >/dev/null 2>&1; then
     *) bad "jq-missing case did not produce the expected warning: $nojq_out" ;;
   esac
   rm -rf "$NOJQ_TMP" "$NOJQ_HOME"
+  else
+    echo "  SKIP: jq-missing warning case (stub PATH not constructable on this platform)"
+  fi
 fi
 
 echo
@@ -1424,12 +1435,16 @@ ORCH_HOOK="$CORE/scripts/inject-orchestrator-role.sh"
 # (a) every command string in hooks.json is quote-wrapped -- the step-1 fix, asserted so it
 # cannot silently regress back to a bare ${CLAUDE_PLUGIN_ROOT}/... string that a harness
 # substituting an unquoted path with a space would split.
-all_cmds="$(jq -r '[.. | .command? // empty] | .[]' "$HOOKS_JSON" 2>/dev/null)"
-unquoted="$(printf '%s\n' "$all_cmds" | grep -vE '^".*"$' || true)"
-if [ -n "$all_cmds" ] && [ -z "$unquoted" ]; then
-  ok "every command string in hooks.json is quote-wrapped"
+if command -v jq >/dev/null 2>&1; then
+  all_cmds="$(jq -r '[.. | .command? // empty] | .[]' "$HOOKS_JSON" 2>/dev/null)"
+  unquoted="$(printf '%s\n' "$all_cmds" | grep -vE '^".*"$' || true)"
+  if [ -n "$all_cmds" ] && [ -z "$unquoted" ]; then
+    ok "every command string in hooks.json is quote-wrapped"
+  else
+    bad "a command string in hooks.json is not quote-wrapped: $unquoted"
+  fi
 else
-  bad "a command string in hooks.json is not quote-wrapped: $unquoted"
+  echo "  SKIP: hooks.json quote-wrap check (jq not installed)"
 fi
 
 # (b) a resolved command whose path contains a space executes cleanly -- proves the fix
