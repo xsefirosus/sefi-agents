@@ -164,6 +164,36 @@ through a free-window model.
 
 Override the whole table with `--model-map <path>` or by editing the `opencode:` block.
 
+## CI loop workflows (manual dispatch)
+
+Three GitHub Actions workflows run this repo's own loops headlessly on OpenCode:
+`.github/workflows/triage-opencode.yml` (morning-triage), `retro-opencode.yml`
+(weekly-retro), and `sync-opencode.yml` (sync) -- mirrors of the Claude-based
+`triage.yml`/`retro.yml`/`sync.yml`.
+
+Manual dispatch only, no cron schedule, on purpose: those Claude-based workflows already
+run on a schedule as of the 2026-08-23 audit remediation, and a second scheduled runner
+over the same loop and the same `state/` files multiplies untested collision risk
+(`docs/LOOP-FAILURE-MODES.md` S3), not coverage. Enabling a schedule here is a separate
+future owner decision.
+
+They pin `opencode/muse-spark-1.2-contributor-free` -- a CI-only exception to
+`config/model-map.yml`'s shipped `flexible` default above: a headless run has no human
+present to pick a model interactively. The map itself stays untouched and flexible on
+every tier; if this one model rotates out of Zen's free lineup, only these three files
+need an edit.
+
+Credential prerequisite: add an Actions secret named `OPENCODE_ZEN_API_KEY` under
+Settings > Secrets > Actions before the first dispatch (same name adapters/HERMES.md
+uses). No CLI env-var contract for the Zen API key could be verified from primary
+sources, so each workflow writes `$HOME/.local/share/opencode/auth.json` from that
+secret at runtime, then fails fast via `opencode auth list` before any model call.
+
+Privacy caveat inherited from "Model tiers and reasoning"'s **Privacy** note: Muse Spark
+1.2 Contributor Free is a free-window Meta model, so data submitted through it may train
+future Meta models. These workflows must only ever operate on this already-public repo's
+own content -- never repoint them at proprietary code.
+
 ## Agent visibility (Tab-cycle vs. dispatch-only)
 
 OpenCode's `mode:` field controls whether an installed agent shows up in the Tab-cycle
