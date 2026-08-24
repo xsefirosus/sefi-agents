@@ -154,7 +154,7 @@ its own memory system on itself, but a fresh install starts empty.
 | Tool | How to install | Notes |
 |---|---|---|
 | Claude Code | plugin install (above) | full support |
-| OpenCode | [adapters/OPENCODE.md](adapters/OPENCODE.md) | can run unattended for scheduled jobs; reviewer and builder tiers both resolve to the same model by default, so the review is a second pass, not yet a second opinion |
+| OpenCode | [adapters/OPENCODE.md](adapters/OPENCODE.md) | can run unattended for scheduled jobs; reviewer and builder tiers both resolve to the same model by default, so the review is a second pass, not yet a second opinion; its three CI loop workflows are manual-dispatch only (see "CI loop workflows (manual dispatch)" in that file) |
 | Hermes Agent | [adapters/HERMES.md](adapters/HERMES.md) | one command; 11 of 13 skills install automatically, 2 need one manual step (see FAQ); same model-tier caveat as OpenCode, and tool restrictions are advisory only -- Hermes doesn't enforce them |
 | Codex | [adapters/CODEX.md](adapters/CODEX.md) | plugin marketplace install |
 

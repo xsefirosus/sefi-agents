@@ -50,12 +50,15 @@ written into a committed YAML file, matching this repo's own anti-hallucination 
 and when each entry was actually verified.
 
 ## Steps
-- [ ] 1. Install the OpenCode CLI in a scratch/CI-like shell and verify it for real. (needs: -)
+- [x] 1. Install the OpenCode CLI in a scratch/CI-like shell and verify it for real. (needs: -)
   Run `npm install -g opencode-ai`, then `opencode --version`. If the package name or install
   command from this plan's research is wrong, the failure is immediate and loud -- fix the
   command here before touching any workflow file. Do not proceed to step 2 on an unconfirmed
   install.
-- [ ] 2. Verify the model id and the non-interactive model-selection mechanism. (needs: 1)
+  CONFIRMED (executed 2026-08-23 on this machine): `npm install -g opencode-ai`
+  installed cleanly (3 packages); `opencode --version` -> `1.18.21`. Both the package
+  name and the install command from this plan's research were correct.
+- [x] 2. Verify the model id and the non-interactive model-selection mechanism. (needs: 1)
   Run `opencode models` (or the closest current equivalent -- `opencode --help` / `opencode run
   --help` if that subcommand doesn't exist) and confirm `muse-spark-1-2-contributor-free`
   (under the `opencode/` provider prefix per `adapters/OPENCODE.md` section 1's stated
@@ -66,7 +69,18 @@ and when each entry was actually verified.
   this plan file before step 4. If the id has already rotated out, stop and report back rather
   than silently substituting a different free model -- that substitution is the owner's call,
   the same principle `model-map.yml`'s own header argues for.
-- [ ] 3. Resolve the credential requirement, if any. (needs: 2)
+  CONFIRMED (executed 2026-08-23 on this machine): `opencode models` lists
+  `opencode/muse-spark-1.2-contributor-free` -- the real id uses DOTS in `1.2`,
+  correcting this plan's dashed WebSearch-derived guess (`muse-spark-1-2-contributor-free`
+  was a pi.dev URL-slug artifact). Same model (Muse Spark 1.2 Contributor Free), same
+  `opencode/` provider prefix adapters/OPENCODE.md requires -- NOT a rotation, no
+  substitution made. Non-interactive selection confirmed from `opencode run --help`:
+  `-m, --model` takes `provider/model`. Confirmed invocation:
+  `opencode run -m opencode/muse-spark-1.2-contributor-free "<prompt>"`. A live dispatch
+  with that exact form resolved the model and reached Zen's API, returning only
+  `Rate limit exceeded` (free-tier throttle) on two tries -- id resolution verified
+  end-to-end; completion blocked only by throttling at execution time.
+- [x] 3. Resolve the credential requirement, if any. (needs: 2)
   Determine whether `Muse Spark 1.2 Contributor Free` needs an API key/token in a headless
   runner (distinct from an interactive OAuth login a human would do once locally). If yes,
   name the exact secret this plan expects (e.g. `OPENCODE_API_KEY`) so step 4-6's workflow
@@ -74,7 +88,19 @@ and when each entry was actually verified.
   repo owner must add it under Settings > Secrets > Actions before first run -- same posture
   `triage.yml` already takes for `ANTHROPIC_API_KEY`. If the free tier needs no key at all in
   CI, state that explicitly rather than leaving the question open.
-- [ ] 4. Write `.github/workflows/triage-opencode.yml`. (needs: 1, 2, 3)
+  RESOLVED (2026-08-23): a credential IS required. Verified on this machine: the OpenCode
+  Zen API credential lives in `~/.local/share/opencode/auth.json` under key `opencode`,
+  shape `{type: "api", key: <secret>}` (confirmed via `opencode auth list`, which prints
+  that exact path, plus JSON structure inspection; the value itself was never read or
+  printed). `opencode debug paths` confirms data dir = `~/.local/share/opencode`.
+  Expected Actions secret name: `OPENCODE_ZEN_API_KEY` (repo precedent: adapters/HERMES.md
+  uses that exact name for Zen API keys). Headless injection: NO CLI env var for the Zen
+  key could be verified from available primary sources (installed-binary string scan empty;
+  `opencode debug config` exposes none; models.dev catalog has no Zen entry), so the three
+  workflows will instead WRITE `auth.json` into `$HOME/.local/share/opencode/` from the
+  injected secret at runtime, then verify with `opencode auth list` before any model call
+  -- mechanism verified by construction, not an asserted env-var contract.
+- [x] 4. Write `.github/workflows/triage-opencode.yml`. (needs: 1, 2, 3)
   Model on `triage.yml`'s structure (checkout with `fetch-depth: 0`, ripgrep install,
   `probe-tools.sh` preflight, budget-check step, commit-to-branch-and-open-PR ending, never
   merge). Differences from `triage.yml`: install `opencode-ai` instead of
@@ -86,27 +112,27 @@ and when each entry was actually verified.
   (`docs/LOOP-FAILURE-MODES.md` S3) rather than the coverage. Manual dispatch is a deliberate,
   smaller first step; enabling a schedule here is a separate future owner decision, not this
   plan's to make.
-- [ ] 5. Write `.github/workflows/retro-opencode.yml`. (needs: 1, 2, 3)
+- [x] 5. Write `.github/workflows/retro-opencode.yml`. (needs: 1, 2, 3)
   Same shape as step 4, mirroring `retro.yml`. `workflow_dispatch` only, same rationale.
-- [ ] 6. Write `.github/workflows/sync-opencode.yml`. (needs: 1, 2, 3)
+- [x] 6. Write `.github/workflows/sync-opencode.yml`. (needs: 1, 2, 3)
   Same shape as step 4, mirroring `sync.yml`. `workflow_dispatch` only, same rationale.
-- [ ] 7. Document the new option in `adapters/OPENCODE.md`. (needs: 2, 3)
+- [x] 7. Document the new option in `adapters/OPENCODE.md`. (needs: 2, 3)
   New short section next to the existing "Model tiers and reasoning" section: these three
   workflows exist, are manual-dispatch only, pin `opencode/muse-spark-1-2-contributor-free`
   specifically for CI (where the shipped `flexible` default cannot apply -- no human present
   to pick interactively), and inherit the same free-window privacy caveat already stated
   there (submitted data may train future Meta models -- never point these workflows at
   proprietary code; they only ever operate on this already-open-source repo's own content).
-- [ ] 8. Add a one-line Notes-column mention in the README harness table for OpenCode. (needs: 7)
+- [x] 8. Add a one-line Notes-column mention in the README harness table for OpenCode. (needs: 7)
   Point at `adapters/OPENCODE.md`'s new section rather than duplicating the explanation --
   match the existing terse style of that table's other cells.
-- [ ] 9. CHANGELOG entry and version bump. (needs: 4, 5, 6, 7, 8)
+- [x] 9. CHANGELOG entry and version bump. (needs: 4, 5, 6, 7, 8)
   Name this as new, additive capability (not a fix), list the three new workflow files, state
   the manual-dispatch-only scope and the pinned-model exception to `model-map.yml`'s
   `flexible` default, and link back to this plan file the way the 0.4.1 entry already links
   the audit. Bump `plugins/sefi-core/.claude-plugin/plugin.json` and
   `.claude-plugin/marketplace.json` together, as the 0.4.1 change did.
-- [ ] 10. Run `bash plugins/sefi-core/scripts/ci/run-all.sh` in full. (needs: 9)
+- [x] 10. Run `bash plugins/sefi-core/scripts/ci/run-all.sh` in full. (needs: 9)
   Paste the real tail into the final report. A run that was not executed is PENDING, never
   assumed. `validate-loops.sh` should pass unchanged -- these three workflows are additive and
   not referenced by any `loops/*.loop.md` `cloud:` declaration, so the existence check has
@@ -146,8 +172,20 @@ this session's environment, confirmed via `which opencode` returning not-found)
   repo's Actions settings yet and must be added by the owner before first run -- same
   prerequisite-not-satisfiable-from-inside-the-repo shape as `ANTHROPIC_API_KEY` already is for
   the Claude-based workflows.
+- Step 3 resolution: the repo owner must add `OPENCODE_ZEN_API_KEY` under Settings >
+  Secrets > Actions before first manual dispatch -- the workflows construct
+  `$HOME/.local/share/opencode/auth.json` from it at runtime because no CLI env-var
+  contract for the Zen key could be verified from primary sources.
 - No prior note in `memory/decisions/` constrains this plan (not re-checked by this planning
   pass; re-check before step 11 in case a decision landed since).
+- Step 10 result (2026-08-24): bash plugins/sefi-core/scripts/ci/run-all.sh ran in full;
+  test-integration OK (33 passed); validate-* all OK; test-scripts 2 failed / 144 passed
+  -- BOTH failures reproduced identically on pristine origin/main (verified by stash-run),
+  so they are pre-existing and outside this plan's scope: (1) resolve-shared-memory-path.sh
+  'cross_project_enabled: false' case expects exit 1, got 0; (2) hooks.json quote-wrap
+  assertion needs jq, absent on this Windows machine. No regression introduced by this
+  branch; Done Criterion "run-all.sh exits 0" is unsatisfiable on any branch until those
+  two ship fixes.
 
 ## Done Criteria
 Steps 1-3 each have a recorded, tool-confirmed answer in this file (not left as the
