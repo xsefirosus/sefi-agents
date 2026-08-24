@@ -389,6 +389,8 @@ if command -v jq >/dev/null 2>&1 && [ -f "$HOOKS_JSON" ]; then
   fi
   while IFS= read -r cmd; do
     [ -n "$cmd" ] || continue
+    # CRLF checkouts make jq echo a trailing carriage return, which would defeat the quote stripping below.
+    cmd="${cmd%$'\r'}"
     # v0.3.20 quote-wrapped every command (Windows path-with-space fix), so strip a
     # surrounding literal `"..."` before matching the placeholder prefix -- otherwise the
     # leading quote character makes every entry look untracked.
@@ -1335,9 +1337,14 @@ if command -v jq >/dev/null 2>&1; then
   JQ_REAL="$(command -v jq)"
   NOJQ_TMP="$(mktemp -d)"
   mkdir -p "$NOJQ_TMP/bin"
-  for c in bash sed grep cp mkdir ln rm mv find cat env printf mktemp basename dirname cygpath; do
-    p="$(command -v "$c" 2>/dev/null)" && ln -sf "$p" "$NOJQ_TMP/bin/$c"
+  for c in bash sed grep cp mkdir ln rm mv find cat env git printf mktemp basename dirname cygpath; do
+    # Git Bash cannot always create symlinks, so cp is the fallback.
+    p="$(command -v "$c" 2>/dev/null)" && { ln -sf "$p" "$NOJQ_TMP/bin/$c" 2>/dev/null || cp "$p" "$NOJQ_TMP/bin/$c"; }
   done
+  # The sentinel exists because Git Bash builtin resolution and host-specific tool gaps
+  # make the stub PATH unfaithful -- skip honestly rather than assert against an
+  # environment that was never constructed.
+  if PATH="$NOJQ_TMP/bin" bash -c 'command -v sed >/dev/null 2>&1 && command -v git >/dev/null 2>&1'; then
   NOJQ_HOME="$(mktemp -d)"
   nojq_out="$(PATH="$NOJQ_TMP/bin" HOME="$NOJQ_HOME" bash "$ROOT/install.sh" --target claude --copy 2>&1)" || true
   case "$nojq_out" in
@@ -1345,6 +1352,9 @@ if command -v jq >/dev/null 2>&1; then
     *) bad "jq-missing case did not produce the expected warning: $nojq_out" ;;
   esac
   rm -rf "$NOJQ_TMP" "$NOJQ_HOME"
+  else
+    echo "  SKIP: jq-missing warning case (stub PATH not constructable on this platform)"
+  fi
 fi
 
 echo
