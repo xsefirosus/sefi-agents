@@ -15,17 +15,22 @@ Changelog; this project adheres to Semantic Versioning.
    Claude-based workflows already run on cron as of the 2026-08-23 audit remediation, and
    a second scheduled runner over the same loop and the same `state/` files would multiply
    untested collision risk (`docs/LOOP-FAILURE-MODES.md` S3) rather than coverage.
-   **CI-only pinned-model exception**: all three pin
-   `opencode/muse-spark-1.2-contributor-free`, an exception to `config/model-map.yml`'s
+   **CI-only default-plus-dispatch-model**: all three take a `model` string input at
+   dispatch time -- any provider/model id `opencode models` lists, validated as a
+   non-empty provider/model value before use, with no auto-selection of another free
+   model (Zen's live catalog also lists TTS/video/embedding/music models that cannot run
+   an agentic loop) -- and default to `opencode/muse-spark-1.2-contributor-free`
+   (live-verified on Zen 2026-08-24). Still an exception to `config/model-map.yml`'s
    shipped `flexible` default -- a headless CI run has no human present to pick a model
    interactively; the map itself is untouched and stays flexible on every tier.
    **Secret prerequisite**: add `OPENCODE_ZEN_API_KEY` under Settings > Secrets > Actions
    before the first dispatch -- no CLI env-var contract for the Zen API key could be
    verified from primary sources, so the workflows write
    `$HOME/.local/share/opencode/auth.json` from that secret at runtime, then fail fast via
-   `opencode auth list`. Free-window privacy caveat applies: submitted data may train
-   future Meta models, so these workflows must only ever operate on this already-public
-   repo's own content. Plan and verification trail: `state/plan-opencode-workflows.md`;
+   `opencode auth list`. Free-window privacy caveat applies to whichever model is
+   dispatched: submitted data may train that model's provider's future models, so these
+   workflows must only ever operate on this already-public repo's own content. Plan and
+   verification trail: `state/plan-opencode-workflows.md`;
    doc coverage in "CI loop workflows (manual dispatch)" in `adapters/OPENCODE.md`.
 
 ## [0.4.1] - 2026-08-23
