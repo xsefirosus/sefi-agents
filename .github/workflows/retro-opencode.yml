@@ -8,17 +8,20 @@
 # Claude-only case. Manual dispatch is a deliberate, smaller first step; enabling a
 # schedule here is a separate future owner decision, not this file's to make.
 #
-# PINNED MODEL -- CI-only exception to config/model-map.yml. This file pins
-# opencode/muse-spark-1.2-contributor-free because a headless CI run has no human present
-# to resolve model-map.yml's shipped `flexible` default interactively. model-map.yml
-# itself is deliberately untouched and stays flexible on every tier (Zen's free catalog
-# rotates; see that file's own header). If Muse Spark 1.2 Contributor Free rotates out of
-# Zen's free lineup, only these *-opencode.yml files need an edit.
+# DEFAULT MODEL -- overridable per dispatch via the model input; CI-only exception to
+# config/model-map.yml. The shipped default, opencode/muse-spark-1.2-contributor-free,
+# was verified live on 2026-08-24 (listed by `opencode models`, -m invocation reached
+# Zen). Auto-picking whatever-is-free is deliberately NOT done: the live catalog mixes
+# non-agent models (TTS/video/embeddings/music) into what `opencode models` lists, and an
+# unverified silent substitution is against this repo's discipline. model-map.yml itself
+# is deliberately untouched and stays flexible on every tier (Zen's free catalog rotates;
+# see that file's own header). If the default rotates out of Zen, pass another id at
+# dispatch time or update the default here.
 #
-# PRIVACY CAVEAT (free-window model): Muse Spark 1.2 Contributor Free is a free-tier Meta
-# model served via OpenCode Zen; data submitted through it may train future Meta models.
-# These workflows must only ever operate on this already-open-source repo's own content --
-# never repoint them at proprietary code.
+# PRIVACY CAVEAT (model chosen at dispatch): submitted data may train the upstream
+# provider's models depending on the chosen model's own terms. These workflows must only
+# ever operate on this already-public repo's own content -- never repoint them at
+# proprietary code.
 #
 # improvement.enabled is false in config/sefi.config.yml, deliberately (commands/init.md's
 # shared-install guardrail). This loop therefore writes PROPOSALS to
@@ -27,7 +30,12 @@
 name: sefi-weekly-retro-opencode
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "Any provider/model id listed by 'opencode models'. Default is a free model verified live 2026-08-24."
+        type: string
+        default: opencode/muse-spark-1.2-contributor-free
 
 permissions:
   contents: write
@@ -87,6 +95,7 @@ jobs:
       - name: Run the retro loop
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MODEL: ${{ inputs.model }}
         run: |
           set -euo pipefail
           # Prompt content matches retro.yml byte for byte. Transport differs: retro.yml
@@ -98,7 +107,13 @@ jobs:
           Follow loops/weekly-retro.loop.md exactly, including its human checkpoint.
           EOF
           )"
-          opencode run -m opencode/muse-spark-1.2-contributor-free --auto "$PROMPT"
+          MODEL="${MODEL:-opencode/muse-spark-1.2-contributor-free}"
+          case "$MODEL" in
+            *[[:space:]]*|"") echo "MODEL must be a non-empty provider/model id (see opencode models)" >&2; exit 2 ;;
+            */*) : ;;
+            *) echo "MODEL must look like provider/model (see opencode models)" >&2; exit 2 ;;
+          esac
+          opencode run -m "$MODEL" --auto "$PROMPT"
 
       - name: Enforce budget caps
         if: always()

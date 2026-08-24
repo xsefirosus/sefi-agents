@@ -189,6 +189,11 @@ this session's environment, confirmed via `which opencode` returning not-found)
   assertion needs jq, absent on this Windows machine. No regression introduced by this
   branch; Done Criterion "run-all.sh exits 0" is unsatisfiable on any branch until those
   two ship fixes.
+- Owner supersession (2026-08-24): the single-model pin was relaxed post-plan by owner decision --
+  all three workflows now take a dispatch-time model input defaulting to the verified muse-spark
+  id; automatic whatever-is-free selection was considered and rejected because the live catalog
+  includes non-agent models and silent substitution violates this repo's verification discipline.
+  config/model-map.yml remains untouched.
 
 ## Done Criteria
 Steps 1-3 each have a recorded, tool-confirmed answer in this file (not left as the
