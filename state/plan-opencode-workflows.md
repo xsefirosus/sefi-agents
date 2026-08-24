@@ -137,7 +137,10 @@ and when each entry was actually verified.
   assumed. `validate-loops.sh` should pass unchanged -- these three workflows are additive and
   not referenced by any `loops/*.loop.md` `cloud:` declaration, so the existence check has
   nothing new to enforce against them.
-- [ ] 11. Commit on a feature branch, push, open a PR. Do not merge. (needs: 10)
+- [x] 11. Commit on a feature branch, push, open a PR. Do not merge. (needs: 10)
+  DONE (2026-08-24): commit a8d8408 on branch plan/opencode-workflows, pushed; PR
+  https://github.com/xsefirosus/sefi-agents/pull/3 opened against main, unmerged per
+  human-checkpoint.md.
   Follow this repo's own never-auto-merge rule
   (`skills/sefi-orchestration/references/human-checkpoint.md`) -- this is new unattended-spend
   surface even at manual-dispatch-only, and the owner reviews before it lands on `main`.
