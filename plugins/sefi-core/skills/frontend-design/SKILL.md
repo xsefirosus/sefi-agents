@@ -9,10 +9,10 @@ managed-by: sefi-agents
 Craft skill backing the ui-ux-designer and the software-engineer above the API seam.
 The goal is UI that looks decided, not generated. Deep material lives in four
 references, read on demand: references/direction-lanes.md (the named direction
-catalog), references/anti-slop-checklist.md (the tells, in two tiers), and
+catalog), references/anti-slop-checklist.md (the tells, in two tiers),
 references/industry-patterns.md (domain heuristics, illustrative only), and
-references/design-system-map.md (brief signal to an official design-system
-package, or an honest native-CSS approach when no package fits).
+references/design-system-map.md (brief signal to an official design-system package,
+or an honest native-CSS approach when no package fits).
 
 User instructions always override this skill.
 All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never
