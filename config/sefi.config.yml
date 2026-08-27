@@ -19,9 +19,6 @@ memory:
 terse_mode:
   enabled: true        # on by user preference; costs ~1-1.5k tokens/turn to load, nets
                        # negative on short replies -- see skills/terse-mode/SKILL.md
-adhd_mode:
-  enabled: false        # false by this repo's own precedent (see improvement.enabled
-                        # above): when in doubt, prefer false. A new, stronger
-                        # behavioral change nobody has opted into yet; costs ~1-1.5k
-                        # tokens/turn while active, comparable to terse_mode -- see
-                        # skills/i-have-adhd/SKILL.md
+focus_mode:
+  enabled: true         # on by user preference; costs ~1-1.5k tokens/turn while active
+                        # -- see skills/focus/SKILL.md

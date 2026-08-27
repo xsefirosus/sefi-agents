@@ -14,7 +14,7 @@ describes the package layout.
 - `skills/` -- 12 skills: sefi-orchestration (the always-loaded router),
   anti-hallucination (the canonical no-invention rule), memory-protocol,
   loop-engineering, retro-improve, terse-mode, frontend-design, backend-design,
-  security-review, technical-writing, n8n-workflow-design, i-have-adhd. Deep material
+  security-review, technical-writing, n8n-workflow-design, focus. Deep material
   lives in each skill's `references/`, read on demand.
 - `commands/` -- `/sefi:init`, `/sefi:triage`, `/sefi:retro`, `/sefi:status`,
   `/sefi:loop-new`, `/sefi:route` (deterministic sefi-orchestration load, for when the
@@ -58,8 +58,8 @@ describes the package layout.
 When writing a skill, decide whether reference material should live inline or in
 `references/`: under 50 lines, keep it inline in the SKILL.md body (short lists,
 examples, small decision tables belong where they're read); 50-100 lines is a judgment
-call weighed against the skill's total line count (target <500 -- extract if adding it
-would push the skill over 450 lines, inline is fine if the skill is still around 150);
+call weighed against the skill's total line count (target <300 -- extract if adding it
+would push the skill over 250 lines, inline is fine if the skill is still around 150);
 over 100 lines always extract to `references/` and link it with "See
 `references/<name>.md` for detail." This keeps skills scannable while preserving deep
 material for readers who need it.
