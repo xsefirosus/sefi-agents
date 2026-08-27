@@ -200,6 +200,10 @@ test-integration: OK (33 passed) -- full loop skeleton executed end to end
 CI: all validators passed
 ```
 
+- `test-scripts` reads 155 on this authoring machine (2 skipped: shellcheck not on
+  PATH, jq-missing stub PATH not constructable here) -- expect 157 on an environment
+  with both present; nothing was removed, only skipped by toolchain, same as the
+  count on `main`.
 - The last two lines matter most: one proves every script works by itself, the other
   proves the whole cycle works together, end to end, in a real test project -- with a real
   check that nothing merged itself.
