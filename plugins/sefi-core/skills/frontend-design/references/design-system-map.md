@@ -4,7 +4,7 @@ Adapted from Section 2 ("Brief -> Design System Map") of
 https://github.com/Leonxlnx/taste-skill (MIT licensed), condensed to house style;
 table content (package names, signals, rationale) preserved from the source.
 
-Complements references/industry-patterns.md: that file names an aesthetic
+Complements industry-patterns.md: that file names an aesthetic
 *direction* per domain; this file names the actual package (or honest native-CSS
 approach) once a direction is chosen. Consult during BUILD Pass 1 (token-system
 planning), before committing to a component foundation. One system per project --

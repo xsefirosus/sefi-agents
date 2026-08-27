@@ -35,7 +35,7 @@ installs the right way for it, Claude Code or otherwise:
 > https://raw.githubusercontent.com/xsefirosus/sefi-agents/main/Install.md
 
 **Contents:** [Why this exists](#why-this-exists) -- [How it compares](#how-it-compares) --
-[The team](#the-team-13-agents) -- [The skills](#the-skills-11) --
+[The team](#the-team-13-agents) -- [The skills](#the-skills-12) --
 [How a request gets done](#how-a-request-actually-gets-done) --
 [Memory](#memory-that-survives-the-session) -- [Where it runs](#works-with-your-harness) --
 [Safety rules](#safety-rails-all-of-them-in-one-place) -- [Proof](#proof) -- [FAQ](#faq) --
@@ -94,7 +94,7 @@ piece at a time, in its own workspace -- `ui-ux-designer` handles interface work
 sorts incoming issues -- `knowledge-manager` tends the memory, never deletes -- `technical-writer`
 writes docs, claims double-checked -- `prompt-engineer` clarifies a raw request first.
 
-## The skills (11)
+## The skills (12)
 
 Playbooks an agent loads only when the task needs it, not a 14th agent -- most load
 automatically, a few you call by name, and a named skill can never chain another one, so
@@ -109,7 +109,7 @@ interface, API, and security best practices.
 **Memory & process:** `memory-protocol`, `loop-engineering`, `retro-improve` -- how
 memory is read and written, the five-step loop pattern, and small self-improvements.
 
-**Specialized:** `technical-writing`, `n8n-workflow-design`, `terse-mode`.
+**Specialized:** `technical-writing`, `n8n-workflow-design`, `terse-mode`, `i-have-adhd`.
 
 ## How a request actually gets done
 
@@ -180,22 +180,22 @@ run them yourself, in one command:
 ```
 $ bash plugins/sefi-core/scripts/ci/run-all.sh
 validate-agents: OK (13 agent files validated)
-validate-skills: OK (11 SKILL.md validated)
-validate-doc-counts: OK (agents=13 skills=11 commands=6 loops=3, all prose matches disk)
+validate-skills: OK (12 SKILL.md validated)
+validate-doc-counts: OK (agents=13 skills=12 commands=6 loops=3, all prose matches disk)
 validate-loops: OK (3 loop spec(s) validated, plus 3 in this project's loops/)
 validate-budget: OK (all caps present and bounded)
-validate-config-wired: OK (14 config keys, all wired)
+validate-config-wired: OK (15 config keys, all wired)
 validate-no-personal-paths: OK (no personal paths in shipped files)
 validate-no-orphans: OK (references, templates, agents all wired)
-validate-links: OK (55 files scanned, all repo-path references resolve; bare script names checked)
-validate-script-refs: OK (40 files scanned, every scripts/*.sh reference carries ${CLAUDE_PLUGIN_ROOT}/)
+validate-links: OK (57 files scanned, all repo-path references resolve; bare script names checked)
+validate-script-refs: OK (42 files scanned, every scripts/*.sh reference carries ${CLAUDE_PLUGIN_ROOT}/)
 validate-routing: OK (routing-table agents exist, fixtures resolve, no duplicate triggers)
 validate-model-map: OK (13 agents, 4 harnesses, 44 scripts parse; 2 warning(s))
 validate-adapters: OK (install-hermes.sh skill list matches disk, adapter doc paths resolve)
-check-unicode-safety: OK (125 files scanned, ASCII-clean)
+check-unicode-safety: OK (127 files scanned, ASCII-clean)
 validate-comment-safety: OK (2 file(s) scanned)
 validate-token-budget: OK (all within token budgets; agents total 8316 words)
-test-scripts: OK (157 passed)
+test-scripts: OK (155 passed)
 test-integration: OK (33 passed) -- full loop skeleton executed end to end
 CI: all validators passed
 ```
