@@ -7,10 +7,12 @@ managed-by: sefi-agents
 # Frontend Design -- anti-slop craft
 
 Craft skill backing the ui-ux-designer and the software-engineer above the API seam.
-The goal is UI that looks decided, not generated. Deep material lives in three
+The goal is UI that looks decided, not generated. Deep material lives in four
 references, read on demand: references/direction-lanes.md (the named direction
 catalog), references/anti-slop-checklist.md (the tells, in two tiers), and
-references/industry-patterns.md (domain heuristics, illustrative only).
+references/industry-patterns.md (domain heuristics, illustrative only), and
+references/design-system-map.md (brief signal to an official design-system
+package, or an honest native-CSS approach when no package fits).
 
 User instructions always override this skill.
 All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never
@@ -51,7 +53,11 @@ guess (this includes design tokens -- never cite a token that is not in the spec
    Lucide) -- never emoji as icons or decoration.
 10. Domain awareness: references/industry-patterns.md lists conventional starting
     heuristics per domain (illustrative, not authoritative research); a brief that
-    breaks convention should do so knowingly.
+    breaks convention should do so knowingly. During BUILD Pass 1's token-system
+    planning, also check references/design-system-map.md for whether the brief
+    signals an existing ecosystem with an official package, or an aesthetic with no
+    official package -- never hand-recreate a system's CSS when its official package
+    is the honest answer.
 
 ## Workflow (four verbs)
 BUILD runs two passes: Pass 1 plans a token system (4-6 named colors, 2+ typefaces, a
