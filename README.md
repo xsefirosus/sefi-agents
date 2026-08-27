@@ -109,7 +109,7 @@ interface, API, and security best practices.
 **Memory & process:** `memory-protocol`, `loop-engineering`, `retro-improve` -- how
 memory is read and written, the five-step loop pattern, and small self-improvements.
 
-**Specialized:** `technical-writing`, `n8n-workflow-design`, `terse-mode`, `i-have-adhd`.
+**Specialized:** `technical-writing`, `n8n-workflow-design`, `terse-mode`, `focus`.
 
 ## How a request actually gets done
 

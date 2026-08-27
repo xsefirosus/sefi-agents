@@ -1,6 +1,6 @@
 ---
-name: i-have-adhd
-description: Use when adhd_mode.enabled is true in sefi.config.yml. Shapes orchestrator replies to the human for actionability -- lead with the next action, number multi-step work, restate progress every turn, cap lists at five, matter-of-fact errors, no preamble or closers. Governs structure, not phrasing -- pairs with, and never replaces, terse-mode's phrasing compression.
+name: focus
+description: Use when focus_mode.enabled is true in sefi.config.yml. Shapes orchestrator replies to the human for actionability -- lead with the next action, number multi-step work, restate progress every turn, cap lists at five, matter-of-fact errors, no preamble or closers. Governs structure, not phrasing -- pairs with, and never replaces, terse-mode's phrasing compression.
 managed-by: sefi-agents
 ---
 
@@ -13,7 +13,7 @@ Scope: this shapes how the top-level orchestrator talks to the human user in cha
 does not apply to any of the 13 dispatched agents -- they hand off to each other
 through machine output contracts that already enforce "result first, no narration,"
 and adding this to an agent file would cost tokens on every dispatch forever, unlike a
-skill that loads only when triggered. Enable only when `adhd_mode.enabled: true` in
+skill that loads only when triggered. Enable only when `focus_mode.enabled: true` in
 `sefi.config.yml`.
 
 Not the same axis as terse-mode: terse-mode (`terse_mode.enabled`) compresses
