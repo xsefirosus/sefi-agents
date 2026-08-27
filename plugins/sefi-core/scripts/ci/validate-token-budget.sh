@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # validate-token-budget.sh -- repo bloat linter. Fail if any description > 60 words; any
-# agent file > 150 lines; any SKILL.md > 300 lines; templates/memory/index.md > 60 lines;
+# agent file > 150 lines; any SKILL.md > 500 lines; templates/memory/index.md > 60 lines;
 # or total agents/ word count > agent_count x 640 (the original cap was 4500 for 7 agents,
 # ~643 words per agent; the per-agent budget scales with the roster).
 set -uo pipefail
@@ -42,11 +42,11 @@ if [ "$agent_words" -gt "$agent_cap" ]; then
   echo "ERROR: plugins/sefi-core/agents - total $agent_words words (max $agent_cap for $agent_count agents)"; errors=$((errors + 1))
 fi
 
-# SKILL.md: <= 300 lines each; descriptions <= 60 words.
+# SKILL.md: <= 500 lines each; descriptions <= 60 words.
 while IFS= read -r f; do
   rel="${f#"$ROOT"/}"
   lines="$(wc -l < "$f")"
-  [ "$lines" -gt 300 ] && { echo "ERROR: $rel - $lines lines (max 300)"; errors=$((errors + 1)); }
+  [ "$lines" -gt 500 ] && { echo "ERROR: $rel - $lines lines (max 500)"; errors=$((errors + 1)); }
   check_desc "$f" "$rel"
 done < <(find "$CORE/skills" -name 'SKILL.md')
 

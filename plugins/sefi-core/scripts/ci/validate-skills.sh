@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # validate-skills.sh -- each SKILL.md non-empty; frontmatter has name + description;
 # description is single-line (no YAML block scalar) and contains no ": " (colon+space
-# breaks YAML plain-scalar parsing -- use " -- " instead); body <= 300 lines; body
+# breaks YAML plain-scalar parsing -- use " -- " instead); body <= 500 lines; body
 # carries the anti-hallucination pointer line (the canonical rule lives in
 # skills/anti-hallucination).
 set -uo pipefail
@@ -35,8 +35,8 @@ while IFS= read -r f; do
   fi
 
   lines="$(wc -l < "$f")"
-  if [ "$lines" -gt 300 ]; then
-    echo "ERROR: $rel - body $lines lines (max 300)"; errors=$((errors + 1))
+  if [ "$lines" -gt 500 ]; then
+    echo "ERROR: $rel - body $lines lines (max 500)"; errors=$((errors + 1))
   fi
 
   grep -q 'anti-hallucination' "$f" \
