@@ -4,7 +4,7 @@ description: Use when focus_mode.enabled is true in sefi.config.yml. Shapes orch
 managed-by: sefi-agents
 ---
 
-# I Have ADHD -- output shaping for the human-facing orchestrator
+# Focus -- output shaping for the human-facing orchestrator
 
 Adapted from https://github.com/ayghri/i-have-adhd (MIT licensed); condensed and
 reworded to sefi-agents' config-gated skill convention, rules preserved near-verbatim.
