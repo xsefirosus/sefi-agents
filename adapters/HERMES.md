@@ -94,7 +94,7 @@ bash plugins/sefi-core/scripts/install-hermes.sh
 ```
 
 The script loops the real `hermes skills install <owner>/<repo>/<path>` command once per
-skill (all 12). After the loop it derives success from `hermes skills list` rather
+skill (all 13). After the loop it derives success from `hermes skills list` rather
 than from the per-call exit code, because hermes exits 0 even on a BLOCKED scanner
 verdict.
 
@@ -102,9 +102,9 @@ Two skills are attempted with `--force` because hermes's community-skill scanner
 flag their *content* on substring match: `sefi-orchestration` (its references name
 subagent dispatch / hooks / shell) and `security-review` (its checklist names
 dangerous patterns to warn against them). On this Hermes version, `--force` does not
-override a `DANGEROUS` verdict. The script still attempts all 12 skills, verifies the
+override a `DANGEROUS` verdict. The script still attempts all 13 skills, verifies the
 real installed set with `hermes skills list`, reports any missing names, and exits 1
-when the verified count is incomplete. The other 10 stay on the default no-override
+when the verified count is incomplete. The other 11 stay on the default no-override
 path.
 
 Agents are NOT installed this way -- Hermes has no discrete "install agent" concept.
@@ -134,7 +134,7 @@ would run the printed commands.
   drift, JSON validity, and synthetic run timing") -- useful only once you have wired the
   memory-injection hook yourself (see section 3). No sefi installer creates it on Hermes, so
   on a stock install this reports nothing about sefi.
-- **GitHub API rate limit exhausted** -- `install-hermes.sh` makes 12 fetches per run
+- **GitHub API rate limit exhausted** -- `install-hermes.sh` makes 13 fetches per run
   (one per skill); Hermes's unauthenticated GitHub API limit is 60 requests/hour, so
   a few re-runs (or other GitHub activity sharing the same limit) can exhaust it. The
   install output says so directly ("GitHub API rate limit exhausted") rather than
