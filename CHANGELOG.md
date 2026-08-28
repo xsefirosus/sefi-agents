@@ -3,6 +3,43 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.5.1] - 2026-08-28
+
+### Added
+
+1. **`premortem` skill** (PR #5) -- new standalone skill,
+   `plugins/sefi-core/skills/premortem/SKILL.md`, a 5-stage forensic pre-execution
+   failure analysis (autopsy of 7 ranked failure causes, verdict, rebuild, adversary
+   roleplay, tripwires), adapted from an external MIT-licensed skill. Wired as an
+   OPTIONAL step (never mandatory) into `product-manager.md` (triggers: explicit
+   request, or 8+ draft plan steps) and `solutions-architect.md` (triggers: BUILD BIG
+   mode, or explicit request).
+2. **`focus` skill + `design-system-map.md` reference** (PR #6) -- new config-gated
+   skill `plugins/sefi-core/skills/focus/SKILL.md`, gated on `focus_mode.enabled` in
+   `sefi.config.yml` (default `false` in the shipped template), shaping the top-level
+   orchestrator's replies for actionability (lead with the next action, numbered steps,
+   restate progress, cap lists at 5, no preamble/recap) -- distinct from `terse-mode`'s
+   phrasing compression, not a replacement. The skill was renamed from an earlier
+   working title before shipping, at the owner's direction. Also added
+   `plugins/sefi-core/skills/frontend-design/references/design-system-map.md`, a
+   brief-signal-to-official-design-system-package lookup table (Fluent, Material,
+   Carbon, Primer, govuk-frontend, shadcn, etc.), adapted from an external
+   MIT-licensed skill, wired into `frontend-design/SKILL.md`.
+3. **Three previously-undefined `agentic-signals` now defined, plus a safety-citation
+   fix** (PR #7) -- in `plugins/sefi-core/skills/sefi-orchestration/references/`:
+   `refusal-gate.md`, `verification.md`, and `loop-discipline.md`. Three skills
+   (`loop-engineering`, `retro-improve`, `security-review`) had declared these five
+   signals in frontmatter for a while, but only `goal_intake` and `close_out` ever had
+   a defined reference file; these three close that gap. Also,
+   `plugins/sefi-core/agents/technical-writer.md` now cites the never-auto-merge rule
+   (`human-checkpoint.md`) in its Memory section, matching every other write-capable
+   agent -- it was the one exception before this fix, at a net word DECREASE (a
+   compensating trim), not an increase.
+
+Net effect on the repo's self-reported numbers: skills 11 -> 13, agents unchanged at
+13, config keys 14 -> 15 (the new `focus_mode` key; `adhd_mode` was renamed to
+`focus_mode` before shipping, never shipped under the old name).
+
 ## [0.5.0] - 2026-08-24
 
 ### Added
