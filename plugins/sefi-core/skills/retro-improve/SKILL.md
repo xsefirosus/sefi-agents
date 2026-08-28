@@ -13,6 +13,11 @@ User instructions always override this skill.
 All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never guess.
 
 agentic-signals: goal_intake, refusal_gate, verification, loop_discipline, close_out
+(goal_intake's behavior: `skills/sefi-orchestration/references/goal-intake.md`;
+refusal_gate's: `skills/sefi-orchestration/references/refusal-gate.md`; verification's:
+`skills/sefi-orchestration/references/verification.md`; loop_discipline's:
+`skills/sefi-orchestration/references/loop-discipline.md`; close_out's:
+`skills/sefi-orchestration/references/close-out.md`)
 
 ## HARD GUARDS
 You may edit only files whose frontmatter contains `managed-by: sefi-agents`. You may not
