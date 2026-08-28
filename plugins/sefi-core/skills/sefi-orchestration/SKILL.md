@@ -105,6 +105,9 @@ with chat ("Here's the summary: ...").
   gated on the dispatched path by `${CLAUDE_PLUGIN_ROOT}/scripts/check-reply.sh`.
 - `references/close-out.md` -- the canonical close_out behavior, and the vault's only
   producer: the knowledge-manager dispatch that files a cycle's durable observations.
+- `references/refusal-gate.md` -- the canonical refusal_gate behavior.
+- `references/verification.md` -- the canonical verification behavior.
+- `references/loop-discipline.md` -- the canonical loop_discipline behavior.
 - `docs/BUDGET.md` -- the token-discipline stack, biggest lever first; terse-mode (output
   compression) is last and smallest on purpose -- check the bigger levers before reaching
   for it.

@@ -11,10 +11,10 @@ describes the package layout.
   devops-engineer, support-engineer, knowledge-manager, technical-writer,
   solutions-architect. Each carries a `tools`/`disallowedTools` contract, a
   named model tier, and the anti-hallucination pointer (CI-enforced).
-- `skills/` -- 12 skills: sefi-orchestration (the always-loaded router),
+- `skills/` -- 13 skills: sefi-orchestration (the always-loaded router),
   anti-hallucination (the canonical no-invention rule), memory-protocol,
   loop-engineering, retro-improve, terse-mode, frontend-design, backend-design,
-  security-review, technical-writing, n8n-workflow-design, focus. Deep material
+  security-review, technical-writing, n8n-workflow-design, premortem, focus. Deep material
   lives in each skill's `references/`, read on demand.
 - `commands/` -- `/sefi:init`, `/sefi:triage`, `/sefi:retro`, `/sefi:status`,
   `/sefi:loop-new`, `/sefi:route` (deterministic sefi-orchestration load, for when the
