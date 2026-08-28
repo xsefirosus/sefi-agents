@@ -9,7 +9,7 @@ agent file under `agents/`. Every agent additionally follows the anti-hallucinat
 | `prompt-engineer.md` | haiku | sefi-orchestration | Stage 0, read-only; restates intent, never routes | cheap |
 | `engineering-manager.md` | sonnet | sefi-orchestration | routes and dispatches; never edits files | mid |
 | `research-analyst.md` | haiku | memory-protocol | read-only; digest contract | cheap |
-| `product-manager.md` | sonnet | loop-engineering | fixed heading skeleton; grep-countable steps | mid |
+| `product-manager.md` | sonnet | loop-engineering, premortem (optional) | fixed heading skeleton; grep-countable steps | mid |
 | `ui-ux-designer.md` | sonnet | frontend-design | four verbs (build/audit/redesign/study); direction-first; never pixel-clones | mid |
 | `software-engineer.md` | sonnet | loop-engineering, backend-design, frontend-design | gate.sh before done; minimization ladder; vertical slices | mid |
 | `qa-engineer.md` | opus | anti-hallucination (bar-comparison) | adversarial; executes to verify | high |
@@ -18,7 +18,7 @@ agent file under `agents/`. Every agent additionally follows the anti-hallucinat
 | `support-engineer.md` | haiku | loop-engineering | triage classes; consume-before-act | cheap |
 | `knowledge-manager.md` | haiku | memory-protocol | append-only; single writer for `memory/` | cheap |
 | `technical-writer.md` | haiku | technical-writing | verify-before-cite; honest claims only | cheap |
-| `solutions-architect.md` | sonnet | n8n-workflow-design | locked ROI review; recommends only | mid |
+| `solutions-architect.md` | sonnet | n8n-workflow-design, premortem (optional) | locked ROI review; recommends only | mid |
 
 ## Growth
 At 13 agents (`prompt-engineer` added flat -- narrow scope, no restructuring implied) this
