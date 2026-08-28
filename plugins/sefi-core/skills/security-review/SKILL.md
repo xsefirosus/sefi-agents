@@ -15,6 +15,11 @@ All factual output follows the anti-hallucination skill: cite file:line or mark 
 never guess.
 
 agentic-signals: goal_intake, refusal_gate, verification, loop_discipline, close_out
+(goal_intake's behavior: `skills/sefi-orchestration/references/goal-intake.md`;
+refusal_gate's: `skills/sefi-orchestration/references/refusal-gate.md`; verification's:
+`skills/sefi-orchestration/references/verification.md`; loop_discipline's:
+`skills/sefi-orchestration/references/loop-discipline.md`; close_out's:
+`skills/sefi-orchestration/references/close-out.md`)
 
 ## Rule block (every reviewed diff is checked against all six)
 1. Secrets: no credential, token, key, or connection string in code, fixtures, logs, or
