@@ -7,7 +7,7 @@ agent file under `agents/`. Every agent additionally follows the anti-hallucinat
 | Agent (`agents/<file>`) | Model | Skills used | Gate / discipline | Cost tier |
 |---|---|---|---|---|
 | `prompt-engineer.md` | haiku | sefi-orchestration | Stage 0, read-only; restates intent, never routes | cheap |
-| `engineering-manager.md` | sonnet | sefi-orchestration | routes and dispatches; never edits files | mid |
+| `sefi-agents.md` | sonnet | sefi-orchestration | routes and dispatches; never edits files | mid |
 | `research-analyst.md` | haiku | memory-protocol | read-only; digest contract | cheap |
 | `product-manager.md` | sonnet | loop-engineering, premortem (optional) | fixed heading skeleton; grep-countable steps | mid |
 | `ui-ux-designer.md` | sonnet | frontend-design | four verbs (build/audit/redesign/study); direction-first; never pixel-clones | mid |

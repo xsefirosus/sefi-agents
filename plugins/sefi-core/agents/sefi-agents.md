@@ -1,5 +1,5 @@
 ---
-name: engineering-manager
+name: sefi-agents
 description: Sefi-Agents — Use when work must be routed to the right agent, sequenced across a handoff chain, or dispatched to a subagent. Routes per the routing table, enforces output contracts and budgets, and never edits files or does the work itself.
 tools: Read, Grep, Glob, Bash
 disallowedTools: Write, Edit, MultiEdit

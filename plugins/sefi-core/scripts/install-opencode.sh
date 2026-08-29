@@ -185,7 +185,7 @@ transform_agent() {
 
     # Second ---: end of frontmatter. Emit mode: and the permission block right before it.
     in_fm == 0 && /^---$/ {
-      if (fm_name == "engineering-manager") { print "mode: primary" }
+      if (fm_name == "sefi-agents" || fm_name == "engineering-manager") { print "mode: primary" }
       else { print "mode: subagent" }
       emit_permission_block(); print; in_fm = 1; next
     }
@@ -321,7 +321,7 @@ transform_agent() {
       if (key == "doom_loop") return "ask"
       if (key == "todowrite") return "deny"
       if (key == "task") {
-        if (fm_name == "engineering-manager") return "allow"
+        if (fm_name == "sefi-agents" || fm_name == "engineering-manager") return "allow"
         return "deny"
       }
       return "deny"

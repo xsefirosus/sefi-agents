@@ -856,7 +856,7 @@ fi
 primary_n="$(grep -l '^mode: primary$' "$TMP_OC"/agents/*.md 2>/dev/null | wc -l | tr -d ' ')"
 primary_file="$(grep -l '^mode: primary$' "$TMP_OC"/agents/*.md 2>/dev/null | xargs -n1 basename)"
 subagent_n="$(grep -l '^mode: subagent$' "$TMP_OC"/agents/*.md 2>/dev/null | wc -l | tr -d ' ')"
-if [ "$primary_n" = "1" ] && [ "$primary_file" = "engineering-manager.md" ] && [ "$subagent_n" = "12" ]; then
+if [ "$primary_n" = "1" ] && [ "$primary_file" = "sefi-agents.md" ] && [ "$subagent_n" = "12" ]; then
   ok "exactly engineering-manager is mode: primary; the other 12 are mode: subagent"
 else
   bad "mode: split is wrong (primary_n=$primary_n primary_file='$primary_file' subagent_n=$subagent_n)"
@@ -867,12 +867,12 @@ fi
 # flat bash: allow has the identical gap. An agent that fully disallows all three now gets a
 # pattern-map deny list instead; an agent with real Write access (software-engineer,
 # knowledge-manager -- only MultiEdit denied) must NOT be narrowed by this.
-if grep -q '^  bash:$' "$TMP_OC/agents/engineering-manager.md" 2>/dev/null \
-   && grep -qF '"sed -i*": deny' "$TMP_OC/agents/engineering-manager.md" 2>/dev/null \
-   && grep -qF '"*": allow' "$TMP_OC/agents/engineering-manager.md" 2>/dev/null; then
-  ok "engineering-manager's OpenCode bash: permission is a deny-pattern map, not a flat allow"
+if grep -q '^  bash:$' "$TMP_OC/agents/sefi-agents.md" 2>/dev/null \
+   && grep -qF '"sed -i*": deny' "$TMP_OC/agents/sefi-agents.md" 2>/dev/null \
+   && grep -qF '"*": allow' "$TMP_OC/agents/sefi-agents.md" 2>/dev/null; then
+  ok "sefi-agents's OpenCode bash: permission is a deny-pattern map, not a flat allow"
 else
-  bad "engineering-manager's OpenCode bash: permission did not get the write-pattern deny map"
+  bad "sefi-agents's OpenCode bash: permission did not get the write-pattern deny map"
 fi
 if grep -q '^  bash: allow$' "$TMP_OC/agents/software-engineer.md" 2>/dev/null; then
   ok "software-engineer's OpenCode bash: stays a flat allow (real Write access, not narrowed)"
@@ -979,11 +979,11 @@ expect_bw() {
   if [ "$got" -eq "$want" ]; then ok "$label (exit $got)"; else bad "$label (expected exit $want, got $got)"; fi
 }
 
-expect_bw 2 "engineering-manager: sed -i on a state file is blocked" \
+expect_bw 2 "sefi-agents: sed -i on a state file is blocked" \
   engineering-manager "sed -i s/a/b/ state/foo.md"
 expect_bw 2 "qa-engineer: tee into a state file is blocked" \
   qa-engineer "echo hi | tee state/foo.md"
-expect_bw 0 "engineering-manager: an ordinary grep is allowed" \
+expect_bw 0 "sefi-agents: an ordinary grep is allowed" \
   engineering-manager "grep -rn TODO plugins/"
 expect_bw 0 "software-engineer: sed -i is allowed (real Write access -- not this hook's concern)" \
   software-engineer "sed -i s/a/b/ src/foo.py"
@@ -1019,7 +1019,7 @@ fi
 
 # (a) broken python3 + working python -> the gate still blocks sed -i (exit 2).
 got=0
-printf '{"agent_type":"engineering-manager","tool_input":{"command":"sed -i s/a/b/ state/foo.md"}}' \
+printf '{"agent_type":"sefi-agents","tool_input":{"command":"sed -i s/a/b/ state/foo.md"}}' \
   | env PATH="$PYSHIM:$PATH" bash "$CBW" >/dev/null 2>&1 || got=$?
 if [ "$got" -eq 2 ]; then
   ok "broken python3 + working python: sed -i still blocked (exit 2)"
@@ -1042,7 +1042,7 @@ rm -rf "$EXB"
 mkpy python 'exit 1'
 mkpy py 'exit 1'
 got=0
-printf '{"agent_type":"engineering-manager","tool_input":{"command":"sed -i s/a/b/ state/foo.md"}}' \
+printf '{"agent_type":"sefi-agents","tool_input":{"command":"sed -i s/a/b/ state/foo.md"}}' \
   | env PATH="$PYSHIM:$PATH" bash "$CBW" >/dev/null 2>&1 || got=$?
 if [ "$got" -eq 0 ]; then
   ok "no working parser at all: documented fail-open preserved (exit 0)"
