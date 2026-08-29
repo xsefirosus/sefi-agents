@@ -1,6 +1,6 @@
 # Routing Table -- precedence-ordered, append-only
 
-One dispatcher (the engineering-manager) reads this table. Resolve the routing key
+One dispatcher (sefi-agents) reads this table. Resolve the routing key
 highest-to-lowest: per-message override -> per-project config (`sefi.config.yml`) ->
 global default -> hardcoded fallback. Agent identity travels as a field. A new trigger or
 loop is one appended row, never a new code branch.
@@ -21,7 +21,7 @@ genuinely ambiguous between two rows, that's a goal_intake case: ask, don't gues
 | close_out / end of a loop cycle or work chunk | knowledge-manager | -- | files durable observations; SKIP if none |
 | "automate X" (n8n/Make/GHL) | solutions-architect | override: `agent` | -- |
 | scheduled / CI trigger | (per loop spec) | -- | `skip_clarification`, `non_interactive` |
-| multi-agent request / route it | engineering-manager | -- | -- |
+| multi-agent request / route it | sefi-agents | -- | -- |
 | "design / UI / UX spec" | ui-ux-designer | override: `agent` | before any UI build |
 | diff touches a trust boundary | security-engineer | -- | blocks PR on Critical |
 | pipeline / release / worktree ops | devops-engineer | -- | -- |

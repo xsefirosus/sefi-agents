@@ -15,7 +15,7 @@ All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, n
 ## Roster (summary; full detail in `references/roster.md`)
 | Agent | Use for | Cost |
 |---|---|---|
-| engineering-manager | route, dispatch, enforce contracts and budgets | sonnet |
+| sefi-agents | route, dispatch, enforce contracts and budgets | sonnet |
 | research-analyst | gather web/repo/doc context as a digest | haiku |
 | product-manager | turn a goal into a checkable plan file | sonnet |
 | ui-ux-designer | build, audit, redesign, or study a UI, direction-first | sonnet |
@@ -36,7 +36,7 @@ for now, and the NEXT addition introduces a file-name prefix and domain subfolde
 ## Dispatch (one dispatcher, table-driven)
 Stage 0: an interactive human message passes through `prompt-engineer` first -- it
 restates the raw message into single-intent statements plus stated constraints, and
-attaches a non-binding suggested row. The engineering-manager then resolves the restated
+attaches a non-binding suggested row. The sefi-agents then resolves the restated
 intent(s) against the table below. Skipped entirely on a non-interactive or scheduled
 trigger; the raw trigger reaches the table unchanged.
 

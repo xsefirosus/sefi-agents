@@ -37,7 +37,7 @@ string fails schema validation. The script converts each agent's `tools:` /
 (conversion table lives in the script's comments). `model:` is REPLACED with the
 harness-resolved value via `config/model-map.yml`, not dropped -- see "Model tiers and
 reasoning" below for why dropping it was tried once and reverted. A `mode:` field is
-also written: `primary` for `engineering-manager` only, `subagent` for every other
+also written: `primary` for `sefi-agents` only, `subagent` for every other
 agent, so OpenCode's own Tab-cycle switcher shows just the one entry point instead of
 all 13 (see "Agent visibility" below). Every other frontmatter field and the entire body
 is preserved byte-for-byte.
@@ -202,18 +202,18 @@ this already-public repo's own content -- never repoint them at proprietary code
 ## Agent visibility (Tab-cycle vs. dispatch-only)
 
 OpenCode's `mode:` field controls whether an installed agent shows up in the Tab-cycle
-switcher (`primary`), is reachable only via `@ mention` or an `engineering-manager`
+switcher (`primary`), is reachable only via `@ mention` or an `sefi-agents`
 dispatch (`subagent`), or both (`all` -- OpenCode's own default when `mode:` is unset).
 
 Live-observed (2026-08-18): with no `mode:` written, every converted agent defaulted to
-`all`, so all 14 -- every specialist alongside `engineering-manager` -- sat in the same
+`all`, so all 14 -- every specialist alongside `sefi-agents` -- sat in the same
 switcher as OpenCode's native `build`/`plan` agents. Nothing distinguished the one entry
 point from the ones it dispatches, and a direct switch to a specialist skips every gate
 that only runs on the dispatched path (`check-reply.sh`, `check-handoff.sh`,
 `ready-steps.sh`'s parallel cap) -- the same failure class as the `prompt-engineer`
 scope-creep bug that motivated `scope-boundary.md`.
 
-`install-opencode.sh` now writes `mode: primary` for `engineering-manager` and
+`install-opencode.sh` now writes `mode: primary` for `sefi-agents` and
 `mode: subagent` for the other 12, so the switcher shows one entry point and the
 specialists remain dispatchable exactly as before. This is enforcement, not a suggestion
 on top of the existing "always go through the EM" convention -- the other 12 are
