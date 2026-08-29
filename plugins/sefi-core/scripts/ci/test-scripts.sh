@@ -980,11 +980,11 @@ expect_bw() {
 }
 
 expect_bw 2 "sefi-agents: sed -i on a state file is blocked" \
-  engineering-manager "sed -i s/a/b/ state/foo.md"
+  sefi-agents "sed -i s/a/b/ state/foo.md"
 expect_bw 2 "qa-engineer: tee into a state file is blocked" \
   qa-engineer "echo hi | tee state/foo.md"
 expect_bw 0 "sefi-agents: an ordinary grep is allowed" \
-  engineering-manager "grep -rn TODO plugins/"
+  sefi-agents "grep -rn TODO plugins/"
 expect_bw 0 "software-engineer: sed -i is allowed (real Write access -- not this hook's concern)" \
   software-engineer "sed -i s/a/b/ src/foo.py"
 expect_bw 0 "knowledge-manager: sed -i is allowed (only MultiEdit denied, not Write)" \
