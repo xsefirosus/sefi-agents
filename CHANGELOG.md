@@ -3,6 +3,11 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.5.2] - 2026-08-29
+
+### Changed
+
+1. **Sefi-Agents branding and picker name** -- previously the primary orchestrator showed as engineering-manager everywhere (file, picker, routing). Two-step rename, both visual-only for routing: (a) plugins/sefi-core/agents/engineering-manager.md gained a Sefi-Agents prefix in description and Role header (You are Sefi-Agents (engineering-manager).) while keeping name: engineering-manager and the filename; (b) renamed the file itself to plugins/sefi-core/agents/sefi-agents.md with name: sefi-agents so every harness picker (opencode Tab, Claude mention, Codex marketplace, Hermes delegate_task) now shows Sefi-Agents. Updated roster.md, routing-table.md (One dispatcher (sefi-agents) and sefi-agents row), sefi-orchestration/SKILL.md roster, adapters/OPENCODE.md (mode: primary docs), install-opencode.sh (primary check now sefi-agents || engineering-manager for backward compat), and test-scripts.sh expectations. Agents remain 13, skills 13 (sefi-agents replaces engineering-manager in the roster count).
 ## [0.5.1] - 2026-08-28
 
 ### Added
