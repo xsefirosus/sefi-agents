@@ -1,0 +1,4 @@
+# missing-target fixture for validate-rule-presence.sh -- the row names a file that does
+# not exist under --base. The validator must exit 1 and name the missing target, never
+# silently pass a row whose source file it could not open (validate-rule-presence.sh:76-79).
+no-such-file.md	a sentence whose target file is absent

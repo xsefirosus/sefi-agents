@@ -1,0 +1,6 @@
+# whitespace-split-space fixture for validate-rule-presence.sh -- pins the space-only
+# separator half of the Finding: awk RS="" splits only on TRULY empty lines, so a
+# separator holding a lone space still joined two paragraphs before the normalizer got
+# its leading sed. sample.md holds the two halves of the registered sentence separated
+# by a single-space line; the row must MISS and the run must exit 1 naming sample.md.
+sample.md	The reviewer never merges on its own authority

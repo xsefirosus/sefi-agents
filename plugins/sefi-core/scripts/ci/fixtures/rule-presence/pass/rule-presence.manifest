@@ -1,0 +1,3 @@
+# pass fixture for validate-rule-presence.sh -- the sentence is present (and
+# soft-wrapped in the target, exercising the line-join normalization).
+sample.md	This exact sentence lives in the body of the sample file
