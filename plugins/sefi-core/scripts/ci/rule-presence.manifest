@@ -1,0 +1,99 @@
+# rule-presence.manifest -- load-bearing rule sentences that MUST stay present in the
+# repo tree. Consumed by validate-rule-presence.sh (wired into scripts/ci/run-all.sh).
+#
+# Format: one row per registered sentence, TAB-separated:
+#     <repo-relative-file><TAB><canonical rule sentence>
+# Lines beginning with '#' and blank lines are ignored.
+#
+# Normalization -- the registered sentence is normalized as one line; the target file
+# is normalized PARAGRAPH-LOCALLY (one blank-line-delimited block at a time):
+#   1. join soft-wrapped lines WITHIN a paragraph into one logical line (every run of
+#      whitespace, soft-wrap newlines included, becomes a single space) -- paragraph
+#      breaks are NOT bridged, so a sentence split by an inserted paragraph break stops
+#      matching. A paragraph break is any line with no non-whitespace content: a truly
+#      empty line OR a line holding only spaces/tabs (Markdown treats both the same);
+#   2. collapse remaining whitespace runs to a single space;
+#   3. strip leading/trailing whitespace;
+#   4. drop a single trailing '.' or ':';
+#   5. case-sensitive otherwise.
+# The check PASSES for a row when its normalized sentence is a substring of some
+# normalized paragraph of the target file. A missing target file or an empty manifest
+# is a failure.
+#
+# Registration rules:
+#   - Register only text that lives in a file BODY, or in a frontmatter line that no
+#     install transform rewrites. NEVER register a 'tools:' / 'disallowedTools:' /
+#     'tier:' / 'model:' value -- install-opencode.sh:199-236 rewrites exactly those.
+#   - Do not register a line containing ${CLAUDE_PLUGIN_ROOT}: install-opencode.sh
+#     rewrites that placeholder to a literal path in agent/skill/command files.
+#   - Every registered sentence must additionally survive the OpenCode agent transform
+#     (validate-rule-presence.sh --post-install <DEST>); skills/commands are copied
+#     verbatim so only the agent frontmatter transform is exercised.
+#
+# Reword rule: if a registered sentence is legitimately reworded in a source file
+# (e.g. retro-improve's <=3-sentence-per-file cap), its manifest row is updated in the
+# SAME commit as the source edit -- never left stale, never deleted to dodge the check.
+#
+# Coverage: every skills/*/SKILL.md (all 13 dirs) is represented. The 12 non-canonical
+# skill dirs each register their full anti-hallucination POINTER SENTENCE ("All factual
+# output follows the anti-hallucination skill: ..."). The 13th dir, anti-hallucination/
+# itself, carries no pointer, so it registers its canonical-source line instead ("This is
+# the one place the rule is stated in full"). backend-design/ and premortem/ ADDITIONALLY
+# register "User instructions always override this skill" -- a second load-bearing line in
+# those two files; those rows are extra coverage, never a substitute for the pointer row.
+# Reference-file and agent rules follow below.
+#
+# Belt-and-braces gap this closes: validate-skills.sh:42 only greps each SKILL.md for the
+# bare token 'anti-hallucination' anywhere in the file, so the full pointer SENTENCE (and
+# its exact wording) is otherwise unprotected -- gutting a pointer down to a bare token
+# leaves validate-skills.sh green. Registering the sentence here pins it. This holds only
+# while every pointer-bearing SKILL.md has its sentence row below; keep the two in sync.
+#
+# --post-install constraint: every row path below MUST live under 'plugins/sefi-core/'.
+# --post-install strips exactly that prefix to resolve rows against the tree
+# install-opencode.sh writes; a row outside that prefix is rejected (exit 1), never
+# guessed. A future row for a repo file outside plugins/sefi-core/ needs the resolver
+# taught that path first.
+#
+# Deviations from state/plan-astral-adoption.md Phase 1 step 1, each verified against the
+# named file at build time (the plan text was written before these files were re-read):
+#   - "consume-before-act" is NOT a human-checkpoint.md rule; it lives in
+#     loop-discipline.md:28 (the "four predecessor-earned rules" sentence, registered
+#     below against loop-discipline.md).
+#   - loop-discipline.md contains NO "five-move loop" sentence; the load-bearing loop
+#     rules registered instead are its stop-conditions rule and its
+#     SKIP/degrade/escalate rule (loop-discipline.md:9-13).
+#   - the envelope / check-handoff.sh-before-dispatch rule is NOT in scope-boundary.md;
+#     it lives in sefi-orchestration/SKILL.md:49,58,67,69 and is registered below
+#     against that file ("Write the handoff as an envelope ...", "A blocked envelope is
+#     fixed and re-checked, never dispatched anyway"). scope-boundary.md carries the
+#     related but distinct "belongs to another agent" / "not permission" rules, also
+#     registered below.
+plugins/sefi-core/skills/loop-engineering/SKILL.md	All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never guess
+plugins/sefi-core/skills/memory-protocol/SKILL.md	All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never guess
+plugins/sefi-core/skills/retro-improve/SKILL.md	All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never guess
+plugins/sefi-core/skills/terse-mode/SKILL.md	All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never guess
+plugins/sefi-core/skills/sefi-orchestration/SKILL.md	All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never guess
+plugins/sefi-core/skills/security-review/SKILL.md	All factual output follows the anti-hallucination skill: cite file:line or mark UNKNOWN, never guess
+plugins/sefi-core/skills/backend-design/SKILL.md	All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never guess
+plugins/sefi-core/skills/backend-design/SKILL.md	User instructions always override this skill
+plugins/sefi-core/skills/premortem/SKILL.md	All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never guess
+plugins/sefi-core/skills/premortem/SKILL.md	User instructions always override this skill
+plugins/sefi-core/skills/anti-hallucination/SKILL.md	This is the one place the rule is stated in full
+plugins/sefi-core/skills/focus/SKILL.md	All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never guess
+plugins/sefi-core/skills/frontend-design/SKILL.md	All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never guess
+plugins/sefi-core/skills/n8n-workflow-design/SKILL.md	All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never guess
+plugins/sefi-core/skills/technical-writing/SKILL.md	All factual output follows the anti-hallucination skill: every command, path, flag, and number is verified against the repo or an executed output -- or marked UNKNOWN, never guessed
+plugins/sefi-core/skills/sefi-orchestration/references/human-checkpoint.md	A loop, agent, or automation never auto-merges, never force-pushes, never deploys to production
+plugins/sefi-core/skills/sefi-orchestration/references/human-checkpoint.md	An autonomous retry budget hides a bad call inside more automation
+plugins/sefi-core/skills/sefi-orchestration/references/loop-discipline.md	A loop or repeated cycle obeys its own stop conditions, escalation thresholds, and state precedence rules exactly, every cycle, with no silent skip and no silent scope-widening
+plugins/sefi-core/skills/sefi-orchestration/references/loop-discipline.md	SKIP, degrade, and escalate are logged conclusions the loop reaches deliberately, never omissions it drifts into
+plugins/sefi-core/skills/sefi-orchestration/references/loop-discipline.md	The four predecessor-earned rules -- consume-before-act, non-retryable harness-limit notices, the metrics append after every verdict, and per-operation timeout classes -- are each a specific, previously-violated discipline rule now made explicit
+plugins/sefi-core/skills/sefi-orchestration/references/scope-boundary.md	Being unable to perform an action is not permission to perform it a different way
+plugins/sefi-core/skills/sefi-orchestration/references/scope-boundary.md	A deliverable that belongs to another agent is a contract violation even when it is correct, even when it is good
+plugins/sefi-core/skills/sefi-orchestration/SKILL.md	Write the handoff as an envelope and gate it before dispatching
+plugins/sefi-core/skills/sefi-orchestration/SKILL.md	A blocked envelope is fixed and re-checked, never dispatched anyway
+plugins/sefi-core/skills/sefi-orchestration/SKILL.md	Each stage's output file must be self-contained
+plugins/sefi-core/agents/qa-engineer.md	Apply the delete-the-line test: if reverting the change would not fail a test or visibly break the flow you exercised, it is not integrated -- REJECT as unwired
+plugins/sefi-core/agents/qa-engineer.md	THIS CODE IS BROKEN until executed evidence proves otherwise
+plugins/sefi-core/agents/qa-engineer.md	Every fix you PASS must leave a regression test that asserts the specific failure mode traced during the fix

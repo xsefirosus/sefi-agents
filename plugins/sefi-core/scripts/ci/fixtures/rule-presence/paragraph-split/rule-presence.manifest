@@ -1,0 +1,6 @@
+# paragraph-split fixture for validate-rule-presence.sh -- pins the Finding 3 fix.
+# sample.md holds the two halves of the registered sentence separated by a blank line.
+# A whole-file normalizer would bridge that blank line and FALSELY report OK; the
+# paragraph-local normalizer must NOT bridge it, so this row misses and the run exits 1
+# naming sample.md.
+sample.md	The reviewer never merges on its own authority
