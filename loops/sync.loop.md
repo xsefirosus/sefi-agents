@@ -39,7 +39,7 @@ never a CHANGELOG read as if it were a test result).
 ## Persistence
 state file: `state/sync.md` (committed, carries the 6-field resume block; one row
 per upgrade)
-metrics: append one row per qa-engineer verdict to `state/metrics.md` (target-path keyed)
+metrics: append one row per qa-engineer verdict to `state/metrics.md` (target-path keyed); the row's `route` column carries that dispatch's `${CLAUDE_PLUGIN_ROOT}/scripts/check-route.sh <harness> <tier> <session-record>` status (`unavailable` or `not-applicable` is expected on every harness today), or `n/a` when the row records no dispatch. If it ever returns `mismatch` (a future revision with a confirmed rollout format): stop, park the upgrade in `inbox/`, do not accept the run.
 outputs: PRs + `inbox/` for uncertainty (a major-version or otherwise breaking bump goes to
 `inbox/` instead of a direct PR)
 close_out: dispatch the knowledge-manager to file this cycle's durable observations to

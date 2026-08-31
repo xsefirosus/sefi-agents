@@ -20,7 +20,7 @@ stop condition: the proposed edit is <= 3 sentences per file, lands in a `manage
 
 ## Persistence
 state file: `state/retro-<date>.md` (committed; carries the 6-field resume block and the SKIP reason when nothing changed)
-metrics: read `state/metrics.md` as the scorecard; append the retro outcome row
+metrics: read `state/metrics.md` as the scorecard; append the retro outcome row with its `route` column set to `n/a` (a retro performs no dispatch, so `${CLAUDE_PLUGIN_ROOT}/scripts/check-route.sh` is not run for this row)
 ledger: read `state/retro-ledger.md` before selecting a target (churn guard, rejection memory, evidence debt), and append one row per decision at edit time, carrying the commit SHA that makes the edit revertible
 outputs: applied skill edits if `improvement.enabled: true`, else a proposal in `state/retro-<date>.md`; new skills go to `inbox/`
 close_out: dispatch the knowledge-manager to file this cycle's durable observations to `memory/daily/` (privacy-filtered, tier: trace), or log SKIP with a reason -- never neither. Rule: `skills/sefi-orchestration/references/close-out.md`
