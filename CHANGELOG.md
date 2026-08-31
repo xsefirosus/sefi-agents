@@ -3,6 +3,49 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [Unreleased] - 2026-08-30
+
+### Added
+
+1. **`release-tracking` skill + multi-surface release ledger** -- new skill
+   `plugins/sefi-core/skills/release-tracking/SKILL.md` with
+   `references/release-surfaces.md`, ported from `Demonbane18/astral-orchestrator`'s
+   `track-astral-releases` skill and its `release-ledger.py` (MIT): it reconciles six
+   independent publication surfaces (`plugin.json` version, `.claude-plugin/marketplace.json`
+   -- both `metadata.version` and `plugins[0].version` -- the `CHANGELOG.md` first
+   versioned heading, the git tag, the GitHub release, and the GitHub marketplace index)
+   against one
+   append-only evidence ledger at `state/release-ledger.md`, carrying astral's "common
+   false proof" column and its strict "say `partially released`, not `released`, until every
+   surface matches" gate. New validator
+   `plugins/sefi-core/scripts/ci/validate-release-ledger.sh` (POSIX sh, no `python3`, no
+   `jq`) hard-fails when two observed surfaces contradict within any one version group in
+   the ledger, when a latest-version row contradicts the on-disk source it names, or when
+   `marketplace.json`'s two version occurrences disagree with each other on disk; it also
+   exits 1 on a missing `--ledger`/`--root` value, an unrecognized `--opt=value` joined
+   option, or a `version` cell that is not an exact semver (the `norm_semver` match is
+   anchored end-to-end, so a near-miss like `0.5.2.1` / `0.6.0-rc1` / `1.2.3.4` is rejected
+   by name rather than silently truncated to a prefix and dropped from every check). It
+   accepts both spaced (`--ledger PATH`) and joined (`--ledger=PATH`) option forms and
+   skips GFM alignment-marker separator rows (`:---`, `:--:`, `---:`). It warns (non-fatal)
+   on any `unobserved` surface; wired into
+   `plugins/sefi-core/scripts/ci/run-all.sh` and
+   `release-tracking` added to `plugins/sefi-core/scripts/install-hermes.sh`'s `SKILLS=`
+   list. Fixtures under
+   `plugins/sefi-core/scripts/ci/fixtures/release-ledger/{ok,contradiction,incomplete}/`
+   with `test-scripts.sh` cases. Skills count 13 -> 14 in both READMEs. No `version` field
+   in `plugin.json` or `marketplace.json` changed. The backfilled ledger at
+   `state/release-ledger.md` records the six surfaces reconciled against `0.5.2`: five
+   carry observed `0.5.2` -- `plugin.json`, both `marketplace.json` occurrences, the
+   `CHANGELOG.md` first versioned heading, the `v0.5.2` git tag (local and `origin`), and
+   the GitHub marketplace index -- and `validate-release-ledger.sh` exits 0 with
+   `OK (latest 0.5.2, 5/6 surfaces observed, 1 warning(s))`. The single non-fatal warning
+   is `github-release`, genuinely `unobserved` because this repo has no GitHub releases
+   (`gh release list` is empty; `gh release view v0.5.2` returns `release not found`). An
+   orphaned `v0.5.3` tag that had briefly existed on HEAD while every version surface read
+   `0.5.2` was deleted from local and `origin`; that earlier hard-fail is retained in the
+   ledger's Notes as history, not erased.
+
 ## [0.5.2] - 2026-08-29
 
 ### Changed
