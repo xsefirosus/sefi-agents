@@ -1,0 +1,6 @@
+# fixture: a model-map.yml whose codex/mid value carries an injected JSON fragment.
+# check-route.sh must reject this at the tier-map trust boundary (exit 2, no JSON line),
+# never let it flow into emit().
+codex:
+  mid: gpt-5.6-terra"},"injected":"pwned
+  mid_reasoning: high

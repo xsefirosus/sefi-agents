@@ -88,6 +88,7 @@ with chat ("Here's the summary: ...").
 - Output-contract enforcement: discard excess beyond a subagent's contract; a dispatched
   agent's returned digest stays within `per_agent_return_tokens` (config/budget.yml).
 - Model routing: name every `model:`; an omitted model inherits the most expensive tier.
+- Route evidence: after each dispatch run `${CLAUDE_PLUGIN_ROOT}/scripts/check-route.sh <harness> <tier> <session-record>` and record its status in the `state/metrics.md` `route` column (`unavailable` / `not-applicable` is expected on every harness today); if it ever returns `mismatch` (a future revision with a confirmed rollout format), STOP, park the item in `inbox/`, never accept the run.
 - The orchestrator never edits files; unfinished work is written to `state/`, never
   carried in context.
 - Never open a file > 100 KB without a stated need; `rg` the needed slice instead.

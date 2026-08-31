@@ -1526,5 +1526,98 @@ else
   echo "  SKIPPED (jq not on PATH)"
 fi
 
+echo
+echo "=== check-route.sh (Phase 3: requested-vs-observed route evidence, reduced -- no session-record parser) ==="
+
+# check-route.sh is post-dispatch, not a CI validator -- it lives in scripts/, not
+# scripts/ci/, and is exercised here, never from run-all.sh's validators list.
+#
+# THE PARSER WAS STRIPPED. This version reads NO session record for ANY harness: every
+# real (non-`flexible`) resolved model returns `unavailable`, every `flexible` tier
+# returns `not-applicable`. `match` / `mismatch` / `invalid` remain in the documented
+# vocabulary (harness-actions.md, state/metrics.md) but the script has no code path that
+# produces them -- so there is nothing here to test for those three. The third positional
+# argument is an accepted-but-never-opened placeholder ("X" below).
+CRT="$CORE/scripts/check-route.sh"
+CRF="$CORE/scripts/ci/fixtures/check-route"
+
+# claude-code: the CLI reports no per-agent model/usage -> unavailable, nonzero.
+crt_out="$(sh "$CRT" claude-code mid X 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"unavailable"'*)
+    [ "$crt_rc" -ne 0 ] && ok "claude-code mid X -> unavailable, exit $crt_rc" \
+      || bad "claude-code reported unavailable but exited 0" ;;
+  *) bad "claude-code did not report unavailable: $crt_out" ;;
+esac
+
+# codex: a real resolved model (gpt-5.6-terra) but the rollout format is unconfirmed in
+# this repo -> unavailable, nonzero, reason codex-rollout-format-unconfirmed.
+crt_out="$(sh "$CRT" codex mid X 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"unavailable"'*'codex-rollout-format-unconfirmed'*)
+    [ "$crt_rc" -ne 0 ] && ok "codex mid X -> unavailable / codex-rollout-format-unconfirmed, exit $crt_rc" \
+      || bad "codex unavailable but exit 0" ;;
+  *) bad "codex did not report unavailable / codex-rollout-format-unconfirmed: $crt_out" ;;
+esac
+
+# opencode: every tier resolves to the 'flexible' sentinel (model-map.yml) -> not-applicable, exit 0.
+crt_out="$(sh "$CRT" opencode mid X 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"not-applicable"'*)
+    [ "$crt_rc" -eq 0 ] && ok "opencode mid X -> not-applicable, exit 0" \
+      || bad "opencode not-applicable but nonzero exit $crt_rc" ;;
+  *) bad "opencode did not report not-applicable: $crt_out" ;;
+esac
+
+# hermes: every tier resolves to 'flexible' too -> not-applicable, exit 0.
+crt_out="$(sh "$CRT" hermes mid X 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"not-applicable"'*)
+    [ "$crt_rc" -eq 0 ] && ok "hermes mid X -> not-applicable, exit 0" \
+      || bad "hermes not-applicable but nonzero exit $crt_rc" ;;
+  *) bad "hermes did not report not-applicable: $crt_out" ;;
+esac
+
+# A non-printable character in ANY argument -> exit 2, and NO JSON status line.
+crt_out="$(sh "$CRT" codex "$(printf 'mid\007')" X 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status"'*) bad "a non-printable arg reached a JSON status line -- must exit 2, no JSON: $crt_out" ;;
+  *)
+    [ "$crt_rc" -eq 2 ] && ok "a non-printable arg -> exit 2, no JSON line" \
+      || bad "a non-printable arg expected exit 2, got $crt_rc: $crt_out" ;;
+esac
+
+# An unknown harness -> exit 2, and NO JSON status line.
+crt_out="$(sh "$CRT" frobnicate mid X 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status"'*) bad "an unknown harness reached a JSON status line -- must exit 2, no JSON: $crt_out" ;;
+  *)
+    [ "$crt_rc" -eq 2 ] && ok "an unknown harness -> exit 2, no JSON line" \
+      || bad "an unknown harness expected exit 2, got $crt_rc: $crt_out" ;;
+esac
+
+# A usage error (wrong arg count) is exit 2, not a JSON status line.
+expect_code 2 "check-route.sh with too few args is a usage error" \
+  sh "$CRT" codex mid
+
+# EXPECTED_MODEL / EXPECTED_EFFORT gate (MEDIUM 1): a malformed config/model-map.yml value
+# (injected JSON) must be rejected at the tier-map trust boundary -- exit 2, NO JSON line.
+# check-route.sh no longer takes --map, so stand up a throwaway scripts/ + config/ pair and
+# let the copied model-for.sh resolve against the malformed fixture map via its own
+# $HERE/../config/model-map.yml. This is the reduced replacement for the removed FIX B case.
+GATEDIR="$(mktemp -d)"
+mkdir -p "$GATEDIR/scripts" "$GATEDIR/config"
+cp "$CRT" "$GATEDIR/scripts/check-route.sh"
+cp "$CORE/scripts/model-for.sh" "$GATEDIR/scripts/model-for.sh"
+cp "$CRF/malformed-map/model-map.yml" "$GATEDIR/config/model-map.yml"
+crt_out="$(sh "$GATEDIR/scripts/check-route.sh" codex mid X 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status"'*) bad "malformed model-map value reached a JSON status line -- must exit 2 with no JSON: $crt_out" ;;
+  *)
+    [ "$crt_rc" -eq 2 ] && ok "malformed model-map value -> exit 2, no JSON line" \
+      || bad "malformed model-map value expected exit 2, got $crt_rc: $crt_out" ;;
+esac
+rm -rf "$GATEDIR"
+
 if [ "$fail" -ne 0 ]; then echo "test-scripts: $fail failed, $pass passed"; exit 1; fi
 echo "test-scripts: OK ($pass passed)"

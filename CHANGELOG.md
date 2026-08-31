@@ -3,6 +3,72 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [Unreleased] - 2026-08-31
+
+### Added
+
+1. **Runtime route-evidence assertion (`check-route.sh`), reduced scope** -- new
+   post-dispatch check, `plugins/sefi-core/scripts/check-route.sh` (bash shebang, POSIX
+   body; in `scripts/`, not `scripts/ci/` -- not a CI validator, not on `run-all.sh`'s
+   list). It resolves a requested tier to a concrete model + reasoning effort through the
+   one resolver (`scripts/model-for.sh` -> `config/model-map.yml`), gates that pair
+   against a strict allowlist (a resolved model that is neither `flexible` nor a bare
+   `^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$` identifier, or a resolved effort outside the
+   allowlist, is a usage error -- exit 2, no JSON -- closing an injection path from a
+   malformed `config/model-map.yml`), and emits one compact JSON line
+   `{status, reason, expected_model, expected_effort, observed_model, observed_effort}`.
+   **It reads NO session record for any harness.** `unavailable` for every harness whose
+   tier resolves to a real model (claude-code, codex, hermes, opencode -- each with a
+   harness-specific reason; codex's is `codex-rollout-format-unconfirmed`);
+   `not-applicable` when the tier resolves to the `flexible` sentinel (opencode / hermes
+   today). Exit 0 only on `not-applicable`; non-zero on `unavailable`; exit 2 (no JSON)
+   on a usage error (bad arg count, non-printable char in any argument, unknown harness).
+   The 3rd positional argument is an accepted-but-never-opened placeholder. No network
+   calls, no write side effects.
+2. **Five-state status vocabulary, documented** -- `match` / `mismatch` / `invalid` /
+   `unavailable` / `not-applicable` are defined verbatim in
+   `skills/sefi-orchestration/references/harness-actions.md` and `state/metrics.md`.
+   `match` / `mismatch` / `invalid` are **reserved for a future revision** with a
+   confirmed rollout format and a real JSON parser; `check-route.sh` has no code path
+   that produces them today. An earlier draft shipped a rollout parser here; it was
+   stripped because no harness has a confirmed rollout format in this repo and every
+   parser variant tried had a fail-open shape (a decoy record could report `match` on a
+   downgraded run).
+3. **"Requested vs observed route" section in `harness-actions.md`** -- one row per
+   harness in the single place the cross-runtime mapping lives. Stated honestly: Claude
+   Code exposes no per-agent model/token readback; Codex's rollout format, sessions dir,
+   and thread-id env are undocumented in `adapters/CODEX.md` / `.codex/config.toml`;
+   OpenCode and Hermes tiers resolve to `flexible`. Net result, stated plainly: Phase 3
+   ships with NO live route comparison on any of the four harnesses -- every call returns
+   `unavailable` or `not-applicable`. Codex is the first candidate for a real parser once
+   its adapter doc lands. This is the expected outcome, not a defect.
+4. **`route` column in `state/metrics.md`** -- the schema
+   `| date | target-path | loop | verdict | retries | note |` gains a 7th `| route |`
+   column carrying the per-run `check-route.sh` status (`unavailable` / `not-applicable`
+   today; `match` / `mismatch` / `invalid` reserved), or `n/a` for a row with no
+   dispatch. Header, separator, and top comment updated in both `state/metrics.md` and
+   `plugins/sefi-core/templates/state/metrics.md` (the copy `/sefi:init` and
+   `test-integration.sh` use); every existing row set to `n/a`. `skills/retro-improve/`
+   reads `metrics.md` by column header name / prose, not by positional index, so it is
+   unaffected; `test-integration.sh`'s metrics-append line now writes the 7th field.
+   `skills/loop-engineering/SKILL.md`'s schema string synced to 7 columns. No `version`
+   field changed.
+5. **Wiring** -- `check-route.sh` is referenced (with the
+   `${CLAUDE_PLUGIN_ROOT}/scripts/check-route.sh` prefix `validate-script-refs.sh`
+   requires) from the new `harness-actions.md` section, from
+   `skills/sefi-orchestration/references/close-out.md`, from a `## Discipline` bullet in
+   `skills/sefi-orchestration/SKILL.md`, and from the `## Persistence` move of the three
+   loop specs (`loops/{morning-triage,sync,weekly-retro}.loop.md` and their
+   `templates/loops/` copies), whose `metrics:` line now carries the `route` column. Each
+   of those mentions is worded so it does not promise a STOP-on-`mismatch` the current
+   script cannot trigger: the STOP-and-park rule is stated as applying "if it ever
+   returns `mismatch` (a future revision)". `model-for.sh` keeps the `--` end-of-options
+   guard added for this work. Fixtures under
+   `plugins/sefi-core/scripts/ci/fixtures/check-route/` are reduced to `malformed-map/`
+   (the only one the reduced `test-scripts.sh` check-route block references); that block
+   asserts the two live verdicts, the exit-2 usage errors, and the model-map trust-boundary
+   gate.
+
 ## [0.5.2] - 2026-08-29
 
 ### Changed

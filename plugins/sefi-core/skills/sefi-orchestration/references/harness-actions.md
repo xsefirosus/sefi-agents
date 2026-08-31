@@ -76,3 +76,51 @@ confirm against their adapter docs before assuming more overlap than the table s
 - Codex: `codex exec`.
 - Hermes: HTTP to its local gateway; its OpenAI-compatible responses carry a real `usage`
   block -- record it.
+
+## Requested vs observed route (post-dispatch route-evidence assertion)
+
+After a dispatch, `${CLAUDE_PLUGIN_ROOT}/scripts/check-route.sh <harness> <tier>
+<session-record-placeholder>` resolves the model + reasoning effort the tier map asked
+for (through `${CLAUDE_PLUGIN_ROOT}/scripts/model-for.sh` -> `config/model-map.yml`, the
+single resolver), gates that pair against a strict allowlist, and reports one of two
+verdicts. This is the one place that per-harness mapping lives; adapters point here.
+
+**This version reads NO session record for any harness.** An earlier revision shipped a
+rollout parser here; it was stripped because no harness has a confirmed rollout format in
+this repo and every parser variant tried had a fail-open shape (a decoy record could make
+a downgraded run report `match`). The third argument is an accepted-but-never-opened
+placeholder. The parser returns only in a future revision that has a real, documented
+format.
+
+Five states are the documented vocabulary. This version emits only the last two:
+- `match` -- observed model AND effort equal the requested route. **Reserved: not emitted
+  by this version.**
+- `mismatch` -- a real requested route, but the record shows a different one; the
+  orchestrator STOPS and reports to `inbox/` rather than accepting a downgraded run.
+  **Reserved: not emitted by this version.** If a future revision ever returns it, that
+  STOP-and-park rule applies.
+- `invalid` -- a session record is present but off its documented schema; fail noisily, a
+  field is never guessed. **Reserved: not emitted by this version.**
+- `unavailable` -- the harness exposes no route readback this repo can trust. The result
+  for EVERY harness whose tier resolves to a real (non-`flexible`) model today.
+- `not-applicable` -- the requested tier resolves to the `flexible` sentinel
+  (`config/model-map.yml:87-89` opencode, `:106-108` hermes): there is no requested
+  model id, so a comparison is undefined. Without this state a naive comparator would
+  false-alarm on every OpenCode/Hermes dispatch.
+
+Exit code: 0 only on `not-applicable`; non-zero on `unavailable`; exit 2 (no JSON) on a
+usage error.
+
+| Harness | Where an observed route would live (future) | State today | Why |
+|---|---|---|---|
+| Claude Code | nothing -- the CLI reports no per-agent model or token usage (see the Headless invocation note above: "The CLI reports no token usage") | `unavailable` (reason `harness-exposes-no-route-readback`) | no route readback exists on this harness, by design |
+| Codex | the session rollout `rollout-*-<thread-id>.jsonl` under `${CODEX_HOME:-~/.codex}/sessions` (technique adapted from astral-orchestrator `check-primary.py` lines 82-101, MIT: match rollout *filenames* only, never read rollout contents) | `unavailable` (reason `codex-rollout-format-unconfirmed`) | `CODEX_THREAD_ID`, that sessions directory, and the rollout JSON shape are NOT documented in `adapters/CODEX.md` or `.codex/config.toml`. Per this file's gap rule (lines 44-47) the cell stays UNKNOWN and `check-route.sh` opens nothing; a real parser returns only once `adapters/CODEX.md` documents the format. |
+| OpenCode | a session record -- location and format | `not-applicable` | `adapters/OPENCODE.md` documents no session-record location/format, so that cell stays UNKNOWN; and every OpenCode tier resolves to `flexible` (`config/model-map.yml:87-89`), so `check-route.sh` short-circuits to `not-applicable` regardless. |
+| Hermes | the OpenAI-compatible `usage` block carries tokens (Headless invocation note above), but not a model readback | `not-applicable` (`unavailable` if a tier is ever pinned to a real id) | model readback is UNKNOWN in `adapters/HERMES.md`; and every Hermes tier resolves to `flexible` (`config/model-map.yml:106-108`), so `check-route.sh` returns `not-applicable` today. |
+
+Honest net result: Phase 3 ships with NO live route comparison on any of the four
+harnesses. Every call returns `unavailable` or `not-applicable`. `match` / `mismatch` /
+`invalid` are reserved for a future revision with a confirmed rollout format and a real
+JSON parser -- Codex is the first candidate. This is the expected outcome, not a defect:
+the documented five-state vocabulary and the honest `unavailable` / `not-applicable`
+verdicts are the deliverable.
