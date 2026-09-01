@@ -15,3 +15,9 @@ per_agent_return_tokens_target: 150   # soft target -- check-reply.sh notes (doe
                                        # cap above. Every agent should aim here first; 200 is
                                        # the ceiling for when the job genuinely needs more,
                                        # not the default to write toward.
+benchmark_per_run_usd_cap: 15.00   # operator-tracked ceiling for ONE run of the blinded
+                                    # paired A/B benchmark (docs/BUDGET.md, benchmarks/).
+                                    # NOT enforced by budget-check.sh and NOT in any scope
+                                    # it checks; nothing in the repo blocks a benchmark run
+                                    # that exceeds it yet. Verified after the fact from the
+                                    # summed trial cost_usd on the scorecard.

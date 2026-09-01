@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "note": "Three frozen benchmark cases. allowed_paths and immutable_paths are ADVISORY documentation of what each case is meant to permit -- in THIS version of the harness NOTHING enforces them: there is no filesystem sandbox, no out-of-process snapshot/diff, no post-arm path check. A future sandboxed runner MUST enforce them (see benchmarks/README.md, 'Trial integrity -- NOT IMPLEMENTED in this version'). case_fingerprint = first 64 hex of sha256(cat <prompt_file> <acceptance_check>) -- the two-file case definition (prompt + check ONLY). It is retained purely as scorecard.py's control/treatment pairing key: the scorer only checks that a paired control and treatment record carry the SAME value, it never recomputes it from disk. If a case is deliberately regoldened (its prompt or check edited), recompute the value by hand -- see benchmarks/README.md, 'Recomputing a case_fingerprint'. Every acceptance_check exits 1 against the starting sandbox file and exits 0 only after a trial completes the task. The operator resolves and runs every acceptance_check (and its check_<id>.sh) from a PRISTINE copy of benchmarks/cases/ outside the trial worktree -- never the arm's copy in its own worktree -- see benchmarks/README.md and plugins/sefi-core/skills/run-sefi-benchmark/SKILL.md.",
+  "cases": [
+    {
+      "case_id": "sh-strict-mode",
+      "case_fingerprint": "30e03faf9e99aa212a8cff2761e0653d392dd4552cc126292c4c3784d3ed3d44",
+      "prompt_file": "benchmarks/prompts/sh-strict-mode.md",
+      "allowed_paths": ["benchmarks/sandbox/deploy.sh"],
+      "immutable_paths": [
+        "benchmarks/prompts/sh-strict-mode.md",
+        "benchmarks/cases/check_sh-strict-mode.sh",
+        "benchmarks/cases.json"
+      ],
+      "acceptance_check": "sh benchmarks/cases/check_sh-strict-mode.sh ."
+    },
+    {
+      "case_id": "json-trailing-newline",
+      "case_fingerprint": "794b70fc9de0787bb05107a2a456b2ea6f855c2e4e26aa4541a96d5de3a6da69",
+      "prompt_file": "benchmarks/prompts/json-trailing-newline.md",
+      "allowed_paths": ["benchmarks/sandbox/config.json"],
+      "immutable_paths": [
+        "benchmarks/prompts/json-trailing-newline.md",
+        "benchmarks/cases/check_json-trailing-newline.sh",
+        "benchmarks/cases.json"
+      ],
+      "acceptance_check": "sh benchmarks/cases/check_json-trailing-newline.sh ."
+    },
+    {
+      "case_id": "notes-single-h1",
+      "case_fingerprint": "9d913ff4f7df7b575d0cecbcaf1bc3a7eda3916abf661c5e766181ded578e8ba",
+      "prompt_file": "benchmarks/prompts/notes-single-h1.md",
+      "allowed_paths": ["benchmarks/sandbox/NOTES.md"],
+      "immutable_paths": [
+        "benchmarks/prompts/notes-single-h1.md",
+        "benchmarks/cases/check_notes-single-h1.sh",
+        "benchmarks/cases.json"
+      ],
+      "acceptance_check": "sh benchmarks/cases/check_notes-single-h1.sh ."
+    }
+  ]
+}
