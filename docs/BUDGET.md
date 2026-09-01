@@ -24,6 +24,48 @@ off.
   mid-loop; `--by-agent` for per-adapter spend). ccusage is never required -- the
   `--spent` fallback keeps the zero-dependency install intact.
 
+## Benchmark runs are out-of-loop and NOT budget-enforced
+
+The blinded paired A/B benchmark (`plugins/sefi-core/skills/run-sefi-benchmark/SKILL.md`,
+`benchmarks/`) is **not** covered by `budget-check.sh` and is outside every scope it
+checks -- `per_run_usd_cap: 0.50`, `daily_usd_cap: 2.00`, `per_dispatch_usd_cap`. A real
+run pairs each frozen case against both a full-chain arm and a strong-single-model
+control, across two harnesses, with repetitions and a blinded judge -- it exceeds the
+interactive per-run cap by design, the same way the predecessor's measured full pilot did.
+
+Be honest about what bounds it and what does not:
+
+- **`benchmark_per_run_usd_cap: 15.00` in `config/budget.yml` is an operator-tracked
+  target, not an enforced cap.** Nothing in the repo blocks a benchmark run that spends
+  more -- there is no code path that reads this key and refuses a run. It exists so the
+  intended ceiling is written down in one place. Rationale for the number: up to ~24
+  paired arm-runs (3 cases x 2 arms x 2 harnesses x 2 repetitions) plus one read-only
+  judge pass per trial, each arm a full multi-step chain or a high-tier solo, puts a run
+  in the single-digit-to-low-double-digit dollar range.
+- **Verified after the fact, from the run's own artifacts.** Each trial records an
+  optional `cost_usd`. When every scored trial carries it, `benchmarks/scorecard.py`
+  prints `run cost $X.XX vs ceiling $15.00 [config/budget.yml]: WITHIN` (or `OVER`); when
+  any scored trial lacks it, `run cost: unknown (cost_usd missing on N scored trial(s))
+  -- ceiling $15.00 [config/budget.yml] not checkable`. (Same strings in
+  `docs/METRICS-PROVENANCE.md`, `plugins/sefi-core/skills/run-sefi-benchmark/SKILL.md`,
+  and `benchmarks/README.md`.) The operator compares that line to the 15.00 target once
+  the run completes. There is no automated block, only this post-hoc check.
+- **Explicit per-invocation authorization** is the real gate. The operator approves the
+  specific trial matrix and its token/time spend before any model call; a dry-run plan
+  (zero model calls) is produced first. `loops/*.loop.md` must never invoke the benchmark
+  skill -- and nothing mechanically enforces that either, it is model-compliance prose
+  backed by the authorization gate.
+- Cadence: **never more than one benchmark run per day, AND only with explicit
+  per-invocation authorization.** There is no standing pre-authorization -- a day passing
+  does not auto-approve a run, and yesterday's approval never carries over. Same statement
+  in `plugins/sefi-core/skills/run-sefi-benchmark/SKILL.md` and
+  `docs/METRICS-PROVENANCE.md`.
+- A benchmark run whose reviewer verdict is REJECT is retained with an `INVALID.md`,
+  never deleted and never silently re-run (see `state/retro-ledger.md`).
+
+`docs/METRICS-PROVENANCE.md` records where benchmark numbers are cited and that the
+harness runs out-of-loop.
+
 ## The token-discipline stack (lever order -- biggest first)
 1. Code and scope minimization -- the software-engineer climbs the minimization ladder and
    builds less. This is the biggest lever; everything below is smaller.
