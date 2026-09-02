@@ -85,14 +85,26 @@ cited from here with the run directory named. Rules for that evidence:
   benchmarks/runner/"). The **runner process, not any arm**, writes every field of every
   trial record: `benchmarks/runner/record.py` builds records from runner-observed values
   only and never reads arm stdout. Route evidence comes only from the runner shelling out
-  to check-route.sh (an out-of-process helper); no arm-written value is a scoring input.
+  to check-route.sh (an out-of-process helper); no arm-written *value* is a scoring input.
   Each trial runs in a real `git clone` sandbox with its own object store (never a
   `git worktree`), and an out-of-process binary-mode snapshot + diff flags any change
-  outside the case `allowed_paths`. `benchmarks/runner/integrity.verify` is a fail-closed
-  AND of those checks (`try/except -> False`); it is the ONLY thing that sets
-  `integrity_ok`, and only to `true`. An aborted run (budget pre-flight or running
-  ceiling) writes `ABORTED.md` and never produces `trials.jsonl`, so partial data is
-  structurally unscoreable. `scorecard.py` then filters to `integrity_ok is True`.
+  outside the case `allowed_paths` against a **dedicated once-per-run baseline clone**.
+  `benchmarks/runner/integrity.verify` is a fail-closed AND of those checks
+  (`try/except -> False`); it is the ONLY thing that sets `integrity_ok`, and only to
+  `true`. An aborted run -- budget pre-flight, running cost ceiling, or a fatal mid-run
+  error -- writes `ABORTED.md`, removes any raced-in `trials.jsonl`, and never produces
+  one; the runner also refuses to finalize over a pre-existing `trials.jsonl`. So partial
+  data is structurally unscoreable and `scorecard.py` then filters to `integrity_ok is
+  True`.
+- **Honest limits.** `model_calls` is emitted as a floor of `1` (one arm invocation) to
+  satisfy the scorer's `model_calls >= len(route_evidence)` invariant -- in this version
+  NO harness reports a per-call count, so `model_calls_delta` between arms is not a
+  meaningful measured quantity until per-call telemetry is wired. And wholesale artifact
+  forgery -- an arm dropping its own `trials.jsonl` on disk -- is not prevented without
+  OS-level isolation (a container), which this version does not use; the mitigations are
+  that arm scratch is isolated from the results dir, the results-dir path is never
+  disclosed to the arm, and the runner refuses to finalize over a `trials.jsonl` it did
+  not write.
 - Positive route capture requires check-route.sh, which lives on
   `feat/route-evidence-live` @ `8c1779c` and is NOT on the `feat/benchmark-runner`
   branch. Until that is merged (or the branch rebased onto it), route capture fails

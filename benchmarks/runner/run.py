@@ -16,8 +16,18 @@ and NEVER creates ``<out>/trials.jsonl`` -- so an aborted run has nothing to sco
 a clean, within-budget completion of the full matrix copies
 ``trials.partial.jsonl -> trials.jsonl`` (write-temp-then-rename).
 
-``run.py`` exits 0 on a completed OR a cleanly aborted run; non-zero ONLY on a usage /
-argument error.
+``run.py`` exits 0 on a completed OR a cleanly aborted run (budget, cost-ceiling, or a
+fatal mid-run error -- all write ``ABORTED.md``); non-zero ONLY on a usage / argument
+error (a bad ``--strategies`` / ``--harness``, an unknown case, etc. -- exit 2, no output
+dir created).
+
+Trust boundary, stated honestly: no arm-written VALUE is a scoring input, and the arm is
+never told the results-dir path (``arms.py`` isolates all arm scratch). Wholesale
+artifact forgery -- an arm dropping its own ``trials.jsonl`` somewhere -- is NOT prevented
+without OS-level isolation (a container), which this version does not use. Mitigations:
+arm scratch is isolated from the results dir; the results-dir path is never disclosed to
+the arm; a stale ``trials.jsonl`` is removed at startup AND the runner refuses to finalize
+over a pre-existing ``trials.jsonl``.
 
 Standard library only: argparse, json, math, os, re, shutil, subprocess, sys, tempfile,
 pathlib.
@@ -43,7 +53,7 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from benchmarks.runner import integrity  # noqa: E402
-from benchmarks.runner.arms import run_arm  # noqa: E402
+from benchmarks.runner.arms import _HARNESSES, run_arm  # noqa: E402
 from benchmarks.runner.record import build_record  # noqa: E402
 from benchmarks.runner.route import capture_route  # noqa: E402
 from benchmarks.runner.sandbox import resolve_git, sandbox  # noqa: E402
@@ -59,6 +69,12 @@ _CHAIN_STRATEGIES = ("sefi-chain", "sefi-chain-sequential")
 # record.py emits exactly one route lane per trial; scorecard.py requires
 # ``model_calls >= len(route_evidence)`` (scorecard.py:230).
 _ROUTE_LANES_PER_TRIAL = 1
+
+# No harness exposes a per-call model-call count in this version. This is a PLACEHOLDER,
+# not an observation: ``model_calls`` is emitted only as a floor (see below) so the record
+# satisfies the scorer's route-lane invariant. ``model_calls_delta`` in the scorecard is
+# therefore a difference of two constants, not a measured quantity.
+_MODEL_CALLS_UNKNOWN = 0
 
 _CHECK_SCRIPT_RE = re.compile(r"(\S+\.sh)")
 
@@ -148,11 +164,12 @@ def resolve_check_script(case: dict) -> Path:
     """Absolute path to the case's acceptance-check script from the PRISTINE base
     checkout -- ``<repo-root>/<relpath>`` -- NEVER the sandbox copy.
 
-    The arm never had write access to the base checkout, so an arm cannot poison the
-    check it will be graded by (cross-session privilege-escalation risk). The relpath is
-    taken from the case ``acceptance_check`` string (e.g.
-    ``sh benchmarks/cases/check_sh-strict-mode.sh .``); the arm-authored check string is
-    NEVER executed from the trial worktree.
+    The check script is resolved from the base checkout by absolute path, with a
+    ``relative_to`` escape guard, and run as an argv list (never a shell string, never the
+    sandbox copy). The relpath is taken from the case ``acceptance_check`` string (e.g.
+    ``sh benchmarks/cases/check_sh-strict-mode.sh .``); the arm-authored check string in
+    the trial worktree is NEVER executed. Base-checkout integrity itself is not enforced
+    without OS-level isolation.
     """
     ac = str(case.get("acceptance_check", ""))
     m = _CHECK_SCRIPT_RE.search(ac)
@@ -211,11 +228,24 @@ def _write_manifest(path: Path, manifest: dict) -> None:
     )
 
 
-def _abort(out_dir: Path, reason: str) -> None:
-    """Write ``<out>/ABORTED.md``. The caller must NOT create ``trials.jsonl``."""
+def _abort(out_dir: Path, reason: str, *, final: Path | None = None) -> None:
+    """Write ``<out>/ABORTED.md`` and guarantee no scoreable ``trials.jsonl`` survives.
+
+    If ``final`` exists (a stale artifact, or an arm raced a write into the results dir),
+    it is unlinked here and the removal is noted in ``ABORTED.md``. The caller must NOT
+    create ``trials.jsonl`` after an abort.
+    """
+    removed_note = ""
+    if final is not None and final.exists():
+        final.unlink()
+        removed_note = (
+            f"\nA pre-existing `{final.name}` was found and REMOVED -- an aborted run is\n"
+            "never scoreable, and the runner never finalizes over a file it did not write.\n"
+        )
     (out_dir / "ABORTED.md").write_text(
         "# benchmark run aborted\n\n"
-        f"reason: {reason}\n\n"
+        f"reason: {reason}\n"
+        f"{removed_note}\n"
         "No `trials.jsonl` was produced. `trials.partial.jsonl` (if present) holds only\n"
         "the trials that completed before the abort and is NOT scoreable.\n",
         encoding="utf-8",
@@ -240,8 +270,16 @@ def run_trial(
     tier: str,
     pinned_ref: str,
     check_script: Path,
+    ref_manifest: dict,
 ) -> dict:
-    """Execute one ``case x strategy x trial`` and return its runner-written record."""
+    """Execute one ``case x strategy x trial`` and return its runner-written record.
+
+    ``ref_manifest`` is the cached known-good baseline: ``snapshot()`` of a DEDICATED
+    clean ``sandbox()`` clone at ``pinned_ref``, computed ONCE per run by ``main()`` and
+    reused for every trial. Integrity check 1 (``pre == ref``) then genuinely catches a
+    per-trial clone that came out different from that baseline (a corrupted clone, an
+    autocrlf leak, a disk fault) -- it is no longer a by-construction tautology.
+    """
     case_id = case["case_id"]
     trial_id = f"{case_id}-{strategy}-t{trial_index}"
     allowed_paths = list(case.get("allowed_paths", []))
@@ -249,13 +287,6 @@ def run_trial(
 
     with sandbox(_REPO_ROOT, pinned_ref) as sb:
         pre = snapshot(sb)
-        # ref manifest: a fresh ``git clone`` checked out at ``pinned_ref`` with
-        # ``* -text`` + ``eol=lf`` and no arm yet run IS the pinned-ref state, so the
-        # ref manifest == the pre-run snapshot of the clean clone. Written as a distinct
-        # artifact so a future runner can compute it independently (e.g. a cached golden
-        # manifest) and give integrity check 1 real teeth; here the equality is
-        # by-construction and check 1 catches only a sandbox that was NOT a clean clone.
-        ref_manifest = dict(pre)
         _write_manifest(out_dir / f"pre-{trial_id}.manifest", pre)
         _write_manifest(out_dir / f"ref-{trial_id}.manifest", ref_manifest)
 
@@ -297,12 +328,11 @@ def run_trial(
             pre, ref_manifest, post, allowed_paths, route_result
         )
 
-    # C1: synthetic floor to satisfy the route-lane invariant
-    # (scorecard.py:230, model_calls >= len(route_evidence)). A mock trial makes zero
-    # real model calls and no current harness wrapper reports a count, so the observed
-    # count is 0; real runs use harness-reported counts.
-    observed_model_calls = 0
-    model_calls = max(observed_model_calls, _ROUTE_LANES_PER_TRIAL)
+    # SYNTHETIC FLOOR, not a measurement: no harness reports a per-call count in this
+    # version, so model_calls is emitted only as a floor of 1 (one arm invocation) to
+    # satisfy the scorer's route-lane invariant (scorecard.py:230,
+    # model_calls >= len(route_evidence)). See _MODEL_CALLS_UNKNOWN.
+    model_calls = max(_MODEL_CALLS_UNKNOWN, _ROUTE_LANES_PER_TRIAL)
 
     return build_record(
         trial_id=trial_id,
@@ -356,6 +386,11 @@ def main(argv: list[str] | None = None) -> int:
     bad = [s for s in strategies if s not in _STRATEGIES]
     if not strategies or bad:
         parser.error(f"--strategies must be a comma list from {','.join(_STRATEGIES)}; bad: {bad}")
+
+    # Validate --harness HERE (usage error: exit 2, no output dir created), alongside
+    # --strategies -- not deep inside run_arm after the out dir and manifests exist.
+    if args.harness not in _HARNESSES:
+        parser.error(f"--harness must be one of {','.join(_HARNESSES)}; got {args.harness!r}")
 
     case_ids = [c.strip() for c in args.cases.split(",") if c.strip()]
     if not case_ids:
@@ -414,6 +449,22 @@ def main(argv: list[str] | None = None) -> int:
             out_dir,
             f"budget pre-flight: {BUDGET_KEY} in config/budget.yml is absent, "
             "non-finite, or <= 0 -- no run beats an unbounded run",
+            final=final,
+        )
+        return 0
+
+    est = float(args.est_cost_per_trial)
+
+    # COST-CEILING pre-flight (fail-closed): a REAL run (no --mock-arm) with a
+    # non-positive --est-cost-per-trial has NOTHING to accumulate, so the running ceiling
+    # below is inert -- the $cap would never bind. Refuse it. A --mock-arm run (zero
+    # spend by construction) may keep 0.
+    if mock_arm is None and est <= 0:
+        _abort(
+            out_dir,
+            f"a real run requires a positive --est-cost-per-trial so the ${cap:.2f} "
+            "ceiling can bind (a --mock-arm run may pass 0)",
+            final=final,
         )
         return 0
 
@@ -431,49 +482,74 @@ def main(argv: list[str] | None = None) -> int:
         },
     )
 
-    est = float(args.est_cost_per_trial)
     running_total = 0.0
     aborted = False
-    with partial.open("w", encoding="utf-8", newline="\n") as fh:
-        for case in cases:
-            if aborted:
-                break
-            for strategy in strategies:
+    try:
+        # FIX 7a: one DEDICATED clean clone at pinned_ref, snapshotted ONCE per run, is
+        # the known-good baseline reused for every trial's integrity check 1. Not a
+        # per-trial tautology -- it catches a per-trial clone that came out different.
+        with sandbox(_REPO_ROOT, pinned_ref) as ref_sb:
+            ref_manifest = snapshot(ref_sb)
+        _write_manifest(out_dir / "ref.manifest", ref_manifest)
+
+        with partial.open("w", encoding="utf-8", newline="\n") as fh:
+            for case in cases:
                 if aborted:
                     break
-                for trial_index in range(1, args.trials + 1):
-                    # BUDGET running ceiling: stop BEFORE a trial that would push the
-                    # running total past the cap.
-                    if est > 0 and running_total + est > cap:
-                        _abort(
-                            out_dir,
-                            f"running cost ceiling ${cap:.2f} would be exceeded: "
-                            f"${running_total:.2f} spent + ${est:.2f} est for the next trial",
-                        )
-                        aborted = True
+                for strategy in strategies:
+                    if aborted:
                         break
-                    record = run_trial(
-                        case=case,
-                        strategy=strategy,
-                        harness=args.harness,
-                        trial_index=trial_index,
-                        out_dir=out_dir,
-                        timeout_s=args.timeout_s,
-                        mock_arm=mock_arm,
-                        check_route_cmd=check_route_cmd,
-                        tier=args.tier,
-                        pinned_ref=pinned_ref,
-                        check_script=check_scripts[case["case_id"]],
-                    )
-                    fh.write(json.dumps(record) + "\n")
-                    fh.flush()
-                    running_total += est
+                    for trial_index in range(1, args.trials + 1):
+                        # BUDGET running ceiling: stop BEFORE a trial that would push the
+                        # running total past the cap.
+                        if est > 0 and running_total + est > cap:
+                            _abort(
+                                out_dir,
+                                f"running cost ceiling ${cap:.2f} would be exceeded: "
+                                f"${running_total:.2f} spent + ${est:.2f} est for the next trial",
+                                final=final,
+                            )
+                            aborted = True
+                            break
+                        record = run_trial(
+                            case=case,
+                            strategy=strategy,
+                            harness=args.harness,
+                            trial_index=trial_index,
+                            out_dir=out_dir,
+                            timeout_s=args.timeout_s,
+                            mock_arm=mock_arm,
+                            check_route_cmd=check_route_cmd,
+                            tier=args.tier,
+                            pinned_ref=pinned_ref,
+                            check_script=check_scripts[case["case_id"]],
+                            ref_manifest=ref_manifest,
+                        )
+                        fh.write(json.dumps(record) + "\n")
+                        fh.flush()
+                        running_total += est
+    except Exception as exc:  # noqa: BLE001 -- any fatal mid-run error is a clean abort
+        # FIX 4b: a fatal error mid-run writes ABORTED.md (not a bare non-zero exit),
+        # removes any raced trials.jsonl, leaves trials.partial.jsonl, and returns 0.
+        # "non-zero ONLY on a usage/arg error" now holds.
+        _abort(out_dir, f"fatal: {exc}", final=final)
+        return 0
 
     if aborted:
         # trials.partial.jsonl is left in place; trials.jsonl is NEVER created.
         return 0
 
     # CLEAN completion: stage trials.partial.jsonl -> trials.jsonl (temp then rename).
+    # FIX 1b: if trials.jsonl already exists here, an arm raced a write into the results
+    # dir -- treat it as an abort, do NOT create the real file.
+    if final.exists():
+        _abort(
+            out_dir,
+            "a trials.jsonl already existed at finalize time -- the runner never writes "
+            "over a file it did not create; treating as an aborted run",
+            final=final,
+        )
+        return 0
     tmp = out_dir / "trials.jsonl.tmp"
     shutil.copyfile(partial, tmp)
     os.replace(tmp, final)

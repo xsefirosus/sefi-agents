@@ -21,18 +21,44 @@ import os
 import shutil
 import stat
 import subprocess
+import sys
 import tempfile
 from collections.abc import Iterator
 from pathlib import Path
 
 
-def _force_remove(func, path, _exc_info):  # type: ignore[no-untyped-def]
-    """rmtree onerror hook: git marks pack files read-only, and Windows then refuses the
-    unlink with WinError 5. Clear the read-only bit and retry once. Not ``ignore_errors``
-    -- a genuine failure still propagates -- teardown must actually complete on this host.
+def _chmod_and_retry(func, path) -> None:
+    """git marks pack files read-only, and Windows then refuses the unlink with WinError
+    5. Clear the read-only bit and retry once. A genuine second failure still propagates
+    -- teardown must actually complete on this host.
     """
     os.chmod(path, stat.S_IWRITE)
     func(path)
+
+
+def _force_remove_onerror(func, path, _exc_info):  # type: ignore[no-untyped-def]
+    """``shutil.rmtree(onerror=...)`` hook -- signature ``(func, path, exc_info)``.
+    Removed in Python 3.14; used only on < 3.12 (see ``_rmtree`` below).
+    """
+    _chmod_and_retry(func, path)
+
+
+def _force_remove_onexc(func, path, _exc):  # type: ignore[no-untyped-def]
+    """``shutil.rmtree(onexc=...)`` hook -- signature ``(func, path, exception)``.
+    Added in Python 3.12; the supported replacement for ``onerror``.
+    """
+    _chmod_and_retry(func, path)
+
+
+def _rmtree(target: Path) -> None:
+    """``shutil.rmtree`` with the read-only-retry hook, on the API the running Python
+    supports: ``onexc`` on >= 3.12 (``onerror`` is deprecated there and gone in 3.14),
+    ``onerror`` on 3.11. ``ignore_errors=False`` either way -- behaviour is identical.
+    """
+    if sys.version_info >= (3, 12):
+        shutil.rmtree(target, ignore_errors=False, onexc=_force_remove_onexc)
+    else:
+        shutil.rmtree(target, ignore_errors=False, onerror=_force_remove_onerror)
 
 
 def _walk_path(names: tuple[str, ...]) -> str | None:
@@ -151,4 +177,4 @@ def sandbox(origin_repo: str | os.PathLike[str], pinned_ref: str) -> Iterator[Pa
         )
         yield repo
     finally:
-        shutil.rmtree(scratch, ignore_errors=False, onerror=_force_remove)
+        _rmtree(scratch)
