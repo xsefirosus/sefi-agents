@@ -15,6 +15,7 @@ Standard library only.
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
@@ -30,9 +31,13 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from benchmarks.runner.arms import ArmResult, run_arm  # noqa: E402
-from benchmarks.runner.route import capture_route  # noqa: E402
+from benchmarks.runner.integrity import verify  # noqa: E402
+from benchmarks.runner.record import build_record  # noqa: E402
+from benchmarks.runner.route import RouteResult, capture_route  # noqa: E402
 from benchmarks.runner.sandbox import resolve_git, resolve_python, sandbox  # noqa: E402
 from benchmarks.runner.snapshot import diff, snapshot  # noqa: E402
+
+SCORECARD = REPO_ROOT / "benchmarks" / "scorecard.py"
 
 # A tracked file under benchmarks/ used for the check-attr assertion. check_sh-strict-mode.sh
 # exists on this branch (benchmarks/cases/), so no substitution was needed.
@@ -284,6 +289,206 @@ class RouteTests(unittest.TestCase):
             check_route_cmd="/nonexistent/check-route.sh",
         )
         self.assertFalse(result.captured)
+
+
+_ROUTE_CAPTURED = RouteResult(
+    captured=True,
+    status="not-applicable",
+    reason="stub",
+    expected_model=None,
+    expected_effort="none",
+    observed_model="",
+    observed_effort="",
+    exit_code=0,
+)
+_ROUTE_NOT_CAPTURED = _ROUTE_CAPTURED._replace(captured=False, status="invalid", exit_code=1)
+
+# A manifest shaped exactly like snapshot.snapshot() output: {relpath: sha256hex}.
+_PRE = {
+    "src/a.py": "1111111111111111111111111111111111111111111111111111111111111111",
+    "pkg/out/result.txt": "2222222222222222222222222222222222222222222222222222222222222222",
+    "README.md": "3333333333333333333333333333333333333333333333333333333333333333",
+}
+_ALLOWED = ["pkg/out"]
+_FINGERPRINT = "cafef00d" * 8  # 64 hex chars -- fits scorecard.py's _TEXT_FIELD_RE.
+
+
+class IntegrityTests(unittest.TestCase):
+    """Step 6a: integrity.verify -- an AND of three mandatory checks, fail-closed."""
+
+    def test_all_three_checks_pass_returns_true(self) -> None:
+        post = dict(_PRE)
+        self.assertIs(verify(_PRE, dict(_PRE), post, _ALLOWED, _ROUTE_CAPTURED), True)
+
+    def test_change_inside_allowlist_still_passes(self) -> None:
+        post = dict(_PRE)
+        post["pkg/out/result.txt"] = "9" * 64  # under an allowed_paths entry
+        self.assertIs(verify(_PRE, dict(_PRE), post, _ALLOWED, _ROUTE_CAPTURED), True)
+
+    def test_change_outside_allowlist_returns_false(self) -> None:
+        post = dict(_PRE)
+        post["README.md"] = "9" * 64  # not under any allowed_paths entry
+        self.assertIs(verify(_PRE, dict(_PRE), post, _ALLOWED, _ROUTE_CAPTURED), False)
+
+    def test_route_not_captured_returns_false(self) -> None:
+        post = dict(_PRE)
+        self.assertIs(verify(_PRE, dict(_PRE), post, _ALLOWED, _ROUTE_NOT_CAPTURED), False)
+
+    def test_pre_not_equal_ref_returns_false(self) -> None:
+        post = dict(_PRE)
+        self.assertIs(
+            verify(_PRE, {"other": "x" * 64}, post, _ALLOWED, _ROUTE_CAPTURED), False
+        )
+
+    def test_forced_exception_returns_false_not_raised(self) -> None:
+        # post_manifest=None -> snapshot.diff raises AttributeError -> caught -> False.
+        result = verify(_PRE, dict(_PRE), None, _ALLOWED, _ROUTE_CAPTURED)
+        self.assertIs(result, False)
+
+    def test_none_route_result_returns_false_not_raised(self) -> None:
+        post = dict(_PRE)
+        self.assertIs(verify(_PRE, dict(_PRE), post, _ALLOWED, None), False)
+
+
+class RecordTests(unittest.TestCase):
+    """Step 6b: record.build_record -- runner-observed fields only; integrity_ok last."""
+
+    _ACCEPT = {"accepted": True, "first_pass_accepted": True, "rework_required": False}
+    _ALLOWED_KEYS = {
+        "schema_version", "trial_id", "case_id", "case_fingerprint", "trial", "strategy",
+        "harness", "acceptance_checks", "accepted", "first_pass_accepted",
+        "rework_required", "wall_time_seconds", "model_calls", "route_evidence",
+        "input_tokens", "output_tokens", "quality_score", "quality_score_blinded",
+        "integrity_ok", "cost_usd",
+    }
+
+    def _build(self, *, trial_id, strategy, integrity_ok_verified, route_result=_ROUTE_CAPTURED):
+        return build_record(
+            trial_id=trial_id,
+            case_id="sh-strict-mode",
+            trial=1,
+            strategy=strategy,
+            harness="claude-code",
+            acceptance_checks=["check_sh-strict-mode"],
+            acceptance=self._ACCEPT,
+            wall_time_seconds=12.5,
+            model_calls=1,
+            case_fingerprint=_FINGERPRINT,
+            route_result=route_result,
+            integrity_ok_verified=integrity_ok_verified,
+        )
+
+    def test_verified_true_sets_integrity_ok_true(self) -> None:
+        rec = self._build(trial_id="ssm-c1", strategy="control", integrity_ok_verified=True)
+        self.assertEqual(rec["integrity_ok"], True)
+
+    def test_only_known_scorecard_keys_are_emitted(self) -> None:
+        rec = self._build(trial_id="ssm-c1", strategy="control", integrity_ok_verified=True)
+        self.assertEqual(set(rec) - self._ALLOWED_KEYS, set())
+        lane = rec["route_evidence"][0]
+        self.assertEqual(
+            set(lane), {"role", "model", "effort", "expected_effort", "task_id"}
+        )
+        self.assertNotIn("expected_model", lane)  # -> scorecard reports model=unchecked
+        self.assertEqual(lane["model"], "not-applicable")  # empty observed -> status word
+
+    def test_verified_false_omits_integrity_ok(self) -> None:
+        rec = self._build(trial_id="ssm-c1", strategy="control", integrity_ok_verified=False)
+        self.assertNotIn("integrity_ok", rec)
+
+    def test_verified_none_omits_integrity_ok(self) -> None:
+        rec = self._build(trial_id="ssm-c1", strategy="control", integrity_ok_verified=None)
+        self.assertNotIn("integrity_ok", rec)
+
+    def test_truthy_non_true_omits_integrity_ok(self) -> None:
+        # ONLY an explicit True writes the key -- a truthy 1 must not.
+        rec = self._build(trial_id="ssm-c1", strategy="control", integrity_ok_verified=1)
+        self.assertNotIn("integrity_ok", rec)
+
+    def test_diff_failure_flows_through_to_absent_key(self) -> None:
+        post = dict(_PRE)
+        post["README.md"] = "9" * 64
+        verified = verify(_PRE, dict(_PRE), post, _ALLOWED, _ROUTE_CAPTURED)
+        rec = self._build(
+            trial_id="ssm-c1", strategy="control", integrity_ok_verified=verified
+        )
+        self.assertNotIn("integrity_ok", rec)
+
+    def test_route_not_captured_flows_through_to_absent_key(self) -> None:
+        post = dict(_PRE)
+        verified = verify(_PRE, dict(_PRE), post, _ALLOWED, _ROUTE_NOT_CAPTURED)
+        rec = self._build(
+            trial_id="ssm-c1", strategy="control",
+            integrity_ok_verified=verified, route_result=_ROUTE_NOT_CAPTURED,
+        )
+        self.assertNotIn("integrity_ok", rec)
+
+    def test_forced_exception_flows_through_to_absent_key(self) -> None:
+        verified = verify(_PRE, dict(_PRE), None, _ALLOWED, _ROUTE_CAPTURED)
+        rec = self._build(
+            trial_id="ssm-c1", strategy="control", integrity_ok_verified=verified
+        )
+        self.assertNotIn("integrity_ok", rec)
+
+    def test_real_match_lane_keeps_observed_and_expected_strings(self) -> None:
+        graded = RouteResult(
+            captured=True, status="match", reason="ok",
+            expected_model="high-tier-model", expected_effort="high",
+            observed_model="high-tier-model", observed_effort="high", exit_code=0,
+        )
+        rec = self._build(
+            trial_id="ssm-x1", strategy="sefi-chain-sequential",
+            integrity_ok_verified=True, route_result=graded,
+        )
+        lane = rec["route_evidence"][0]
+        self.assertEqual(lane["model"], "high-tier-model")
+        self.assertEqual(lane["effort"], "high")
+        self.assertEqual(lane["expected_model"], "high-tier-model")
+        self.assertEqual(lane["expected_effort"], "high")
+
+    def test_built_pair_loads_and_scores_through_scorecard(self) -> None:
+        control = self._build(
+            trial_id="ssm-c1", strategy="control", integrity_ok_verified=True
+        )
+        treatment = self._build(
+            trial_id="ssm-x1", strategy="sefi-chain-sequential", integrity_ok_verified=True
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "trials.jsonl"
+            with path.open("w", encoding="utf-8", newline="\n") as fh:
+                for rec in (control, treatment):
+                    fh.write(json.dumps(rec) + "\n")
+            proc = subprocess.run(
+                [sys.executable, str(SCORECARD), str(path)],
+                capture_output=True, text=True,
+            )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("scored trials (integrity_ok is true): 2", proc.stdout)
+        self.assertIn("status=model=unchecked", proc.stdout)
+
+    def test_excluded_pair_scores_zero_through_scorecard(self) -> None:
+        # Records built from a failed verify() omit integrity_ok -> scorecard excludes them.
+        post = dict(_PRE)
+        post["README.md"] = "9" * 64
+        bad = verify(_PRE, dict(_PRE), post, _ALLOWED, _ROUTE_CAPTURED)
+        control = self._build(
+            trial_id="ssm-c1", strategy="control", integrity_ok_verified=bad
+        )
+        treatment = self._build(
+            trial_id="ssm-x1", strategy="sefi-chain-sequential", integrity_ok_verified=bad
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "trials.jsonl"
+            with path.open("w", encoding="utf-8", newline="\n") as fh:
+                for rec in (control, treatment):
+                    fh.write(json.dumps(rec) + "\n")
+            proc = subprocess.run(
+                [sys.executable, str(SCORECARD), str(path)],
+                capture_output=True, text=True,
+            )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("scored trials (integrity_ok is true): 0", proc.stdout)
+        self.assertIn("excluded (integrity_ok not true): 2", proc.stdout)
 
 
 if __name__ == "__main__":
