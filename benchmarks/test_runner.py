@@ -46,6 +46,8 @@ CHECK_ATTR_TARGET = "benchmarks/cases/check_sh-strict-mode.sh"
 FIXTURES = REPO_ROOT / "benchmarks" / "runner" / "fixtures"
 MOCK_ARM = FIXTURES / "mock_arm.py"
 MOCK_ARM_SLOW = FIXTURES / "mock_arm_slow.py"
+MOCK_ARM_TAMPER = FIXTURES / "mock_arm_tamper.py"
+CHECK_ROUTE_STUB = FIXTURES / "check-route-stub.sh"
 SH_STRICT_PROMPT = (
     REPO_ROOT / "benchmarks" / "prompts" / "sh-strict-mode.md"
 ).read_text(encoding="utf-8")
@@ -349,6 +351,16 @@ class IntegrityTests(unittest.TestCase):
         post = dict(_PRE)
         self.assertIs(verify(_PRE, dict(_PRE), post, _ALLOWED, None), False)
 
+    def test_all_none_manifests_fail_by_explicit_guard(self) -> None:
+        # C3: the explicit shape guard (check 0) fails this WITHOUT relying on a
+        # downstream raise -- snapshot.diff is never reached (short-circuit).
+        self.assertIs(verify(None, None, None, [], _ROUTE_CAPTURED), False)
+
+    def test_empty_pre_or_post_manifest_returns_false(self) -> None:
+        # An empty dict is not a real snapshot -> the guard fails it.
+        self.assertIs(verify({}, {}, dict(_PRE), _ALLOWED, _ROUTE_CAPTURED), False)
+        self.assertIs(verify(_PRE, dict(_PRE), {}, _ALLOWED, _ROUTE_CAPTURED), False)
+
 
 class RecordTests(unittest.TestCase):
     """Step 6b: record.build_record -- runner-observed fields only; integrity_ok last."""
@@ -489,6 +501,217 @@ class RecordTests(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertIn("scored trials (integrity_ok is true): 0", proc.stdout)
         self.assertIn("excluded (integrity_ok not true): 2", proc.stdout)
+
+
+class AcceptanceEvalTests(unittest.TestCase):
+    """Step 7: run.evaluate_acceptance -- pristine re-run + one chain rework pass."""
+
+    def _make_check(self, tmp: Path) -> Path:
+        # exit 0 iff <arg1>/marker exists -- a stand-in for a case acceptance check.
+        chk = tmp / "check_marker.sh"
+        chk.write_bytes(b'#!/usr/bin/env sh\ntest -f "${1:-.}/marker"\n')
+        return chk
+
+    def test_chain_reworks_once_then_accepts(self) -> None:
+        from benchmarks.runner.run import evaluate_acceptance
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            chk = self._make_check(root)
+            sb = root / "sb"
+            sb.mkdir()
+            calls: list[int] = []
+
+            def rerun() -> None:
+                calls.append(1)
+                (sb / "marker").write_text("done", encoding="ascii")
+
+            acc = evaluate_acceptance(
+                strategy="sefi-chain", check_script=chk, sandbox_repo=sb, rerun_arm=rerun
+            )
+        self.assertEqual(calls, [1], "exactly one rework pass")
+        self.assertEqual(
+            acc,
+            {"accepted": True, "first_pass_accepted": False, "rework_required": True},
+        )
+
+    def test_control_failure_is_just_not_accepted_no_rework(self) -> None:
+        from benchmarks.runner.run import evaluate_acceptance
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            chk = self._make_check(root)
+            sb = root / "sb"
+            sb.mkdir()
+            calls: list[int] = []
+
+            acc = evaluate_acceptance(
+                strategy="control",
+                check_script=chk,
+                sandbox_repo=sb,
+                rerun_arm=lambda: calls.append(1),
+            )
+        self.assertEqual(calls, [], "control never reworks")
+        self.assertEqual(
+            acc,
+            {"accepted": False, "first_pass_accepted": False, "rework_required": False},
+        )
+
+    def test_first_pass_accept_needs_no_rerun(self) -> None:
+        from benchmarks.runner.run import evaluate_acceptance
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            chk = self._make_check(root)
+            sb = root / "sb"
+            sb.mkdir()
+            (sb / "marker").write_text("done", encoding="ascii")
+            calls: list[int] = []
+
+            acc = evaluate_acceptance(
+                strategy="sefi-chain-sequential",
+                check_script=chk,
+                sandbox_repo=sb,
+                rerun_arm=lambda: calls.append(1),
+            )
+        self.assertEqual(calls, [])
+        self.assertEqual(
+            acc,
+            {"accepted": True, "first_pass_accepted": True, "rework_required": False},
+        )
+
+
+class BudgetScanTests(unittest.TestCase):
+    """Step 7: run.read_cap -- fail-closed budget line-scan (mirrors scorecard.py)."""
+
+    def _cap(self, body: str):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "budget.yml"
+            p.write_text(body, encoding="utf-8")
+            from benchmarks.runner.run import read_cap
+
+            return read_cap(p)
+
+    def test_positive_value_is_returned(self) -> None:
+        self.assertEqual(self._cap("benchmark_per_run_usd_cap: 15.00\n"), 15.0)
+
+    def test_absent_key_is_none(self) -> None:
+        self.assertIsNone(self._cap("other_key: 1\n"))
+
+    def test_zero_and_negative_are_none(self) -> None:
+        self.assertIsNone(self._cap("benchmark_per_run_usd_cap: 0\n"))
+        self.assertIsNone(self._cap("benchmark_per_run_usd_cap: 0.0\n"))
+
+    def test_live_budget_yml_has_a_usable_cap(self) -> None:
+        from benchmarks.runner.run import read_cap
+
+        self.assertIsInstance(read_cap(), float)
+
+
+class EndToEndTests(unittest.TestCase):
+    """Step 8: run.py -> trials.jsonl -> scorecard.py, the first real end-to-end."""
+
+    def _run(
+        self,
+        out: Path,
+        *,
+        mock_arm: Path,
+        strategies: str = "control,sefi-chain-sequential",
+        est: str = "0",
+        check_route_cmd: str | None = None,
+    ) -> int:
+        from benchmarks.runner.run import main as run_main
+
+        argv = [
+            "--mock-arm", str(mock_arm),
+            "--check-route-cmd", check_route_cmd or str(CHECK_ROUTE_STUB),
+            "--cases", "sh-strict-mode",
+            "--strategies", strategies,
+            "--harness", "claude-code",
+            "--tier", "mid",
+            "--est-cost-per-trial", est,
+            "--out", str(out),
+        ]
+        return run_main(argv)
+
+    def _records(self, out: Path) -> list[dict]:
+        lines = (out / "trials.jsonl").read_text(encoding="utf-8").splitlines()
+        return [json.loads(ln) for ln in lines if ln.strip()]
+
+    def _score(self, out: Path) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            [sys.executable, str(SCORECARD), str(out / "trials.jsonl")],
+            capture_output=True,
+            text=True,
+        )
+
+    def setUp(self) -> None:
+        self._scratch_baseline = {
+            p.name for p in Path(tempfile.gettempdir()).glob("sefi-bench-*")
+        }
+
+    def _no_leftover_scratch(self) -> None:
+        now = {p.name for p in Path(tempfile.gettempdir()).glob("sefi-bench-*")}
+        leaked = sorted(now - self._scratch_baseline)
+        self.assertEqual(leaked, [], f"sandbox scratch dirs leaked this run: {leaked}")
+
+    def test_green_run_scores_two_trials(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "run1"
+            rc = self._run(out, mock_arm=MOCK_ARM)
+            self.assertEqual(rc, 0)
+            self.assertTrue((out / "trials.jsonl").is_file())
+            recs = self._records(out)
+            self.assertEqual(len(recs), 2)
+            for rec in recs:
+                self.assertIs(rec.get("integrity_ok"), True)
+            self._no_leftover_scratch()
+
+            proc = self._score(out)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertIn("scored trials (integrity_ok is true): 2", proc.stdout)
+            self.assertIn("route-correctness", proc.stdout)
+            self.assertIn("== aggregate deltas", proc.stdout)
+
+    def test_tamper_run_is_excluded_by_scorecard(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "run3"
+            rc = self._run(out, mock_arm=MOCK_ARM_TAMPER)
+            self.assertEqual(rc, 0)
+            recs = self._records(out)
+            self.assertEqual(len(recs), 2)
+            for rec in recs:
+                self.assertNotIn("integrity_ok", rec)
+            self._no_leftover_scratch()
+
+            proc = self._score(out)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertIn("scored trials (integrity_ok is true): 0", proc.stdout)
+            self.assertIn("excluded (integrity_ok not true): 2", proc.stdout)
+
+    def test_budget_abort_produces_no_trials_jsonl(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "run4"
+            rc = self._run(out, mock_arm=MOCK_ARM, est="999")
+            self.assertEqual(rc, 0)
+            self.assertTrue((out / "ABORTED.md").is_file())
+            self.assertFalse((out / "trials.jsonl").exists())
+            self._no_leftover_scratch()
+
+    def test_route_not_captured_run_is_excluded(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "run5"
+            rc = self._run(out, mock_arm=MOCK_ARM, check_route_cmd="/nonexistent")
+            self.assertEqual(rc, 0)
+            recs = self._records(out)
+            self.assertEqual(len(recs), 2)
+            for rec in recs:
+                self.assertNotIn("integrity_ok", rec)
+            self._no_leftover_scratch()
+
+            proc = self._score(out)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertIn("scored trials (integrity_ok is true): 0", proc.stdout)
 
 
 if __name__ == "__main__":
