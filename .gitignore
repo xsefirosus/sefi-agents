@@ -10,3 +10,11 @@ docs/master-prompt-v4-provenance.md
 # /sefi:init's harness marker -- a machine-local install fact (which harness ran init),
 # never a vault note or a state ledger entry.
 .sefi/
+
+# Python bytecode and pytest scratch from running scripts/check-route.py and its
+# gate. __pycache__/*.pyc embeds an absolute build path -- never shipped, never committed.
+# (feat/benchmark carries the same three ignores for scripts/scorecard.py; the two
+# branches converge on merge.)
+__pycache__/
+*.pyc
+.pytest_cache/

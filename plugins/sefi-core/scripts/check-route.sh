@@ -1,159 +1,95 @@
 #!/usr/bin/env bash
-# check-route.sh -- post-dispatch route-evidence assertion: did the harness actually run
-# the model + reasoning effort this repo's tier map asked for?
+# check-route.sh -- interpreter-resolving shim over check-route.py, the real route-evidence
+# parser. THE PATH IS LOAD-BEARING: every `${CLAUDE_PLUGIN_ROOT}/scripts/check-route.sh`
+# reference in the agent/skill markdown (validate-script-refs.sh enforces the prefix) and
+# the harness-neutral invocation resolve here, so this file keeps its exact name while the
+# parsing logic lives in the sibling check-route.py.
 #
-#   check-route.sh <harness> <requested-tier> <session-record-placeholder>
+# WHY A PYTHON PARSER. The previous jq-free POSIX-sh version was reduced across four review
+# rounds for five fail-open shapes -- a decoy rollout record could make a downgraded run
+# report `match`. A real `json.loads` per line plus top-level-only dict access cannot have
+# those shapes. The "no Python in plugin scripts" rule was lifted by the human for this one
+# post-dispatch script, on the same basis the repo already accepts python3 for
+# benchmarks/scorecard.py as contributor tooling.
 #
-# Resolves the requested tier to a concrete model + reasoning effort through the ONE
-# resolver (scripts/model-for.sh -> config/model-map.yml), gates that resolved pair
-# against a strict allowlist, then emits one compact JSON line:
+# Interpreter resolution: prefer `python3`, fall back to `python` (the dev Windows host's
+# `python3` is the broken Microsoft Store stub; `python` is a real 3.11) -- each is accepted
+# only if it runs AND reports version >= 3.11. If neither qualifies, this prints a "route
+# check skipped" notice to stderr and exits 3, so a caller can tell "no interpreter" (3)
+# apart from a real route verdict (0/1) or a usage error (2).
 #
-#   {"status":..,"reason":..,"expected_model":..,"expected_effort":..,
-#    "observed_model":..,"observed_effort":..}
+# Arguments are forwarded to check-route.py, which owns every validation, the model-for.sh
+# resolution, and the JSON emit. See check-route.py's header for the status vocabulary and
+# exit codes.
 #
-# NO SESSION RECORD IS READ BY ANY HARNESS IN THIS VERSION. The third positional argument
-# is accepted as a placeholder and is only non-printable-character-checked -- it is never
-# opened, stat-ed, or followed. A prior revision shipped a rollout parser here; it was
-# stripped because no harness has a confirmed rollout format in this repo and every parser
-# variant tried had a fail-open shape (a decoy record could make a downgraded run report
-# `match`). The parser returns only once a real, documented format exists.
-#
-# status is one of:
-#   unavailable     the harness exposes no route readback this repo can trust. This is the
-#                   result for EVERY harness with a real (non-`flexible`) resolved model
-#                   today: claude-code (the CLI reports no per-agent model/usage), codex
-#                   (rollout format unconfirmed -- see adapters/CODEX.md), hermes and
-#                   opencode (only reached if a tier is ever pinned to a real id).
-#   not-applicable  the requested tier resolves to the "flexible" sentinel
-#                   (config/model-map.yml: opencode / hermes) -- there is no requested
-#                   model id to compare, so a comparison would be meaningless.
-#
-# RESERVED, NOT EMITTED. `match`, `mismatch`, and `invalid` stay in the documented
-# five-state vocabulary (skills/sefi-orchestration/references/harness-actions.md,
-# state/metrics.md) as dormant future states. This script has NO code path that produces
-# any of them: a future revision with a confirmed rollout format and a real JSON parser
-# re-introduces them.
-#
-# Exit code: 0 only on `not-applicable`; non-zero on `unavailable`; exit 2 on a usage
-# error. A usage error prints to stderr ONLY -- never a JSON status line.
-#
-# WHAT "VALIDATED" MEANS HERE, EXACTLY:
-#   * <harness>, <requested-tier> and the placeholder are each rejected (exit 2, no JSON)
-#     if they contain a non-printable character.
-#   * <harness> must be one of: claude-code codex opencode hermes. Any other value is a
-#     usage error (exit 2).
-#   * The tier map's resolved model must be the literal "flexible" or match
-#     ^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$; the resolved effort must be one of
-#     "minimal low medium high xhigh none ultra". A malformed config/model-map.yml value
-#     that is neither is a usage error (exit 2, no JSON) -- an unconstrained value can
-#     never reach the JSON output, so every value emit() prints is constrained by
-#     construction.
-#   * The third positional argument is NEVER opened. No path parsing, no symlink check, no
-#     size cap -- there is nothing to read.
-#   * NO network calls. NO write side effects.
+# EVERY POSITIONAL IS FORCED AFTER `--`. When at least three args are given, this shim
+# execs `check-route.py -- "$@"`, so arguments 1, 2, AND 3+ (harness, tier, and the
+# thread-id/record slot) all reach the parser as POSITIONALS -- never as options. A call
+# site that expands an env-derived value UNQUOTED into ANY slot -- `$CODEX_THREAD_ID` in
+# slot 3 (`check-route.sh codex mid $CODEX_THREAD_ID`), or a stray leading-dash word that
+# word-splits into slot 1-2 -- lands after `--`: argparse then reports "unrecognized
+# arguments" (or an unknown-harness usage error) and exits 2 with NO JSON. `--rollout-file`
+# smuggling through the shim is structurally impossible; it can never redirect the check at
+# an attacker-authored rollout. `--rollout-file` / `--sessions-dir` stay REGISTERED in
+# build_parser: a DIRECT `python check-route.py ... --rollout-file X` (no `--`) still works
+# -- that is the trusted contributor-test path. The `$# -lt 3` fallback preserves the
+# existing "too few args -> argparse usage error, exit 2" and "--help" / "-h" (exit 0)
+# behaviour.
 
 set -u
 
-EFFORTS='minimal low medium high xhigh none ultra'
-
-emit() {
-  # emit <status> <reason> <expected_model> <expected_effort> <observed_model> <observed_effort>
-  # Every value here is a fixed literal, a model id already constrained to
-  # [A-Za-z0-9._:/-] (regex-gated below before it can get here), or an effort word from
-  # EFFORTS -- none can carry a quote, a backslash, or free text into the JSON.
-  printf '{"status":"%s","reason":"%s","expected_model":"%s","expected_effort":"%s","observed_model":"%s","observed_effort":"%s"}\n' \
-    "$1" "$2" "$3" "$4" "$5" "$6"
-}
-
-usage() {
-  printf 'ERROR: %s\n' "$1" >&2
-  printf 'usage: check-route.sh <harness> <requested-tier> <session-record-placeholder>\n' >&2
-  exit 2
-}
-
-# --- arguments -------------------------------------------------------------------------
-# Keep a `--` end-of-options guard and reject any unknown option, but there are no
-# options of our own any more.
-while [ "$#" -gt 0 ]; do
-  case "$1" in
-    --) shift; break ;;
-    --*) usage "unknown option: $1" ;;
-    *) break ;;
-  esac
-done
-
-[ "$#" -eq 3 ] || usage "exactly three positional arguments are required: <harness> <requested-tier> <session-record-placeholder>"
-HARNESS=$1
-TIER=$2
-REC=$3
-
-[ -n "$HARNESS" ] || usage "harness must not be empty"
-[ -n "$TIER" ]    || usage "requested tier must not be empty"
-[ -n "$REC" ]     || usage "session-record placeholder must not be empty"
-
-# Non-printable-character guard on EVERY argument (HARNESS and TIER are echoed to stderr
-# in diagnostics; REC is retained only as an opaque placeholder): a control char in any of
-# them is rejected outright.
-for _arg in "$HARNESS" "$TIER" "$REC"; do
-  case "$_arg" in
-    *[![:print:]]*) usage "an argument contains a non-printable character" ;;
-  esac
-done
-
-case "$HARNESS" in
-  claude-code|codex|opencode|hermes) : ;;
-  *) usage "unsupported harness: $HARNESS (expected one of: claude-code codex opencode hermes)" ;;
-esac
-
-HERE=$(cd "$(dirname "$0")" && pwd)
-MODEL_FOR="$HERE/model-for.sh"
-[ -f "$MODEL_FOR" ] || usage "model-for.sh not found beside check-route.sh"
-
-# Route the tier/harness through the ONE resolver, every value BEHIND a `--`
-# end-of-options guard so a hostile tier or harness starting with '-' is never a flag.
-EXPECTED_MODEL=$(bash "$MODEL_FOR" -- "$HARNESS" "$TIER" 2>/dev/null) \
-  || usage "cannot resolve a model for harness='$HARNESS' tier='$TIER' (unknown harness, unmapped tier, or unreadable model map)"
-EXPECTED_EFFORT=$(bash "$MODEL_FOR" --reasoning -- "$HARNESS" "$TIER" 2>/dev/null) \
-  || usage "cannot resolve a reasoning effort for harness='$HARNESS' tier='$TIER'"
-
-# The tier map's output is a trust boundary: a malformed config/model-map.yml value must
-# never flow unchecked into emit(). Constrain it to the same shape emit() promises.
-if [ "$EXPECTED_MODEL" != "flexible" ]; then
-  printf '%s' "$EXPECTED_MODEL" | grep -Eq '^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$' \
-    || usage "the model map resolved a model id that is not a bare identifier for harness='$HARNESS' tier='$TIER': '$EXPECTED_MODEL'"
-fi
-case " $EFFORTS " in
-  *" $EXPECTED_EFFORT "*) : ;;
-  *) usage "the model map resolved a reasoning effort outside the allowlist ($EFFORTS) for harness='$HARNESS' tier='$TIER': '$EXPECTED_EFFORT'" ;;
-esac
-
-# --- the flexible sentinel: no requested model id exists, so a comparison is undefined ---
-if [ "$EXPECTED_MODEL" = "flexible" ]; then
-  emit "not-applicable" "tier-resolves-to-flexible" \
-    "$EXPECTED_MODEL" "$EXPECTED_EFFORT" "" ""
-  exit 0
-fi
-
-# --- a real requested route, but no readable session record on any harness this version ---
-case "$HARNESS" in
-  claude-code)
-    emit "unavailable" "harness-exposes-no-route-readback" \
-      "$EXPECTED_MODEL" "$EXPECTED_EFFORT" "" ""
-    ;;
-  codex)
-    emit "unavailable" "codex-rollout-format-unconfirmed" \
-      "$EXPECTED_MODEL" "$EXPECTED_EFFORT" "" ""
-    ;;
-  hermes)
-    emit "unavailable" "harness-model-readback-undocumented" \
-      "$EXPECTED_MODEL" "$EXPECTED_EFFORT" "" ""
-    ;;
-  opencode)
-    emit "unavailable" "session-record-format-undocumented" \
-      "$EXPECTED_MODEL" "$EXPECTED_EFFORT" "" ""
+# Locate this shim's own directory so we can find its sibling check-route.py. Use shell
+# parameter expansion (cd/pwd are builtins) rather than external `dirname`, so this still
+# resolves when PATH has been stripped bare for the interpreter-skip path below. A bare
+# `$0` with no slash is NEVER resolved from $(pwd) -- a planted ./check-route.py there
+# could otherwise be run; fall back to `command -v` instead, and if that fails too, refuse.
+case "$0" in
+  */*)
+    HERE="$(cd "${0%/*}" 2>/dev/null && pwd)"
     ;;
   *)
-    usage "unsupported harness: $HARNESS"
+    self="$(command -v -- "$0" 2>/dev/null || true)"
+    case "$self" in
+      */*) HERE="$(cd "${self%/*}" 2>/dev/null && pwd)" ;;
+      *)   HERE="" ;;
+    esac
     ;;
 esac
-exit 1
+PY="$HERE/check-route.py"
+if [ -z "$HERE" ] || [ ! -f "$PY" ]; then
+  printf '%s\n' \
+    "check-route: cannot locate check-route.py next to $0; route check skipped" >&2
+  exit 3
+fi
+
+# usable <interpreter-name> -- on PATH, executes, and is Python 3.11 or newer.
+usable() {
+  command -v "$1" >/dev/null 2>&1 || return 1
+  "$1" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)' \
+    >/dev/null 2>&1
+}
+
+# Resolve to the ABSOLUTE interpreter path (command -v result), not the bare name, so the
+# exec is not a second PATH lookup at exec time.
+INTERP=""
+if usable python3; then
+  INTERP="$(command -v python3)"
+elif usable python; then
+  INTERP="$(command -v python)"
+fi
+
+if [ -z "$INTERP" ]; then
+  printf '%s\n' \
+    'check-route: no python3 or python 3.11+ interpreter available; route check skipped' >&2
+  exit 3
+fi
+
+# Force EVERY positional argument to reach check-route.py after an argparse `--`
+# end-of-options marker (see header). No arg-1/arg-2 capture: `--` goes first, so a stray
+# leading-dash word in ANY slot is a fail-closed arity / unrecognized-arguments error
+# (exit 2), never an honoured option. The `$# -lt 3` fallback keeps `--help` / `-h` (exit 0
+# usage) and the 2-arg "required: record" usage error (exit 2) identical to a bare forward.
+if [ "$#" -ge 3 ]; then
+  exec "$INTERP" "$PY" -- "$@"
+fi
+exec "$INTERP" "$PY" "$@"
