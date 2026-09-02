@@ -15,6 +15,7 @@ Standard library only.
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import tempfile
@@ -28,12 +29,36 @@ if str(REPO_ROOT) not in sys.path:
     # (which shells out instead); this suite imports the runner modules under test.
     sys.path.insert(0, str(REPO_ROOT))
 
+from benchmarks.runner.arms import ArmResult, run_arm  # noqa: E402
+from benchmarks.runner.route import capture_route  # noqa: E402
 from benchmarks.runner.sandbox import resolve_git, resolve_python, sandbox  # noqa: E402
 from benchmarks.runner.snapshot import diff, snapshot  # noqa: E402
 
 # A tracked file under benchmarks/ used for the check-attr assertion. check_sh-strict-mode.sh
 # exists on this branch (benchmarks/cases/), so no substitution was needed.
 CHECK_ATTR_TARGET = "benchmarks/cases/check_sh-strict-mode.sh"
+
+FIXTURES = REPO_ROOT / "benchmarks" / "runner" / "fixtures"
+MOCK_ARM = FIXTURES / "mock_arm.py"
+MOCK_ARM_SLOW = FIXTURES / "mock_arm_slow.py"
+SH_STRICT_PROMPT = (
+    REPO_ROOT / "benchmarks" / "prompts" / "sh-strict-mode.md"
+).read_text(encoding="utf-8")
+SH_STRICT_CHECK = REPO_ROOT / "benchmarks" / "cases" / "check_sh-strict-mode.sh"
+
+
+def _resolve_tool(names: tuple[str, ...]) -> str | None:
+    for directory in os.environ.get("PATH", os.defpath).split(os.pathsep):
+        if not directory:
+            continue
+        for name in names:
+            candidate = os.path.join(directory, name)
+            if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+                return candidate
+    return None
+
+
+BASH = _resolve_tool(("bash.exe", "bash"))
 
 
 class ResolveTests(unittest.TestCase):
@@ -146,6 +171,119 @@ class SnapshotTests(unittest.TestCase):
             json.dumps(manifest_a, sort_keys=True),
             json.dumps(manifest_b, sort_keys=True),
         )
+
+
+class ArmsTests(unittest.TestCase):
+    """Step 4: benchmarks/runner/arms.run_arm -- all via the --mock-arm seam."""
+
+    def test_mock_arm_completes_case_and_reports_runner_observed_facts(self) -> None:
+        with sandbox(REPO_ROOT, "HEAD") as repo, tempfile.TemporaryDirectory() as out:
+            result = run_arm(
+                "control",
+                "claude-code",
+                SH_STRICT_PROMPT,
+                repo,
+                timeout_s=5,
+                mock_arm=MOCK_ARM,
+                results_dir=Path(out),
+            )
+            self.assertIsInstance(result, ArmResult)
+            self.assertEqual(result.exit_code, 0)
+            self.assertIsInstance(result.wall_time_s, float)
+            self.assertGreaterEqual(result.wall_time_s, 0.0)
+            # session id captured BY THE RUNNER from the invocation, not from arm stdout.
+            self.assertIsNotNone(result.session_record_ref)
+            # raw log is a human artifact under the results dir.
+            self.assertTrue(Path(result.raw_log_path).is_file())
+            self.assertTrue(
+                Path(result.raw_log_path).parent.samefile(out),
+                "raw log must live under the runner-owned results dir, outside the sandbox",
+            )
+            # the sandbox target now satisfies the case's acceptance check.
+            self.assertIsNotNone(BASH, "bash must be on PATH for this suite")
+            proc = subprocess.run(
+                [BASH, str(SH_STRICT_CHECK), repo.as_posix()],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+
+    def test_timeout_is_caught_as_nonfatal_result(self) -> None:
+        with sandbox(REPO_ROOT, "HEAD") as repo, tempfile.TemporaryDirectory() as out:
+            # A 0.1s budget against a mock that sleeps 30s: run_arm must NOT raise.
+            result = run_arm(
+                "control",
+                "claude-code",
+                SH_STRICT_PROMPT,
+                repo,
+                timeout_s=0.1,
+                mock_arm=MOCK_ARM_SLOW,
+                results_dir=Path(out),
+            )
+        self.assertNotEqual(result.exit_code, 0)
+        self.assertIsInstance(result.wall_time_s, float)
+        self.assertGreaterEqual(result.wall_time_s, 0.0)
+
+    def test_sequential_and_parallel_strategies_are_distinct_code_paths(self) -> None:
+        # sefi-chain and sefi-chain-sequential are never equated: distinct real-harness
+        # invocations. No test touches the real path, so assert the builder directly.
+        from benchmarks.runner.arms import _real_command
+
+        parallel = _real_command("sefi-chain", "codex", "PROMPT")
+        sequential = _real_command("sefi-chain-sequential", "codex", "PROMPT")
+        self.assertNotEqual(parallel, sequential)
+
+    def test_unknown_strategy_is_rejected_at_the_boundary(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(ValueError):
+                run_arm("bogus", "claude-code", "x", tmp, timeout_s=1)
+
+
+class RouteTests(unittest.TestCase):
+    """Step 5: benchmarks/runner/route.capture_route capture / no-capture matrix."""
+
+    def _cap(self, stub: str, ref: str | None = None, harness: str = "codex"):
+        return capture_route(
+            harness, "high", ref, check_route_cmd=FIXTURES / stub
+        )
+
+    def test_not_applicable_exit0_is_captured(self) -> None:
+        result = self._cap("check-route-stub.sh", harness="opencode")
+        self.assertTrue(result.captured)
+        self.assertEqual(result.status, "not-applicable")
+
+    def test_unavailable_exit1_is_captured(self) -> None:
+        result = self._cap("check-route-stub-unavailable.sh", harness="claude-code")
+        self.assertTrue(result.captured)
+        self.assertEqual(result.status, "unavailable")
+
+    def test_exit3_no_interpreter_is_not_captured(self) -> None:
+        result = self._cap("check-route-stub-exit3.sh", ref="-")
+        self.assertFalse(result.captured)
+
+    def test_invalid_status_exit1_is_not_captured(self) -> None:
+        result = self._cap(
+            "check-route-stub-invalid.sh",
+            ref="00000000-0000-4000-8000-000000000000",
+        )
+        self.assertFalse(result.captured)
+        self.assertEqual(result.status, "invalid")
+
+    def test_non_json_stdout_is_not_captured(self) -> None:
+        result = self._cap("check-route-stub-nojson.sh")
+        self.assertFalse(result.captured)
+
+    def test_absent_default_script_is_not_captured_without_raising(self) -> None:
+        # check-route.sh lives on feat/route-evidence-live, NOT this branch -> fail-closed.
+        result = capture_route("claude-code", "high", None, check_route_cmd=None)
+        self.assertFalse(result.captured)
+
+    def test_nonexistent_explicit_cmd_is_not_captured(self) -> None:
+        result = capture_route(
+            "claude-code", "high", None,
+            check_route_cmd="/nonexistent/check-route.sh",
+        )
+        self.assertFalse(result.captured)
 
 
 if __name__ == "__main__":
