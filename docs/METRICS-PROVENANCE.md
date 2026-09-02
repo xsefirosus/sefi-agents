@@ -80,11 +80,24 @@ cited from here with the run directory named. Rules for that evidence:
 - Until a published scorecard exists under `benchmarks/published/`, this repo has **no
   first-party chain-versus-control numbers**; the row below stays UNKNOWN rather than
   being filled from the predecessor or an estimate.
-- Until a sandboxed trial-integrity runner exists (see `benchmarks/README.md`
-  "Trial integrity -- NOT IMPLEMENTED in this version"), no run can satisfy this
-  condition -- nothing sets `integrity_ok` and `scorecard.py` is fail-closed on it, so
-  every scorecard shows `scored trials (integrity_ok is true): 0` -- meaning the
-  benchmark number stays UNKNOWN by construction, not merely for lack of a run.
+- **Out-of-process trust boundary.** Trial integrity is enforced by the runner package
+  `benchmarks/runner/` (see `benchmarks/README.md` "Trial integrity -- enforced by
+  benchmarks/runner/"). The **runner process, not any arm**, writes every field of every
+  trial record: `benchmarks/runner/record.py` builds records from runner-observed values
+  only and never reads arm stdout. Route evidence comes only from the runner shelling out
+  to check-route.sh (an out-of-process helper); no arm-written value is a scoring input.
+  Each trial runs in a real `git clone` sandbox with its own object store (never a
+  `git worktree`), and an out-of-process binary-mode snapshot + diff flags any change
+  outside the case `allowed_paths`. `benchmarks/runner/integrity.verify` is a fail-closed
+  AND of those checks (`try/except -> False`); it is the ONLY thing that sets
+  `integrity_ok`, and only to `true`. An aborted run (budget pre-flight or running
+  ceiling) writes `ABORTED.md` and never produces `trials.jsonl`, so partial data is
+  structurally unscoreable. `scorecard.py` then filters to `integrity_ok is True`.
+- Positive route capture requires check-route.sh, which lives on
+  `feat/route-evidence-live` @ `8c1779c` and is NOT on the `feat/benchmark-runner`
+  branch. Until that is merged (or the branch rebased onto it), route capture fails
+  closed and every trial is non-scored, so the benchmark number stays UNKNOWN for lack of
+  a scoreable run -- not by construction.
 
 | Claim | Current source | Where cited | Promotion condition |
 |---|---|---|---|
