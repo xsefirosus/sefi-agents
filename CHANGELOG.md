@@ -17,36 +17,40 @@ Changelog; this project adheres to Semantic Versioning.
    allowlist, is a usage error -- exit 2, no JSON -- closing an injection path from a
    malformed `config/model-map.yml`), and emits one compact JSON line
    `{status, reason, expected_model, expected_effort, observed_model, observed_effort}`.
-   **It reads NO session record for any harness.** `unavailable` for every harness whose
-   tier resolves to a real model (claude-code, codex, hermes, opencode -- each with a
-   harness-specific reason; codex's is `codex-rollout-format-unconfirmed`);
-   `not-applicable` when the tier resolves to the `flexible` sentinel (opencode / hermes
-   today). Exit 0 only on `not-applicable`; non-zero on `unavailable`; exit 2 (no JSON)
-   on a usage error (bad arg count, non-printable char in any argument, unknown harness).
-   The 3rd positional argument is an accepted-but-never-opened placeholder. No network
-   calls, no write side effects.
-2. **Five-state status vocabulary, documented** -- `match` / `mismatch` / `invalid` /
-   `unavailable` / `not-applicable` are defined verbatim in
-   `skills/sefi-orchestration/references/harness-actions.md` and `state/metrics.md`.
-   `match` / `mismatch` / `invalid` are **reserved for a future revision** with a
-   confirmed rollout format and a real JSON parser; `check-route.sh` has no code path
-   that produces them today. An earlier draft shipped a rollout parser here; it was
-   stripped because no harness has a confirmed rollout format in this repo and every
-   parser variant tried had a fail-open shape (a decoy record could report `match` on a
-   downgraded run).
+   **For a Codex dispatch it reads the session rollout** (entry 6 below completed this
+   half); claude-code, opencode and hermes read no session record. `match` / `mismatch` /
+   `invalid` for Codex per the observed route; `unavailable` for claude-code
+   (`harness-exposes-no-route-readback`) and for Codex when no thread id / rollout is
+   available; `not-applicable` when the tier resolves to the `flexible` sentinel
+   (opencode / hermes today). Exit 0 on `match` / `not-applicable`; non-zero on
+   `mismatch` / `invalid` / `unavailable`; exit 2 (no JSON) on a usage error (bad arg
+   count, non-printable char in any argument, unknown harness); exit 3 when no `python3` /
+   `python` 3.11+ interpreter is available (recorded as `route` = `skipped`). For a Codex
+   dispatch the 3rd positional argument is the `CODEX_THREAD_ID` (a lowercase UUID) or
+   `-`; other harnesses ignore it. No network calls, no write side effects.
+2. **Status vocabulary, documented** -- `match` / `mismatch` / `invalid` /
+   `unavailable` / `not-applicable` (plus `skipped` when no interpreter is available) are
+   defined verbatim in `skills/sefi-orchestration/references/harness-actions.md` and
+   `state/metrics.md`. `match` / `mismatch` / `invalid` are **produced for Codex today**
+   (entry 6 added the `check-route.py` JSON parser); they remain reserved for the other
+   three harnesses until their adapter docs describe a readable route. An interim
+   POSIX-sh draft had every parser variant fail open on a decoy record (report `match` on
+   a downgraded run); a real `json.loads` per line plus top-level-only dict access is what
+   closed those shapes.
 3. **"Requested vs observed route" section in `harness-actions.md`** -- one row per
    harness in the single place the cross-runtime mapping lives. Stated honestly: Claude
-   Code exposes no per-agent model/token readback; Codex's rollout format, sessions dir,
-   and thread-id env are undocumented in `adapters/CODEX.md` / `.codex/config.toml`;
-   OpenCode and Hermes tiers resolve to `flexible`. Net result, stated plainly: Phase 3
-   ships with NO live route comparison on any of the four harnesses -- every call returns
-   `unavailable` or `not-applicable`. Codex is the first candidate for a real parser once
-   its adapter doc lands. This is the expected outcome, not a defect.
+   Code exposes no per-agent model/token readback; OpenCode and Hermes tiers resolve to
+   `flexible`. Codex's rollout format is now documented in `adapters/CODEX.md`
+   `## Session rollout` and read live. Net result: live requested-vs-observed route
+   comparison exists on **Codex** (`match` / `mismatch` / `invalid` per the run);
+   claude-code stays `unavailable` and opencode / hermes stay `not-applicable` by those
+   harnesses' own limits, not by any limitation of the check.
 4. **`route` column in `state/metrics.md`** -- the schema
    `| date | target-path | loop | verdict | retries | note |` gains a 7th `| route |`
-   column carrying the per-run `check-route.sh` status (`unavailable` / `not-applicable`
-   today; `match` / `mismatch` / `invalid` reserved), or `n/a` for a row with no
-   dispatch. Header, separator, and top comment updated in both `state/metrics.md` and
+   column carrying the per-run `check-route.sh` status (`match` / `mismatch` / `invalid`
+   live for Codex; `unavailable` / `not-applicable` for the other harnesses; `skipped`
+   when no interpreter is available), or `n/a` for a row with no dispatch. Header,
+   separator, and top comment updated in both `state/metrics.md` and
    `plugins/sefi-core/templates/state/metrics.md` (the copy `/sefi:init` and
    `test-integration.sh` use); every existing row set to `n/a`. `skills/retro-improve/`
    reads `metrics.md` by column header name / prose, not by positional index, so it is
@@ -59,15 +63,63 @@ Changelog; this project adheres to Semantic Versioning.
    `skills/sefi-orchestration/references/close-out.md`, from a `## Discipline` bullet in
    `skills/sefi-orchestration/SKILL.md`, and from the `## Persistence` move of the three
    loop specs (`loops/{morning-triage,sync,weekly-retro}.loop.md` and their
-   `templates/loops/` copies), whose `metrics:` line now carries the `route` column. Each
-   of those mentions is worded so it does not promise a STOP-on-`mismatch` the current
-   script cannot trigger: the STOP-and-park rule is stated as applying "if it ever
-   returns `mismatch` (a future revision)". `model-for.sh` keeps the `--` end-of-options
-   guard added for this work. Fixtures under
-   `plugins/sefi-core/scripts/ci/fixtures/check-route/` are reduced to `malformed-map/`
-   (the only one the reduced `test-scripts.sh` check-route block references); that block
-   asserts the two live verdicts, the exit-2 usage errors, and the model-map trust-boundary
-   gate.
+   `templates/loops/` copies), whose `metrics:` line now carries the `route` column. The
+   STOP-and-park-on-`mismatch` rule is current behaviour for Codex; it stays
+   forward-looking for the other three harnesses. `model-for.sh` keeps the `--`
+   end-of-options guard added for this work. Fixtures under
+   `plugins/sefi-core/scripts/ci/fixtures/check-route/` are `malformed-map/` (the model-map
+   trust-boundary case) plus eleven Codex rollout fixtures -- `match`, `mismatch`,
+   `invalid-not-json`, `invalid-no-turn-context`, `invalid-two-turn-context`,
+   `decoy-nested-model-string`, `decoy-nested-turn-context-obj`, `decoy-nested-after-real`,
+   `decoy-only-nested`, `decoy-realshape-nested-after-real`, `decoy-realshape-only-nested`
+   -- exercised by the `test-scripts.sh` check-route block alongside the exit-2 usage
+   errors and a streamed 5000-digit-int `rollout-unreadable` case.
+6. **Live Codex route comparison (`check-route.py`)** -- `check-route.sh` keeps its exact
+   path but becomes a thin interpreter-resolving shim (prefer `python3`, fall back to
+   `python`, both required to be 3.11+; exit 3 with a "route check skipped" stderr notice
+   if neither is) over a new stdlib-Python parser
+   `plugins/sefi-core/scripts/check-route.py`. The live `match` / `mismatch` / `invalid`
+   route comparison is **Codex-only**: for a Codex dispatch the third positional argument
+   is the `CODEX_THREAD_ID` (a lowercase UUID) or `-` -- never a file path (a hidden
+   test-only `--rollout-file` reads a fixture directly) -- and the parser reads
+   `rollout-*-<thread-id>.jsonl` under `${CODEX_HOME:-~/.codex}/sessions` by streaming one
+   line at a time (never a full `records[]` list) with a real `json.loads` plus
+   **top-level dict access only** -- the last top-level `turn_context` record's
+   `payload.model` / `payload.effort` are compared against the tier map, and nothing else
+   (no rollout free text) leaves the parser. The POSIX-sh fail-open shapes structurally
+   cannot occur. Six `check-route` decoy fixtures pin two distinct classes. The four
+   flattened-shape decoys (`decoy-nested-model-string`, `decoy-nested-turn-context-obj`,
+   `decoy-nested-after-real`, `decoy-only-nested`) pin the substring-scan /
+   nested-key-confusion class -- a real `json.loads` never treats a nested `"model"` string
+   as a key, and the nested `turn_context` objects there are flattened
+   (`{"type":"turn_context","model":..,"effort":..}`, no `payload` key) so even a faithful
+   recursive descent walks past them. The top-level-only filter itself is pinned by two
+   REAL-SHAPE fixtures (`decoy-realshape-nested-after-real`, `decoy-realshape-only-nested`)
+   whose nested decoy is an exact
+   `{"type":"turn_context","payload":{"model":..,"effort":..}}` record: a recursive descent
+   that PRESERVES the payload-dict clause reads the nested route and their `mismatch` /
+   `invalid` assertions redden (verified by hand -- descend keeping all 3 clauses, run
+   `test-scripts.sh`, revert).
+   claude-code stays `unavailable`
+   (`harness-exposes-no-route-readback`) and opencode / hermes stay `not-applicable` (every
+   tier resolves to `flexible`) -- limits of those harnesses, not of the check; `match` /
+   `mismatch` / `invalid` remain reserved for them. `adapters/CODEX.md` gains a
+   `## Session rollout` section documenting the format (reverse-engineered from the
+   MIT-licensed astral-orchestrator `check-primary.py:82-101` /
+   `inspect-agent-runtime.sh:84-231` plus Codex public docs), marking every field not
+   confirmable from those sources UNKNOWN; the live path is fixture-validated, a
+   real-rollout confirmation on a live Codex host is a follow-up. `harness-actions.md`, the
+   `sefi-orchestration` `## Discipline` bullet, `close-out.md`, and both `state/metrics.md`
+   comments are reworded so STOP-on-`mismatch` is a current Codex behaviour, forward-looking
+   for the other three. The "no Python in plugin scripts" rule was lifted by the human for
+   this one post-dispatch script only, on the `benchmarks/scorecard.py` contributor-tooling
+   precedent. `gate.sh` picks up `feat/benchmark`'s pytest guard (run `pytest` only when a
+   test file or an explicit pytest config section -- incl. `tox.ini [pytest]` -- exists;
+   `--tolerate=5`; `.git` / `.worktrees` ignored) and `.gitignore` gains `__pycache__/`,
+   `*.pyc`, `.pytest_cache/`; the two branches converge on merge. No new runtime or CI
+   dependency (`python3` or `python` 3.11+, stdlib only: `argparse` / `json` / `os` / `re`
+   / `subprocess` / `sys` / `pathlib`); `check-route.py` is post-dispatch and NOT on
+   `run-all.sh`'s validator list. No `version` field changed.
 
 ## [0.5.2] - 2026-08-29
 

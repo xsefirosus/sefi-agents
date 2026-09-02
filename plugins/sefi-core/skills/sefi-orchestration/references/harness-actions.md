@@ -80,47 +80,66 @@ confirm against their adapter docs before assuming more overlap than the table s
 ## Requested vs observed route (post-dispatch route-evidence assertion)
 
 After a dispatch, `${CLAUDE_PLUGIN_ROOT}/scripts/check-route.sh <harness> <tier>
-<session-record-placeholder>` resolves the model + reasoning effort the tier map asked
+<session-record-or-thread-id>` resolves the model + reasoning effort the tier map asked
 for (through `${CLAUDE_PLUGIN_ROOT}/scripts/model-for.sh` -> `config/model-map.yml`, the
-single resolver), gates that pair against a strict allowlist, and reports one of two
-verdicts. This is the one place that per-harness mapping lives; adapters point here.
+single resolver), gates that pair against a strict allowlist, and reports one of the six
+states below. This is the one place that per-harness mapping lives; adapters point here.
+`check-route.sh` is a thin interpreter-resolving shim over `check-route.py`, a stdlib
+Python 3.11+ parser (real `json.loads` per rollout line, top-level dict access only).
 
-**This version reads NO session record for any harness.** An earlier revision shipped a
-rollout parser here; it was stripped because no harness has a confirmed rollout format in
-this repo and every parser variant tried had a fail-open shape (a decoy record could make
-a downgraded run report `match`). The third argument is an accepted-but-never-opened
-placeholder. The parser returns only in a future revision that has a real, documented
-format.
+**`match` / `mismatch` / `invalid` are LIVE for Codex, reserved for the other three.**
+For a Codex dispatch the third argument is the `CODEX_THREAD_ID` (a lowercase UUID) or `-`
+when none is available; the parser reads the last top-level `turn_context` record's
+`model` / `effort` from
+`rollout-*-<thread-id>.jsonl` under `${CODEX_HOME:-~/.codex}/sessions` and compares. It
+reads rollout *filenames* and those two fields only -- never rollout free text. An earlier
+POSIX-sh revision was reduced for five fail-open shapes (a decoy record could make a
+downgraded run report `match`); `json.loads` + top-level-only dict access structurally
+cannot have them. claude-code exposes no per-agent route readback; opencode / hermes
+resolve every tier to `flexible` -- those are limitations of those harnesses, not of the
+check, and their cells stay `unavailable` / `not-applicable`.
 
-Five states are the documented vocabulary. This version emits only the last two:
-- `match` -- observed model AND effort equal the requested route. **Reserved: not emitted
-  by this version.**
-- `mismatch` -- a real requested route, but the record shows a different one; the
+The check is tamper-EVIDENT against an accidental route downgrade (the harness silently
+running a different model/effort than the tier map asked for), not tamper-PROOF: an actor
+who controls the dispatch environment (`CODEX_HOME`, `PATH`) can still point it at a forged
+rollout -- that is the same trust level as the harness itself.
+
+Six states are the documented vocabulary:
+- `match` -- observed model AND effort equal the requested route. **LIVE for Codex.**
+  Exit 0.
+- `mismatch` -- a real requested route, but the rollout shows a different one; the
   orchestrator STOPS and reports to `inbox/` rather than accepting a downgraded run.
-  **Reserved: not emitted by this version.** If a future revision ever returns it, that
-  STOP-and-park rule applies.
-- `invalid` -- a session record is present but off its documented schema; fail noisily, a
-  field is never guessed. **Reserved: not emitted by this version.**
-- `unavailable` -- the harness exposes no route readback this repo can trust. The result
-  for EVERY harness whose tier resolves to a real (non-`flexible`) model today.
+  **LIVE for Codex** (reserved for the other three). Exit non-zero.
+- `invalid` -- a session rollout is present but off its documented schema (not JSON, no
+  `turn_context`, a malformed last `turn_context`, an ambiguous thread id); fail noisily,
+  a field is never guessed. **LIVE for Codex** (reserved for the other three). Exit
+  non-zero.
+- `unavailable` -- the harness exposes no route readback this repo can trust (claude-code
+  always; Codex when no thread id / no rollout is available).
 - `not-applicable` -- the requested tier resolves to the `flexible` sentinel
   (`config/model-map.yml:87-89` opencode, `:106-108` hermes): there is no requested
   model id, so a comparison is undefined. Without this state a naive comparator would
   false-alarm on every OpenCode/Hermes dispatch.
+- `skipped` -- `check-route.sh` exited 3: no `python3` / `python` 3.11+ interpreter is
+  available, so the check never ran. Record `route` as `skipped` and move on -- it is
+  **not** a `mismatch` and does **not** block or STOP the dispatch. The only "the check
+  could not run" state.
 
-Exit code: 0 only on `not-applicable`; non-zero on `unavailable`; exit 2 (no JSON) on a
-usage error.
+Exit code: 0 only on `match` or `not-applicable`; non-zero on `mismatch` / `invalid` /
+`unavailable`; exit 2 (no JSON) on a usage error; exit 3 (shim, stderr notice) when no
+`python3` / `python` 3.11+ interpreter is available -- the orchestrator records `route`
+as `skipped` and treats it as "the check did not run" (never as `mismatch`).
 
-| Harness | Where an observed route would live (future) | State today | Why |
+| Harness | Where the observed route lives | State today | Why |
 |---|---|---|---|
 | Claude Code | nothing -- the CLI reports no per-agent model or token usage (see the Headless invocation note above: "The CLI reports no token usage") | `unavailable` (reason `harness-exposes-no-route-readback`) | no route readback exists on this harness, by design |
-| Codex | the session rollout `rollout-*-<thread-id>.jsonl` under `${CODEX_HOME:-~/.codex}/sessions` (technique adapted from astral-orchestrator `check-primary.py` lines 82-101, MIT: match rollout *filenames* only, never read rollout contents) | `unavailable` (reason `codex-rollout-format-unconfirmed`) | `CODEX_THREAD_ID`, that sessions directory, and the rollout JSON shape are NOT documented in `adapters/CODEX.md` or `.codex/config.toml`. Per this file's gap rule (lines 44-47) the cell stays UNKNOWN and `check-route.sh` opens nothing; a real parser returns only once `adapters/CODEX.md` documents the format. |
-| OpenCode | a session record -- location and format | `not-applicable` | `adapters/OPENCODE.md` documents no session-record location/format, so that cell stays UNKNOWN; and every OpenCode tier resolves to `flexible` (`config/model-map.yml:87-89`), so `check-route.sh` short-circuits to `not-applicable` regardless. |
-| Hermes | the OpenAI-compatible `usage` block carries tokens (Headless invocation note above), but not a model readback | `not-applicable` (`unavailable` if a tier is ever pinned to a real id) | model readback is UNKNOWN in `adapters/HERMES.md`; and every Hermes tier resolves to `flexible` (`config/model-map.yml:106-108`), so `check-route.sh` returns `not-applicable` today. |
+| Codex | the session rollout `rollout-*-<thread-id>.jsonl` under `${CODEX_HOME:-~/.codex}/sessions`, format documented in `adapters/CODEX.md` `## Session rollout` (technique adapted from astral-orchestrator `check-primary.py:82-101`, MIT: match rollout *filenames* only, read only `model` / `effort` from the last top-level `turn_context`, never rollout free text) | **LIVE: `match` / `mismatch` / `invalid`** per the state of the run (`unavailable` when no `CODEX_THREAD_ID` / rollout is available) | `${CLAUDE_PLUGIN_ROOT}/scripts/check-route.sh` (the `check-route.py` parser) reads the rollout and compares observed model + effort against the tier map. Fields not confirmable from the two cited MIT sources are marked UNKNOWN in `adapters/CODEX.md`; an off-schema rollout is `invalid`, never a guessed `match`. |
+| OpenCode | a session record -- location and format | `not-applicable` | `adapters/OPENCODE.md` documents no session-record location/format, so that cell stays UNKNOWN; and every OpenCode tier resolves to `flexible` (`config/model-map.yml:87-89`), so `check-route.sh` short-circuits to `not-applicable` regardless. A limitation of the harness, not of the check. |
+| Hermes | the OpenAI-compatible `usage` block carries tokens (Headless invocation note above), but not a model readback | `not-applicable` (`unavailable` if a tier is ever pinned to a real id) | model readback is UNKNOWN in `adapters/HERMES.md`; and every Hermes tier resolves to `flexible` (`config/model-map.yml:106-108`), so `check-route.sh` returns `not-applicable` today. A limitation of the harness, not of the check. |
 
-Honest net result: Phase 3 ships with NO live route comparison on any of the four
-harnesses. Every call returns `unavailable` or `not-applicable`. `match` / `mismatch` /
-`invalid` are reserved for a future revision with a confirmed rollout format and a real
-JSON parser -- Codex is the first candidate. This is the expected outcome, not a defect:
-the documented five-state vocabulary and the honest `unavailable` / `not-applicable`
-verdicts are the deliverable.
+Net result: live requested-vs-observed route comparison now exists on **Codex** -- a real
+`json.loads` parser over the session rollout, `match` / `mismatch` / `invalid` per the
+state of the run. claude-code stays `unavailable` and opencode / hermes stay
+`not-applicable` by those harnesses' own limits (no route readback; every tier resolves to
+`flexible`), not by any limitation of the check. `match` / `mismatch` / `invalid` remain
+reserved for those three until their adapter docs document a readable route.

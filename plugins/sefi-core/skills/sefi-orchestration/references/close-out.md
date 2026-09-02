@@ -37,13 +37,19 @@ File it when it would change how a later session acts:
   run first, a test that is flaky for a known reason)
 - a correction to something previously believed true here
 - a recurring symptom seen for the second time (recurrence is the promotion signal)
-- a route `mismatch` this cycle: in this version
-  `${CLAUDE_PLUGIN_ROOT}/scripts/check-route.sh` returns only `unavailable` or
-  `not-applicable` and never `mismatch` -- that verdict is reserved for a future revision
-  with a confirmed rollout format. If such a revision ever reports `mismatch` (the dispatch
-  ran a different model/effort than the tier map asked for), the cycle stops, parks the item
-  in `inbox/`, and the observed-vs-expected route is filed as a constraint. A routine
-  `match` / `unavailable` / `not-applicable` result is not filed.
+- a route `mismatch` this cycle: on Codex,
+  `${CLAUDE_PLUGIN_ROOT}/scripts/check-route.sh` reads the session rollout and returns
+  `mismatch` when the dispatch ran a different model/effort than the tier map asked for
+  (or `invalid` when the rollout is off-schema). When that happens the cycle stops, parks
+  the item in `inbox/`, and the observed-vs-expected route is filed as a constraint. The
+  same STOP-and-file rule is forward-looking for claude-code / opencode / hermes, whose
+  rows stay `unavailable` / `not-applicable` until their adapter docs document a readable
+  route. A routine `match` / `unavailable` / `not-applicable` result is not filed; nor is a
+single `skipped` (the shim found no `python3` / `python` 3.11+ interpreter, so the check
+did not run -- it is recorded in `metrics.md` but is not a finding and never STOPs the
+cycle). But N consecutive `skipped` route rows (use >= 3) IS an inbox item: on that host
+the route assertion is effectively OFF (no Python 3.11+), so a real `mismatch` would be
+invisible -- file it so the host gets an interpreter.
 
 Do NOT file: what was done step by step, anything reconstructable from the diff or from
 `state/`, restatements of the plan, or tool output. That is what `state/` and

@@ -1,0 +1,2 @@
+{"type":"session_meta","payload":{"id":"11111111-1111-4111-8111-111111111111","agent_path":"/workspace/repo/AGENTS.md","cwd":"/workspace/repo"}}
+{"type":"turn_context","payload":{"model":"gpt-5.6-terra","effort":"high","cwd":"/workspace/repo"}}
