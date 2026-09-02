@@ -5,7 +5,12 @@ uses RUNNER-OBSERVED values ONLY:
 
   * ``strategy`` / ``harness`` / ``trial`` / ``case_id`` / ``acceptance_checks`` -- the
     trial matrix the runner is executing;
-  * ``wall_time_seconds`` / ``model_calls`` -- observed by the runner around the arm;
+  * ``wall_time_seconds`` -- observed by the runner around the arm;
+  * ``model_calls`` -- in this version NO harness reports a per-call count, so this is
+    emitted as a FLOOR of 1 (one arm invocation) purely to satisfy the scorer's
+    route-lane invariant (``scorecard.py`` requires ``model_calls`` present and
+    ``model_calls >= len(route_evidence)``). It is NOT an observation; ``model_calls_delta``
+    between arms is not a meaningful measured quantity until per-call telemetry is wired;
   * ``accepted`` / ``first_pass_accepted`` / ``rework_required`` -- from the
     ``acceptance`` dict the caller (``run.py``, step 7) computes by re-running the case
     ``acceptance_check`` from a PRISTINE copy OUTSIDE the sandbox

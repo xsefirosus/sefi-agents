@@ -32,6 +32,21 @@ Changelog; this project adheres to Semantic Versioning.
    note. Real positive route capture still requires `feat/route-evidence-live` merged or
    rebased in first.
 
+   Security + QA fix pass on the runner: arm-facing scratch (prompt, session-echo, raw
+   log) is now isolated in a private `tempfile.mkdtemp` dir and the `--out` path is never
+   disclosed to the arm; the abort path removes any raced-in `trials.jsonl` and the runner
+   refuses to finalize over a pre-existing one; `session_record_ref` is trusted only when
+   the echoed id byte-equals the runner-generated id; `--harness` is validated as a usage
+   error (exit 2, no output dir); a fatal mid-run error now writes `ABORTED.md` and exits
+   0; a real run requires a positive `--est-cost-per-trial`; integrity check 1 compares
+   each trial's pre-manifest to a dedicated once-per-run baseline clone (no longer a
+   tautology); `model_calls` is documented as a synthetic floor, not a measurement;
+   `shutil.rmtree` uses `onexc` on Python >= 3.12; arm logs record the interpreter
+   basename only. The three frozen cases (`sh-strict-mode`, `json-trailing-newline`,
+   `notes-single-h1`) were **re-golden'd** -- their prompts' stale "boundaries are
+   ADVISORY / NOTHING enforces them" line was corrected to state the runner enforces
+   `allowed_paths`, so each `case_fingerprint` in `benchmarks/cases.json` was recomputed.
+
 ## [Unreleased] - 2026-09-01
 
 ### Added

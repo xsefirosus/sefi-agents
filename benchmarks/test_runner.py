@@ -17,11 +17,13 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -47,7 +49,12 @@ FIXTURES = REPO_ROOT / "benchmarks" / "runner" / "fixtures"
 MOCK_ARM = FIXTURES / "mock_arm.py"
 MOCK_ARM_SLOW = FIXTURES / "mock_arm_slow.py"
 MOCK_ARM_TAMPER = FIXTURES / "mock_arm_tamper.py"
+MOCK_ARM_FORGE = FIXTURES / "mock_arm_forge.py"
+MOCK_ARM_WRONGSESSION = FIXTURES / "mock_arm_wrongsession.py"
 CHECK_ROUTE_STUB = FIXTURES / "check-route-stub.sh"
+UUID_RE = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+)
 SH_STRICT_PROMPT = (
     REPO_ROOT / "benchmarks" / "prompts" / "sh-strict-mode.md"
 ).read_text(encoding="utf-8")
@@ -215,6 +222,26 @@ class ArmsTests(unittest.TestCase):
             )
             self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
 
+    def test_honest_arm_session_ref_is_a_uuid_the_runner_generated(self) -> None:
+        # FIX 2: mock_arm.py echoes SEFI_ARM_SESSION_ID verbatim -> run_arm returns it.
+        with sandbox(REPO_ROOT, "HEAD") as repo, tempfile.TemporaryDirectory() as out:
+            result = run_arm(
+                "control", "claude-code", SH_STRICT_PROMPT, repo,
+                timeout_s=5, mock_arm=MOCK_ARM, results_dir=Path(out),
+            )
+        self.assertIsNotNone(result.session_record_ref)
+        self.assertRegex(result.session_record_ref, UUID_RE)
+
+    def test_mismatched_session_echo_yields_none(self) -> None:
+        # FIX 2: an arm that echoes a DIFFERENT lowercase-UUID does NOT get to pick the
+        # session ref -- run_arm compares the echo to the id it generated and returns None.
+        with sandbox(REPO_ROOT, "HEAD") as repo, tempfile.TemporaryDirectory() as out:
+            result = run_arm(
+                "control", "claude-code", SH_STRICT_PROMPT, repo,
+                timeout_s=5, mock_arm=MOCK_ARM_WRONGSESSION, results_dir=Path(out),
+            )
+        self.assertIsNone(result.session_record_ref)
+
     def test_timeout_is_caught_as_nonfatal_result(self) -> None:
         with sandbox(REPO_ROOT, "HEAD") as repo, tempfile.TemporaryDirectory() as out:
             # A 0.1s budget against a mock that sleeps 30s: run_arm must NOT raise.
@@ -351,9 +378,18 @@ class IntegrityTests(unittest.TestCase):
         post = dict(_PRE)
         self.assertIs(verify(_PRE, dict(_PRE), post, _ALLOWED, None), False)
 
-    def test_all_none_manifests_fail_by_explicit_guard(self) -> None:
-        # C3: the explicit shape guard (check 0) fails this WITHOUT relying on a
-        # downstream raise -- snapshot.diff is never reached (short-circuit).
+    def test_empty_dict_manifests_fail_by_the_shape_guard_alone(self) -> None:
+        # verify({}, {}, {}) is the ONE combination that only the shape guard (check 0)
+        # decides: {} == {} passes check 1, snapshot.diff({}, {}, ...) == [] passes
+        # check 2, and the route is captured -- so WITHOUT the guard this returns True.
+        # With integrity.py's guard line removed, this assertion reddens.
+        self.assertIs(verify({}, {}, {}, [], _ROUTE_CAPTURED), False)
+
+    def test_none_manifests_fail_by_guard_or_outer_except(self) -> None:
+        # None inputs are failed EITHER by the shape guard (isinstance(None, dict) is
+        # False) OR, if the guard were absent, by the outer `except Exception: return
+        # False` when snapshot.diff calls None.items(). Both paths end at False; this
+        # asserts the outcome, not which line caught it.
         self.assertIs(verify(None, None, None, [], _ROUTE_CAPTURED), False)
 
     def test_empty_pre_or_post_manifest_returns_false(self) -> None:
@@ -712,6 +748,228 @@ class EndToEndTests(unittest.TestCase):
             proc = self._score(out)
             self.assertEqual(proc.returncode, 0, proc.stderr)
             self.assertIn("scored trials (integrity_ok is true): 0", proc.stdout)
+
+
+def _load_case(case_id: str) -> dict:
+    data = json.loads(
+        (REPO_ROOT / "benchmarks" / "cases.json").read_text(encoding="utf-8")
+    )
+    return next(c for c in data["cases"] if c["case_id"] == case_id)
+
+
+class RefManifestTests(unittest.TestCase):
+    """FIX 7: integrity check 1 (`pre == ref`) is a real check against a DEDICATED
+    once-per-run baseline clone, not a per-trial `dict(pre)` tautology."""
+
+    def _run_trial(self, ref_manifest: dict, out: Path) -> dict:
+        from benchmarks.runner.run import resolve_check_script, run_trial
+
+        case = _load_case("sh-strict-mode")
+        return run_trial(
+            case=case,
+            strategy="control",
+            harness="claude-code",
+            trial_index=1,
+            out_dir=out,
+            timeout_s=30,
+            mock_arm=MOCK_ARM,
+            check_route_cmd=str(CHECK_ROUTE_STUB),
+            tier="mid",
+            pinned_ref="HEAD",
+            check_script=resolve_check_script(case),
+            ref_manifest=ref_manifest,
+        )
+
+    def test_matching_baseline_passes_check_one(self) -> None:
+        with sandbox(REPO_ROOT, "HEAD") as sb:
+            baseline = snapshot(sb)
+        with tempfile.TemporaryDirectory() as tmp:
+            rec = self._run_trial(baseline, Path(tmp))
+        self.assertIs(rec.get("integrity_ok"), True)
+
+    def test_perturbed_pre_vs_baseline_fails_check_one(self) -> None:
+        with sandbox(REPO_ROOT, "HEAD") as sb:
+            baseline = snapshot(sb)
+        perturbed = dict(baseline)
+        perturbed["zzz/not-a-real-file"] = "0" * 64  # pre (real clone) != this ref
+        with tempfile.TemporaryDirectory() as tmp:
+            rec = self._run_trial(perturbed, Path(tmp))
+        self.assertNotIn("integrity_ok", rec)
+
+    def test_dedicated_ref_clone_built_once_per_run(self) -> None:
+        import benchmarks.runner.run as runmod
+
+        real_sandbox = runmod.sandbox
+        calls = {"n": 0}
+
+        def counting(*a, **kw):
+            calls["n"] += 1
+            return real_sandbox(*a, **kw)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "run"
+            with mock.patch.object(runmod, "sandbox", counting):
+                rc = runmod.main([
+                    "--mock-arm", str(MOCK_ARM),
+                    "--check-route-cmd", str(CHECK_ROUTE_STUB),
+                    "--cases", "sh-strict-mode",
+                    "--strategies", "control,sefi-chain-sequential",
+                    "--harness", "claude-code", "--tier", "mid",
+                    "--est-cost-per-trial", "0", "--out", str(out),
+                ])
+        self.assertEqual(rc, 0)
+        # 1 dedicated baseline clone + 1 clone per trial (2 trials) == 3.
+        self.assertEqual(calls["n"], 3)
+
+
+class FatalAndPreflightTests(unittest.TestCase):
+    """FIX 4 + FIX 6: a bad --harness is a usage error (exit 2, no out dir); a fatal
+    mid-run error writes ABORTED.md and exits 0; a real run needs a positive est cost."""
+
+    def _argv(self, out: Path, **over) -> list[str]:
+        base = {
+            "--mock-arm": str(MOCK_ARM),
+            "--check-route-cmd": str(CHECK_ROUTE_STUB),
+            "--cases": "sh-strict-mode",
+            "--strategies": "control,sefi-chain-sequential",
+            "--harness": "claude-code",
+            "--tier": "mid",
+            "--est-cost-per-trial": "0",
+            "--out": str(out),
+        }
+        base.update(over)
+        argv: list[str] = []
+        for k, v in base.items():
+            if v is None:
+                continue
+            argv += [k, v]
+        return argv
+
+    def _expect_usage_error(self, argv: list[str]) -> int:
+        import contextlib
+        import io
+
+        with contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit) as ctx:
+                from benchmarks.runner.run import main as run_main
+
+                run_main(argv)
+        return ctx.exception.code
+
+    def test_bad_harness_is_exit_2_and_creates_no_out_dir(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "run"
+            code = self._expect_usage_error(self._argv(out, **{"--harness": "bogus"}))
+            self.assertEqual(code, 2)
+            self.assertFalse(out.exists(), "no output dir on a usage error")
+
+    def test_bad_strategy_is_exit_2_and_creates_no_out_dir(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "run"
+            code = self._expect_usage_error(self._argv(out, **{"--strategies": "xyz"}))
+            self.assertEqual(code, 2)
+            self.assertFalse(out.exists())
+
+    def test_fatal_midloop_error_writes_aborted_md_and_exits_0(self) -> None:
+        import benchmarks.runner.run as runmod
+
+        def boom(**kw):
+            raise RuntimeError("injected mid-loop failure")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "run"
+            with mock.patch.object(runmod, "run_trial", boom):
+                rc = runmod.main(self._argv(out))
+            self.assertEqual(rc, 0)
+            self.assertTrue((out / "ABORTED.md").is_file())
+            self.assertIn("fatal:", (out / "ABORTED.md").read_text(encoding="utf-8"))
+            self.assertFalse((out / "trials.jsonl").exists())
+
+    def test_real_run_without_est_cost_preflight_aborts(self) -> None:
+        from benchmarks.runner.run import main as run_main
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "run"
+            # No --mock-arm: a REAL run. est cost 0 -> the $cap can never bind -> abort.
+            rc = run_main(self._argv(out, **{"--mock-arm": None}))
+            self.assertEqual(rc, 0)
+            self.assertTrue((out / "ABORTED.md").is_file())
+            self.assertIn(
+                "positive --est-cost-per-trial",
+                (out / "ABORTED.md").read_text(encoding="utf-8"),
+            )
+            self.assertFalse((out / "trials.jsonl").exists())
+
+    def test_mock_run_with_zero_est_cost_still_runs(self) -> None:
+        from benchmarks.runner.run import main as run_main
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "run"
+            rc = run_main(self._argv(out))
+            self.assertEqual(rc, 0)
+            self.assertTrue((out / "trials.jsonl").is_file())
+
+
+class ForgeryTests(unittest.TestCase):
+    """FIX 1: an arm cannot forge a scoreable <out>/trials.jsonl.
+
+    The arm scratch is isolated from the results dir and the results-dir path is never
+    disclosed to the arm; the runner removes a stale trials.jsonl at startup, refuses to
+    finalize over a pre-existing one, and unlinks any raced-in one on an abort.
+    """
+
+    def _argv(self, out: Path, mock_arm: Path, est: str) -> list[str]:
+        return [
+            "--mock-arm", str(mock_arm),
+            "--check-route-cmd", str(CHECK_ROUTE_STUB),
+            "--cases", "sh-strict-mode",
+            "--strategies", "control,sefi-chain-sequential",
+            "--harness", "claude-code", "--tier", "mid",
+            "--est-cost-per-trial", est, "--out", str(out),
+        ]
+
+    def test_forge_on_clean_run_keeps_only_the_real_records(self) -> None:
+        from benchmarks.runner.run import main as run_main
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "run"
+            rc = run_main(self._argv(out, MOCK_ARM_FORGE, "0"))
+            self.assertEqual(rc, 0)
+            recs = [
+                json.loads(ln)
+                for ln in (out / "trials.jsonl").read_text(encoding="utf-8").splitlines()
+                if ln.strip()
+            ]
+        self.assertEqual(len(recs), 2)
+        for rec in recs:
+            self.assertTrue(rec["trial_id"].startswith("sh-strict-mode-"))
+            self.assertNotIn("forged", rec["trial_id"])
+            # the arm's forgery landed nowhere the runner reads -> real trial still clean.
+            self.assertIs(rec.get("integrity_ok"), True)
+
+    def test_forge_on_budget_abort_leaves_no_trials_jsonl(self) -> None:
+        import benchmarks.runner.run as runmod
+
+        real_run_trial = runmod.run_trial
+
+        def racing(**kw):
+            # Simulate an arm that raced a trials.jsonl into --out mid-run (something the
+            # isolation in arms.py now prevents, but the abort path must still be robust).
+            rec = real_run_trial(**kw)
+            (kw["out_dir"] / "trials.jsonl").write_text('{"raced": true}\n', encoding="ascii")
+            return rec
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "run"
+            with mock.patch.object(runmod, "run_trial", racing):
+                # est 8 vs the $15 cap: trial 1 runs (and races a file in), trial 2 aborts.
+                rc = runmod.main(self._argv(out, MOCK_ARM_FORGE, "8"))
+            self.assertEqual(rc, 0)
+            self.assertTrue((out / "ABORTED.md").is_file())
+            self.assertFalse(
+                (out / "trials.jsonl").exists(),
+                "the abort path must unlink a raced-in trials.jsonl (FIX 1b)",
+            )
 
 
 if __name__ == "__main__":

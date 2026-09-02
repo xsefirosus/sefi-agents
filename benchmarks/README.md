@@ -54,8 +54,9 @@ this Windows host. `diff(before, after, allowed_paths)` returns every path that 
 was added, or was removed AND is not under an `allowed_paths` entry. An `allowed_paths`
 entry matches a path exactly or as a directory prefix (`a/b` covers `a/b` and `a/b/c`,
 not `a/bc`); `allowed_paths` is the case's own list from `cases.json`. The runner writes
-`pre-*.manifest`, `ref-*.manifest`, and `post-*.manifest` to the `--out` directory,
-OUTSIDE the sandbox, in a runner-owned dir the arm's prompt and cwd never name.
+`pre-*.manifest`, `ref-*.manifest`, and `post-*.manifest` per trial to the `--out`
+directory, plus one run-level `ref.manifest` (see the integrity gate below), OUTSIDE the
+sandbox, in a runner-owned dir the arm's prompt and cwd never name.
 
 ### Out-of-process route capture (`benchmarks/runner/route.py`)
 
@@ -91,32 +92,63 @@ from the base checkout -- never an arm-authored check string from the trial tree
 `model=unchecked`. `record.py` imports nothing from `arms.py` and has no code path that
 reads arm stdout or the raw log. No arm-written value is an input to scoring.
 
+`model_calls` is a **placeholder, not an observation**: in this version NO harness reports
+a per-call count, so `model_calls` is emitted as a floor of `1` (one arm invocation)
+purely to satisfy the scorer's route-lane invariant (`model_calls >= len(route_evidence)`).
+`model_calls_delta` between arms is therefore **not a meaningful measured quantity** until
+per-call telemetry is wired.
+
+**Honest limit -- wholesale artifact forgery.** No arm-written *value* is a scoring input,
+and the arm is never told the results-dir path (`arms.py` puts every arm-facing file --
+prompt, session-echo, raw log -- in a private `tempfile.mkdtemp` dir torn down in a
+`finally:`; the runner copies the human-readable log under `--out` only *after* the arm
+has exited). But an arm dropping its *own* `trials.jsonl` somewhere on disk is **not
+prevented without OS-level isolation** (a container), which this version does not use.
+Mitigations: arm scratch is isolated from the results dir; the results-dir path is never
+disclosed to the arm; `run.py` removes a stale `trials.jsonl` at startup, refuses to
+finalize over a pre-existing `trials.jsonl`, and unlinks any raced-in one on an abort.
+
 ### Fail-closed integrity gate (`benchmarks/runner/integrity.py`)
 
 `verify(pre, ref, post, allowed_paths, route_result)` computes `ok = True` then
 `ok = ok and <check>` for EACH of: an explicit shape guard (`pre` and `post` are
-non-empty dicts, `ref` is a dict); `pre == ref` (the pre-run state equals the pinned-ref
-manifest); `snapshot.diff(pre, post, allowed_paths) == []` (no out-of-allowlist change);
-`route_result.captured is True`. The whole body is wrapped in
+non-empty dicts, `ref` is a dict); `pre == ref`; `snapshot.diff(pre, post, allowed_paths)
+== []` (no out-of-allowlist change); `route_result.captured is True`. The whole body is
+wrapped in
 `try: ... except Exception: return False`. There is **no `is not False`, no
 `if <x>_available:` skip, no early `return True`** -- a missing manifest, an import
 failure, a raised exception, or an uncaptured route all yield `False`. `record.py` sets
 `integrity_ok` LAST and ONLY as `verify(...) is True`; every other outcome omits the key
 and `scorecard.py` then excludes the trial.
 
+The `ref` manifest is `snapshot()` of a **dedicated clean `git clone` at `pinned_ref`**,
+built and torn down ONCE per run by `run.py` and cached for every trial. So `pre == ref`
+is a real check -- it catches a per-trial clone that came out different from a known-good
+baseline (a corrupted clone, an `autocrlf` leak, a disk fault) -- not a by-construction
+tautology. One extra `git clone` per run (not per trial). Base-checkout integrity itself
+is not enforced without OS isolation; the check script is resolved from the base checkout
+by absolute path with a `relative_to` escape guard and run as an argv list (never a shell
+string, never the sandbox copy).
+
 ### `trials.partial.jsonl` -> `trials.jsonl` staging (`benchmarks/runner/run.py`)
 
 Each trial's record is staged to `<out>/trials.partial.jsonl` as it completes. The budget
 pre-flight reads `benchmark_per_run_usd_cap` from `config/budget.yml` by the same
 line-scan `scorecard.py` uses (no YAML dependency); an absent / non-finite / non-positive
-cap **ABORTS before any arm runs**. A running cost ceiling stops the matrix before a
-trial that would cross the cap. On ANY abort the runner writes `<out>/ABORTED.md`, leaves
-`trials.partial.jsonl` in place, and **never creates `<out>/trials.jsonl`**. Only a
-clean, within-budget completion of the full matrix copies
-`trials.partial.jsonl` -> `trials.jsonl` (write-temp-then-rename). The scorer is only ever
-pointed at `trials.jsonl`, so an aborted run has nothing to score -- "trials so far
-non-scored" holds structurally. `run.py` exits 0 on a completed OR a cleanly aborted run;
-non-zero only on a usage error.
+cap **ABORTS before any arm runs**. A **real run** (no `--mock-arm`) with a non-positive
+`--est-cost-per-trial` also aborts in pre-flight -- the running ceiling would be inert, so
+the `$cap` could never bind; a `--mock-arm` run (zero spend by construction) may pass `0`.
+A running cost ceiling then stops the matrix before a trial that would cross the cap. On
+ANY abort -- budget, cost-ceiling, or a fatal mid-run error -- the runner writes
+`<out>/ABORTED.md` (a fatal error's reason is `fatal: <exc>`), leaves
+`trials.partial.jsonl` in place, removes any `<out>/trials.jsonl` that raced in, and
+**never creates `<out>/trials.jsonl`**. Only a clean, within-budget completion of the full
+matrix copies `trials.partial.jsonl` -> `trials.jsonl` (write-temp-then-rename), and only
+if no `trials.jsonl` already exists there -- the runner never finalizes over a file it did
+not write. The scorer is only ever pointed at `trials.jsonl`, so an aborted run has
+nothing to score -- "trials so far non-scored" holds structurally. `run.py` exits 0 on a
+completed OR a cleanly aborted run; **non-zero ONLY on a usage / argument error** (a bad
+`--strategies` / `--harness`, an unknown case: exit 2, no output dir created).
 
 ### How to run
 
@@ -148,7 +180,7 @@ CI job, or a loop. `gate.sh` already auto-collects `benchmarks/test_*.py` via it
 `find ... -name 'test_*.py'` branch (with `--ignore=.git --ignore=.worktrees`), so
 `benchmarks/test_runner.py` runs under the gate with **no `gate.sh` change**. Confirmed
 on this branch: `pytest -q --collect-only --ignore=.git --ignore=.worktrees` collects
-`benchmarks/test_runner.py` (52 tests, e.g.
+`benchmarks/test_runner.py` (65 tests, e.g.
 `benchmarks/test_runner.py::EndToEndTests::test_green_run_scores_two_trials`), and
 `bash plugins/sefi-core/scripts/gate.sh` prints `gate: PASSED (2 checks)` with
 `ok: pytest`.
@@ -268,7 +300,7 @@ is `1`. Required fields:
 | `first_pass_accepted` | Whether it passed before any rework. Cannot be true when `accepted` is false. |
 | `rework_required` | Whether the first output needed rework. Cannot be true together with `first_pass_accepted`. |
 | `wall_time_seconds` | Non-negative wall-clock duration for the whole arm. |
-| `model_calls` | Number of model calls (never fewer than the `route_evidence` count). |
+| `model_calls` | Never fewer than the `route_evidence` count. In this version NO harness reports a per-call count, so the runner emits it as a floor of `1` (one arm invocation) to satisfy that invariant -- it is a placeholder, not a measurement, and `model_calls_delta` is not a meaningful measured quantity yet. |
 | `route_evidence` | Non-empty list of route-evidence objects (below). |
 
 Optional fields: `input_tokens`, `output_tokens`, `quality_score` (0-100 number,

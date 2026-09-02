@@ -11,10 +11,23 @@ It returns an ``ArmResult`` of RUNNER-OBSERVED values only:
                                RUNNER from the invocation: the runner generates the id,
                                exports it in the child environment, and reads it back from
                                a known file the harness echoes it into. It is NEVER parsed
-                               from arm stdout. ``None`` when no id came back -- downstream
-                               that means route-not-captured -> the trial fails closed.
-  * ``raw_log_path``        -- combined stdout+stderr saved to a file for humans under
-                               ``results_dir``. ``record.py`` (step 6) never reads it.
+                               from arm stdout, and it is returned ONLY when the echoed
+                               value byte-equals the runner-generated id -- a missing /
+                               blank / different echo yields ``None`` (route-not-captured
+                               -> the trial fails closed).
+  * ``raw_log_path``        -- combined stdout+stderr saved to a file for humans. It is
+                               written into a private per-arm scratch dir first; the
+                               RUNNER copies it under ``results_dir`` AFTER the arm process
+                               has exited, so the arm never learns the results-dir path.
+                               ``record.py`` (step 6) never reads it.
+
+Trust boundary: ALL arm-facing scratch (the prompt file, the session-echo file, the raw
+log) is created in a private ``tempfile.mkdtemp(prefix="sefi-arm-")`` dir that is torn
+down in a ``finally:``. The ``results_dir`` (which holds ``trials.jsonl``) is NEVER passed
+to the child in argv or env and is NEVER the arm's scratch dir. This does not stop an arm
+from writing a bogus ``trials.jsonl`` somewhere it can reach -- only OS-level isolation
+would -- but the arm cannot reach the real results dir, and ``run.py`` refuses to finalize
+over a pre-existing ``trials.jsonl``.
 
 The test-only ``mock_arm`` seam runs a local Python file via ``resolve_python()`` instead
 of a real harness CLI; EVERY test in ``benchmarks/test_runner.py`` uses it. The
@@ -28,6 +41,7 @@ Standard library only: os, subprocess, tempfile, time, pathlib, typing.
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 import tempfile
 import time
@@ -139,84 +153,100 @@ def run_arm(
     if not repo.is_dir():
         raise ValueError(f"sandbox_repo is not a directory: {repo}")
 
-    if results_dir is not None:
-        out_dir = Path(results_dir)
-    else:
-        out_dir = Path(tempfile.mkdtemp(prefix="sefi-arm-"))
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    session_id = _new_session_id()
-    session_file = out_dir / f"arm-session-{session_id}.txt"
-    prompt_path = out_dir / f"arm-prompt-{session_id}.md"
-    prompt_path.write_text(prompt_text, encoding="utf-8")
-    raw_log_path = out_dir / f"arm-{strategy}-{session_id}.log"
-
-    # The runner sets the session id in the child environment; the harness (or the mock)
-    # echoes it into SEFI_ARM_SESSION_FILE. The runner reads THAT file back -- it never
-    # trusts arm stdout for the id.
-    env = os.environ.copy()
-    env["SEFI_ARM_SESSION_ID"] = session_id
-    env["SEFI_ARM_SESSION_FILE"] = str(session_file)
-    env["SEFI_ARM_STRATEGY"] = strategy
-    env["SEFI_ARM_HARNESS"] = harness
-
-    if mock_arm is not None:
-        cmd = [
-            resolve_python(),
-            str(Path(mock_arm).resolve(strict=True)),
-            str(prompt_path),
-            repo.as_posix(),
-        ]
-    else:
-        cmd = _real_command(strategy, harness, prompt_text)
-
-    start = time.monotonic()
-    stdout = ""
-    stderr = ""
+    # ALL arm-facing scratch lives in a private dir, NEVER results_dir. Torn down in the
+    # finally: below. The arm is never handed the results-dir path in argv or env.
+    arm_scratch = Path(tempfile.mkdtemp(prefix="sefi-arm-"))
     try:
-        proc = subprocess.run(
-            cmd,
-            cwd=str(repo),
-            env=env,
-            capture_output=True,
-            text=True,
-            timeout=timeout_s,
-            check=False,
+        session_id = _new_session_id()
+        session_file = arm_scratch / f"arm-session-{session_id}.txt"
+        prompt_path = arm_scratch / f"arm-prompt-{session_id}.md"
+        prompt_path.write_text(prompt_text, encoding="utf-8")
+        raw_log_path = arm_scratch / f"arm-{strategy}-{session_id}.log"
+
+        # The runner sets the session id in the child environment; the harness (or the
+        # mock) echoes it into SEFI_ARM_SESSION_FILE (in the private scratch dir). The
+        # runner reads THAT file back -- it never trusts arm stdout for the id.
+        env = os.environ.copy()
+        env["SEFI_ARM_SESSION_ID"] = session_id
+        env["SEFI_ARM_SESSION_FILE"] = str(session_file)
+        env["SEFI_ARM_STRATEGY"] = strategy
+        env["SEFI_ARM_HARNESS"] = harness
+
+        if mock_arm is not None:
+            cmd = [
+                resolve_python(),
+                str(Path(mock_arm).resolve(strict=True)),
+                str(prompt_path),
+                repo.as_posix(),
+            ]
+        else:
+            cmd = _real_command(strategy, harness, prompt_text)
+
+        start = time.monotonic()
+        stdout = ""
+        stderr = ""
+        try:
+            proc = subprocess.run(
+                cmd,
+                cwd=str(repo),
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=timeout_s,
+                check=False,
+            )
+            exit_code = proc.returncode
+            stdout = proc.stdout or ""
+            stderr = proc.stderr or ""
+        except subprocess.TimeoutExpired as exc:
+            # NON-FATAL: a timed-out arm is a recorded result, not a raised exception.
+            exit_code = _TIMEOUT_EXIT
+            stdout = _as_text(exc.stdout)
+            stderr = _as_text(exc.stderr)
+            stderr += f"\n[run_arm] subprocess.TimeoutExpired after {timeout_s}s\n"
+        except OSError as exc:
+            # NON-FATAL: no usable harness binary -> fail-closed (plan objective:24-27).
+            exit_code = _NO_BINARY_EXIT
+            stderr = f"[run_arm] could not launch arm: {exc}\n"
+        wall_time_s = max(0.0, time.monotonic() - start)
+
+        # Log the interpreter / binary BASENAME only -- the absolute path embeds the
+        # operator's home dir (benchmarks/README.md stance on personal paths).
+        logged_cmd = [Path(cmd[0]).name, *cmd[1:]] if cmd else []
+        raw_log_path.write_text(
+            f"$ {' '.join(logged_cmd)}\n--- stdout ---\n{stdout}\n--- stderr ---\n{stderr}\n",
+            encoding="utf-8",
         )
-        exit_code = proc.returncode
-        stdout = proc.stdout or ""
-        stderr = proc.stderr or ""
-    except subprocess.TimeoutExpired as exc:
-        # NON-FATAL: a timed-out arm is a recorded result, not a raised exception.
-        exit_code = _TIMEOUT_EXIT
-        stdout = _as_text(exc.stdout)
-        stderr = _as_text(exc.stderr)
-        stderr += f"\n[run_arm] subprocess.TimeoutExpired after {timeout_s}s\n"
-    except OSError as exc:
-        # NON-FATAL: no usable harness binary -> fail-closed (plan objective:24-27).
-        exit_code = _NO_BINARY_EXIT
-        stderr = f"[run_arm] could not launch arm: {exc}\n"
-    wall_time_s = max(0.0, time.monotonic() - start)
 
-    raw_log_path.write_text(
-        f"$ {' '.join(cmd)}\n--- stdout ---\n{stdout}\n--- stderr ---\n{stderr}\n",
-        encoding="utf-8",
-    )
+        # The id is trusted ONLY when the echoed value byte-equals the id the runner
+        # generated. A missing / blank / different echo -> None -> route not captured ->
+        # the trial fails closed. The arm cannot supply a session ref of its choosing.
+        session_record_ref: str | None = None
+        try:
+            if session_file.is_file():
+                echoed = session_file.read_text(encoding="utf-8", errors="replace").strip()
+                session_record_ref = session_id if echoed == session_id else None
+        except OSError:
+            session_record_ref = None
 
-    session_record_ref: str | None = None
-    try:
-        if session_file.is_file():
-            echoed = session_file.read_text(encoding="utf-8", errors="replace").strip()
-            session_record_ref = echoed or None
-    except OSError:
-        session_record_ref = None
+        # The RUNNER -- after the arm has exited -- copies the human-readable log under
+        # results_dir. The arm never had that path.
+        final_log_path = str(raw_log_path)
+        if results_dir is not None:
+            dest_dir = Path(results_dir)
+            dest_dir.mkdir(parents=True, exist_ok=True)
+            dest = dest_dir / raw_log_path.name
+            shutil.copyfile(raw_log_path, dest)
+            final_log_path = str(dest)
 
-    return ArmResult(
-        exit_code=exit_code,
-        wall_time_s=float(wall_time_s),
-        session_record_ref=session_record_ref,
-        raw_log_path=str(raw_log_path),
-    )
+        return ArmResult(
+            exit_code=exit_code,
+            wall_time_s=float(wall_time_s),
+            session_record_ref=session_record_ref,
+            raw_log_path=final_log_path,
+        )
+    finally:
+        shutil.rmtree(arm_scratch, ignore_errors=True)
 
 
 def _as_text(value: str | bytes | None) -> str:

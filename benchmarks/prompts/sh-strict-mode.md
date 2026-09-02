@@ -13,10 +13,10 @@
 
 ## Boundaries
 
-These boundaries are ADVISORY. In this version of the harness NOTHING enforces them --
-there is no filesystem sandbox and no post-arm diff. A future sandboxed runner must
-enforce them; see `benchmarks/README.md` "Trial integrity -- NOT IMPLEMENTED in this
-version".
+These boundaries are ENFORCED out-of-process by `benchmarks/runner/`: any change outside
+the allowed paths makes the post-arm `snapshot.diff` non-empty, fails `integrity.verify`,
+and excludes the trial from scoring. See `benchmarks/README.md` "Trial integrity --
+enforced by benchmarks/runner/".
 
 - Allowed paths: `benchmarks/sandbox/deploy.sh`
 - Immutable paths (a trial must not touch any of these): `benchmarks/prompts/sh-strict-mode.md`,
