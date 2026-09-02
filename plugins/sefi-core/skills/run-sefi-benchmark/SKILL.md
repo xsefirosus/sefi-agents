@@ -63,51 +63,57 @@ the `flexible` sentinel and the control arm then has no fixed model identity.
 
 ## Running a trial
 
-- **One isolated git worktree per trial**, cut from a fixed full commit id -- never a
-  moving branch tip. The control and treatment arms get separate worktrees. This worktree
-  is for isolating concurrent trials; **it is NOT a security boundary** -- a git worktree
-  shares `.git` (including `.git/info/exclude`) with its base, so an arm can reach what the
-  base sees. See `benchmarks/README.md` "Trial integrity -- NOT IMPLEMENTED in this
-  version".
-- Hand each arm the case's `prompt_file` verbatim. The case's `allowed_paths` /
-  `immutable_paths` describe what the trial is meant to touch; in this version they are
-  advisory and nothing enforces them.
-- Run each case's `acceptance_check` from a **pristine copy outside the trial worktree**:
-  resolve both `check_<id>.sh` and the `acceptance_check` command string from the base
-  checkout -- or from a fresh copy of `benchmarks/cases/` and `cases.json` the arm never
-  had write access to -- and invoke it **by absolute path** against the arm's output tree,
-  **never from the trial worktree**. Because `immutable_paths` is advisory and nothing
-  enforces it, an arm can rewrite BOTH its `acceptance_check` string in `cases.json` AND
-  its own `check_<id>.sh` in its worktree; executing an arm-authored `acceptance_check`
-  string or `check_<id>.sh` then runs the arm's code in the operator's own shell, outside
-  whatever permission constraints applied to the arm -- a cross-session
-  privilege-escalation risk, not just a scoring risk. This is the same rule as "never copy
-  a field from anything the arm produced" below: an executed check is such a field.
-- Using that pristine check, record `first_pass_accepted`, allow one rework pass if the
-  chain's own review calls for it, then re-run for `accepted`.
-- Record observed route evidence per lane (model, effort, expected_effort, and
-  expected_model when known). Requested routing is not proof of what ran.
-- Append one JSON object per trial to `trials.jsonl` in the output directory, per the
-  schema in `benchmarks/README.md`. The operator writes every record from OUTSIDE the
-  trial worktree; never copy a field from anything the arm produced.
+Trials run through the out-of-process runner, `benchmarks/runner/run.py` (`git` CLI +
+Python 3.11 standard library only). From the repository root, `python3` first then
+`python` where `python3` is absent or a non-working Microsoft Store stub:
 
-## Trial integrity -- NOT IMPLEMENTED in this version
+```sh
+python benchmarks/runner/run.py \
+  --cases <ids> --strategies control,sefi-chain-sequential \
+  --harness <name> --out benchmarks/results/<date>-<slug> [--trials N]
+```
 
-Nothing in this version verifies that an arm did not edit its own acceptance check,
-rewrite the answer key, or change files outside `allowed_paths`. There is no filesystem
-sandbox and no out-of-process diff. Full detail and the requirements for a future
-sandboxed runner are in `benchmarks/README.md` "Trial integrity -- NOT IMPLEMENTED in
-this version".
+- **Each trial is a real `git clone` sandbox**, cut from a fixed full commit id -- never a
+  moving branch tip, **never a `git worktree`**. `benchmarks/runner/sandbox.py` clones
+  with `--no-checkout --no-hardlinks --no-local` so the clone has its OWN object store,
+  writes `.gitattributes` `* -text` and checks out with `core.eol=lf` for a reproducible
+  manifest, and tears the scratch dir down in a `finally:`. The clone IS the security
+  boundary.
+- Each arm gets the case's `prompt_file` verbatim, with its cwd inside the sandbox. The
+  case's `allowed_paths` is **enforced**: `benchmarks/runner/snapshot.py` takes an
+  out-of-process binary-mode snapshot before and after the arm runs, and any change
+  outside `allowed_paths` makes `benchmarks/runner/integrity.py` withhold `integrity_ok`.
+- The acceptance check is re-run by the runner from a **PRISTINE copy outside the
+  sandbox**: `benchmarks/runner/run.py` resolves `check_<id>.sh` by **absolute path from
+  the base checkout** and runs it against the sandbox post-state. An arm-authored
+  `acceptance_check` string or `check_<id>.sh` from the trial tree is **never** executed
+  -- executing one would run the arm's code in the operator's own shell outside the arm's
+  permission constraints (a cross-session privilege-escalation risk, not just a scoring
+  risk). From that pristine check the runner records `first_pass_accepted`, allows one
+  rework pass for a chain strategy, then re-runs for `accepted`.
+- Route evidence is captured **out-of-process**: the runner shells out to check-route.sh
+  (the route-evidence shim on `feat/route-evidence-live`) and maps its exit code + one
+  JSON stdout line to a single boolean. The arm's own output is never parsed for route
+  data. Requested routing is not proof of what ran.
+- `benchmarks/runner/record.py` writes every field of every `trials.jsonl` record from
+  runner-observed values only; it never copies a field from anything the arm produced.
 
-- **Do NOT record `integrity_ok: true`** from anything available in this version -- there
-  is no component entitled to set it. Leave the field ABSENT on every real-run record.
+## Trial integrity -- enforced by benchmarks/runner/
+
+`benchmarks/runner/integrity.verify` is a fail-closed AND of mandatory checks (pre-run
+state equals the pinned-ref manifest; no post-run change outside `allowed_paths`; route
+evidence captured out-of-process), wrapped in `try/except -> False`. Full detail is in
+`benchmarks/README.md` "Trial integrity -- enforced by benchmarks/runner/".
+
+- **Never hand-set `integrity_ok`.** Only `benchmarks/runner/integrity.verify` sets it,
+  and only to `true`. A trial it cannot verify omits the key.
 - `scorecard.py` is fail-closed: it scores ONLY trials with `integrity_ok` exactly
   `true`; an absent or non-true value is excluded from every delta and from the route
-  table. So a real run scores zero trials until a sandboxed runner exists -- that is the
-  intended behaviour, not a bug. An unverified score is worse than no score.
+  table. Until check-route.sh is merged onto this branch (or the branch is rebased onto
+  `feat/route-evidence-live`), route capture fails closed and a real run scores zero
+  trials -- that is intended, not a bug. An unverified score is worse than no score.
 - If a trial is known-bad (an arm visibly tampered, or a defect is found later), retain
-  it with an `INVALID.md` and record `integrity_ok: false`; never delete it, never
-  silently re-run it.
+  it with an `INVALID.md`; never delete it, never silently re-run it.
 
 ## The blinded judge
 
@@ -147,17 +153,18 @@ is absent or a non-working stub). The scorer:
 - is **Python 3 standard library only**, dev-only contributor tooling. It makes no model
   call, no dispatch, no network request, and writes nothing. It is **never** wired into
   `run-all.sh`, a CI job, a loop, or a dispatched-agent path.
-- has one test, `benchmarks/test_scorecard.py`: a fast offline stdlib unit test of the
+- has a test, `benchmarks/test_scorecard.py`: a fast offline stdlib unit test of the
   SCORER only -- zero model calls, **NOT** a benchmark run. It runs under both
-  `python -m pytest` and `python -m unittest` and is the only benchmark file `gate.sh`
-  executes. A real benchmark run is never triggered by CI, the gate, or a loop -- that is
-  now literally true, not just intent.
+  `python -m pytest` and `python -m unittest`. It and `benchmarks/test_runner.py` (the
+  runner-package test) are the two benchmark files `gate.sh` executes. A real benchmark
+  run is never triggered by CI, the gate, or a loop -- that is literally true, not just
+  intent.
 - is **deterministic**: same `trials.jsonl` gives byte-identical output.
 - scores ONLY trials with `integrity_ok: true`. It prints
   `scored trials (integrity_ok is true): N` and `excluded (integrity_ok not true): N`
-  (missing or non-true is EXCLUDED, never counted clean). Nothing in this version sets
-  `integrity_ok`, so a real run's records omit it and score zero trials -- see "Trial
-  integrity -- NOT IMPLEMENTED in this version" above.
+  (missing or non-true is EXCLUDED, never counted clean). Only
+  `benchmarks/runner/integrity.verify` sets `integrity_ok`; a hand-authored run omits it
+  and scores zero -- see "Trial integrity -- enforced by benchmarks/runner/" above.
 - prints a run-cost line against the `benchmark_per_run_usd_cap` ceiling in
   `config/budget.yml` -- `run cost $X.XX vs ceiling $15.00 [config/budget.yml]:
   WITHIN / OVER` when every scored trial carries `cost_usd`, `run cost: unknown (...)`
@@ -192,4 +199,4 @@ is absent or a non-working stub). The scorer:
 | "Re-use the last output directory." | Refuse a non-empty output dir; mixed-run evidence is void. |
 | "The judge timed out, score it 0." | Missing telemetry is `null`, never `0`. |
 | "A loop can run this monthly on its own." | No `loops/*.loop.md` may call this; a run needs explicit human spend authorization. |
-| "Set `integrity_ok: true` so the scorecard has data." | Nothing in this version may set it; a real run scores zero trials by design until a sandboxed runner exists. |
+| "Set `integrity_ok: true` so the scorecard has data." | Only `benchmarks/runner/integrity.verify` may set it; a hand-authored or route-unverified run scores zero trials by design. |

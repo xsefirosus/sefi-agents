@@ -3,6 +3,35 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [Unreleased] - 2026-09-02
+
+### Added
+
+1. **Phase 4-real benchmark runner (`benchmarks/runner/`)** -- the deferred
+   trial-integrity / execution half of the Phase 4 benchmark, built on branch
+   `feat/benchmark-runner` (cut from `feat/benchmark`, unmerged; no `version` change). A
+   `git` CLI + Python 3.11 standard-library-only package: `sandbox.py` (a real
+   `git clone --no-checkout --no-hardlinks --no-local` with its own object store, never a
+   `git worktree`; `.gitattributes` `* -text` + `core.eol=lf` forced checkout for a
+   reproducible manifest; `finally:` teardown), `snapshot.py` (out-of-process binary-mode
+   snapshot + allowlisted `diff`), `arms.py` (arm invocation with an enforced timeout and
+   cwd inside the sandbox; a test-only `--mock-arm` seam), `route.py` (out-of-process
+   route capture by shelling out to check-route.sh -- from `feat/route-evidence-live`,
+   absent here, so route capture fails closed), `integrity.py` (a fail-closed AND of
+   mandatory checks wrapped in `try/except -> False`; the only thing that sets
+   `integrity_ok`), `record.py` (records built from runner-observed values only -- no arm
+   stdout is ever a scoring input), and `run.py` (budget pre-flight from
+   `benchmark_per_run_usd_cap` in `config/budget.yml` + running ceiling;
+   `trials.partial.jsonl` -> `trials.jsonl` staging, so an aborted run writes `ABORTED.md`
+   and never a scoreable `trials.jsonl`). `benchmarks/test_runner.py` (52 tests, stdlib
+   only, zero model calls) runs under both `python -m unittest` and `python -m pytest` and
+   is auto-collected by `gate.sh`; `run-all.sh` stays Python-free. Docs updated:
+   `benchmarks/README.md` and `plugins/sefi-core/skills/run-sefi-benchmark/SKILL.md`
+   replace their "Trial integrity -- NOT IMPLEMENTED" sections with the runner design and
+   procedure, and `docs/METRICS-PROVENANCE.md` gains the out-of-process trust-boundary
+   note. Real positive route capture still requires `feat/route-evidence-live` merged or
+   rebased in first.
+
 ## [Unreleased] - 2026-09-01
 
 ### Added
