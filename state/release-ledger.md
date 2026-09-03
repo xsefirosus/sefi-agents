@@ -20,6 +20,9 @@
 | 0.6.0 | git-tag | 0.6.0 | unobserved | unobserved | PENDING -- orchestrator tags v0.6.0 after this commit; git tag -l shows no v0.6.0 at commit time | a local tag that was never pushed to origin | 2026-09-03T08:31:30Z |
 | 0.6.0 | github-release | 0.6.0 | unobserved | unobserved | PENDING -- orchestrator creates the GitHub release after tagging; gh release view v0.6.0 -> release not found | a local or pushed tag with no release; a draft release | 2026-09-03T08:31:30Z |
 | 0.6.0 | github-marketplace-index | 0.6.0 | unobserved | unobserved | PENDING -- release commit not pushed at commit time; gh api raw marketplace.json on origin still reads 0.5.2 | install commands quoted only in a README | 2026-09-03T08:31:30Z |
+| 0.6.0 | git-tag | 0.6.0 | 0.6.0 | match | git tag -l v0.6.0 -> v0.6.0 ; git ls-remote --tags origin v0.6.0 -> 192a96ad2e3eacbe3e8d3f5a8c36a586482f3a64 refs/tags/v0.6.0 ; git rev-parse v0.6.0^{commit} -> 9d5813e7d1bf93d2c6dfc842ad9719d893d7aec9 (ancestor of origin/main @ fab099b, pushed) | a local tag that was never pushed to origin | 2026-09-03T17:06:31Z |
+| 0.6.0 | github-release | 0.6.0 | 0.6.0 | match | gh release view v0.6.0 --json tagName,isDraft,url,publishedAt -> tagName=v0.6.0, url=https://github.com/xsefirosus/sefi-agents/releases/tag/v0.6.0, publishedAt=2026-09-03T17:03:41Z, isDraft=false | a local or pushed tag with no release; a draft release | 2026-09-03T17:06:31Z |
+| 0.6.0 | github-marketplace-index | 0.6.0 | 0.6.0 | match | gh api repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main (Accept: raw) -> metadata.version 0.6.0, plugins[0].version 0.6.0 | install commands quoted only in a README | 2026-09-03T17:06:31Z |
 
 ## Notes
 
@@ -69,3 +72,18 @@
   `validate-release-ledger.sh` exits 0 with
   `OK (latest 0.6.0, 3/6 surfaces observed, 3 warning(s))`; the three warnings are the
   three PENDING surfaces above.
+- 2026-09-03: 0.6.0 tag + release + marketplace-index reconciled (append-only; the three
+  PENDING `unobserved` rows above are left byte-for-byte intact as the at-commit-time
+  record and are superseded, not edited, by the observed appends below them). `v0.6.0` is
+  now tagged local AND on `origin`: `git tag -l v0.6.0` -> `v0.6.0`;
+  `git ls-remote --tags origin v0.6.0` -> `192a96ad2e3eacbe3e8d3f5a8c36a586482f3a64
+  refs/tags/v0.6.0`; `git rev-parse v0.6.0^{commit}` -> `9d5813e7d1bf93d2c6dfc842ad9719d893d7aec9`,
+  an ancestor of `origin/main`. `main` was pushed and is at `fab099b` on `origin`. The
+  GitHub release is live and published (not a draft): `gh release view v0.6.0` ->
+  tagName `v0.6.0`, url https://github.com/xsefirosus/sefi-agents/releases/tag/v0.6.0,
+  publishedAt `2026-09-03T17:03:41Z`, isDraft=false. `github-marketplace-index` also
+  caught up -- `gh api .../contents/.claude-plugin/marketplace.json?ref=main` (raw) now
+  serves `metadata.version` 0.6.0 and `plugins[0].version` 0.6.0 -- so it gets a `match`
+  append here too. All six 0.6.0 surfaces are now observed.
+  `validate-release-ledger.sh` exits 0 with
+  `OK (latest 0.6.0, 6/6 surfaces observed, 0 warning(s))`.
