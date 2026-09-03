@@ -11,54 +11,20 @@ bare name handed to subprocess: on Windows a bare ``git`` / ``bash`` is resolved
 CreateProcess, which searches System32 first and can hit a WSL relay stub. Mirrors
 ``plugins/sefi-core/scripts/check-route.py`` ``resolve_bash``.
 
-Standard library only: subprocess, shutil, tempfile, os, pathlib, contextlib.
+Standard library only: subprocess, tempfile, os, pathlib, contextlib. Teardown
+(``_rmtree``) is the shared helper in ``benchmarks/runner/_fsutil.py``.
 """
 
 from __future__ import annotations
 
 import contextlib
 import os
-import shutil
-import stat
 import subprocess
-import sys
 import tempfile
 from collections.abc import Iterator
 from pathlib import Path
 
-
-def _chmod_and_retry(func, path) -> None:
-    """git marks pack files read-only, and Windows then refuses the unlink with WinError
-    5. Clear the read-only bit and retry once. A genuine second failure still propagates
-    -- teardown must actually complete on this host.
-    """
-    os.chmod(path, stat.S_IWRITE)
-    func(path)
-
-
-def _force_remove_onerror(func, path, _exc_info):  # type: ignore[no-untyped-def]
-    """``shutil.rmtree(onerror=...)`` hook -- signature ``(func, path, exc_info)``.
-    Removed in Python 3.14; used only on < 3.12 (see ``_rmtree`` below).
-    """
-    _chmod_and_retry(func, path)
-
-
-def _force_remove_onexc(func, path, _exc):  # type: ignore[no-untyped-def]
-    """``shutil.rmtree(onexc=...)`` hook -- signature ``(func, path, exception)``.
-    Added in Python 3.12; the supported replacement for ``onerror``.
-    """
-    _chmod_and_retry(func, path)
-
-
-def _rmtree(target: Path) -> None:
-    """``shutil.rmtree`` with the read-only-retry hook, on the API the running Python
-    supports: ``onexc`` on >= 3.12 (``onerror`` is deprecated there and gone in 3.14),
-    ``onerror`` on 3.11. ``ignore_errors=False`` either way -- behaviour is identical.
-    """
-    if sys.version_info >= (3, 12):
-        shutil.rmtree(target, ignore_errors=False, onexc=_force_remove_onexc)
-    else:
-        shutil.rmtree(target, ignore_errors=False, onerror=_force_remove_onerror)
+from benchmarks.runner._fsutil import _rmtree
 
 
 def _walk_path(names: tuple[str, ...]) -> str | None:
@@ -126,9 +92,11 @@ def sandbox(origin_repo: str | os.PathLike[str], pinned_ref: str) -> Iterator[Pa
         ``git -C <repo> -c core.autocrlf=false -c core.eol=lf checkout --force
         <pinned_ref> -- .`` (detached), so a system ``core.autocrlf=true`` cannot rewrite
         content on checkout;
-    (d) yield the repo path;
-    (e) ``finally:`` ``shutil.rmtree(<scratch>, ignore_errors=False)`` -- teardown runs
-        on error/timeout too.
+    (d) ``git -C <repo> remote remove origin`` -- the only remaining record of the
+        operator's absolute origin path (``url = file:///D:/...`` in ``.git/config``);
+    (e) yield the repo path;
+    (f) ``finally:`` ``_rmtree(<scratch>)`` (``ignore_errors=False``) -- teardown runs on
+        error/timeout too.
     """
     git = resolve_git()
     origin_abs = Path(origin_repo).resolve(strict=True)
@@ -171,6 +139,16 @@ def sandbox(origin_repo: str | os.PathLike[str], pinned_ref: str) -> Iterator[Pa
                 "--",
                 ".",
             ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        # Strip the ``origin`` remote BEFORE the arm can see the tree: it is the only
+        # place ``<repo>/.git/config`` still records ``url = file:///D:/...`` -- the
+        # operator's absolute origin path. The clone has its own object store
+        # (``--no-local``), so removing the remote loses nothing the runner needs.
+        subprocess.run(
+            [git, "-C", str(repo), "remote", "remove", "origin"],
             capture_output=True,
             text=True,
             check=True,
