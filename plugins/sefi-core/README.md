@@ -27,7 +27,10 @@ describes the package layout.
   per harness. A new model is an edit here, never a pass over 13 agent files.
 - `scripts/` -- `gate.sh`, `compress-output.sh`, `inject-memory.sh`, `budget-check.sh`,
   `gen-router.sh`, `probe-tools.sh`, `check-handoff.sh`, `model-for.sh`,
-  `apply-model-map.sh`, plus the `ci/` validation suite (`run-all.sh` is the entry point).
+  `apply-model-map.sh`, `check-route.py`/`check-route.sh` (post-dispatch: assert a Codex
+  run's observed model/effort matches the tier it requested), plus the `ci/` validation
+  suite (`run-all.sh` is the entry point, and `validate-rule-presence.sh` asserts every
+  required rule is physically present in each agent and skill, not merely claimed).
 - `templates/` -- copied into the user's project by `/sefi:init`: the memory vault, state
   ledger, inbox, two loop specs, config, and a GitHub Actions workflow. The plugin never
   owns project state; the project does.

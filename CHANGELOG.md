@@ -3,7 +3,15 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
-## [Unreleased] - 2026-09-02
+## [Unreleased]
+
+## [0.6.0] - 2026-09-03
+
+- Astral-orchestrator adoption, Phases 1-4: content-presence contract test
+  (`validate-rule-presence`), multi-surface release ledger (`release-tracking` skill +
+  `validate-release-ledger`), live Codex route-evidence assertion (`check-route.py`/`.sh`
+  + `route` metrics column), and a sandboxed out-of-process A/B benchmark runner
+  (`benchmarks/` + `run-sefi-benchmark` skill).
 
 ### Added
 
@@ -160,7 +168,7 @@ Changelog; this project adheres to Semantic Versioning.
    `run-all.sh`'s validator list. No `version` field changed.
 
 8. **`run-sefi-benchmark` skill + `benchmarks/` harness (REDUCED delivery)** -- new skill
-   `plugins/sefi-core/skills/run-sefi-benchmark/SKILL.md` (14th skill) and a
+   `plugins/sefi-core/skills/run-sefi-benchmark/SKILL.md` (15th skill) and a
    project-root `benchmarks/` tree for a blinded paired A/B comparison of the full
    sefi-agents chain against one strong model. Shipping: `benchmarks/README.md` (design of
    record, trial-record JSONL schema, harness matrix with the `sefi-chain` vs
@@ -174,7 +182,8 @@ Changelog; this project adheres to Semantic Versioning.
    `benchmarks/fixtures/trials.jsonl` + `expected-scorecard.txt` back a determinism test
    (`benchmarks/test_scorecard.py`, the one benchmark file `gate.sh` runs).
    `run-sefi-benchmark` added to `install-hermes.sh`'s `SKILLS=` list; both READMEs,
-   `adapters/CODEX.md`, and `adapters/HERMES.md` bumped 13 -> 14 skills.
+   `adapters/CODEX.md`, and `adapters/HERMES.md` now state 15 skills -- the net for this
+   release is 13 -> 15 (adds `release-tracking` and `run-sefi-benchmark`).
    `docs/METRICS-PROVENANCE.md`, `docs/BUDGET.md`, and the `state/retro-ledger.md` header
    record that a benchmark run is manual, out-of-loop, and NOT budget-enforced -- it has an
    operator-tracked `benchmark_per_run_usd_cap: 15.00` in `config/budget.yml` that nothing

@@ -168,7 +168,12 @@ its own memory system on itself, but a fresh install starts empty.
   it with real evidence.
 - A security checker reviews any change touching sensitive code.
 - Automated checks the AI can't skip: tests and linting, plan structure, handoffs between
-  agents, and tool availability before a job starts.
+  agents, tool availability before a job starts, that every required safety rule is
+  actually present in each agent and skill (not just claimed), and -- after a dispatch --
+  that the agent ran on the model tier it asked for (`check-route`).
+- One version number, reconciled across all six places it gets published -- with an
+  append-only evidence ledger (`state/release-ledger.md`) -- before anything is called
+  released.
 - Spending limits: per task, per day, and overall. If spending can't be measured, the
   system stops and says so instead of assuming it's fine.
 - Anything the system isn't sure about goes to a review folder (`inbox/`) for you to
