@@ -20,9 +20,11 @@ validate-no-personal-paths.sh
 validate-no-orphans.sh
 validate-links.sh
 validate-script-refs.sh
+validate-release-ledger.sh
 validate-routing.sh
 validate-model-map.sh
 validate-adapters.sh
+validate-rule-presence.sh
 check-unicode-safety.sh
 validate-comment-safety.sh
 validate-token-budget.sh

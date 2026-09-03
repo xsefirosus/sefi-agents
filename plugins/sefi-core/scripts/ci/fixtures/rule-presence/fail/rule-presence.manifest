@@ -1,0 +1,3 @@
+# fail fixture for validate-rule-presence.sh -- the registered sentence is NOT
+# present in the target file, so the validator must exit 1 and name sample.md.
+sample.md	A registered sentence that is absent from this fixture file

@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "note": "Three frozen benchmark cases. allowed_paths is ENFORCED out-of-process by benchmarks/runner/: each trial runs in a real git-clone sandbox, and any change to a path NOT under allowed_paths makes benchmarks/runner/snapshot.diff non-empty, fails benchmarks/runner/integrity.verify, and EXCLUDES the trial from scoring (integrity_ok is withheld; see benchmarks/README.md, 'Trial integrity -- enforced by benchmarks/runner/'). immutable_paths is documentation of intent -- the runner enforces the complement (anything not under allowed_paths is a violation). case_fingerprint = first 64 hex of sha256(cat <prompt_file> <acceptance_check>) -- the two-file case definition (prompt + check ONLY). It is retained purely as scorecard.py's control/treatment pairing key: the scorer only checks that a paired control and treatment record carry the SAME value, it never recomputes it from disk. If a case is deliberately regoldened (its prompt or check edited), recompute the value by hand -- see benchmarks/README.md, 'Recomputing a case_fingerprint'. Every acceptance_check exits 1 against the starting sandbox file and exits 0 only after a trial completes the task. The runner resolves and runs every acceptance_check (and its check_<id>.sh) from a PRISTINE copy of benchmarks/cases/ outside the trial sandbox -- never the arm's copy -- see benchmarks/README.md and plugins/sefi-core/skills/run-sefi-benchmark/SKILL.md.",
+  "cases": [
+    {
+      "case_id": "sh-strict-mode",
+      "case_fingerprint": "e8cdb70fb615c96feccc2128e4e04d405dcf223aa51c0c1bac880f069714a163",
+      "prompt_file": "benchmarks/prompts/sh-strict-mode.md",
+      "allowed_paths": ["benchmarks/sandbox/deploy.sh"],
+      "immutable_paths": [
+        "benchmarks/prompts/sh-strict-mode.md",
+        "benchmarks/cases/check_sh-strict-mode.sh",
+        "benchmarks/cases.json"
+      ],
+      "acceptance_check": "sh benchmarks/cases/check_sh-strict-mode.sh ."
+    },
+    {
+      "case_id": "json-trailing-newline",
+      "case_fingerprint": "81629762a01c8c03ed9f505db57acf41c7e63eb5be69889d1dac1f0ab9a67346",
+      "prompt_file": "benchmarks/prompts/json-trailing-newline.md",
+      "allowed_paths": ["benchmarks/sandbox/config.json"],
+      "immutable_paths": [
+        "benchmarks/prompts/json-trailing-newline.md",
+        "benchmarks/cases/check_json-trailing-newline.sh",
+        "benchmarks/cases.json"
+      ],
+      "acceptance_check": "sh benchmarks/cases/check_json-trailing-newline.sh ."
+    },
+    {
+      "case_id": "notes-single-h1",
+      "case_fingerprint": "3367dd2121bc9aa1b3138be5e759cecfd1b4493d90ef32264489c244005a8e38",
+      "prompt_file": "benchmarks/prompts/notes-single-h1.md",
+      "allowed_paths": ["benchmarks/sandbox/NOTES.md"],
+      "immutable_paths": [
+        "benchmarks/prompts/notes-single-h1.md",
+        "benchmarks/cases/check_notes-single-h1.sh",
+        "benchmarks/cases.json"
+      ],
+      "acceptance_check": "sh benchmarks/cases/check_notes-single-h1.sh ."
+    }
+  ]
+}

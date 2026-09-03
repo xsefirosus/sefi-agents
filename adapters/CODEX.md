@@ -13,7 +13,7 @@ codex plugin marketplace add xsefirosus/sefi-agents
 codex plugin add sefi-core@sefi-agents
 ```
 
-The first registers the marketplace; the second installs all 13 agents, 13 skills,
+The first registers the marketplace; the second installs all 13 agents, 14 skills,
 hooks, commands, and templates into `~/.codex/plugins/cache/sefi-agents/sefi-core/
 <version>/`.
 
@@ -129,3 +129,65 @@ the Codex model, drops the `tier:` line, preserves everything else byte-for-byte
 prints the matching `config.toml` block. Reasoning effort is deliberately NOT written into
 frontmatter: Codex reads it from `config.toml`, so an agent-file field would be inert while
 looking wired.
+
+## Session rollout
+
+Codex writes a per-thread session rollout that the post-dispatch route-evidence check
+(`${CLAUDE_PLUGIN_ROOT}/scripts/check-route.sh`, whose parser is the sibling
+`check-route.py`) reads to confirm a dispatch ran the model + reasoning effort the tier map
+asked for. This section documents the format the check depends on. Its shape is
+reverse-engineered from the MIT-licensed astral-orchestrator reader --
+`check-primary.py:82-101` (the sessions-directory resolution and rollout-filename match)
+and `inspect-agent-runtime.sh:84-231` (the embedded stdlib-Python rollout reader) -- plus
+Codex's public session-logging documentation. Anything below not confirmable from those two
+sources is marked UNKNOWN and the check treats it as such (fail-noisy `invalid`, never a
+guessed field).
+
+- **Location.** `${CODEX_HOME:-~/.codex}/sessions`, searched **recursively** (Codex nests
+  rollouts in dated subdirectories). `check-route.sh` honors `CODEX_HOME`; a test-only
+  `--sessions-dir PATH` override widens the read scope and nothing else.
+- **Filename.** `rollout-*-<thread-id>.jsonl`, where `<thread-id>` is a **lowercase UUID**
+  (`[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`). The check matches
+  rollout **filenames only** -- exactly one match is read; zero is `unavailable`, more than
+  one is `invalid` (ambiguous).
+- **Line shape.** One JSON object per line (JSONL). Every record has a top-level string
+  `type` and a top-level object `payload`. The check parses each line with a real JSON
+  parser and only ever inspects those two **top-level** keys -- it never descends into a
+  nested object, so a `type`/`model` pair nested inside some other record's `payload`
+  is not a route signal.
+- **`turn_context` record.** `type == "turn_context"`; its `payload` carries the effective
+  route as two string fields, `payload.model` (a bare model identifier, e.g.
+  `gpt-5.6-terra`) and `payload.effort` (a reasoning-effort word). The check reads only
+  `model` and `effort` from this record -- never any other `payload` field, never rollout
+  free text (prompts, reasoning, tool output, cwd).
+  - `payload.effort` accepts `minimal | low | medium | high | xhigh` (the values Codex's
+    `model_reasoning_effort` documents, see `### Reasoning effort` above) plus `none` and
+    `ultra`, which `check-route.py`'s allowlist also permits -- `none` = a tier that
+    exposes no reasoning dial, `ultra` = an explicit maximum. Neither `none` nor `ultra`
+    appears in Codex's public `model_reasoning_effort` docs (source UNKNOWN); they are
+    carried only so a rollout that happens to use them is not spuriously rejected as
+    `invalid`. The allowlist is deliberately a superset, never narrower than what a real
+    rollout might contain.
+- **Last-wins.** A forked rollout snapshot legitimately contains several `turn_context`
+  records (inherited parent contexts). The **last** top-level `turn_context` is the
+  effective route for the thread; earlier ones are ignored. A malformed last record fails
+  as `invalid` -- it never falls back to an earlier good one.
+- **`CODEX_THREAD_ID`.** The environment variable carrying the current thread's id, passed
+  to `check-route.sh` as its third argument after a dispatch. A literal `-` (or empty)
+  means "no thread id available" and yields `unavailable`.
+
+UNKNOWN, not confirmed from the two cited sources or Codex's public docs:
+
+- the full `payload` schema of a `turn_context` record beyond `model` / `effort` (astral's
+  reader also reads `sandbox_policy` / `permission_profile` / `cwd`, but whether those keys
+  and their nesting are stable across Codex versions is not documented here);
+- the `session_meta` record's exact schema (only that it appears first and its `payload.id`
+  is the thread id);
+- whether `CODEX_THREAD_ID` is **always** exported into a dispatched agent's environment,
+  or only under certain sandbox / approval modes;
+- the rollout's rotation / retention policy and whether a single thread can span more than
+  one `rollout-*-<thread-id>.jsonl` file.
+
+Because these are UNKNOWN, the live route check is **Codex-only and fixture-validated**: a
+confirmation run against a real rollout on a live Codex host is a follow-up, not a claim of
+the current implementation.

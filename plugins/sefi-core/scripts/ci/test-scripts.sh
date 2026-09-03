@@ -149,6 +149,81 @@ fi
 rm -rf "$GW"
 
 echo
+echo "=== gate.sh Python pytest-config detection (Phase-4 FIX 11: fail-open guard) ==="
+
+# gate.sh's round-3 change let an explicit pytest config section force an unconditional
+# `pytest -q`. FIX 11 hardens three specific gaps in that branch:
+#   (1) a repo with .py source but NO tests and NO config must still stay green (the
+#       round-2 filename guard -- qa confirmed this half was NOT the regression);
+#   (2) `[tool.pytest.ini_options]` pointing discovery at non-default filenames must
+#       actually catch a failing test (not be skipped by the filename guard);
+#   (3) tox.ini `[pytest]` is a real pytest config location and must be honored too --
+#       the round-3 change only covered pyproject.toml / pytest.ini / setup.cfg.
+if command -v pytest >/dev/null 2>&1; then
+  GP="$(mktemp -d)"
+
+  # (1) .py source, no tests, no config -> pytest never runs -> gate green.
+  mkdir -p "$GP/nosuite"
+  printf 'x = 1\n' > "$GP/nosuite/mod.py"
+  expect_code 0 "a repo with .py source but no tests and no pytest config passes the gate" \
+    bash -c "cd '$GP/nosuite' && bash '$CORE/scripts/gate.sh'"
+
+  # (2) [tool.pytest.ini_options] with python_files pointing at a non-default name; a
+  #     failing test under that name must redden the gate.
+  mkdir -p "$GP/pyproj"
+  printf '[tool.pytest.ini_options]\npython_files = ["spec_*.py"]\n' > "$GP/pyproj/pyproject.toml"
+  printf 'def test_it():\n    assert False\n' > "$GP/pyproj/spec_thing.py"
+  gp_code=0
+  ( cd "$GP/pyproj" && bash "$CORE/scripts/gate.sh" ) >/dev/null 2>&1 || gp_code=$?
+  if [ "$gp_code" -ne 0 ]; then
+    ok "[tool.pytest.ini_options] + a failing non-default-named test reddens the gate (exit $gp_code)"
+  else
+    bad "[tool.pytest.ini_options] failing test did NOT redden the gate (exit 0)"
+  fi
+
+  # (3) same, but the config section lives in tox.ini [pytest].
+  mkdir -p "$GP/toxcfg"
+  printf '[pytest]\npython_files = spec_*.py\n' > "$GP/toxcfg/tox.ini"
+  printf 'def test_it():\n    assert False\n' > "$GP/toxcfg/spec_thing.py"
+  tx_code=0
+  ( cd "$GP/toxcfg" && bash "$CORE/scripts/gate.sh" ) >/dev/null 2>&1 || tx_code=$?
+  if [ "$tx_code" -ne 0 ]; then
+    ok "tox.ini [pytest] + a failing non-default-named test reddens the gate (exit $tx_code)"
+  else
+    bad "tox.ini [pytest] failing test did NOT redden the gate (exit 0) -- config location not honored"
+  fi
+
+  rm -rf "$GP"
+else
+  echo "  SKIP: gate.sh pytest-config assertions (pytest not on PATH)"
+fi
+
+echo
+echo "=== validate-no-personal-paths.sh benchmarks/ scan (Phase-4 FIX 12: bytecode + results/ exclusions) ==="
+
+# FIX 12: a synthetic benchmarks/__pycache__/PROBE.pyc carrying a Windows home path must
+# NOT trip the scan (bytecode is a compiler artifact, git-ignored, never shipped), and
+# the same for anything under the git-ignored benchmarks/results/. Without the exclusions
+# on the find line the identical tree DOES trip -- so the exclusion is load-bearing on a
+# home-directory checkout, and this pins that it is exactly an exclusion, not a broader
+# claim that a real leak ever shipped.
+VNP="$CORE/scripts/ci/validate-no-personal-paths.sh"
+NPT="$(mktemp -d)"
+mkdir -p "$NPT/plugins/sefi-core/scripts/ci" "$NPT/benchmarks/__pycache__" "$NPT/benchmarks/results/2026-01-01-run"
+printf 'byte-compiled from C:\\Users\\someone\\proj\\benchmarks\\scorecard.py\n' > "$NPT/benchmarks/__pycache__/PROBE.pyc"
+printf 'raw artifact path C:\\Users\\someone\\run\n' > "$NPT/benchmarks/results/2026-01-01-run/raw.txt"
+printf '{"clean": true}\n' > "$NPT/benchmarks/fixtures-ok.json"
+cp "$VNP" "$NPT/plugins/sefi-core/scripts/ci/validate-no-personal-paths.sh"
+expect_code 0 "the shipped scan ignores benchmarks/__pycache__/*.pyc and benchmarks/results/*" \
+  bash "$NPT/plugins/sefi-core/scripts/ci/validate-no-personal-paths.sh"
+# strip the two -not -path guards from the benchmarks find line -> the same tree now trips.
+sed "s#find benchmarks -type f .*#find benchmarks -type f#" "$VNP" \
+  > "$NPT/plugins/sefi-core/scripts/ci/no-exclude.sh"
+expect_code 1 "without the benchmarks exclusions the identical tree is flagged (exit 1)" \
+  bash "$NPT/plugins/sefi-core/scripts/ci/no-exclude.sh"
+rm -rf "$NPT"
+
+echo
 echo "=== compress-output.sh (2026-08-11 audit: a failure could report zero diagnostics) ==="
 
 CW="$(mktemp -d)"
@@ -1524,6 +1599,894 @@ if command -v jq >/dev/null 2>&1; then
   rm -rf "$BOTH_TMP"
 else
   echo "  SKIPPED (jq not on PATH)"
+fi
+
+echo
+echo "=== validate-rule-presence.sh (content-presence contract: a load-bearing rule sentence deleted or reworded past recognition while every path still resolves) ==="
+
+RP="$CORE/scripts/ci/validate-rule-presence.sh"
+RP_FIX="$CORE/scripts/ci/fixtures/rule-presence"
+
+# The pass fixture: the registered sentence is present (and soft-wrapped in the target,
+# so this also exercises the Markdown line-join step of the normalization).
+expect_code 0 "a manifest whose every sentence is present exits 0" \
+  bash "$RP" --manifest "$RP_FIX/pass/rule-presence.manifest" --base "$RP_FIX/pass"
+
+# The fail fixture: the exact failure this validator exists to catch -- a registered
+# sentence that is no longer in the file it names.
+expect_code 1 "a manifest with a missing sentence exits 1" \
+  bash "$RP" --manifest "$RP_FIX/fail/rule-presence.manifest" --base "$RP_FIX/fail"
+
+# An empty / comment-only manifest is a setup error, not a silent pass.
+RP_EMPTY="$(mktemp)"
+printf '# only a comment, no rows\n' > "$RP_EMPTY"
+expect_code 1 "a manifest with no registered rows exits 1" \
+  bash "$RP" --manifest "$RP_EMPTY" --base "$RP_FIX/pass"
+rm -f "$RP_EMPTY"
+
+# The real manifest against the real tree must be green in this checkout.
+expect_code 0 "the shipped rule-presence.manifest is satisfied by the current tree" \
+  bash "$RP"
+
+# Finding 6: a row naming a file absent under --base exits 1 -- never a silent skip of a
+# row whose source file could not be opened (validate-rule-presence.sh:76-79).
+expect_code 1 "a manifest row whose target file is missing exits 1" \
+  bash "$RP" --manifest "$RP_FIX/missing-target/rule-presence.manifest" --base "$RP_FIX/missing-target"
+
+# Finding 3 pin: the two halves of the registered sentence are separated by a blank line
+# in the target. A whole-file normalizer bridges that gap and FALSELY reports OK; the
+# paragraph-local normalizer must not, so this row misses and the run exits 1.
+expect_code 1 "a sentence split across a blank line in the target is not a match (paragraph-local join)" \
+  bash "$RP" --manifest "$RP_FIX/paragraph-split/rule-presence.manifest" --base "$RP_FIX/paragraph-split"
+
+# Whitespace-only-separator pin: awk RS="" paragraph mode splits ONLY on truly empty
+# lines. A separator holding a lone space (space-sep) or a lone tab (tab-sep) is a
+# Markdown paragraph break too; the normalizer's leading sed must blank it so the row
+# straddling it MISSES and the run exits 1. Without the sed both of these falsely pass.
+expect_code 1 "a sentence split across a space-only separator line is not a match" \
+  bash "$RP" --manifest "$RP_FIX/whitespace-split-space/rule-presence.manifest" --base "$RP_FIX/whitespace-split-space"
+expect_code 1 "a sentence split across a tab-only separator line is not a match" \
+  bash "$RP" --manifest "$RP_FIX/whitespace-split-tab/rule-presence.manifest" --base "$RP_FIX/whitespace-split-tab"
+
+# Finding 1 regression: run-all.sh forwards --strict (or CI_STRICT=1) to every validator.
+# This one has no warning tier, so it must tolerate the flag the way its siblings do --
+# not reject it as an unknown argument and turn CI_STRICT=1 run-all.sh red.
+expect_code 0 "--strict is accepted and ignored (parity with the siblings run-all.sh forwards it to)" \
+  bash "$RP" --strict
+
+# Finding 2 regression: a value-taking option given with no value must exit 1 AND must
+# terminate. An earlier revision spun forever -- 'set -u' without '-e' left a failed
+# 'shift 2' unconsumed and the 'while [ $# -gt 0 ]' loop never ended.
+if command -v timeout >/dev/null 2>&1; then
+  rp_hang_rc=0
+  timeout 8 bash "$RP" --manifest >/dev/null 2>&1 || rp_hang_rc=$?
+  if [ "$rp_hang_rc" -eq 1 ]; then
+    ok "--manifest with no following value exits 1 without hanging"
+  elif [ "$rp_hang_rc" -eq 124 ]; then
+    bad "--manifest with no following value HUNG (timeout fired) instead of exiting 1"
+  else
+    bad "--manifest with no following value: expected exit 1, got $rp_hang_rc"
+  fi
+else
+  echo "  SKIP: --manifest no-value hang guard (timeout(1) not on PATH)"
+fi
+
+# Step-3 cross-harness survival: install-opencode.sh is the one install transform that
+# rewrites files. Run it against a throwaway OPENCODE_HOME, then require every registered
+# sentence to still be a normalized substring of the TRANSFORMED output tree.
+RP_OC="$(mktemp -d)"
+# Capture the installer's own exit code FIRST. If the transform itself failed, the
+# survival check below would run against a partial tree and misattribute the install
+# error as "a sentence did not survive" -- assert the install succeeded before trusting
+# anything downstream of it.
+rp_oc_install_rc=0
+OPENCODE_HOME="$RP_OC" bash "$CORE/scripts/install-opencode.sh" >/dev/null 2>&1 || rp_oc_install_rc=$?
+if [ "$rp_oc_install_rc" -ne 0 ]; then
+  bad "install-opencode.sh failed (rc=$rp_oc_install_rc) -- cross-harness survival assertion could not run"
+else
+  rp_oc_rc=0
+  rp_oc_out="$(bash "$RP" --post-install "$RP_OC" 2>&1)" || rp_oc_rc=$?
+  if [ "$rp_oc_rc" -eq 0 ]; then
+    ok "every registered rule sentence survives the OpenCode agent transform ($rp_oc_out)"
+  else
+    bad "a registered rule sentence did not survive install-opencode.sh (rc=$rp_oc_rc): $rp_oc_out"
+  fi
+fi
+rm -rf "$RP_OC"
+
+echo
+echo "=== validate-release-ledger.sh (Phase 2: six-surface release reconciliation, ported from astral-orchestrator release-ledger.py, MIT) ==="
+
+RL="$CORE/scripts/ci/validate-release-ledger.sh"
+RLF="$CORE/scripts/ci/fixtures/release-ledger"
+# An empty --root so the on-disk cross-check (condition 2) is inert -- these fixtures
+# exercise the cross-surface contradiction (condition 1) and the unobserved-surface
+# warning path, both of which must hold with no repo files in reach.
+RL_ROOT="$(mktemp -d)"
+
+# ok: every surface observed and agreeing -> exit 0.
+expect_code 0 "ok fixture: all six surfaces agree, exits 0" \
+  bash "$RL" --ledger "$RLF/ok/ledger.md" --root "$RL_ROOT"
+
+# contradiction: git-tag observed a version no other surface shows -> hard-fail exit 1.
+expect_code 1 "contradiction fixture: two surfaces disagree for the latest version, exits 1" \
+  bash "$RL" --ledger "$RLF/contradiction/ledger.md" --root "$RL_ROOT"
+
+# incomplete: on-disk surfaces agree, the three remote surfaces never checked -> exit 0
+# but every missing surface must be named in a WARN line (the signal must not be silent).
+inc_out="$(bash "$RL" --ledger "$RLF/incomplete/ledger.md" --root "$RL_ROOT" 2>&1)"
+inc_rc=$?
+if [ "$inc_rc" -eq 0 ] && printf '%s' "$inc_out" | grep -q "WARN: surface 'github-release' is unobserved" \
+   && printf '%s' "$inc_out" | grep -q "3/6 surfaces observed"; then
+  ok "incomplete fixture: exits 0 with WARN lines naming each unobserved surface"
+else
+  bad "incomplete fixture: expected exit 0 + WARN lines, got rc=$inc_rc out=$inc_out"
+fi
+
+# condition 2: a row whose observed value contradicts the on-disk file it names must
+# hard-fail even if no two ledger rows disagree with each other. Build a throwaway repo
+# root whose plugin.json says 0.6.0 and a ledger row that claims it observed 0.4.0.
+C2_ROOT="$(mktemp -d)"
+mkdir -p "$C2_ROOT/plugins/sefi-core/.claude-plugin" "$C2_ROOT/.claude-plugin"
+printf '{\n  "version": "0.6.0"\n}\n' > "$C2_ROOT/plugins/sefi-core/.claude-plugin/plugin.json"
+printf '{ "metadata": { "version": "0.6.0" }, "plugins": [ { "version": "0.6.0" } ] }\n' > "$C2_ROOT/.claude-plugin/marketplace.json"
+printf '# Changelog\n\n## [0.6.0] - 2026-09-01\n' > "$C2_ROOT/CHANGELOG.md"
+cat > "$C2_ROOT/ledger.md" <<'LEDGER'
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.6.0 | plugin.json | 0.6.0 | 0.4.0 | match | stale row | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | marketplace.json | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | changelog | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | git-tag | 0.6.0 | 0.4.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-release | 0.6.0 | 0.4.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-marketplace-index | 0.6.0 | 0.4.0 | match | ok | x | 2026-09-01T00:00:00Z |
+LEDGER
+c2_out="$(bash "$RL" --ledger "$C2_ROOT/ledger.md" --root "$C2_ROOT" 2>&1)"
+c2_rc=$?
+if [ "$c2_rc" -eq 1 ] && printf '%s' "$c2_out" | grep -q "plugin.json observed 0.4.0"; then
+  ok "condition 2: a row's observed value contradicting the on-disk plugin.json hard-fails"
+else
+  bad "condition 2: expected exit 1 naming the plugin.json contradiction, got rc=$c2_rc out=$c2_out"
+fi
+rm -rf "$C2_ROOT"
+
+# condition 2, CHANGELOG arm (distinct from the plugin.json arm above): a changelog row
+# whose observed value contradicts the CHANGELOG.md first versioned heading on disk must
+# hard-fail for THAT reason. Every other surface is `unobserved`, so hard-fail 1 (two
+# observed surfaces disagree) cannot fire -- only the `changelog)` arm of the on-disk
+# cross-check can produce this exit 1. Deleting that arm makes this test go green->red.
+C2_CL_ROOT="$(mktemp -d)"
+mkdir -p "$C2_CL_ROOT/plugins/sefi-core/.claude-plugin" "$C2_CL_ROOT/.claude-plugin"
+printf '{\n  "version": "0.6.0"\n}\n' > "$C2_CL_ROOT/plugins/sefi-core/.claude-plugin/plugin.json"
+printf '{ "metadata": { "version": "0.6.0" }, "plugins": [ { "version": "0.6.0" } ] }\n' > "$C2_CL_ROOT/.claude-plugin/marketplace.json"
+printf '# Changelog\n\n## [Unreleased] - 2026-09-02\n\n## [0.6.0] - 2026-09-01\n' > "$C2_CL_ROOT/CHANGELOG.md"
+cat > "$C2_CL_ROOT/ledger.md" <<'LEDGER'
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.6.0 | plugin.json | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | marketplace.json | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | changelog | 0.6.0 | 0.5.0 | match | stale row | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | git-tag | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-release | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-marketplace-index | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+LEDGER
+c2cl_out="$(bash "$RL" --ledger "$C2_CL_ROOT/ledger.md" --root "$C2_CL_ROOT" 2>&1)"
+c2cl_rc=$?
+if [ "$c2cl_rc" -eq 1 ] && printf '%s' "$c2cl_out" | grep -q "changelog observed 0.5.0" \
+   && ! printf '%s' "$c2cl_out" | grep -q "surfaces disagree"; then
+  ok "condition 2 CHANGELOG arm: a changelog row vs the on-disk top heading hard-fails on its own"
+else
+  bad "condition 2 CHANGELOG arm: expected exit 1 naming the changelog contradiction and NO hard-fail-1, got rc=$c2cl_rc out=$c2cl_out"
+fi
+rm -rf "$C2_CL_ROOT"
+
+# condition 2, marketplace.json arm (distinct again): a marketplace.json row whose observed
+# value matches neither on-disk occurrence must hard-fail for THAT reason, with every other
+# surface `unobserved` so hard-fail 1 cannot fire. Deleting the `marketplace.json)` arm
+# makes this test go green->red.
+C2_MP_ROOT="$(mktemp -d)"
+mkdir -p "$C2_MP_ROOT/plugins/sefi-core/.claude-plugin" "$C2_MP_ROOT/.claude-plugin"
+printf '{\n  "version": "0.6.0"\n}\n' > "$C2_MP_ROOT/plugins/sefi-core/.claude-plugin/plugin.json"
+printf '{ "metadata": { "version": "0.6.0" }, "plugins": [ { "version": "0.6.0" } ] }\n' > "$C2_MP_ROOT/.claude-plugin/marketplace.json"
+printf '# Changelog\n\n## [0.6.0] - 2026-09-01\n' > "$C2_MP_ROOT/CHANGELOG.md"
+cat > "$C2_MP_ROOT/ledger.md" <<'LEDGER'
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.6.0 | plugin.json | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | marketplace.json | 0.6.0 | 0.4.0 | match | stale row | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | changelog | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | git-tag | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-release | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-marketplace-index | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+LEDGER
+c2mp_out="$(bash "$RL" --ledger "$C2_MP_ROOT/ledger.md" --root "$C2_MP_ROOT" 2>&1)"
+c2mp_rc=$?
+if [ "$c2mp_rc" -eq 1 ] && printf '%s' "$c2mp_out" | grep -q "marketplace.json observed 0.4.0" \
+   && ! printf '%s' "$c2mp_out" | grep -q "surfaces disagree"; then
+  ok "condition 2 marketplace.json arm: a marketplace.json row vs both on-disk occurrences hard-fails on its own"
+else
+  bad "condition 2 marketplace.json arm: expected exit 1 naming the marketplace.json contradiction and NO hard-fail-1, got rc=$c2mp_rc out=$c2mp_out"
+fi
+rm -rf "$C2_MP_ROOT"
+
+# marketplace.json self-disagreement: metadata.version and plugins[0].version differ FROM
+# EACH OTHER on disk. Must hard-fail regardless of what the ledger row observed -- here the
+# ledger row observes 0.6.0, which matches ONE of the two occurrences, so the old
+# sort -u membership test would have passed it.
+MP_SELF_ROOT="$(mktemp -d)"
+mkdir -p "$MP_SELF_ROOT/plugins/sefi-core/.claude-plugin" "$MP_SELF_ROOT/.claude-plugin"
+printf '{\n  "version": "0.6.0"\n}\n' > "$MP_SELF_ROOT/plugins/sefi-core/.claude-plugin/plugin.json"
+printf '{ "metadata": { "version": "0.6.0" }, "plugins": [ { "version": "0.6.1" } ] }\n' > "$MP_SELF_ROOT/.claude-plugin/marketplace.json"
+printf '# Changelog\n\n## [0.6.0] - 2026-09-01\n' > "$MP_SELF_ROOT/CHANGELOG.md"
+cat > "$MP_SELF_ROOT/ledger.md" <<'LEDGER'
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.6.0 | plugin.json | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | marketplace.json | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | changelog | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | git-tag | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-release | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-marketplace-index | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+LEDGER
+mps_out="$(bash "$RL" --ledger "$MP_SELF_ROOT/ledger.md" --root "$MP_SELF_ROOT" 2>&1)"
+mps_rc=$?
+if [ "$mps_rc" -eq 1 ] && printf '%s' "$mps_out" | grep -q "marketplace.json self-disagreement"; then
+  ok "marketplace.json self-disagreement: the two on-disk occurrences differing from each other hard-fails even when the ledger row matches one of them"
+else
+  bad "marketplace.json self-disagreement: expected exit 1 naming the self-disagreement, got rc=$mps_rc out=$mps_out"
+fi
+rm -rf "$MP_SELF_ROOT"
+
+# a non-empty version cell that is not a semver must hard-fail, symmetric with the unknown
+# surface / unknown status checks -- not silently drop the row out of latest/latest_rows.
+BADVER_ROOT="$(mktemp -d)"
+cat > "$BADVER_ROOT/ledger.md" <<'LEDGER'
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.6.0 | plugin.json | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| TBD | changelog | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | git-tag | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+LEDGER
+bv_out="$(bash "$RL" --ledger "$BADVER_ROOT/ledger.md" --root "$BADVER_ROOT" 2>&1)"
+bv_rc=$?
+if [ "$bv_rc" -eq 1 ] && printf '%s' "$bv_out" | grep -q "unparseable version cell 'TBD'"; then
+  ok "malformed version cell: a non-semver version token among valid rows hard-fails (does not silently exempt the row)"
+else
+  bad "malformed version cell: expected exit 1 naming the unparseable cell, got rc=$bv_rc out=$bv_out"
+fi
+# an ALL-malformed version column keeps the pre-existing 'no semantic version found' exit 1.
+cat > "$BADVER_ROOT/allbad.md" <<'LEDGER'
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| draft | plugin.json | x | x | match | ok | x | 2026-09-01T00:00:00Z |
+| TBD | changelog | x | x | match | ok | x | 2026-09-01T00:00:00Z |
+LEDGER
+ab_out="$(bash "$RL" --ledger "$BADVER_ROOT/allbad.md" --root "$BADVER_ROOT" 2>&1)"
+ab_rc=$?
+if [ "$ab_rc" -eq 1 ] && printf '%s' "$ab_out" | grep -q "no semantic version found in the ledger's version column"; then
+  ok "all-malformed version column: still exits 1 with 'no semantic version found' (pre-existing behavior kept)"
+else
+  bad "all-malformed version column: expected exit 1 with 'no semantic version found', got rc=$ab_rc out=$ab_out"
+fi
+rm -rf "$BADVER_ROOT"
+
+# hard-fail 1 is per version GROUP across the whole append-only ledger, not latest-only:
+# the latest group (0.6.0) is internally consistent, but a HISTORICAL group (0.5.0) has two
+# surfaces observing contradicting versions. A latest-only check would exit 0 here.
+PVG_ROOT="$(mktemp -d)"
+cat > "$PVG_ROOT/ledger.md" <<'LEDGER'
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.6.0 | plugin.json | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | marketplace.json | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | changelog | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | git-tag | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-release | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-marketplace-index | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.5.0 | plugin.json | 0.5.0 | 0.5.0 | match | ok | x | 2026-08-01T00:00:00Z |
+| 0.5.0 | git-tag | 0.5.0 | 0.5.1 | mismatch | historical drift never reconciled | x | 2026-08-01T00:00:00Z |
+LEDGER
+pvg_out="$(bash "$RL" --ledger "$PVG_ROOT/ledger.md" --root "$PVG_ROOT" 2>&1)"
+pvg_rc=$?
+if [ "$pvg_rc" -eq 1 ] && printf '%s' "$pvg_out" | grep -q "version claim 0.5.0"; then
+  ok "per-version-group contradiction: a historical (non-latest) version group with disagreeing surfaces hard-fails"
+else
+  bad "per-version-group contradiction: expected exit 1 naming the 0.5.0 group, got rc=$pvg_rc out=$pvg_out"
+fi
+rm -rf "$PVG_ROOT"
+
+# FIX 1 -- partial-semver escape: norm_semver is anchored end-to-end (^v?X.Y.Z$), so a
+# version cell that is ALMOST a semver (a 4th segment, a -rcN suffix) no longer prefix-
+# matches to a truncated version that then silently fails the v==L / v==G equality checks
+# and drops the row out of hard-fail 1, hard-fail 2, and the N/6 count. Each such cell must
+# trip the non-empty version guard and exit 1 naming the exact cell text.
+PSV_ROOT="$(mktemp -d)"
+for badv in "0.6.0-rc1" "1.2.3.4" "0.5.2.1"; do
+  cat > "$PSV_ROOT/ledger.md" <<LEDGER
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.6.0 | plugin.json | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| $badv | changelog | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+LEDGER
+  psv_out="$(bash "$RL" --ledger "$PSV_ROOT/ledger.md" --root "$PSV_ROOT" 2>&1)"
+  psv_rc=$?
+  if [ "$psv_rc" -eq 1 ] && printf '%s' "$psv_out" | grep -qF "unparseable version cell '$badv'"; then
+    ok "partial-semver '$badv': exits 1 naming the cell (no prefix-match escape)"
+  else
+    bad "partial-semver '$badv': expected exit 1 naming the cell, got rc=$psv_rc out=$psv_out"
+  fi
+done
+# the exact forms still parse: a bare semver, a v-prefixed one, and a two-digit segment.
+cat > "$PSV_ROOT/ledger.md" <<'LEDGER'
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.5.2 | plugin.json | 0.5.2 | 0.5.2 | match | ok | x | 2026-09-01T00:00:00Z |
+| v0.5.2 | changelog | 0.5.2 | 0.5.2 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.10.0 | git-tag | 0.10.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+LEDGER
+psv_ok_out="$(bash "$RL" --ledger "$PSV_ROOT/ledger.md" --root "$PSV_ROOT" 2>&1)"
+psv_ok_rc=$?
+if [ "$psv_ok_rc" -eq 0 ] && printf '%s' "$psv_ok_out" | grep -q "latest 0.10.0"; then
+  ok "exact semver forms (0.5.2, v0.5.2, 0.10.0) still parse; latest resolves to 0.10.0"
+else
+  bad "exact semver forms: expected exit 0 with latest 0.10.0, got rc=$psv_ok_rc out=$psv_ok_out"
+fi
+rm -rf "$PSV_ROOT"
+
+# leading-zero semver: each numeric component is (0|[1-9][0-9]*), so a version cell with a
+# leading-zero component (00.5.2, 01.0.0, 0.05.2, 1.2.03) fails to parse and must trip the
+# unparseable-version hard-fail exit 1 naming the cell -- otherwise 00.5.2 and 0.5.2 would
+# normalize into two distinct version groups and hard-fail 1 would never compare them.
+LZ_ROOT="$(mktemp -d)"
+for badv in "00.5.2" "01.0.0" "0.05.2" "1.2.03"; do
+  cat > "$LZ_ROOT/ledger.md" <<LEDGER
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.5.2 | plugin.json | 0.5.2 | 0.5.2 | match | ok | x | 2026-09-01T00:00:00Z |
+| $badv | changelog | 0.5.2 | 0.5.2 | match | ok | x | 2026-09-01T00:00:00Z |
+LEDGER
+  lz_out="$(bash "$RL" --ledger "$LZ_ROOT/ledger.md" --root "$LZ_ROOT" 2>&1)"
+  lz_rc=$?
+  if [ "$lz_rc" -eq 1 ] && printf '%s' "$lz_out" | grep -qF "unparseable version cell '$badv'"; then
+    ok "leading-zero version '$badv': exits 1 naming the cell (no phantom version group)"
+  else
+    bad "leading-zero version '$badv': expected exit 1 naming the cell, got rc=$lz_rc out=$lz_out"
+  fi
+done
+# multi-digit components without a leading zero still parse.
+cat > "$LZ_ROOT/ledger.md" <<'LEDGER'
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.5.2 | plugin.json | 0.5.2 | 0.5.2 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.10.0 | changelog | 0.10.0 | 0.10.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 1.20.3 | git-tag | 1.20.3 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+LEDGER
+lz_ok_out="$(bash "$RL" --ledger "$LZ_ROOT/ledger.md" --root "$LZ_ROOT" 2>&1)"
+lz_ok_rc=$?
+if [ "$lz_ok_rc" -eq 0 ] && printf '%s' "$lz_ok_out" | grep -q "latest 1.20.3"; then
+  ok "no-leading-zero multi-digit forms (0.10.0, 1.20.3) still parse; latest resolves to 1.20.3"
+else
+  bad "multi-digit semver forms: expected exit 0 with latest 1.20.3, got rc=$lz_ok_rc out=$lz_ok_out"
+fi
+rm -rf "$LZ_ROOT"
+
+# FIX 4 -- a legal GFM alignment separator row (colons around the dashes) must be
+# recognized as a separator, not parsed as a data row (which produced spurious
+# unknown-surface / unknown-status errors).
+ALN_ROOT="$(mktemp -d)"
+cat > "$ALN_ROOT/ledger.md" <<'LEDGER'
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|:--------|:-------:|---------:|:--------:|:------:|:---------|:------------------:|-----------:|
+| 0.6.0 | plugin.json | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | git-tag | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+LEDGER
+aln_out="$(bash "$RL" --ledger "$ALN_ROOT/ledger.md" --root "$ALN_ROOT" 2>&1)"
+aln_rc=$?
+if [ "$aln_rc" -eq 0 ] && ! printf '%s' "$aln_out" | grep -q "ERROR:"; then
+  ok "GFM alignment separator row is skipped, not parsed as data (no spurious errors)"
+else
+  bad "GFM alignment separator: expected exit 0 with no ERROR lines, got rc=$aln_rc out=$aln_out"
+fi
+rm -rf "$ALN_ROOT"
+
+# FIX 1 (release-0.5.1 pass) -- the separator-row skip is a WHOLE-ROW test, not a version-
+# column test. A real data row whose version cell alone is :-: / --: / :-- (all valid
+# alignment-marker spellings) must NOT be discarded as a table separator: it has to reach
+# norm_semver, fail the exact-semver guard, and hard-fail exit 1 naming the cell. A revert
+# to the version-column-only skip ($2 ~ /^:?-+:?$/) silently drops the row and returns
+# exit 0 "OK" even while it carries a disk-contradicting observed value -- this catches that.
+DSEP_ROOT="$(mktemp -d)"
+for badv in ":-:" "--:" ":--"; do
+  cat > "$DSEP_ROOT/ledger.md" <<LEDGER
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.5.2 | plugin.json | 0.5.2 | 0.5.2 | match | ok | x | 2026-09-01T00:00:00Z |
+| $badv | plugin.json | 0.5.2 | 0.4.0 | mismatch | fabricated -- version cell is an alignment marker | x | 2026-09-01T00:00:00Z |
+LEDGER
+  dsep_out="$(bash "$RL" --ledger "$DSEP_ROOT/ledger.md" --root "$DSEP_ROOT" 2>&1)"
+  dsep_rc=$?
+  if [ "$dsep_rc" -eq 1 ] && printf '%s' "$dsep_out" | grep -qF "unparseable version cell '$badv'"; then
+    ok "data row with version cell '$badv' is NOT skipped as a separator; hard-fails exit 1 naming the cell"
+  else
+    bad "data row version cell '$badv': expected exit 1 naming the cell (row must not be dropped), got rc=$dsep_rc out=$dsep_out"
+  fi
+done
+rm -rf "$DSEP_ROOT"
+
+# FIX 3 -- joined-form options (--ledger=PATH / --root=DIR) must be parsed, not dropped to
+# the *) shift catch-all where the script would silently validate the DEFAULT ledger.
+expect_code 0 "joined --ledger=PATH / --root=DIR parse like the spaced form (ok fixture)" \
+  bash "$RL" "--ledger=$RLF/ok/ledger.md" "--root=$RL_ROOT"
+jf_out="$(bash "$RL" "--ledger=$RL_ROOT/does-not-exist.md" "--root=$RL_ROOT" 2>&1)"
+jf_rc=$?
+if [ "$jf_rc" -eq 1 ] && printf '%s' "$jf_out" | grep -q "release ledger not found"; then
+  ok "joined --ledger=PATH resolves the given path (missing file -> exit 1, not a silent default pass)"
+else
+  bad "joined --ledger=PATH: expected exit 1 'release ledger not found', got rc=$jf_rc out=$jf_out"
+fi
+expect_code 1 "an empty joined --ledger= value exits 1" \
+  bash "$RL" "--ledger="
+expect_code 1 "an unrecognized joined option (--bogus=1) exits 1, not silently ignored" \
+  bash "$RL" "--bogus=1" --ledger "$RLF/ok/ledger.md" --root "$RL_ROOT"
+
+# a missing ledger file is exit 1, not a silent pass.
+expect_code 1 "a missing ledger path exits 1" \
+  bash "$RL" --ledger "$RL_ROOT/does-not-exist.md" --root "$RL_ROOT"
+
+# a missing --ledger / --root value must fail fast (exit 1), never spin forever on the
+# arg loop. The `timeout` wrapper is a defensive bound for a HYPOTHETICAL future refactor
+# that removes BOTH the `[ $# -ge 2 ]` guard AND the `set -u` protection -- only that
+# combination could actually hang. As the script stands today (`set -u`, no `set -e`), a
+# reverted guard makes `$2` an unbound-variable error that exits non-zero immediately, not
+# an infinite loop. So this assertion pins exit-1-on-missing-value, but does NOT by itself
+# prove the no-hang property; `set -u` alone already gives the fast non-zero exit.
+# If timeout(1) is unavailable, SKIP rather than run an unbounded command.
+if command -v timeout >/dev/null 2>&1; then
+  expect_code 1 "a bare --ledger with no value exits 1 (no infinite loop)" \
+    timeout 8 bash "$RL" --ledger
+  expect_code 1 "a bare --root with no value exits 1 (no infinite loop)" \
+    timeout 8 bash "$RL" --root
+else
+  echo "  SKIP: bare --ledger / --root no-hang assertions (timeout(1) not available on this platform)"
+fi
+
+rm -rf "$RL_ROOT"
+
+echo
+echo "=== check-route.sh (Phase 3 deferred half: LIVE Codex requested-vs-observed route) ==="
+
+# check-route.sh is post-dispatch, not a CI validator -- it lives in scripts/, not
+# scripts/ci/, and is exercised here, never from run-all.sh's validators list. It is now a
+# thin interpreter-resolving shim over check-route.py (stdlib Python 3.11+, real json.loads
+# per rollout line + top-level dict access only). The live match/mismatch/invalid path is
+# CODEX-ONLY: claude-code stays `unavailable`, opencode/hermes stay `not-applicable` (every
+# tier resolves to `flexible`).
+#
+# The .sh shim drives the sentinel / thread-id / non-Codex / interpreter-skip cases below.
+# Because the shim forces argument 3 and beyond to be POSITIONAL with an argparse `--`
+# end-of-options marker (so an unquoted $CODEX_THREAD_ID cannot smuggle --rollout-file
+# through the supported entrypoint), the rollout-fixture verdict cases cannot go through the
+# shim any more -- they call check-route.py DIRECTLY (the contributor-test path), guarded on
+# a usable python3/python 3.11+.
+CRT="$CORE/scripts/check-route.sh"
+CRF="$CORE/scripts/ci/fixtures/check-route"
+CRPY="$CORE/scripts/check-route.py"
+PYBIN=""
+for _c in python3 python; do
+  command -v "$_c" >/dev/null 2>&1 || continue
+  "$_c" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)' >/dev/null 2>&1 || continue
+  PYBIN="$_c"; break
+done
+[ -n "$PYBIN" ] || echo "  SKIP: no python3/python 3.11+ for direct check-route.py cases"
+
+# --- still-valid non-Codex cases, through the .sh shim ------------------------------
+
+# claude-code: the CLI reports no per-agent model/usage -> unavailable, nonzero.
+crt_out="$(sh "$CRT" claude-code mid - 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"unavailable"'*'harness-exposes-no-route-readback'*)
+    [ "$crt_rc" -ne 0 ] && ok "claude-code mid - -> unavailable, exit $crt_rc" \
+      || bad "claude-code reported unavailable but exited 0" ;;
+  *) bad "claude-code did not report unavailable: $crt_out" ;;
+esac
+
+# opencode: every tier resolves to the 'flexible' sentinel (model-map.yml) -> not-applicable, exit 0.
+crt_out="$(sh "$CRT" opencode mid - 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"not-applicable"'*)
+    [ "$crt_rc" -eq 0 ] && ok "opencode mid - -> not-applicable, exit 0" \
+      || bad "opencode not-applicable but nonzero exit $crt_rc" ;;
+  *) bad "opencode did not report not-applicable: $crt_out" ;;
+esac
+
+# hermes: every tier resolves to 'flexible' too -> not-applicable, exit 0.
+crt_out="$(sh "$CRT" hermes mid - 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"not-applicable"'*)
+    [ "$crt_rc" -eq 0 ] && ok "hermes mid - -> not-applicable, exit 0" \
+      || bad "hermes not-applicable but nonzero exit $crt_rc" ;;
+  *) bad "hermes did not report not-applicable: $crt_out" ;;
+esac
+
+# A non-printable character in ANY argument -> exit 2, and NO JSON status line.
+crt_out="$(sh "$CRT" codex "$(printf 'mid\007')" - 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status"'*) bad "a non-printable arg reached a JSON status line -- must exit 2, no JSON: $crt_out" ;;
+  *)
+    [ "$crt_rc" -eq 2 ] && ok "a non-printable arg -> exit 2, no JSON line" \
+      || bad "a non-printable arg expected exit 2, got $crt_rc: $crt_out" ;;
+esac
+
+# An unknown harness -> exit 2, and NO JSON status line.
+crt_out="$(sh "$CRT" frobnicate mid - 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status"'*) bad "an unknown harness reached a JSON status line -- must exit 2, no JSON: $crt_out" ;;
+  *)
+    [ "$crt_rc" -eq 2 ] && ok "an unknown harness -> exit 2, no JSON line" \
+      || bad "an unknown harness expected exit 2, got $crt_rc: $crt_out" ;;
+esac
+
+# A usage error (wrong arg count) is exit 2, not a JSON status line.
+expect_code 2 "check-route.sh with too few args is a usage error" \
+  sh "$CRT" codex mid
+
+# --- LIVE Codex verdicts: DIRECT to check-route.py (contributor-test path) -----------
+# `model-for.sh codex mid` resolves to gpt-5.6-terra / high (config/model-map.yml:59-68);
+# the fixtures under $CRF are built to that baseline. A rollout file is fed via the hidden
+# `--rollout-file` option -- reachable ONLY by a direct `check-route.py` call, since the
+# shim now forces argument 3+ positional with an argparse `--` marker (an attacker-set
+# $CODEX_THREAD_ID, quoted or not, cannot reach --rollout-file). The POSITIONAL 3rd arg is
+# still never file-auto-detected.
+if [ -n "$PYBIN" ]; then
+
+crt_out="$("$PYBIN" "$CRPY" codex mid - --rollout-file "$CRF/match/rollout.jsonl" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"match"'*)
+    [ "$crt_rc" -eq 0 ] && ok "codex mid <match fixture> -> match, exit 0" \
+      || bad "codex match but exit $crt_rc" ;;
+  *) bad "codex <match fixture> did not report match: $crt_out" ;;
+esac
+
+crt_out="$("$PYBIN" "$CRPY" codex mid - --rollout-file "$CRF/mismatch/rollout.jsonl" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"mismatch"'*)
+    [ "$crt_rc" -ne 0 ] && ok "codex mid <mismatch fixture> -> mismatch, exit $crt_rc (STOP rule fires)" \
+      || bad "codex mismatch but exit 0 -- the orchestrator STOP rule would not fire" ;;
+  *) bad "codex <mismatch fixture> did not report mismatch: $crt_out" ;;
+esac
+
+# invalid, one per shape, asserting the reason substring for each.
+for pair in \
+  "invalid-not-json:rollout-unreadable" \
+  "invalid-no-turn-context:turn-context-missing" \
+  "invalid-two-turn-context:turn-context-malformed"; do
+  fx="${pair%%:*}"; why="${pair#*:}"
+  crt_out="$("$PYBIN" "$CRPY" codex mid - --rollout-file "$CRF/$fx/rollout.jsonl" 2>&1)"; crt_rc=$?
+  case "$crt_out" in
+    *'"status":"invalid"'*"$why"*)
+      [ "$crt_rc" -ne 0 ] && ok "codex mid <$fx> -> invalid / $why, exit $crt_rc" \
+        || bad "codex <$fx> invalid but exit 0" ;;
+    *) bad "codex <$fx> did not report invalid / $why: $crt_out" ;;
+  esac
+done
+
+# A rollout whose only content is a >4300-digit JSON integer raises a bare ValueError
+# (not JSONDecodeError) inside json.loads; deep nesting would raise RecursionError. The
+# widened except catches both -> one `invalid` / `rollout-unreadable` JSON line, exit
+# non-zero, NEVER an uncaught traceback that would print the interpreter's absolute path.
+HUGEINT="$(mktemp)"
+awk 'BEGIN { s=""; for (i=0;i<5000;i++) s=s "9"; print s }' > "$HUGEINT"
+crt_out="$("$PYBIN" "$CRPY" codex mid - --rollout-file "$HUGEINT" 2>&1)"; crt_rc=$?
+hugeint_lines="$(printf '%s\n' "$crt_out" | grep -c .)"
+case "$crt_out" in
+  *Traceback*|*'check-route.py"'*)
+    bad "a 5000-digit-int rollout produced a traceback instead of an invalid JSON line: $crt_out" ;;
+  *'"status":"invalid"'*'rollout-unreadable'*)
+    if [ "$crt_rc" -ne 0 ] && [ "$hugeint_lines" -eq 1 ]; then
+      ok "a 5000-digit-int rollout -> invalid / rollout-unreadable, one JSON line, exit $crt_rc, no traceback"
+    else
+      bad "5000-digit-int rollout: exit $crt_rc, $hugeint_lines line(s): $crt_out"
+    fi ;;
+  *) bad "5000-digit-int rollout did not report invalid / rollout-unreadable: $crt_out" ;;
+esac
+rm -f "$HUGEINT"
+
+# --- the top-level-only turn_context filter: two decoy CLASSES pin it ----------------
+# The filter (check-route.py: iterate lines, keep only records whose TOP-LEVEL
+# type=="turn_context" and payload is a dict) is the whole security premise.
+#
+# CLASS 1 -- substring-scan / nested-key-confusion. FOUR flattened-shape decoys
+# (`decoy-nested-model-string`, `decoy-nested-turn-context-obj`, `decoy-nested-after-real`,
+# `decoy-only-nested`) pin it: a real json.loads never treats a nested `"model"` string as
+# a key, and the nested `turn_context` objects here are FLATTENED
+# (`{"type":"turn_context","model":..,"effort":..}` with no `payload` key), so even a
+# recursive descent that KEPT the parser's 3-clause predicate would walk past them. They
+# stay valid JSON-parse-vs-substring regression cases; they are NOT load-bearing against a
+# faithful recursive descent.
+#
+# CLASS 2 -- recursive descent. TWO real-shape fixtures
+# (`decoy-realshape-nested-after-real`, `decoy-realshape-only-nested`) whose nested decoy is
+# an EXACT `{"type":"turn_context","payload":{"model":..,"effort":..}}` record -- the shape
+# the parser's predicate accepts. A descent that preserved the payload-dict clause would
+# read the nested route and redden their assertions (verified by hand: descend keeping all
+# 3 clauses, run this suite, confirm a real-shape assertion goes RED, revert).
+
+# Class 1, decoy 1: a free-text string field literally containing "model":"gpt-5.6-sol"
+# while the real last turn_context payload says gpt-5.6-luna. json.loads never treats that
+# nested string as a key -> must be `mismatch`, NEVER a wrong `match`.
+crt_out="$("$PYBIN" "$CRPY" codex mid - --rollout-file "$CRF/decoy-nested-model-string/rollout.jsonl" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"match"'*) bad "DECOY FAIL-OPEN: nested \"model\" string produced a wrong match: $crt_out" ;;
+  *'"status":"mismatch"'*)
+    [ "$crt_rc" -ne 0 ] && ok "codex mid <decoy-nested-model-string> -> mismatch (no fail-open), exit $crt_rc" \
+      || bad "decoy-nested-model-string mismatch but exit 0" ;;
+  *) bad "decoy-nested-model-string did not report mismatch: $crt_out" ;;
+esac
+
+# Class 1, decoy 2: a non-turn_context top-level line (type=="response_item") whose payload
+# nests a FLATTENED turn_context object with a downgraded model, while the real last
+# top-level turn_context says terra/high. Top-level-only dict access -> must `match` the
+# REAL route.
+crt_out="$("$PYBIN" "$CRPY" codex mid - --rollout-file "$CRF/decoy-nested-turn-context-obj/rollout.jsonl" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"mismatch"'*|*'"status":"invalid"'*)
+    bad "DECOY FAIL: descended into the nested turn_context object instead of the real route: $crt_out" ;;
+  *'"status":"match"'*)
+    [ "$crt_rc" -eq 0 ] && ok "codex mid <decoy-nested-turn-context-obj> -> match on the REAL route, exit 0" \
+      || bad "decoy-nested-turn-context-obj match but exit $crt_rc" ;;
+  *) bad "decoy-nested-turn-context-obj did not report match: $crt_out" ;;
+esac
+
+# Class 1, decoy 3: a REAL top-level turn_context with a DOWNGRADED model
+# (gpt-5.6-luna/medium), FOLLOWED by a later non-turn_context line whose payload nests a
+# FLATTENED turn_context carrying the EXPECTED good model (terra/high). Top-level-only ->
+# the last TOP-LEVEL turn_context is luna/medium -> `mismatch`.
+crt_out="$("$PYBIN" "$CRPY" codex mid - --rollout-file "$CRF/decoy-nested-after-real/rollout.jsonl" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"match"'*) bad "DECOY FAIL-OPEN: descended past the real downgraded route to a nested good model: $crt_out" ;;
+  *'"status":"mismatch"'*)
+    [ "$crt_rc" -ne 0 ] && ok "codex mid <decoy-nested-after-real> -> mismatch on the REAL downgraded route, exit $crt_rc" \
+      || bad "decoy-nested-after-real mismatch but exit 0" ;;
+  *) bad "decoy-nested-after-real did not report mismatch: $crt_out" ;;
+esac
+
+# Class 1, decoy 4: NO top-level turn_context at all -- the only turn_context objects are
+# FLATTENED and nested in payload.parent_context. Top-level-only -> `invalid` /
+# `turn-context-missing`.
+crt_out="$("$PYBIN" "$CRPY" codex mid - --rollout-file "$CRF/decoy-only-nested/rollout.jsonl" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"match"'*|*'"status":"mismatch"'*)
+    bad "DECOY FAIL: descended into a nested-only turn_context instead of reporting it missing: $crt_out" ;;
+  *'"status":"invalid"'*'turn-context-missing'*)
+    [ "$crt_rc" -ne 0 ] && ok "codex mid <decoy-only-nested> -> invalid / turn-context-missing, exit $crt_rc" \
+      || bad "decoy-only-nested invalid but exit 0" ;;
+  *) bad "decoy-only-nested did not report invalid / turn-context-missing: $crt_out" ;;
+esac
+
+# Class 2, real-shape 1 (load-bearing vs recursive descent): a REAL top-level turn_context
+# with a DOWNGRADED payload (gpt-5.6-luna/medium), FOLLOWED by a non-turn_context line whose
+# payload nests an EXACT-SHAPE `{"type":"turn_context","payload":{model,effort}}` record
+# carrying the EXPECTED good model (terra/high). Top-level-only -> the last TOP-LEVEL
+# turn_context is luna/medium -> `mismatch`. A faithful recursive descent (all 3 clauses
+# kept) would pick up the nested terra/high as "last" and wrongly report `match` -- this
+# assertion reddens under that mutation.
+crt_out="$("$PYBIN" "$CRPY" codex mid - --rollout-file "$CRF/decoy-realshape-nested-after-real/rollout.jsonl" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"match"'*) bad "DECOY FAIL-OPEN: descended past the real downgraded route to a nested real-shape good model: $crt_out" ;;
+  *'"status":"mismatch"'*)
+    [ "$crt_rc" -ne 0 ] && ok "codex mid <decoy-realshape-nested-after-real> -> mismatch on the REAL downgraded route, exit $crt_rc" \
+      || bad "decoy-realshape-nested-after-real mismatch but exit 0" ;;
+  *) bad "decoy-realshape-nested-after-real did not report mismatch: $crt_out" ;;
+esac
+
+# Class 2, real-shape 2 (load-bearing vs recursive descent): NO top-level turn_context; the
+# only turn_context records are EXACT-SHAPE and nested under payload.parent_context /
+# payload.inner. Top-level-only -> `invalid` / `turn-context-missing`. A faithful recursive
+# descent would find a nested real-shape record and emit `match` (or `mismatch` if it were
+# downgraded) instead -- either verdict reddens this assertion.
+crt_out="$("$PYBIN" "$CRPY" codex mid - --rollout-file "$CRF/decoy-realshape-only-nested/rollout.jsonl" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"match"'*|*'"status":"mismatch"'*)
+    bad "DECOY FAIL: descended into a nested-only real-shape turn_context instead of reporting it missing: $crt_out" ;;
+  *'"status":"invalid"'*'turn-context-missing'*)
+    [ "$crt_rc" -ne 0 ] && ok "codex mid <decoy-realshape-only-nested> -> invalid / turn-context-missing, exit $crt_rc" \
+      || bad "decoy-realshape-only-nested invalid but exit 0" ;;
+  *) bad "decoy-realshape-only-nested did not report invalid / turn-context-missing: $crt_out" ;;
+esac
+
+else
+  echo "  SKIP: LIVE Codex rollout-verdict + decoy cases (no direct python3/python 3.11+)"
+fi
+
+# thread-id placeholder / invalid.
+crt_out="$(sh "$CRT" codex mid - 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"unavailable"'*'thread-id-unavailable'*)
+    [ "$crt_rc" -ne 0 ] && ok "codex mid - -> unavailable / thread-id-unavailable, exit $crt_rc" \
+      || bad "codex mid - unavailable but exit 0" ;;
+  *) bad "codex mid - did not report unavailable / thread-id-unavailable: $crt_out" ;;
+esac
+
+crt_out="$(sh "$CRT" codex mid not-a-uuid 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"invalid"'*'thread-id-invalid'*)
+    [ "$crt_rc" -ne 0 ] && ok "codex mid not-a-uuid -> invalid / thread-id-invalid, exit $crt_rc" \
+      || bad "codex mid not-a-uuid invalid but exit 0" ;;
+  *) bad "codex mid not-a-uuid did not report invalid / thread-id-invalid: $crt_out" ;;
+esac
+
+# FIX A regression -- the shim forces argument 3+ POSITIONAL with an argparse `--` marker,
+# so a call site that expands $CODEX_THREAD_ID UNQUOTED cannot smuggle --rollout-file
+# through the supported entrypoint and force a `match`/exit 0 from an attacker-authored
+# rollout. The UNQUOTED expansion word-splits into `- --rollout-file X` -> three positionals
+# after `--` while `record` takes one -> argparse "unrecognized arguments" -> exit 2, no
+# JSON, fails closed.
+_smuggle="- --rollout-file $CRF/match/rollout.jsonl"
+crt_out="$(sh "$CRT" codex mid $_smuggle 2>&1)"; crt_rc=$?   # deliberately UNQUOTED $_smuggle
+case "$crt_out" in
+  *'"status":"match"'*) bad "SMUGGLE: an unquoted \$CODEX_THREAD_ID expansion injected --rollout-file through the shim -> wrong match: $crt_out" ;;
+  *)
+    [ "$crt_rc" -eq 2 ] && ok "shim forces arg 3+ positional: unquoted '- --rollout-file X' -> exit 2, no match" \
+      || bad "smuggle attempt: expected exit 2, got $crt_rc: $crt_out" ;;
+esac
+
+# Slot-1/2 twin: the shim puts `--` before EVERY positional, so a leading-dash word that
+# word-splits into the harness/tier slot cannot smuggle --rollout-file either. Load-bearing
+# against a refactor back to arg-1/arg-2 capture (bare `exec "$INTERP" "$PY" "$@"`).
+_smuggle12="--rollout-file $CRF/match/rollout.jsonl codex mid -"
+crt_out="$(sh "$CRT" $_smuggle12 2>&1)"; crt_rc=$?   # deliberately UNQUOTED -- leading-dash word lands in the harness slot
+case "$crt_out" in
+  *'"status":"match"'*) bad "SMUGGLE (slots 1-2): a leading-dash word in the harness/tier slot injected --rollout-file -> wrong match: $crt_out" ;;
+  *)
+    [ "$crt_rc" -eq 2 ] && ok "shim forces EVERY positional after --: unquoted '--rollout-file X codex mid -' -> exit 2, no match" \
+      || bad "slot-1-2 smuggle: expected exit 2, got $crt_rc: $crt_out" ;;
+esac
+
+# The QUOTED form is one positional -> a non-UUID thread id -> invalid / thread-id-invalid.
+crt_out="$(sh "$CRT" codex mid "$_smuggle" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"invalid"'*'thread-id-invalid'*)
+    [ "$crt_rc" -ne 0 ] && ok "quoted '- --rollout-file X' -> invalid / thread-id-invalid" \
+      || bad "quoted smuggle exit 0" ;;
+  *) bad "quoted smuggle did not report invalid / thread-id-invalid: $crt_out" ;;
+esac
+
+# CODEX_HOME sessions-dir resolution: a lowercase-UUID thread id, matched by rollout
+# FILENAME only. Two matches -> ambiguous; empty sessions/ -> no rollout; no sessions/ ->
+# sessions dir unavailable.
+CH_UUID="aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
+CH_TWO="$(mktemp -d)"; mkdir -p "$CH_TWO/sessions/nested"
+cp "$CRF/match/rollout.jsonl" "$CH_TWO/sessions/rollout-2026-a-$CH_UUID.jsonl"
+cp "$CRF/match/rollout.jsonl" "$CH_TWO/sessions/nested/rollout-2026-b-$CH_UUID.jsonl"
+crt_out="$(env CODEX_HOME="$CH_TWO" sh "$CRT" codex mid "$CH_UUID" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"invalid"'*'rollout-ambiguous'*)
+    [ "$crt_rc" -ne 0 ] && ok "CODEX_HOME with two rollout-*-<uuid>.jsonl -> invalid / rollout-ambiguous, exit $crt_rc" \
+      || bad "rollout-ambiguous but exit 0" ;;
+  *) bad "two matching rollouts did not report invalid / rollout-ambiguous: $crt_out" ;;
+esac
+rm -rf "$CH_TWO"
+
+CH_EMPTY="$(mktemp -d)"; mkdir -p "$CH_EMPTY/sessions"
+crt_out="$(env CODEX_HOME="$CH_EMPTY" sh "$CRT" codex mid "$CH_UUID" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"unavailable"'*'rollout-unavailable'*)
+    [ "$crt_rc" -ne 0 ] && ok "CODEX_HOME with an empty sessions/ -> unavailable / rollout-unavailable, exit $crt_rc" \
+      || bad "rollout-unavailable but exit 0" ;;
+  *) bad "empty sessions/ did not report unavailable / rollout-unavailable: $crt_out" ;;
+esac
+rm -rf "$CH_EMPTY"
+
+CH_NOSESS="$(mktemp -d)"
+crt_out="$(env CODEX_HOME="$CH_NOSESS" sh "$CRT" codex mid "$CH_UUID" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"unavailable"'*'sessions-dir-unavailable'*)
+    [ "$crt_rc" -ne 0 ] && ok "CODEX_HOME with no sessions/ -> unavailable / sessions-dir-unavailable, exit $crt_rc" \
+      || bad "sessions-dir-unavailable but exit 0" ;;
+  *) bad "missing sessions/ did not report unavailable / sessions-dir-unavailable: $crt_out" ;;
+esac
+rm -rf "$CH_NOSESS"
+
+# No invocation may leak rollout free text. Every fixture carries a distinctive string in a
+# non-route field; none of it may appear on stdout/stderr. Direct check-route.py calls,
+# guarded on a usable interpreter.
+if [ -n "$PYBIN" ]; then
+  leak_out="$(
+    for fx in match mismatch invalid-no-turn-context decoy-nested-model-string \
+              decoy-nested-turn-context-obj decoy-nested-after-real decoy-only-nested \
+              decoy-realshape-nested-after-real decoy-realshape-only-nested; do
+      "$PYBIN" "$CRPY" codex mid - --rollout-file "$CRF/$fx/rollout.jsonl" 2>&1
+    done
+  )"
+  case "$leak_out" in
+    *"no turn_context record anywhere"*|*"here is the config I would use"*|*'"kind":"reasoning"'*|*"assistant said"*|*"replaying an earlier snapshot"*|*"no top-level turn_context anywhere"*|*"snapshot-replay-marker-alpha"*|*"nested-only-realshape-marker-beta"*)
+      bad "check-route leaked rollout free text into its output: $leak_out" ;;
+    *) ok "no invocation leaked rollout free text (only status/reason/model/effort emitted)" ;;
+  esac
+else
+  echo "  SKIP: rollout free-text leak check (no direct python3/python 3.11+)"
+fi
+
+# EXPECTED_MODEL / EXPECTED_EFFORT gate: a malformed config/model-map.yml value (injected
+# JSON) must be rejected at the tier-map trust boundary -- exit 2, NO JSON line. Stand up a
+# throwaway scripts/ + config/ pair (the shim, its .py parser, and model-for.sh) and let
+# the copied model-for.sh resolve against the malformed fixture map via its own
+# $HERE/../config/model-map.yml.
+GATEDIR="$(mktemp -d)"
+mkdir -p "$GATEDIR/scripts" "$GATEDIR/config"
+cp "$CRT" "$GATEDIR/scripts/check-route.sh"
+cp "$CORE/scripts/check-route.py" "$GATEDIR/scripts/check-route.py"
+cp "$CORE/scripts/model-for.sh" "$GATEDIR/scripts/model-for.sh"
+cp "$CRF/malformed-map/model-map.yml" "$GATEDIR/config/model-map.yml"
+crt_out="$(sh "$GATEDIR/scripts/check-route.sh" codex mid - 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status"'*) bad "malformed model-map value reached a JSON status line -- must exit 2 with no JSON: $crt_out" ;;
+  *)
+    [ "$crt_rc" -eq 2 ] && ok "malformed model-map value -> exit 2, no JSON line" \
+      || bad "malformed model-map value expected exit 2, got $crt_rc: $crt_out" ;;
+esac
+rm -rf "$GATEDIR"
+
+# The shim's interpreter-skip path: with PATH stripped so neither `python3` nor `python`
+# resolves, the shim prints a "route check skipped" notice to stderr and exits 3 -- a
+# caller can tell "no interpreter" (3) from a real verdict (0/1) or a usage error (2).
+# SKIP (not bad) if a usable interpreter cannot actually be hidden in this test env.
+NOPY="$(mktemp -d)"
+SH_ABS="$(command -v sh)"
+np_out="$(env PATH="$NOPY" "$SH_ABS" "$CRT" codex mid - 2>&1)"; np_rc=$?
+case "$np_out" in
+  *'route check skipped'*)
+    [ "$np_rc" -eq 3 ] && ok "shim: no python3/python 3.11+ on PATH -> 'route check skipped', exit 3" \
+      || bad "shim printed the skip notice but exited $np_rc (want 3)" ;;
+  *'"status"'*)
+    echo "  SKIP: interpreter-hiding case (a python stayed reachable with PATH=$NOPY)" ;;
+  *)
+    echo "  SKIP: interpreter-hiding case (unexpected env: $np_out)" ;;
+esac
+rm -rf "$NOPY"
+
+echo
+echo "=== gate.sh Python pytest-config detection (Phase-4 FIX 11: fail-open guard, ported from feat/benchmark) ==="
+
+# gate.sh's config-section branch lets an explicit pytest config force an unconditional
+# `pytest -q` (only exit 5 tolerated). FIX 11 hardens three gaps:
+#   (1) a repo with .py source but NO tests and NO config must still stay green;
+#   (2) `[tool.pytest.ini_options]` pointing discovery at non-default filenames must catch
+#       a failing test (not be skipped by the filename guard);
+#   (3) tox.ini `[pytest]` is a real pytest config location and must be honored too.
+if command -v pytest >/dev/null 2>&1; then
+  GP="$(mktemp -d)"
+
+  mkdir -p "$GP/nosuite"
+  printf 'x = 1\n' > "$GP/nosuite/mod.py"
+  expect_code 0 "a repo with .py source but no tests and no pytest config passes the gate" \
+    bash -c "cd '$GP/nosuite' && bash '$CORE/scripts/gate.sh'"
+
+  mkdir -p "$GP/pyproj"
+  printf '[tool.pytest.ini_options]\npython_files = ["spec_*.py"]\n' > "$GP/pyproj/pyproject.toml"
+  printf 'def test_it():\n    assert False\n' > "$GP/pyproj/spec_thing.py"
+  gp_code=0
+  ( cd "$GP/pyproj" && bash "$CORE/scripts/gate.sh" ) >/dev/null 2>&1 || gp_code=$?
+  if [ "$gp_code" -ne 0 ]; then
+    ok "[tool.pytest.ini_options] + a failing non-default-named test reddens the gate (exit $gp_code)"
+  else
+    bad "[tool.pytest.ini_options] failing test did NOT redden the gate (exit 0)"
+  fi
+
+  mkdir -p "$GP/toxcfg"
+  printf '[pytest]\npython_files = spec_*.py\n' > "$GP/toxcfg/tox.ini"
+  printf 'def test_it():\n    assert False\n' > "$GP/toxcfg/spec_thing.py"
+  tx_code=0
+  ( cd "$GP/toxcfg" && bash "$CORE/scripts/gate.sh" ) >/dev/null 2>&1 || tx_code=$?
+  if [ "$tx_code" -ne 0 ]; then
+    ok "tox.ini [pytest] + a failing non-default-named test reddens the gate (exit $tx_code)"
+  else
+    bad "tox.ini [pytest] failing test did NOT redden the gate (exit 0) -- config location not honored"
+  fi
+
+  rm -rf "$GP"
+else
+  echo "  SKIP: gate.sh pytest-config assertions (pytest not on PATH)"
 fi
 
 if [ "$fail" -ne 0 ]; then echo "test-scripts: $fail failed, $pass passed"; exit 1; fi
