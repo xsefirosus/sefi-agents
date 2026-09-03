@@ -149,6 +149,81 @@ fi
 rm -rf "$GW"
 
 echo
+echo "=== gate.sh Python pytest-config detection (Phase-4 FIX 11: fail-open guard) ==="
+
+# gate.sh's round-3 change let an explicit pytest config section force an unconditional
+# `pytest -q`. FIX 11 hardens three specific gaps in that branch:
+#   (1) a repo with .py source but NO tests and NO config must still stay green (the
+#       round-2 filename guard -- qa confirmed this half was NOT the regression);
+#   (2) `[tool.pytest.ini_options]` pointing discovery at non-default filenames must
+#       actually catch a failing test (not be skipped by the filename guard);
+#   (3) tox.ini `[pytest]` is a real pytest config location and must be honored too --
+#       the round-3 change only covered pyproject.toml / pytest.ini / setup.cfg.
+if command -v pytest >/dev/null 2>&1; then
+  GP="$(mktemp -d)"
+
+  # (1) .py source, no tests, no config -> pytest never runs -> gate green.
+  mkdir -p "$GP/nosuite"
+  printf 'x = 1\n' > "$GP/nosuite/mod.py"
+  expect_code 0 "a repo with .py source but no tests and no pytest config passes the gate" \
+    bash -c "cd '$GP/nosuite' && bash '$CORE/scripts/gate.sh'"
+
+  # (2) [tool.pytest.ini_options] with python_files pointing at a non-default name; a
+  #     failing test under that name must redden the gate.
+  mkdir -p "$GP/pyproj"
+  printf '[tool.pytest.ini_options]\npython_files = ["spec_*.py"]\n' > "$GP/pyproj/pyproject.toml"
+  printf 'def test_it():\n    assert False\n' > "$GP/pyproj/spec_thing.py"
+  gp_code=0
+  ( cd "$GP/pyproj" && bash "$CORE/scripts/gate.sh" ) >/dev/null 2>&1 || gp_code=$?
+  if [ "$gp_code" -ne 0 ]; then
+    ok "[tool.pytest.ini_options] + a failing non-default-named test reddens the gate (exit $gp_code)"
+  else
+    bad "[tool.pytest.ini_options] failing test did NOT redden the gate (exit 0)"
+  fi
+
+  # (3) same, but the config section lives in tox.ini [pytest].
+  mkdir -p "$GP/toxcfg"
+  printf '[pytest]\npython_files = spec_*.py\n' > "$GP/toxcfg/tox.ini"
+  printf 'def test_it():\n    assert False\n' > "$GP/toxcfg/spec_thing.py"
+  tx_code=0
+  ( cd "$GP/toxcfg" && bash "$CORE/scripts/gate.sh" ) >/dev/null 2>&1 || tx_code=$?
+  if [ "$tx_code" -ne 0 ]; then
+    ok "tox.ini [pytest] + a failing non-default-named test reddens the gate (exit $tx_code)"
+  else
+    bad "tox.ini [pytest] failing test did NOT redden the gate (exit 0) -- config location not honored"
+  fi
+
+  rm -rf "$GP"
+else
+  echo "  SKIP: gate.sh pytest-config assertions (pytest not on PATH)"
+fi
+
+echo
+echo "=== validate-no-personal-paths.sh benchmarks/ scan (Phase-4 FIX 12: bytecode + results/ exclusions) ==="
+
+# FIX 12: a synthetic benchmarks/__pycache__/PROBE.pyc carrying a Windows home path must
+# NOT trip the scan (bytecode is a compiler artifact, git-ignored, never shipped), and
+# the same for anything under the git-ignored benchmarks/results/. Without the exclusions
+# on the find line the identical tree DOES trip -- so the exclusion is load-bearing on a
+# home-directory checkout, and this pins that it is exactly an exclusion, not a broader
+# claim that a real leak ever shipped.
+VNP="$CORE/scripts/ci/validate-no-personal-paths.sh"
+NPT="$(mktemp -d)"
+mkdir -p "$NPT/plugins/sefi-core/scripts/ci" "$NPT/benchmarks/__pycache__" "$NPT/benchmarks/results/2026-01-01-run"
+printf 'byte-compiled from C:\\Users\\someone\\proj\\benchmarks\\scorecard.py\n' > "$NPT/benchmarks/__pycache__/PROBE.pyc"
+printf 'raw artifact path C:\\Users\\someone\\run\n' > "$NPT/benchmarks/results/2026-01-01-run/raw.txt"
+printf '{"clean": true}\n' > "$NPT/benchmarks/fixtures-ok.json"
+cp "$VNP" "$NPT/plugins/sefi-core/scripts/ci/validate-no-personal-paths.sh"
+expect_code 0 "the shipped scan ignores benchmarks/__pycache__/*.pyc and benchmarks/results/*" \
+  bash "$NPT/plugins/sefi-core/scripts/ci/validate-no-personal-paths.sh"
+# strip the two -not -path guards from the benchmarks find line -> the same tree now trips.
+sed "s#find benchmarks -type f .*#find benchmarks -type f#" "$VNP" \
+  > "$NPT/plugins/sefi-core/scripts/ci/no-exclude.sh"
+expect_code 1 "without the benchmarks exclusions the identical tree is flagged (exit 1)" \
+  bash "$NPT/plugins/sefi-core/scripts/ci/no-exclude.sh"
+rm -rf "$NPT"
+
+echo
 echo "=== compress-output.sh (2026-08-11 audit: a failure could report zero diagnostics) ==="
 
 CW="$(mktemp -d)"
