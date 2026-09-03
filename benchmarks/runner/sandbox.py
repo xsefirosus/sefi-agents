@@ -83,19 +83,28 @@ def sandbox(origin_repo: str | os.PathLike[str], pinned_ref: str) -> Iterator[Pa
 
     (a) scratch dir via ``tempfile.mkdtemp(prefix="sefi-bench-")``, OUTSIDE any repo tree
         and outside ``benchmarks/results/``;
-    (b) ``git clone --no-checkout --no-hardlinks --no-local <file-uri> <scratch>/repo``
-        -- its own object store, NEVER ``git worktree``. ``--no-checkout`` is load-bearing:
-        it makes the forced checkout in (c) the ONLY checkout, so the system
-        ``core.autocrlf=true`` never gets a chance to CRLF-convert the tree first (that
-        first, uncontrolled checkout was a real source of a non-reproducible manifest);
+    (b) ``git clone -c core.logallrefupdates=false --no-checkout --no-hardlinks
+        --no-local <file-uri> <scratch>/repo`` -- its own object store, NEVER
+        ``git worktree``. ``--no-checkout`` is load-bearing: it makes the forced checkout
+        in (c) the ONLY checkout, so the system ``core.autocrlf=true`` never gets a chance
+        to CRLF-convert the tree first (that first, uncontrolled checkout was a real
+        source of a non-reproducible manifest). ``core.logallrefupdates=false`` stops the
+        clone from writing ``<repo>/.git/logs/HEAD`` -- whose ``clone: from
+        file:///D:/...`` line would otherwise disclose the operator's absolute repo path
+        (F-A / NEW-1);
     (c) write ``<scratch>/repo/.gitattributes`` with ``* -text`` BEFORE checkout, then
         ``git -C <repo> -c core.autocrlf=false -c core.eol=lf checkout --force
-        <pinned_ref> -- .`` (detached), so a system ``core.autocrlf=true`` cannot rewrite
-        content on checkout;
-    (d) ``git -C <repo> remote remove origin`` -- the only remaining record of the
-        operator's absolute origin path (``url = file:///D:/...`` in ``.git/config``);
-    (e) yield the repo path;
-    (f) ``finally:`` ``_rmtree(<scratch>)`` (``ignore_errors=False``) -- teardown runs on
+        <pinned_ref> -- .``, so a system ``core.autocrlf=true`` cannot rewrite content on
+        checkout;
+    (d) ``git -C <repo> -c core.logallrefupdates=false checkout --detach <pinned_ref>`` --
+        so ``<repo>/.git/HEAD`` holds a bare SHA, not ``ref: refs/heads/<origin branch>``
+        (the origin's branch name is an operator fingerprint too), and again no reflog;
+    (e) ``git -C <repo> remote remove origin`` -- the last record of the operator's
+        absolute origin path (``url = file:///D:/...``) and origin branch name in
+        ``<repo>/.git/config``. Then physically drop ``<repo>/.git/logs`` if anything
+        recreated it -- the runner needs no reflog;
+    (f) yield the repo path;
+    (g) ``finally:`` ``_rmtree(<scratch>)`` (``ignore_errors=False``) -- teardown runs on
         error/timeout too.
     """
     git = resolve_git()
@@ -113,6 +122,14 @@ def sandbox(origin_repo: str | os.PathLike[str], pinned_ref: str) -> Iterator[Pa
             [
                 git,
                 "clone",
+                # F-A / NEW-1: no clone reflog. Without this, ``<repo>/.git/logs/HEAD``
+                # and ``.git/logs/refs/heads/<origin branch>`` each carry a
+                # ``clone: from file:///D:/...`` line -- the operator's absolute repo
+                # path, disclosed by ``cat .git/logs/HEAD`` from the arm's cwd. The
+                # runner only does checkout / config / remote-remove / a filesystem
+                # snapshot; it never reads a reflog.
+                "-c",
+                "core.logallrefupdates=false",
                 "--no-checkout",
                 "--no-hardlinks",
                 "--no-local",
@@ -143,16 +160,41 @@ def sandbox(origin_repo: str | os.PathLike[str], pinned_ref: str) -> Iterator[Pa
             text=True,
             check=True,
         )
-        # Strip the ``origin`` remote BEFORE the arm can see the tree: it is the only
-        # place ``<repo>/.git/config`` still records ``url = file:///D:/...`` -- the
-        # operator's absolute origin path. The clone has its own object store
-        # (``--no-local``), so removing the remote loses nothing the runner needs.
+        # Detach HEAD onto the pinned commit so ``<repo>/.git/HEAD`` holds a bare SHA
+        # rather than ``ref: refs/heads/feat/benchmark-runner`` -- the origin's branch
+        # name is as much an operator fingerprint as its path. ``core.logallrefupdates
+        # =false`` again so the detach writes no ``.git/logs/HEAD``.
+        subprocess.run(
+            [
+                git,
+                "-C",
+                str(repo),
+                "-c",
+                "core.logallrefupdates=false",
+                "checkout",
+                "--detach",
+                pinned_ref,
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        # Strip the ``origin`` remote BEFORE the arm can see the tree: it is the last
+        # place ``<repo>/.git/config`` records ``url = file:///D:/...`` (and a
+        # ``[branch "feat/benchmark-runner"]`` section). The clone has its own object
+        # store (``--no-local``), so removing the remote loses nothing the runner needs.
         subprocess.run(
             [git, "-C", str(repo), "remote", "remove", "origin"],
             capture_output=True,
             text=True,
             check=True,
         )
+        # Defense in depth: both git calls above ran with ``core.logallrefupdates=false``,
+        # but physically drop any reflog dir a future git / code path might still create.
+        # The runner needs no reflog; git regenerates ``logs/`` lazily if ever required.
+        logs_dir = repo / ".git" / "logs"
+        if logs_dir.exists():
+            _rmtree(logs_dir)
         yield repo
     finally:
         _rmtree(scratch)

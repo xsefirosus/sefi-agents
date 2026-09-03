@@ -131,6 +131,25 @@ def _redact_arg(arg: str) -> str:
     return arg
 
 
+def _redact_text(s: str) -> str:
+    """Rewrite every occurrence of the operator's home dir -- native-separator form AND
+    forward-slash form -- to ``~``.
+
+    ``_redact_arg`` (above) handles one command-line arg at a time; this handles
+    free-form captured output: arm stdout / stderr before they enter the raw-log body
+    (``arms.py``) and the fatal-abort reason string before it enters ``ABORTED.md``
+    (``run.py`` imports this). Net: no home-dir substring reaches a results-dir file.
+    """
+    home = str(Path.home())
+    if not home:
+        return s
+    out = s.replace(home, "~")
+    home_fwd = home.replace("\\", "/")
+    if home_fwd != home:
+        out = out.replace(home_fwd, "~")
+    return out
+
+
 def _real_command(strategy: str, harness: str, prompt_text: str) -> list[str]:
     """Best-effort real-harness command. NO test exercises this path -- every acceptance
     uses the ``mock_arm`` seam. Details not verifiable on this dev host are marked UNKNOWN.
@@ -250,8 +269,11 @@ def run_arm(
         logged_cmd = (
             [Path(cmd[0]).name, *(_redact_arg(a) for a in cmd[1:])] if cmd else []
         )
+        # F-B / qa-Minor-1: stdout/stderr are copied verbatim under results_dir, so a
+        # home path an arm prints must be redacted to ``~`` before it enters the log body.
         raw_log_path.write_text(
-            f"$ {' '.join(logged_cmd)}\n--- stdout ---\n{stdout}\n--- stderr ---\n{stderr}\n",
+            f"$ {' '.join(logged_cmd)}\n--- stdout ---\n"
+            f"{_redact_text(stdout)}\n--- stderr ---\n{_redact_text(stderr)}\n",
             encoding="utf-8",
         )
 

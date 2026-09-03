@@ -24,8 +24,16 @@ def _chmod_and_retry(func, path) -> None:
     """git marks pack files read-only, and Windows then refuses the unlink with WinError
     5. Clear the read-only bit and retry once. A genuine second failure still propagates
     -- teardown must actually complete on this host.
+
+    F-D: the chmod must NOT follow a symlink. An arm can plant a symlink in the scratch
+    tree; teardown only needs the link itself gone, never its target's mode changed. Use
+    ``follow_symlinks=False`` where the platform supports it, else skip the chmod for a
+    link (the retried ``func`` -- an unlink -- does not need the link writable).
     """
-    os.chmod(path, stat.S_IWRITE)
+    if os.chmod in os.supports_follow_symlinks:
+        os.chmod(path, stat.S_IWRITE, follow_symlinks=False)
+    elif not os.path.islink(path):
+        os.chmod(path, stat.S_IWRITE)
     func(path)
 
 

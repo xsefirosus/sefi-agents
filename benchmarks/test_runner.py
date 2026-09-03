@@ -19,6 +19,7 @@ import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -48,6 +49,7 @@ CHECK_ATTR_TARGET = "benchmarks/cases/check_sh-strict-mode.sh"
 
 FIXTURES = REPO_ROOT / "benchmarks" / "runner" / "fixtures"
 MOCK_ARM = FIXTURES / "mock_arm.py"
+MOCK_ARM_HOMELEAK = FIXTURES / "mock_arm_homeleak.py"
 MOCK_ARM_SLOW = FIXTURES / "mock_arm_slow.py"
 MOCK_ARM_TAMPER = FIXTURES / "mock_arm_tamper.py"
 MOCK_ARM_FORGE = FIXTURES / "mock_arm_forge.py"
@@ -138,21 +140,40 @@ class SandboxTests(unittest.TestCase):
                 "clone must have its own object store (no alternates)",
             )
 
-    def test_origin_remote_and_origin_url_are_stripped(self) -> None:
-        # FIX A: the clone must not disclose the operator's absolute origin path to the
-        # arm. ``git remote`` is empty and ``.git/config`` names no ``file://`` url.
+    def test_no_git_metadata_discloses_origin_path_or_branch(self) -> None:
+        # FIX A + F-A / NEW-1: after sandbox() yields, NOTHING under <repo>/.git/ may
+        # disclose the operator's absolute origin path (``file://...``) or the origin
+        # branch name (``benchmark-runner``) -- not .git/config, not a reflog under
+        # .git/logs/, not packed-refs, not HEAD. Walk every file, binary read, decode
+        # with errors ignored, skip nothing.
         git = resolve_git()
         with sandbox(REPO_ROOT, "HEAD") as repo:
-            proc = subprocess.run(
-                [git, "-C", str(repo), "remote"],
-                capture_output=True,
-                text=True,
-                check=True,
+            gitdir = repo / ".git"
+            offenders: list[str] = []
+            for p in sorted(gitdir.rglob("*")):
+                if not p.is_file():
+                    continue
+                blob = p.read_bytes().decode("utf-8", errors="ignore")
+                if "file://" in blob or "benchmark-runner" in blob:
+                    offenders.append(str(p.relative_to(repo)))
+            self.assertEqual(
+                offenders, [], f"git metadata discloses origin path/branch: {offenders}"
             )
-            self.assertEqual(proc.stdout.strip(), "", "origin remote must be removed")
-            config_text = (repo / ".git" / "config").read_text(encoding="utf-8")
-            self.assertNotIn("file://", config_text)
-            self.assertNotIn("benchmark-runner", config_text)
+            # origin remote gone; the clone is still usable with its own object store.
+            remote = subprocess.run(
+                [git, "-C", str(repo), "remote"],
+                capture_output=True, text=True, check=True,
+            )
+            self.assertEqual(remote.stdout.strip(), "", "origin remote must be removed")
+            head = subprocess.run(
+                [git, "-C", str(repo), "rev-parse", "HEAD"],
+                capture_output=True, text=True, check=True,
+            )
+            self.assertRegex(head.stdout.strip(), r"^[0-9a-f]{40}$")
+            self.assertFalse(
+                (gitdir / "objects" / "info" / "alternates").exists(),
+                "clone must keep its own object store (no alternates)",
+            )
 
     def test_checkout_line_endings_unset(self) -> None:
         git = resolve_git()
@@ -251,9 +272,31 @@ class ArmsTests(_PinnedTempdirMixin, unittest.TestCase):
                 timeout_s=5, mock_arm=MOCK_ARM, results_dir=Path(out),
             )
             text = Path(result.raw_log_path).read_text(encoding="utf-8")
-        self.assertNotIn(str(Path.home()), text)
-        self.assertNotIn("MARYRO", text)
-        self.assertNotIn("Mary Rose", text)
+        # F-C: derive the operator identifiers at runtime -- no personal-name literal in a
+        # tracked file. Same coverage: the home path and every non-empty derived name.
+        home = str(Path.home())
+        home_name = Path.home().name
+        user = os.environ.get("USERNAME") or os.environ.get("USER") or ""
+        self.assertNotIn(home, text)
+        for needle in (home_name, user):
+            if needle:
+                self.assertNotIn(needle, text)
+
+    def test_raw_log_redacts_home_path_from_arm_stdout_and_stderr(self) -> None:
+        # FIX I / F-B / qa-Minor-1: an arm that PRINTS the operator home dir (stdout and
+        # stderr, native and forward-slash form) -> the copied raw log shows ``~`` and
+        # contains no home-path substring.
+        home = str(Path.home())
+        home_fwd = home.replace("\\", "/")
+        with sandbox(REPO_ROOT, "HEAD") as repo, tempfile.TemporaryDirectory() as out:
+            result = run_arm(
+                "control", "claude-code", SH_STRICT_PROMPT, repo,
+                timeout_s=10, mock_arm=MOCK_ARM_HOMELEAK, results_dir=Path(out),
+            )
+            text = Path(result.raw_log_path).read_text(encoding="utf-8")
+        self.assertNotIn(home, text)
+        self.assertNotIn(home_fwd, text)
+        self.assertIn("~/report.txt", text)
 
     def test_timed_out_arm_leaves_no_arm_scratch(self) -> None:
         # FIX D: arm-scratch teardown is the shared read-only-retry _rmtree, not a
@@ -956,6 +999,40 @@ class FatalAndPreflightTests(unittest.TestCase):
             self.assertIn("fatal:", (out / "ABORTED.md").read_text(encoding="utf-8"))
             self.assertFalse((out / "trials.jsonl").exists())
 
+    def test_fatal_reason_redacts_home_path_in_aborted_md(self) -> None:
+        # FIX I / qa-Minor-3: an OSError message carrying an absolute home path is
+        # rewritten to ``~`` before it is written into ABORTED.md.
+        import benchmarks.runner.run as runmod
+
+        home = str(Path.home())
+        home_fwd = home.replace("\\", "/")
+
+        def boom(**kw):
+            raise OSError(f"{home_fwd}/scratch/x: disk full")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "run"
+            with mock.patch.object(runmod, "run_trial", boom):
+                rc = runmod.main(self._argv(out))
+            self.assertEqual(rc, 0)
+            body = (out / "ABORTED.md").read_text(encoding="utf-8")
+        self.assertIn("fatal:", body)
+        self.assertNotIn(home, body)
+        self.assertNotIn(home_fwd, body)
+        self.assertIn("~/scratch/x", body)
+
+    def test_out_pointing_at_existing_file_is_usage_error_2(self) -> None:
+        # FIX L / F-E: --out at an existing regular file -> SystemExit 2 (not an uncaught
+        # NotADirectoryError); the file's bytes are untouched and no ABORTED.md is made.
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "not-a-dir"
+            target.write_bytes(b"preexisting bytes\n")
+            before = target.read_bytes()
+            code = self._expect_usage_error(self._argv(target))
+            self.assertEqual(code, 2)
+            self.assertTrue(target.is_file())
+            self.assertEqual(target.read_bytes(), before, "the file must be byte-unchanged")
+
     def test_real_run_without_est_cost_preflight_aborts(self) -> None:
         from benchmarks.runner.run import main as run_main
 
@@ -1058,6 +1135,51 @@ class ForgeryTests(unittest.TestCase):
                 (out / "trials.jsonl").exists(),
                 "the abort path must unlink a raced-in trials.jsonl (FIX 1b)",
             )
+
+
+class FsutilChmodTests(unittest.TestCase):
+    """FIX K / F-D: the rmtree read-only-retry hook must clear a regular file's read-only
+    bit but must NOT chmod through a symlink to its target."""
+
+    def test_chmod_and_retry_clears_readonly_regular_file(self) -> None:
+        from benchmarks.runner._fsutil import _chmod_and_retry
+
+        with tempfile.TemporaryDirectory() as tmp:
+            f = Path(tmp) / "ro.txt"
+            f.write_text("x", encoding="ascii")
+            os.chmod(f, stat.S_IREAD)
+            calls: list[str] = []
+            _chmod_and_retry(lambda p: calls.append(p), str(f))
+            self.assertEqual(calls, [str(f)], "func must be retried on the path")
+            self.assertTrue(os.access(f, os.W_OK), "read-only bit must be cleared")
+            os.chmod(f, stat.S_IWRITE)  # let TemporaryDirectory clean up
+
+    def test_chmod_and_retry_does_not_follow_symlink_to_target(self) -> None:
+        from benchmarks.runner._fsutil import _chmod_and_retry
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = root / "target.txt"
+            target.write_text("secret", encoding="ascii")
+            os.chmod(target, stat.S_IREAD)  # read-only target
+            link = root / "link"
+            try:
+                os.symlink(target, link)
+            except (OSError, NotImplementedError, AttributeError):
+                os.chmod(target, stat.S_IWRITE)
+                self.skipTest("symlink creation not permitted on this host")
+            mode_before = stat.S_IMODE(os.lstat(target).st_mode)
+
+            calls: list[Path] = []
+            _chmod_and_retry(lambda p: calls.append(Path(p)), str(link))
+
+            self.assertEqual(calls, [Path(str(link))], "func must still be retried on the link")
+            mode_after = stat.S_IMODE(os.lstat(target).st_mode)
+            self.assertEqual(
+                mode_before, mode_after,
+                "teardown must not change the symlink target's mode (follow_symlinks=False / islink guard)",
+            )
+            os.chmod(target, stat.S_IWRITE)  # let TemporaryDirectory clean up
 
 
 if __name__ == "__main__":
