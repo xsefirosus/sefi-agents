@@ -47,6 +47,74 @@ generalise itself, and that the validator asserting a rule is not the same artif
 rule. That is the argument for every one of them landing as an executed regression test
 rather than a corrected sentence.
 
+## Benchmark evidence (blinded paired A/B harness)
+
+Any number this repo cites about the sefi-agents chain versus a single strong model comes
+from a recorded run of the harness in `benchmarks/` (design of record:
+`benchmarks/README.md`; workflow: `plugins/sefi-core/skills/run-sefi-benchmark/SKILL.md`),
+cited from here with the run directory named. Rules for that evidence:
+
+- The harness is **out-of-loop**. It is manual, human-authorized per invocation, and its
+  spend is **not** covered by `budget-check.sh` and is outside every scope it checks. It
+  has an operator-tracked per-run target of USD 15.00 (`benchmark_per_run_usd_cap` in
+  `config/budget.yml`, `docs/BUDGET.md`) that is **not enforced** -- `scorecard.py` prints
+  `run cost $X.XX vs ceiling $15.00: WITHIN / OVER` (or `run cost: unknown ...` when a
+  scored trial lacks `cost_usd`) from the summed trial `cost_usd`, with no automated
+  block. No `loops/*.loop.md` may trigger it.
+- Cadence: **never more than one run per day, AND only with explicit per-invocation
+  authorization** -- no standing pre-authorization, no automatic daily run. Same statement
+  in `docs/BUDGET.md` and `plugins/sefi-core/skills/run-sefi-benchmark/SKILL.md`.
+- A run reports two independent axes: outcome deltas (paired treatment-minus-control) and
+  a **separate route-correctness table**. Cite both. An outcome win on a trial whose lane
+  ran the wrong model is not a clean win.
+- Missing telemetry is `null`, never `0`. A `null` in a scorecard is absent data.
+- A result showing the chain **LOSING** on some task classes -- slower, more tokens, no
+  better acceptance -- is an accepted, citable outcome about where the chain does not pay
+  for itself. It is not a harness failure and is not re-run away.
+- A run whose reviewer verdict is REJECT is retained with an `INVALID.md` and is never
+  cited as evidence (see `state/retro-ledger.md`).
+- **The raw run directory `benchmarks/results/<date>-<slug>/` is git-ignored and never
+  committed.** Promotion copies ONE artifact out of it: the `scorecard.py` output, checked
+  in as `benchmarks/published/<date>-<slug>.scorecard.txt` (that directory is tracked).
+  The citation names both the published scorecard and the local run slug.
+- Until a published scorecard exists under `benchmarks/published/`, this repo has **no
+  first-party chain-versus-control numbers**; the row below stays UNKNOWN rather than
+  being filled from the predecessor or an estimate.
+- **Out-of-process trust boundary.** Trial integrity is enforced by the runner package
+  `benchmarks/runner/` (see `benchmarks/README.md` "Trial integrity -- enforced by
+  benchmarks/runner/"). The **runner process, not any arm**, writes every field of every
+  trial record: `benchmarks/runner/record.py` builds records from runner-observed values
+  only and never reads arm stdout. Route evidence comes only from the runner shelling out
+  to check-route.sh (an out-of-process helper); no arm-written *value* is a scoring input.
+  Each trial runs in a real `git clone` sandbox with its own object store (never a
+  `git worktree`), and an out-of-process binary-mode snapshot + diff flags any change
+  outside the case `allowed_paths` against a **dedicated once-per-run baseline clone**.
+  `benchmarks/runner/integrity.verify` is a fail-closed AND of those checks
+  (`try/except -> False`); it is the ONLY thing that sets `integrity_ok`, and only to
+  `true`. An aborted run -- budget pre-flight, running cost ceiling, or a fatal mid-run
+  error -- writes `ABORTED.md`, removes any raced-in `trials.jsonl`, and never produces
+  one; the runner also refuses to finalize over a pre-existing `trials.jsonl`. So partial
+  data is structurally unscoreable and `scorecard.py` then filters to `integrity_ok is
+  True`.
+- **Honest limits.** `model_calls` is emitted as a floor of `1` (one arm invocation) to
+  satisfy the scorer's `model_calls >= len(route_evidence)` invariant -- in this version
+  NO harness reports a per-call count, so `model_calls_delta` between arms is not a
+  meaningful measured quantity until per-call telemetry is wired. And wholesale artifact
+  forgery -- an arm dropping its own `trials.jsonl` on disk -- is not prevented without
+  OS-level isolation (a container), which this version does not use; the mitigations are
+  that arm scratch is isolated from the results dir, the results-dir path is never
+  disclosed to the arm, and the runner refuses to finalize over a `trials.jsonl` it did
+  not write.
+- Positive route capture requires check-route.sh, which lives on
+  `feat/route-evidence-live` @ `8c1779c` and is NOT on the `feat/benchmark-runner`
+  branch. Until that is merged (or the branch rebased onto it), route capture fails
+  closed and every trial is non-scored, so the benchmark number stays UNKNOWN for lack of
+  a scoreable run -- not by construction.
+
+| Claim | Current source | Where cited | Promotion condition |
+|---|---|---|---|
+| sefi-agents chain vs single strong model: outcome + route-correctness deltas | UNKNOWN (no run yet) | (none yet) | A completed run (raw artifacts under the git-ignored `benchmarks/results/<date>-<slug>/`) with >=2 repetitions per case and a non-REJECT reviewer verdict, whose `scorecard.py` output is committed as `benchmarks/published/<date>-<slug>.scorecard.txt` |
+
 ## Standing check
 
 During the weekly-retro pass, consult this ledger. If accumulated `state/metrics.md` data

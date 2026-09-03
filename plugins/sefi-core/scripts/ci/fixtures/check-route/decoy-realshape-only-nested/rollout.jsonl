@@ -1,0 +1,3 @@
+{"type":"session_meta","payload":{"id":"a2a2a2a2-2222-4222-8222-a2a2a2a2a2a2","agent_path":"/workspace/repo/AGENTS.md","cwd":"/workspace/repo"}}
+{"type":"response_item","payload":{"kind":"message","role":"assistant","text":"nested-only-realshape-marker-beta there is no top-level route record in this file","parent_context":{"type":"turn_context","payload":{"model":"gpt-5.6-terra","effort":"high"}}}}
+{"type":"event_msg","payload":{"kind":"token_count","total":2222,"inner":{"type":"turn_context","payload":{"model":"gpt-5.6-terra","effort":"high"}}}}

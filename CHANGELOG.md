@@ -3,6 +3,271 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [Unreleased] - 2026-09-02
+
+### Added
+
+1. **`release-tracking` skill + multi-surface release ledger** -- new skill
+   `plugins/sefi-core/skills/release-tracking/SKILL.md` with
+   `references/release-surfaces.md`, ported from `Demonbane18/astral-orchestrator`'s
+   `track-astral-releases` skill and its `release-ledger.py` (MIT): it reconciles six
+   independent publication surfaces (`plugin.json` version, `.claude-plugin/marketplace.json`
+   -- both `metadata.version` and `plugins[0].version` -- the `CHANGELOG.md` first
+   versioned heading, the git tag, the GitHub release, and the GitHub marketplace index)
+   against one
+   append-only evidence ledger at `state/release-ledger.md`, carrying astral's "common
+   false proof" column and its strict "say `partially released`, not `released`, until every
+   surface matches" gate. New validator
+   `plugins/sefi-core/scripts/ci/validate-release-ledger.sh` (POSIX sh, no `python3`, no
+   `jq`) hard-fails when two observed surfaces contradict within any one version group in
+   the ledger, when a latest-version row contradicts the on-disk source it names, or when
+   `marketplace.json`'s two version occurrences disagree with each other on disk; it also
+   exits 1 on a missing `--ledger`/`--root` value, an unrecognized `--opt=value` joined
+   option, or a `version` cell that is not an exact semver (the `norm_semver` match is
+   anchored end-to-end, so a near-miss like `0.5.2.1` / `0.6.0-rc1` / `1.2.3.4` is rejected
+   by name rather than silently truncated to a prefix and dropped from every check). It
+   accepts both spaced (`--ledger PATH`) and joined (`--ledger=PATH`) option forms and
+   skips GFM alignment-marker separator rows (`:---`, `:--:`, `---:`). It warns (non-fatal)
+   on any `unobserved` surface; wired into
+   `plugins/sefi-core/scripts/ci/run-all.sh` and
+   `release-tracking` added to `plugins/sefi-core/scripts/install-hermes.sh`'s `SKILLS=`
+   list. Fixtures under
+   `plugins/sefi-core/scripts/ci/fixtures/release-ledger/{ok,contradiction,incomplete}/`
+   with `test-scripts.sh` cases. Skills count 13 -> 14 in both READMEs. No `version` field
+   in `plugin.json` or `marketplace.json` changed. The backfilled ledger at
+   `state/release-ledger.md` records the six surfaces reconciled against `0.5.2`: five
+   carry observed `0.5.2` -- `plugin.json`, both `marketplace.json` occurrences, the
+   `CHANGELOG.md` first versioned heading, the `v0.5.2` git tag (local and `origin`), and
+   the GitHub marketplace index -- and `validate-release-ledger.sh` exits 0 with
+   `OK (latest 0.5.2, 5/6 surfaces observed, 1 warning(s))`. The single non-fatal warning
+   is `github-release`, genuinely `unobserved` because this repo has no GitHub releases
+   (`gh release list` is empty; `gh release view v0.5.2` returns `release not found`). An
+   orphaned `v0.5.3` tag that had briefly existed on HEAD while every version surface read
+   `0.5.2` was deleted from local and `origin`; that earlier hard-fail is retained in the
+   ledger's Notes as history, not erased.
+2. **Runtime route-evidence assertion (`check-route.sh`), reduced scope** -- new
+   post-dispatch check, `plugins/sefi-core/scripts/check-route.sh` (bash shebang, POSIX
+   body; in `scripts/`, not `scripts/ci/` -- not a CI validator, not on `run-all.sh`'s
+   list). It resolves a requested tier to a concrete model + reasoning effort through the
+   one resolver (`scripts/model-for.sh` -> `config/model-map.yml`), gates that pair
+   against a strict allowlist (a resolved model that is neither `flexible` nor a bare
+   `^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$` identifier, or a resolved effort outside the
+   allowlist, is a usage error -- exit 2, no JSON -- closing an injection path from a
+   malformed `config/model-map.yml`), and emits one compact JSON line
+   `{status, reason, expected_model, expected_effort, observed_model, observed_effort}`.
+   **For a Codex dispatch it reads the session rollout** (entry 6 below completed this
+   half); claude-code, opencode and hermes read no session record. `match` / `mismatch` /
+   `invalid` for Codex per the observed route; `unavailable` for claude-code
+   (`harness-exposes-no-route-readback`) and for Codex when no thread id / rollout is
+   available; `not-applicable` when the tier resolves to the `flexible` sentinel
+   (opencode / hermes today). Exit 0 on `match` / `not-applicable`; non-zero on
+   `mismatch` / `invalid` / `unavailable`; exit 2 (no JSON) on a usage error (bad arg
+   count, non-printable char in any argument, unknown harness); exit 3 when no `python3` /
+   `python` 3.11+ interpreter is available (recorded as `route` = `skipped`). For a Codex
+   dispatch the 3rd positional argument is the `CODEX_THREAD_ID` (a lowercase UUID) or
+   `-`; other harnesses ignore it. No network calls, no write side effects.
+3. **Status vocabulary, documented** -- `match` / `mismatch` / `invalid` /
+   `unavailable` / `not-applicable` (plus `skipped` when no interpreter is available) are
+   defined verbatim in `skills/sefi-orchestration/references/harness-actions.md` and
+   `state/metrics.md`. `match` / `mismatch` / `invalid` are **produced for Codex today**
+   (entry 6 added the `check-route.py` JSON parser); they remain reserved for the other
+   three harnesses until their adapter docs describe a readable route. An interim
+   POSIX-sh draft had every parser variant fail open on a decoy record (report `match` on
+   a downgraded run); a real `json.loads` per line plus top-level-only dict access is what
+   closed those shapes.
+4. **"Requested vs observed route" section in `harness-actions.md`** -- one row per
+   harness in the single place the cross-runtime mapping lives. Stated honestly: Claude
+   Code exposes no per-agent model/token readback; OpenCode and Hermes tiers resolve to
+   `flexible`. Codex's rollout format is now documented in `adapters/CODEX.md`
+   `## Session rollout` and read live. Net result: live requested-vs-observed route
+   comparison exists on **Codex** (`match` / `mismatch` / `invalid` per the run);
+   claude-code stays `unavailable` and opencode / hermes stay `not-applicable` by those
+   harnesses' own limits, not by any limitation of the check.
+5. **`route` column in `state/metrics.md`** -- the schema
+   `| date | target-path | loop | verdict | retries | note |` gains a 7th `| route |`
+   column carrying the per-run `check-route.sh` status (`match` / `mismatch` / `invalid`
+   live for Codex; `unavailable` / `not-applicable` for the other harnesses; `skipped`
+   when no interpreter is available), or `n/a` for a row with no dispatch. Header,
+   separator, and top comment updated in both `state/metrics.md` and
+   `plugins/sefi-core/templates/state/metrics.md` (the copy `/sefi:init` and
+   `test-integration.sh` use); every existing row set to `n/a`. `skills/retro-improve/`
+   reads `metrics.md` by column header name / prose, not by positional index, so it is
+   unaffected; `test-integration.sh`'s metrics-append line now writes the 7th field.
+   `skills/loop-engineering/SKILL.md`'s schema string synced to 7 columns. No `version`
+   field changed.
+6. **Wiring** -- `check-route.sh` is referenced (with the
+   `${CLAUDE_PLUGIN_ROOT}/scripts/check-route.sh` prefix `validate-script-refs.sh`
+   requires) from the new `harness-actions.md` section, from
+   `skills/sefi-orchestration/references/close-out.md`, from a `## Discipline` bullet in
+   `skills/sefi-orchestration/SKILL.md`, and from the `## Persistence` move of the three
+   loop specs (`loops/{morning-triage,sync,weekly-retro}.loop.md` and their
+   `templates/loops/` copies), whose `metrics:` line now carries the `route` column. The
+   STOP-and-park-on-`mismatch` rule is current behaviour for Codex; it stays
+   forward-looking for the other three harnesses. `model-for.sh` keeps the `--`
+   end-of-options guard added for this work. Fixtures under
+   `plugins/sefi-core/scripts/ci/fixtures/check-route/` are `malformed-map/` (the model-map
+   trust-boundary case) plus eleven Codex rollout fixtures -- `match`, `mismatch`,
+   `invalid-not-json`, `invalid-no-turn-context`, `invalid-two-turn-context`,
+   `decoy-nested-model-string`, `decoy-nested-turn-context-obj`, `decoy-nested-after-real`,
+   `decoy-only-nested`, `decoy-realshape-nested-after-real`, `decoy-realshape-only-nested`
+   -- exercised by the `test-scripts.sh` check-route block alongside the exit-2 usage
+   errors and a streamed 5000-digit-int `rollout-unreadable` case.
+7. **Live Codex route comparison (`check-route.py`)** -- `check-route.sh` keeps its exact
+   path but becomes a thin interpreter-resolving shim (prefer `python3`, fall back to
+   `python`, both required to be 3.11+; exit 3 with a "route check skipped" stderr notice
+   if neither is) over a new stdlib-Python parser
+   `plugins/sefi-core/scripts/check-route.py`. The live `match` / `mismatch` / `invalid`
+   route comparison is **Codex-only**: for a Codex dispatch the third positional argument
+   is the `CODEX_THREAD_ID` (a lowercase UUID) or `-` -- never a file path (a hidden
+   test-only `--rollout-file` reads a fixture directly) -- and the parser reads
+   `rollout-*-<thread-id>.jsonl` under `${CODEX_HOME:-~/.codex}/sessions` by streaming one
+   line at a time (never a full `records[]` list) with a real `json.loads` plus
+   **top-level dict access only** -- the last top-level `turn_context` record's
+   `payload.model` / `payload.effort` are compared against the tier map, and nothing else
+   (no rollout free text) leaves the parser. The POSIX-sh fail-open shapes structurally
+   cannot occur. Six `check-route` decoy fixtures pin two distinct classes. The four
+   flattened-shape decoys (`decoy-nested-model-string`, `decoy-nested-turn-context-obj`,
+   `decoy-nested-after-real`, `decoy-only-nested`) pin the substring-scan /
+   nested-key-confusion class -- a real `json.loads` never treats a nested `"model"` string
+   as a key, and the nested `turn_context` objects there are flattened
+   (`{"type":"turn_context","model":..,"effort":..}`, no `payload` key) so even a faithful
+   recursive descent walks past them. The top-level-only filter itself is pinned by two
+   REAL-SHAPE fixtures (`decoy-realshape-nested-after-real`, `decoy-realshape-only-nested`)
+   whose nested decoy is an exact
+   `{"type":"turn_context","payload":{"model":..,"effort":..}}` record: a recursive descent
+   that PRESERVES the payload-dict clause reads the nested route and their `mismatch` /
+   `invalid` assertions redden (verified by hand -- descend keeping all 3 clauses, run
+   `test-scripts.sh`, revert).
+   claude-code stays `unavailable`
+   (`harness-exposes-no-route-readback`) and opencode / hermes stay `not-applicable` (every
+   tier resolves to `flexible`) -- limits of those harnesses, not of the check; `match` /
+   `mismatch` / `invalid` remain reserved for them. `adapters/CODEX.md` gains a
+   `## Session rollout` section documenting the format (reverse-engineered from the
+   MIT-licensed astral-orchestrator `check-primary.py:82-101` /
+   `inspect-agent-runtime.sh:84-231` plus Codex public docs), marking every field not
+   confirmable from those sources UNKNOWN; the live path is fixture-validated, a
+   real-rollout confirmation on a live Codex host is a follow-up. `harness-actions.md`, the
+   `sefi-orchestration` `## Discipline` bullet, `close-out.md`, and both `state/metrics.md`
+   comments are reworded so STOP-on-`mismatch` is a current Codex behaviour, forward-looking
+   for the other three. The "no Python in plugin scripts" rule was lifted by the human for
+   this one post-dispatch script only, on the `benchmarks/scorecard.py` contributor-tooling
+   precedent. `gate.sh` picks up `feat/benchmark`'s pytest guard (run `pytest` only when a
+   test file or an explicit pytest config section -- incl. `tox.ini [pytest]` -- exists;
+   `--tolerate=5`; `.git` / `.worktrees` ignored) and `.gitignore` gains `__pycache__/`,
+   `*.pyc`, `.pytest_cache/`; the two branches converge on merge. No new runtime or CI
+   dependency (`python3` or `python` 3.11+, stdlib only: `argparse` / `json` / `os` / `re`
+   / `subprocess` / `sys` / `pathlib`); `check-route.py` is post-dispatch and NOT on
+   `run-all.sh`'s validator list. No `version` field changed.
+
+8. **`run-sefi-benchmark` skill + `benchmarks/` harness (REDUCED delivery)** -- new skill
+   `plugins/sefi-core/skills/run-sefi-benchmark/SKILL.md` (14th skill) and a
+   project-root `benchmarks/` tree for a blinded paired A/B comparison of the full
+   sefi-agents chain against one strong model. Shipping: `benchmarks/README.md` (design of
+   record, trial-record JSONL schema, harness matrix with the `sefi-chain` vs
+   `sefi-chain-sequential` dispatch-asymmetry rule, and how to hand-author
+   `trials.jsonl`), `benchmarks/cases.json` with three frozen cases and their
+   `benchmarks/prompts/` + deterministic `benchmarks/cases/check_*.sh` acceptance checks
+   (exit 0/1, no model calls), and `benchmarks/scorecard.py` -- a minimal deterministic
+   scorer (Python 3 stdlib only, dev-only, never wired into CI, a loop, or a
+   dispatched-agent path) that emits paired treatment-minus-control point deltas plus a
+   separate route-correctness table, fail-closed on `integrity_ok`.
+   `benchmarks/fixtures/trials.jsonl` + `expected-scorecard.txt` back a determinism test
+   (`benchmarks/test_scorecard.py`, the one benchmark file `gate.sh` runs).
+   `run-sefi-benchmark` added to `install-hermes.sh`'s `SKILLS=` list; both READMEs,
+   `adapters/CODEX.md`, and `adapters/HERMES.md` bumped 13 -> 14 skills.
+   `docs/METRICS-PROVENANCE.md`, `docs/BUDGET.md`, and the `state/retro-ledger.md` header
+   record that a benchmark run is manual, out-of-loop, and NOT budget-enforced -- it has an
+   operator-tracked `benchmark_per_run_usd_cap: 15.00` in `config/budget.yml` that nothing
+   in the repo blocks a run from exceeding, verified after the fact from the summed trial
+   `cost_usd` on the scorecard -- and that a REJECT run is retained with `INVALID.md`
+   rather than deleted or silently re-run. No version bump; a chain loss on some task
+   classes is stated as an accepted outcome, not a harness failure. Adapted from
+   `Demonbane18/astral-orchestrator` (MIT).
+
+9. **`gate.sh` Python-branch guard** -- `plugins/sefi-core/scripts/gate.sh`: run `pytest`
+   only when a test file OR an explicit pytest config section exists (`pyproject.toml`
+   `[tool.pytest.ini_options]`, `pytest.ini` / `tox.ini` `[pytest]`, `setup.cfg`
+   `[tool:pytest]`), treating exit 5 as non-fatal via `--tolerate=5`; both pytest branches
+   pass `--ignore=.git --ignore=.worktrees`. The Shell and Python file scans exclude
+   `.git` and `.worktrees` in every branch. Needed because `benchmarks/scorecard.py` is
+   the first project-root `.py` and would otherwise trip the Python branch on a checkout
+   with stdlib tooling but no root suite. Three `test-scripts.sh` regression cases
+   (no-tests-stays-green, `[tool.pytest.ini_options]` + failing non-default-named test,
+   `tox.ini [pytest]` + failing test) and one `validate-no-personal-paths.sh` case (the
+   `benchmarks/__pycache__/*.pyc` exclusion is load-bearing on a home-directory checkout)
+   cover it. `.gitignore` gains `__pycache__/`, `*.pyc`, `.pytest_cache/`, `.ruff_cache/`,
+   `benchmarks/results/`; `validate-no-personal-paths.sh` scans `benchmarks/` for personal
+   paths while excluding `benchmarks/results/` and Python bytecode.
+
+10. **Phase 4-real benchmark runner (`benchmarks/runner/`)** -- the deferred
+   trial-integrity / execution half of the Phase 4 benchmark, built on branch
+   `feat/benchmark-runner` (cut from `feat/benchmark`, unmerged; no `version` change). A
+   `git` CLI + Python 3.11 standard-library-only package: `sandbox.py` (a real
+   `git clone --no-checkout --no-hardlinks --no-local` with its own object store, never a
+   `git worktree`; `.gitattributes` `* -text` + `core.eol=lf` forced checkout for a
+   reproducible manifest; `finally:` teardown), `snapshot.py` (out-of-process binary-mode
+   snapshot + allowlisted `diff`), `arms.py` (arm invocation with an enforced timeout and
+   cwd inside the sandbox; a test-only `--mock-arm` seam), `route.py` (out-of-process
+   route capture by shelling out to check-route.sh -- from `feat/route-evidence-live`,
+   absent here, so route capture fails closed), `integrity.py` (a fail-closed AND of
+   mandatory checks wrapped in `try/except -> False`; the only thing that sets
+   `integrity_ok`), `record.py` (records built from runner-observed values only -- no arm
+   stdout is ever a scoring input), and `run.py` (budget pre-flight from
+   `benchmark_per_run_usd_cap` in `config/budget.yml` + running ceiling;
+   `trials.partial.jsonl` -> `trials.jsonl` staging, so an aborted run writes `ABORTED.md`
+   and never a scoreable `trials.jsonl`). `benchmarks/test_runner.py` (52 tests, stdlib
+   only, zero model calls) runs under both `python -m unittest` and `python -m pytest` and
+   is auto-collected by `gate.sh`; `run-all.sh` stays Python-free. Docs updated:
+   `benchmarks/README.md` and `plugins/sefi-core/skills/run-sefi-benchmark/SKILL.md`
+   replace their "Trial integrity -- NOT IMPLEMENTED" sections with the runner design and
+   procedure, and `docs/METRICS-PROVENANCE.md` gains the out-of-process trust-boundary
+   note. Real positive route capture still requires `feat/route-evidence-live` merged or
+   rebased in first.
+
+   Security + QA fix pass on the runner: arm-facing scratch (prompt, session-echo, raw
+   log) is now isolated in a private `tempfile.mkdtemp` dir and the `--out` path is never
+   disclosed to the arm; the abort path removes any raced-in `trials.jsonl` and the runner
+   refuses to finalize over a pre-existing one; `session_record_ref` is trusted only when
+   the echoed id byte-equals the runner-generated id; `--harness` is validated as a usage
+   error (exit 2, no output dir); a fatal mid-run error now writes `ABORTED.md` and exits
+   0; a real run requires a positive `--est-cost-per-trial`; integrity check 1 compares
+   each trial's pre-manifest to a dedicated once-per-run baseline clone (no longer a
+   tautology); `model_calls` is documented as a synthetic floor, not a measurement;
+   `shutil.rmtree` uses `onexc` on Python >= 3.12; arm logs record the interpreter
+   basename only. The three frozen cases (`sh-strict-mode`, `json-trailing-newline`,
+   `notes-single-h1`) were **re-golden'd** -- their prompts' stale "boundaries are
+   ADVISORY / NOTHING enforces them" line was corrected to state the runner enforces
+   `allowed_paths`, so each `case_fingerprint` in `benchmarks/cases.json` was recomputed.
+
+### Notes
+
+- **Trial-integrity mechanism removed before merge; deferred to a future sandboxed
+  runner.** An earlier revision of this branch shipped a shell-based trust-fingerprint
+  verifier (a pinned trust root + pre-arm / post-arm fingerprint checks + an
+  `allowed_paths` diff) and a dev-only probe script for it. Four security + qa review
+  rounds could not make a shell-based integrity check sound, for two root causes a shell
+  script cannot fix: (a) a `git worktree` shares `.git` (including `.git/info/exclude`)
+  with its base, so there is no filesystem boundary between an arm and the trust root; and
+  (b) `core.autocrlf=true` in this project's own Windows system git config rewrites line
+  endings on checkout, so hash-pinning a checked-out file is not reproducible across the
+  platforms the project is developed on. The verifier, its trust-root and fingerprint
+  manifests, its probe script, and the `seed_paths` field of `cases.json` were all
+  removed. The scorer keeps its fail-closed `integrity_ok is True` filter and its
+  `excluded (integrity_ok not true): N` line unchanged -- because nothing in this version
+  sets `integrity_ok`, a real run's records omit it and score zero trials, which is the
+  intended behaviour until a sandboxed runner exists (an unverified score is worse than no
+  score). `benchmarks/README.md` has a "Trial integrity -- NOT IMPLEMENTED in this
+  version" section listing the requirements for that runner: a real filesystem sandbox
+  (container or a separate clone with its own `.git`, never a git worktree), an
+  out-of-process snapshot + diff taken from outside the arm's reach, line-ending-safe
+  hashing (committed `.gitattributes` or binary-safe hashing), and operator-written trial
+  records. This supersedes the round-1..4 "Phase 4 security + qa hardening" entries that
+  earlier drafts of this Unreleased section carried.
+- The three case `case_fingerprint` values in `benchmarks/cases.json` were recomputed
+  after the cheat-detector references were stripped from `benchmarks/prompts/*.md`; the
+  fixture's fake fingerprints are unaffected and the scorecard output is byte-identical to
+  `benchmarks/fixtures/expected-scorecard.txt`.
+
 ## [0.5.2] - 2026-08-29
 
 ### Changed

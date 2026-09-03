@@ -32,9 +32,16 @@ overall=0
 ran=0
 
 _run() {
-  # _run <budget-seconds> <label> <cmd...> -- never aborts; records the worst exit code.
+  # _run <budget-seconds> <label> [--tolerate=<space-sep-codes>] <cmd...>
+  # Never aborts; records the worst exit code. A tolerated exit code does not redden the
+  # gate (used for pytest's exit 5 "no tests collected" when a config section forces an
+  # unconditional run).
   local budget="$1" label="$2"
   shift 2
+  local tolerate=""
+  case "${1:-}" in
+    --tolerate=*) tolerate="${1#--tolerate=}"; shift ;;
+  esac
   ran=$((ran + 1))
   local code=0
   if [ -f "$COMPRESS" ]; then
@@ -55,6 +62,14 @@ _run() {
   # as an ordinary tool failure and sends the reader hunting for a bug that is not there.
   if [ "$code" -eq 124 ]; then
     echo "gate: TIMEOUT $label exceeded ${budget}s (class budget; raise via SEFI_GATE_TIMEOUT / SEFI_GATE_TEST_TIMEOUT)" >&2
+  fi
+  if [ -n "$tolerate" ]; then
+    case " $tolerate " in
+      *" $code "*)
+        [ "$code" -ne 0 ] && echo "gate: $label exit $code tolerated (not a gate failure)" >&2
+        code=0
+        ;;
+    esac
   fi
   [ "$code" -ne 0 ] && overall="$code"
   return 0
@@ -93,7 +108,32 @@ if [ -f pyproject.toml ] || [ -f requirements.txt ] || [ -f setup.py ] \
         -print -quit 2>/dev/null | grep -q .; then
   command -v ruff   >/dev/null 2>&1 && run      "ruff"   ruff check .
   command -v mypy   >/dev/null 2>&1 && [ -f pyproject.toml ] && run "mypy" mypy .
-  command -v pytest >/dev/null 2>&1 && run_test "pytest" pytest -q
+  if command -v pytest >/dev/null 2>&1; then
+    # If the project declares an explicit pytest config section, its `python_files` /
+    # `testpaths` may point discovery at non-default filenames the pattern probe below
+    # would miss. In that case run pytest UNCONDITIONALLY and treat ONLY exit 5 ("no
+    # tests collected") as non-fatal. Otherwise keep the filename-pattern guard: `pytest`
+    # against a repo with *.py source but no test files exits 5, which the aggregator
+    # would otherwise record as a red gate for a repo that never claimed a suite.
+    # A pytest config section can live in any of four files -- pyproject.toml, pytest.ini,
+    # tox.ini, or setup.cfg -- and tox.ini is a first-class pytest config location, not an
+    # afterthought. Both branches keep the .git / .worktrees exclusions: an unconditional
+    # `pytest -q` from the repo root would otherwise recurse into a sibling worktree under
+    # .worktrees/ and collect its suite as if it were this project's.
+    pytest_cfg=0
+    [ -f pyproject.toml ] && grep -q '^\[tool\.pytest\.ini_options\]' pyproject.toml 2>/dev/null && pytest_cfg=1
+    [ -f pytest.ini ]     && grep -q '^\[pytest\]' pytest.ini 2>/dev/null && pytest_cfg=1
+    [ -f tox.ini ]        && grep -q '^\[pytest\]' tox.ini 2>/dev/null && pytest_cfg=1
+    [ -f setup.cfg ]      && grep -q '^\[tool:pytest\]' setup.cfg 2>/dev/null && pytest_cfg=1
+    if [ "$pytest_cfg" -eq 1 ]; then
+      _run "$TIMEOUT_TEST" "pytest" --tolerate=5 pytest -q --ignore=.git --ignore=.worktrees
+    elif find . \
+         \( -name 'conftest.py' -o -name 'test_*.py' -o -name '*_test.py' \) \
+         -not -path './.git/*' -not -path './.worktrees/*' \
+         -print -quit 2>/dev/null | grep -q .; then
+      run_test "pytest" pytest -q --ignore=.git --ignore=.worktrees
+    fi
+  fi
 fi
 
 # --- Rust ---
