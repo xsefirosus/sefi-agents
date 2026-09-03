@@ -54,7 +54,7 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from benchmarks.runner import integrity  # noqa: E402
-from benchmarks.runner.arms import _HARNESSES, run_arm  # noqa: E402
+from benchmarks.runner.arms import _HARNESSES, _redact_text, run_arm  # noqa: E402
 from benchmarks.runner.record import build_record  # noqa: E402
 from benchmarks.runner.route import capture_route  # noqa: E402
 from benchmarks.runner.sandbox import resolve_git, sandbox  # noqa: E402
@@ -433,7 +433,16 @@ def main(argv: list[str] | None = None) -> int:
     # Refuse a non-empty output dir (SystemExit 2) BEFORE mkdir -- the runner never
     # deletes a prior run's artifacts (run-sefi-benchmark/SKILL.md:130-134,145). A
     # nonexistent or empty --out proceeds.
-    if out_dir.exists() and any(out_dir.iterdir()):
+    # F-E: --out at an existing NON-directory (a regular file) would make ``iterdir()``
+    # raise an uncaught NotADirectoryError; turn it -- and any other OSError from the
+    # emptiness probe -- into the intended SystemExit 2.
+    if out_dir.exists() and not out_dir.is_dir():
+        parser.error(f"--out path {out_dir} exists and is not a directory")
+    try:
+        out_dir_nonempty = out_dir.exists() and any(out_dir.iterdir())
+    except OSError as exc:
+        parser.error(f"cannot inspect output directory {out_dir}: {exc}")
+    if out_dir_nonempty:
         parser.error(
             f"output directory {out_dir} is not empty; choose a new empty directory"
         )
@@ -536,7 +545,9 @@ def main(argv: list[str] | None = None) -> int:
         # FIX 4b: a fatal error mid-run writes ABORTED.md (not a bare non-zero exit),
         # removes any raced trials.jsonl, leaves trials.partial.jsonl, and returns 0.
         # "non-zero ONLY on a usage/arg error" now holds.
-        _abort(out_dir, f"fatal: {exc}", final=final)
+        # qa-Minor-3: an OSError message can carry an absolute home path -- redact it to
+        # ``~`` before it lands in ABORTED.md, same rule as the arm raw log.
+        _abort(out_dir, _redact_text(f"fatal: {exc}"), final=final)
         return 0
 
     if aborted:
