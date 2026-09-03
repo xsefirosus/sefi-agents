@@ -35,7 +35,7 @@ installs the right way for it, Claude Code or otherwise:
 > https://raw.githubusercontent.com/xsefirosus/sefi-agents/main/Install.md
 
 **Contents:** [Why this exists](#why-this-exists) -- [How it compares](#how-it-compares) --
-[The team](#the-team-13-agents) -- [The skills](#the-skills-13) --
+[The team](#the-team-13-agents) -- [The skills](#the-skills-14) --
 [How a request gets done](#how-a-request-actually-gets-done) --
 [Memory](#memory-that-survives-the-session) -- [Where it runs](#works-with-your-harness) --
 [Safety rules](#safety-rails-all-of-them-in-one-place) -- [Proof](#proof) -- [FAQ](#faq) --
@@ -94,7 +94,7 @@ piece at a time, in its own workspace -- `ui-ux-designer` handles interface work
 sorts incoming issues -- `knowledge-manager` tends the memory, never deletes -- `technical-writer`
 writes docs, claims double-checked -- `prompt-engineer` clarifies a raw request first.
 
-## The skills (13)
+## The skills (14)
 
 Playbooks an agent loads only when the task needs it, not a 14th agent -- most load
 automatically, a few you call by name, and a named skill can never chain another one, so
@@ -110,7 +110,8 @@ interface, API, and security best practices.
 memory is read and written, the five-step loop pattern, and small self-improvements.
 
 **Specialized:** `technical-writing`, `n8n-workflow-design`, `terse-mode`, `premortem`
-(forensic pre-execution failure analysis, invoked by name), `focus`.
+(forensic pre-execution failure analysis, invoked by name), `focus`, `release-tracking`
+(reconciles one version across six publish surfaces before calling anything released).
 
 ## How a request actually gets done
 
@@ -156,7 +157,7 @@ its own memory system on itself, but a fresh install starts empty.
 |---|---|---|
 | Claude Code | plugin install (above) | full support |
 | OpenCode | [adapters/OPENCODE.md](adapters/OPENCODE.md) | can run unattended for scheduled jobs; reviewer and builder tiers both resolve to the same model by default, so the review is a second pass, not yet a second opinion; its three CI loop workflows are manual-dispatch only, with a free default model overridable at dispatch (see "CI loop workflows (manual dispatch)" in that file) |
-| Hermes Agent | [adapters/HERMES.md](adapters/HERMES.md) | one command; 11 of 13 skills install automatically, 2 need one manual step (see FAQ); same model-tier caveat as OpenCode, and tool restrictions are advisory only -- Hermes doesn't enforce them |
+| Hermes Agent | [adapters/HERMES.md](adapters/HERMES.md) | one command; 12 of 14 skills install automatically, 2 need one manual step (see FAQ); same model-tier caveat as OpenCode, and tool restrictions are advisory only -- Hermes doesn't enforce them |
 | Codex | [adapters/CODEX.md](adapters/CODEX.md) | plugin marketplace install |
 
 ## Safety rails (all of them, in one place)
@@ -181,8 +182,8 @@ run them yourself, in one command:
 ```
 $ bash plugins/sefi-core/scripts/ci/run-all.sh
 validate-agents: OK (13 agent files validated)
-validate-skills: OK (13 SKILL.md validated)
-validate-doc-counts: OK (agents=13 skills=13 commands=6 loops=3, all prose matches disk)
+validate-skills: OK (14 SKILL.md validated)
+validate-doc-counts: OK (agents=13 skills=14 commands=6 loops=3, all prose matches disk)
 validate-loops: OK (3 loop spec(s) validated, plus 3 in this project's loops/)
 validate-budget: OK (all caps present and bounded)
 validate-config-wired: OK (15 config keys, all wired)
@@ -236,7 +237,7 @@ That rule is enforced automatically across every agent and skill.
 **Why didn't every skill install automatically on Hermes?** Hermes scans skills for
 risky-looking content, and two of ours get flagged by mistake -- they *describe* risky
 patterns in order to guard against them, and the scanner can't yet tell the difference.
-The other 11 skills install fine; the installer prints the two-step manual fix for the
+The other 12 skills install fine; the installer prints the two-step manual fix for the
 rest. See [adapters/HERMES.md](adapters/HERMES.md) section 8.
 
 **Do I need Obsidian?** No. The memory notes are plain text files; Obsidian just makes

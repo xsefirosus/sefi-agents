@@ -1619,5 +1619,363 @@ else
 fi
 rm -rf "$RP_OC"
 
+echo
+echo "=== validate-release-ledger.sh (Phase 2: six-surface release reconciliation, ported from astral-orchestrator release-ledger.py, MIT) ==="
+
+RL="$CORE/scripts/ci/validate-release-ledger.sh"
+RLF="$CORE/scripts/ci/fixtures/release-ledger"
+# An empty --root so the on-disk cross-check (condition 2) is inert -- these fixtures
+# exercise the cross-surface contradiction (condition 1) and the unobserved-surface
+# warning path, both of which must hold with no repo files in reach.
+RL_ROOT="$(mktemp -d)"
+
+# ok: every surface observed and agreeing -> exit 0.
+expect_code 0 "ok fixture: all six surfaces agree, exits 0" \
+  bash "$RL" --ledger "$RLF/ok/ledger.md" --root "$RL_ROOT"
+
+# contradiction: git-tag observed a version no other surface shows -> hard-fail exit 1.
+expect_code 1 "contradiction fixture: two surfaces disagree for the latest version, exits 1" \
+  bash "$RL" --ledger "$RLF/contradiction/ledger.md" --root "$RL_ROOT"
+
+# incomplete: on-disk surfaces agree, the three remote surfaces never checked -> exit 0
+# but every missing surface must be named in a WARN line (the signal must not be silent).
+inc_out="$(bash "$RL" --ledger "$RLF/incomplete/ledger.md" --root "$RL_ROOT" 2>&1)"
+inc_rc=$?
+if [ "$inc_rc" -eq 0 ] && printf '%s' "$inc_out" | grep -q "WARN: surface 'github-release' is unobserved" \
+   && printf '%s' "$inc_out" | grep -q "3/6 surfaces observed"; then
+  ok "incomplete fixture: exits 0 with WARN lines naming each unobserved surface"
+else
+  bad "incomplete fixture: expected exit 0 + WARN lines, got rc=$inc_rc out=$inc_out"
+fi
+
+# condition 2: a row whose observed value contradicts the on-disk file it names must
+# hard-fail even if no two ledger rows disagree with each other. Build a throwaway repo
+# root whose plugin.json says 0.6.0 and a ledger row that claims it observed 0.4.0.
+C2_ROOT="$(mktemp -d)"
+mkdir -p "$C2_ROOT/plugins/sefi-core/.claude-plugin" "$C2_ROOT/.claude-plugin"
+printf '{\n  "version": "0.6.0"\n}\n' > "$C2_ROOT/plugins/sefi-core/.claude-plugin/plugin.json"
+printf '{ "metadata": { "version": "0.6.0" }, "plugins": [ { "version": "0.6.0" } ] }\n' > "$C2_ROOT/.claude-plugin/marketplace.json"
+printf '# Changelog\n\n## [0.6.0] - 2026-09-01\n' > "$C2_ROOT/CHANGELOG.md"
+cat > "$C2_ROOT/ledger.md" <<'LEDGER'
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.6.0 | plugin.json | 0.6.0 | 0.4.0 | match | stale row | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | marketplace.json | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | changelog | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | git-tag | 0.6.0 | 0.4.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-release | 0.6.0 | 0.4.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-marketplace-index | 0.6.0 | 0.4.0 | match | ok | x | 2026-09-01T00:00:00Z |
+LEDGER
+c2_out="$(bash "$RL" --ledger "$C2_ROOT/ledger.md" --root "$C2_ROOT" 2>&1)"
+c2_rc=$?
+if [ "$c2_rc" -eq 1 ] && printf '%s' "$c2_out" | grep -q "plugin.json observed 0.4.0"; then
+  ok "condition 2: a row's observed value contradicting the on-disk plugin.json hard-fails"
+else
+  bad "condition 2: expected exit 1 naming the plugin.json contradiction, got rc=$c2_rc out=$c2_out"
+fi
+rm -rf "$C2_ROOT"
+
+# condition 2, CHANGELOG arm (distinct from the plugin.json arm above): a changelog row
+# whose observed value contradicts the CHANGELOG.md first versioned heading on disk must
+# hard-fail for THAT reason. Every other surface is `unobserved`, so hard-fail 1 (two
+# observed surfaces disagree) cannot fire -- only the `changelog)` arm of the on-disk
+# cross-check can produce this exit 1. Deleting that arm makes this test go green->red.
+C2_CL_ROOT="$(mktemp -d)"
+mkdir -p "$C2_CL_ROOT/plugins/sefi-core/.claude-plugin" "$C2_CL_ROOT/.claude-plugin"
+printf '{\n  "version": "0.6.0"\n}\n' > "$C2_CL_ROOT/plugins/sefi-core/.claude-plugin/plugin.json"
+printf '{ "metadata": { "version": "0.6.0" }, "plugins": [ { "version": "0.6.0" } ] }\n' > "$C2_CL_ROOT/.claude-plugin/marketplace.json"
+printf '# Changelog\n\n## [Unreleased] - 2026-09-02\n\n## [0.6.0] - 2026-09-01\n' > "$C2_CL_ROOT/CHANGELOG.md"
+cat > "$C2_CL_ROOT/ledger.md" <<'LEDGER'
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.6.0 | plugin.json | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | marketplace.json | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | changelog | 0.6.0 | 0.5.0 | match | stale row | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | git-tag | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-release | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-marketplace-index | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+LEDGER
+c2cl_out="$(bash "$RL" --ledger "$C2_CL_ROOT/ledger.md" --root "$C2_CL_ROOT" 2>&1)"
+c2cl_rc=$?
+if [ "$c2cl_rc" -eq 1 ] && printf '%s' "$c2cl_out" | grep -q "changelog observed 0.5.0" \
+   && ! printf '%s' "$c2cl_out" | grep -q "surfaces disagree"; then
+  ok "condition 2 CHANGELOG arm: a changelog row vs the on-disk top heading hard-fails on its own"
+else
+  bad "condition 2 CHANGELOG arm: expected exit 1 naming the changelog contradiction and NO hard-fail-1, got rc=$c2cl_rc out=$c2cl_out"
+fi
+rm -rf "$C2_CL_ROOT"
+
+# condition 2, marketplace.json arm (distinct again): a marketplace.json row whose observed
+# value matches neither on-disk occurrence must hard-fail for THAT reason, with every other
+# surface `unobserved` so hard-fail 1 cannot fire. Deleting the `marketplace.json)` arm
+# makes this test go green->red.
+C2_MP_ROOT="$(mktemp -d)"
+mkdir -p "$C2_MP_ROOT/plugins/sefi-core/.claude-plugin" "$C2_MP_ROOT/.claude-plugin"
+printf '{\n  "version": "0.6.0"\n}\n' > "$C2_MP_ROOT/plugins/sefi-core/.claude-plugin/plugin.json"
+printf '{ "metadata": { "version": "0.6.0" }, "plugins": [ { "version": "0.6.0" } ] }\n' > "$C2_MP_ROOT/.claude-plugin/marketplace.json"
+printf '# Changelog\n\n## [0.6.0] - 2026-09-01\n' > "$C2_MP_ROOT/CHANGELOG.md"
+cat > "$C2_MP_ROOT/ledger.md" <<'LEDGER'
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.6.0 | plugin.json | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | marketplace.json | 0.6.0 | 0.4.0 | match | stale row | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | changelog | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | git-tag | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-release | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-marketplace-index | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+LEDGER
+c2mp_out="$(bash "$RL" --ledger "$C2_MP_ROOT/ledger.md" --root "$C2_MP_ROOT" 2>&1)"
+c2mp_rc=$?
+if [ "$c2mp_rc" -eq 1 ] && printf '%s' "$c2mp_out" | grep -q "marketplace.json observed 0.4.0" \
+   && ! printf '%s' "$c2mp_out" | grep -q "surfaces disagree"; then
+  ok "condition 2 marketplace.json arm: a marketplace.json row vs both on-disk occurrences hard-fails on its own"
+else
+  bad "condition 2 marketplace.json arm: expected exit 1 naming the marketplace.json contradiction and NO hard-fail-1, got rc=$c2mp_rc out=$c2mp_out"
+fi
+rm -rf "$C2_MP_ROOT"
+
+# marketplace.json self-disagreement: metadata.version and plugins[0].version differ FROM
+# EACH OTHER on disk. Must hard-fail regardless of what the ledger row observed -- here the
+# ledger row observes 0.6.0, which matches ONE of the two occurrences, so the old
+# sort -u membership test would have passed it.
+MP_SELF_ROOT="$(mktemp -d)"
+mkdir -p "$MP_SELF_ROOT/plugins/sefi-core/.claude-plugin" "$MP_SELF_ROOT/.claude-plugin"
+printf '{\n  "version": "0.6.0"\n}\n' > "$MP_SELF_ROOT/plugins/sefi-core/.claude-plugin/plugin.json"
+printf '{ "metadata": { "version": "0.6.0" }, "plugins": [ { "version": "0.6.1" } ] }\n' > "$MP_SELF_ROOT/.claude-plugin/marketplace.json"
+printf '# Changelog\n\n## [0.6.0] - 2026-09-01\n' > "$MP_SELF_ROOT/CHANGELOG.md"
+cat > "$MP_SELF_ROOT/ledger.md" <<'LEDGER'
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.6.0 | plugin.json | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | marketplace.json | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | changelog | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | git-tag | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-release | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-marketplace-index | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+LEDGER
+mps_out="$(bash "$RL" --ledger "$MP_SELF_ROOT/ledger.md" --root "$MP_SELF_ROOT" 2>&1)"
+mps_rc=$?
+if [ "$mps_rc" -eq 1 ] && printf '%s' "$mps_out" | grep -q "marketplace.json self-disagreement"; then
+  ok "marketplace.json self-disagreement: the two on-disk occurrences differing from each other hard-fails even when the ledger row matches one of them"
+else
+  bad "marketplace.json self-disagreement: expected exit 1 naming the self-disagreement, got rc=$mps_rc out=$mps_out"
+fi
+rm -rf "$MP_SELF_ROOT"
+
+# a non-empty version cell that is not a semver must hard-fail, symmetric with the unknown
+# surface / unknown status checks -- not silently drop the row out of latest/latest_rows.
+BADVER_ROOT="$(mktemp -d)"
+cat > "$BADVER_ROOT/ledger.md" <<'LEDGER'
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.6.0 | plugin.json | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| TBD | changelog | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | git-tag | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+LEDGER
+bv_out="$(bash "$RL" --ledger "$BADVER_ROOT/ledger.md" --root "$BADVER_ROOT" 2>&1)"
+bv_rc=$?
+if [ "$bv_rc" -eq 1 ] && printf '%s' "$bv_out" | grep -q "unparseable version cell 'TBD'"; then
+  ok "malformed version cell: a non-semver version token among valid rows hard-fails (does not silently exempt the row)"
+else
+  bad "malformed version cell: expected exit 1 naming the unparseable cell, got rc=$bv_rc out=$bv_out"
+fi
+# an ALL-malformed version column keeps the pre-existing 'no semantic version found' exit 1.
+cat > "$BADVER_ROOT/allbad.md" <<'LEDGER'
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| draft | plugin.json | x | x | match | ok | x | 2026-09-01T00:00:00Z |
+| TBD | changelog | x | x | match | ok | x | 2026-09-01T00:00:00Z |
+LEDGER
+ab_out="$(bash "$RL" --ledger "$BADVER_ROOT/allbad.md" --root "$BADVER_ROOT" 2>&1)"
+ab_rc=$?
+if [ "$ab_rc" -eq 1 ] && printf '%s' "$ab_out" | grep -q "no semantic version found in the ledger's version column"; then
+  ok "all-malformed version column: still exits 1 with 'no semantic version found' (pre-existing behavior kept)"
+else
+  bad "all-malformed version column: expected exit 1 with 'no semantic version found', got rc=$ab_rc out=$ab_out"
+fi
+rm -rf "$BADVER_ROOT"
+
+# hard-fail 1 is per version GROUP across the whole append-only ledger, not latest-only:
+# the latest group (0.6.0) is internally consistent, but a HISTORICAL group (0.5.0) has two
+# surfaces observing contradicting versions. A latest-only check would exit 0 here.
+PVG_ROOT="$(mktemp -d)"
+cat > "$PVG_ROOT/ledger.md" <<'LEDGER'
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.6.0 | plugin.json | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | marketplace.json | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | changelog | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | git-tag | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-release | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-marketplace-index | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.5.0 | plugin.json | 0.5.0 | 0.5.0 | match | ok | x | 2026-08-01T00:00:00Z |
+| 0.5.0 | git-tag | 0.5.0 | 0.5.1 | mismatch | historical drift never reconciled | x | 2026-08-01T00:00:00Z |
+LEDGER
+pvg_out="$(bash "$RL" --ledger "$PVG_ROOT/ledger.md" --root "$PVG_ROOT" 2>&1)"
+pvg_rc=$?
+if [ "$pvg_rc" -eq 1 ] && printf '%s' "$pvg_out" | grep -q "version claim 0.5.0"; then
+  ok "per-version-group contradiction: a historical (non-latest) version group with disagreeing surfaces hard-fails"
+else
+  bad "per-version-group contradiction: expected exit 1 naming the 0.5.0 group, got rc=$pvg_rc out=$pvg_out"
+fi
+rm -rf "$PVG_ROOT"
+
+# FIX 1 -- partial-semver escape: norm_semver is anchored end-to-end (^v?X.Y.Z$), so a
+# version cell that is ALMOST a semver (a 4th segment, a -rcN suffix) no longer prefix-
+# matches to a truncated version that then silently fails the v==L / v==G equality checks
+# and drops the row out of hard-fail 1, hard-fail 2, and the N/6 count. Each such cell must
+# trip the non-empty version guard and exit 1 naming the exact cell text.
+PSV_ROOT="$(mktemp -d)"
+for badv in "0.6.0-rc1" "1.2.3.4" "0.5.2.1"; do
+  cat > "$PSV_ROOT/ledger.md" <<LEDGER
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.6.0 | plugin.json | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| $badv | changelog | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+LEDGER
+  psv_out="$(bash "$RL" --ledger "$PSV_ROOT/ledger.md" --root "$PSV_ROOT" 2>&1)"
+  psv_rc=$?
+  if [ "$psv_rc" -eq 1 ] && printf '%s' "$psv_out" | grep -qF "unparseable version cell '$badv'"; then
+    ok "partial-semver '$badv': exits 1 naming the cell (no prefix-match escape)"
+  else
+    bad "partial-semver '$badv': expected exit 1 naming the cell, got rc=$psv_rc out=$psv_out"
+  fi
+done
+# the exact forms still parse: a bare semver, a v-prefixed one, and a two-digit segment.
+cat > "$PSV_ROOT/ledger.md" <<'LEDGER'
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.5.2 | plugin.json | 0.5.2 | 0.5.2 | match | ok | x | 2026-09-01T00:00:00Z |
+| v0.5.2 | changelog | 0.5.2 | 0.5.2 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.10.0 | git-tag | 0.10.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+LEDGER
+psv_ok_out="$(bash "$RL" --ledger "$PSV_ROOT/ledger.md" --root "$PSV_ROOT" 2>&1)"
+psv_ok_rc=$?
+if [ "$psv_ok_rc" -eq 0 ] && printf '%s' "$psv_ok_out" | grep -q "latest 0.10.0"; then
+  ok "exact semver forms (0.5.2, v0.5.2, 0.10.0) still parse; latest resolves to 0.10.0"
+else
+  bad "exact semver forms: expected exit 0 with latest 0.10.0, got rc=$psv_ok_rc out=$psv_ok_out"
+fi
+rm -rf "$PSV_ROOT"
+
+# leading-zero semver: each numeric component is (0|[1-9][0-9]*), so a version cell with a
+# leading-zero component (00.5.2, 01.0.0, 0.05.2, 1.2.03) fails to parse and must trip the
+# unparseable-version hard-fail exit 1 naming the cell -- otherwise 00.5.2 and 0.5.2 would
+# normalize into two distinct version groups and hard-fail 1 would never compare them.
+LZ_ROOT="$(mktemp -d)"
+for badv in "00.5.2" "01.0.0" "0.05.2" "1.2.03"; do
+  cat > "$LZ_ROOT/ledger.md" <<LEDGER
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.5.2 | plugin.json | 0.5.2 | 0.5.2 | match | ok | x | 2026-09-01T00:00:00Z |
+| $badv | changelog | 0.5.2 | 0.5.2 | match | ok | x | 2026-09-01T00:00:00Z |
+LEDGER
+  lz_out="$(bash "$RL" --ledger "$LZ_ROOT/ledger.md" --root "$LZ_ROOT" 2>&1)"
+  lz_rc=$?
+  if [ "$lz_rc" -eq 1 ] && printf '%s' "$lz_out" | grep -qF "unparseable version cell '$badv'"; then
+    ok "leading-zero version '$badv': exits 1 naming the cell (no phantom version group)"
+  else
+    bad "leading-zero version '$badv': expected exit 1 naming the cell, got rc=$lz_rc out=$lz_out"
+  fi
+done
+# multi-digit components without a leading zero still parse.
+cat > "$LZ_ROOT/ledger.md" <<'LEDGER'
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.5.2 | plugin.json | 0.5.2 | 0.5.2 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.10.0 | changelog | 0.10.0 | 0.10.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 1.20.3 | git-tag | 1.20.3 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+LEDGER
+lz_ok_out="$(bash "$RL" --ledger "$LZ_ROOT/ledger.md" --root "$LZ_ROOT" 2>&1)"
+lz_ok_rc=$?
+if [ "$lz_ok_rc" -eq 0 ] && printf '%s' "$lz_ok_out" | grep -q "latest 1.20.3"; then
+  ok "no-leading-zero multi-digit forms (0.10.0, 1.20.3) still parse; latest resolves to 1.20.3"
+else
+  bad "multi-digit semver forms: expected exit 0 with latest 1.20.3, got rc=$lz_ok_rc out=$lz_ok_out"
+fi
+rm -rf "$LZ_ROOT"
+
+# FIX 4 -- a legal GFM alignment separator row (colons around the dashes) must be
+# recognized as a separator, not parsed as a data row (which produced spurious
+# unknown-surface / unknown-status errors).
+ALN_ROOT="$(mktemp -d)"
+cat > "$ALN_ROOT/ledger.md" <<'LEDGER'
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|:--------|:-------:|---------:|:--------:|:------:|:---------|:------------------:|-----------:|
+| 0.6.0 | plugin.json | 0.6.0 | 0.6.0 | match | ok | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | git-tag | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+LEDGER
+aln_out="$(bash "$RL" --ledger "$ALN_ROOT/ledger.md" --root "$ALN_ROOT" 2>&1)"
+aln_rc=$?
+if [ "$aln_rc" -eq 0 ] && ! printf '%s' "$aln_out" | grep -q "ERROR:"; then
+  ok "GFM alignment separator row is skipped, not parsed as data (no spurious errors)"
+else
+  bad "GFM alignment separator: expected exit 0 with no ERROR lines, got rc=$aln_rc out=$aln_out"
+fi
+rm -rf "$ALN_ROOT"
+
+# FIX 1 (release-0.5.1 pass) -- the separator-row skip is a WHOLE-ROW test, not a version-
+# column test. A real data row whose version cell alone is :-: / --: / :-- (all valid
+# alignment-marker spellings) must NOT be discarded as a table separator: it has to reach
+# norm_semver, fail the exact-semver guard, and hard-fail exit 1 naming the cell. A revert
+# to the version-column-only skip ($2 ~ /^:?-+:?$/) silently drops the row and returns
+# exit 0 "OK" even while it carries a disk-contradicting observed value -- this catches that.
+DSEP_ROOT="$(mktemp -d)"
+for badv in ":-:" "--:" ":--"; do
+  cat > "$DSEP_ROOT/ledger.md" <<LEDGER
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.5.2 | plugin.json | 0.5.2 | 0.5.2 | match | ok | x | 2026-09-01T00:00:00Z |
+| $badv | plugin.json | 0.5.2 | 0.4.0 | mismatch | fabricated -- version cell is an alignment marker | x | 2026-09-01T00:00:00Z |
+LEDGER
+  dsep_out="$(bash "$RL" --ledger "$DSEP_ROOT/ledger.md" --root "$DSEP_ROOT" 2>&1)"
+  dsep_rc=$?
+  if [ "$dsep_rc" -eq 1 ] && printf '%s' "$dsep_out" | grep -qF "unparseable version cell '$badv'"; then
+    ok "data row with version cell '$badv' is NOT skipped as a separator; hard-fails exit 1 naming the cell"
+  else
+    bad "data row version cell '$badv': expected exit 1 naming the cell (row must not be dropped), got rc=$dsep_rc out=$dsep_out"
+  fi
+done
+rm -rf "$DSEP_ROOT"
+
+# FIX 3 -- joined-form options (--ledger=PATH / --root=DIR) must be parsed, not dropped to
+# the *) shift catch-all where the script would silently validate the DEFAULT ledger.
+expect_code 0 "joined --ledger=PATH / --root=DIR parse like the spaced form (ok fixture)" \
+  bash "$RL" "--ledger=$RLF/ok/ledger.md" "--root=$RL_ROOT"
+jf_out="$(bash "$RL" "--ledger=$RL_ROOT/does-not-exist.md" "--root=$RL_ROOT" 2>&1)"
+jf_rc=$?
+if [ "$jf_rc" -eq 1 ] && printf '%s' "$jf_out" | grep -q "release ledger not found"; then
+  ok "joined --ledger=PATH resolves the given path (missing file -> exit 1, not a silent default pass)"
+else
+  bad "joined --ledger=PATH: expected exit 1 'release ledger not found', got rc=$jf_rc out=$jf_out"
+fi
+expect_code 1 "an empty joined --ledger= value exits 1" \
+  bash "$RL" "--ledger="
+expect_code 1 "an unrecognized joined option (--bogus=1) exits 1, not silently ignored" \
+  bash "$RL" "--bogus=1" --ledger "$RLF/ok/ledger.md" --root "$RL_ROOT"
+
+# a missing ledger file is exit 1, not a silent pass.
+expect_code 1 "a missing ledger path exits 1" \
+  bash "$RL" --ledger "$RL_ROOT/does-not-exist.md" --root "$RL_ROOT"
+
+# a missing --ledger / --root value must fail fast (exit 1), never spin forever on the
+# arg loop. The `timeout` wrapper is a defensive bound for a HYPOTHETICAL future refactor
+# that removes BOTH the `[ $# -ge 2 ]` guard AND the `set -u` protection -- only that
+# combination could actually hang. As the script stands today (`set -u`, no `set -e`), a
+# reverted guard makes `$2` an unbound-variable error that exits non-zero immediately, not
+# an infinite loop. So this assertion pins exit-1-on-missing-value, but does NOT by itself
+# prove the no-hang property; `set -u` alone already gives the fast non-zero exit.
+# If timeout(1) is unavailable, SKIP rather than run an unbounded command.
+if command -v timeout >/dev/null 2>&1; then
+  expect_code 1 "a bare --ledger with no value exits 1 (no infinite loop)" \
+    timeout 8 bash "$RL" --ledger
+  expect_code 1 "a bare --root with no value exits 1 (no infinite loop)" \
+    timeout 8 bash "$RL" --root
+else
+  echo "  SKIP: bare --ledger / --root no-hang assertions (timeout(1) not available on this platform)"
+fi
+
+rm -rf "$RL_ROOT"
+
 if [ "$fail" -ne 0 ]; then echo "test-scripts: $fail failed, $pass passed"; exit 1; fi
 echo "test-scripts: OK ($pass passed)"
