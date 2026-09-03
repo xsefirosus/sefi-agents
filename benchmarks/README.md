@@ -105,8 +105,14 @@ prompt, session-echo, raw log -- in a private `tempfile.mkdtemp` dir torn down i
 has exited). But an arm dropping its *own* `trials.jsonl` somewhere on disk is **not
 prevented without OS-level isolation** (a container), which this version does not use.
 Mitigations: arm scratch is isolated from the results dir; the results-dir path is never
-disclosed to the arm; `run.py` removes a stale `trials.jsonl` at startup, refuses to
-finalize over a pre-existing `trials.jsonl`, and unlinks any raced-in one on an abort.
+disclosed to the arm; `run.py` refuses a non-empty `--out` (SystemExit 2, never cleaned),
+refuses to finalize over a pre-existing `trials.jsonl`, and unlinks any raced-in one on an
+abort.
+
+**Honest limit -- the raw-log copy window.** The human-readable raw arm log is copied out
+of the arm's private scratch dir *after* the arm process exits, so a detached grandchild
+of the arm could rewrite it in that window; treat the raw log as arm-influenceable
+evidence, never a scoring input (nothing in `benchmarks/runner/` reads it).
 
 ### Fail-closed integrity gate (`benchmarks/runner/integrity.py`)
 

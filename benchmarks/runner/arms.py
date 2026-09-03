@@ -22,12 +22,15 @@ It returns an ``ArmResult`` of RUNNER-OBSERVED values only:
                                ``record.py`` (step 6) never reads it.
 
 Trust boundary: ALL arm-facing scratch (the prompt file, the session-echo file, the raw
-log) is created in a private ``tempfile.mkdtemp(prefix="sefi-arm-")`` dir that is torn
-down in a ``finally:``. The ``results_dir`` (which holds ``trials.jsonl``) is NEVER passed
-to the child in argv or env and is NEVER the arm's scratch dir. This does not stop an arm
-from writing a bogus ``trials.jsonl`` somewhere it can reach -- only OS-level isolation
-would -- but the arm cannot reach the real results dir, and ``run.py`` refuses to finalize
-over a pre-existing ``trials.jsonl``.
+log) is created in a private ``tempfile.mkdtemp(prefix="sefi-arm-")`` dir torn down in a
+``finally:``; the runner never puts that dir -- or ``results_dir`` (which holds
+``trials.jsonl``) -- on the child's argv or env, and the sandbox clone's ``origin`` remote
+is stripped before the arm runs. With no OS-level isolation, an arm running as the same
+user is NOT *prevented* from locating ``benchmarks/results/`` by other means (a well-known
+path, a later cwd), so the guarantee is precisely: no arm-written VALUE is a scoring
+input; ``run.py``'s finalize step refuses to replace an existing ``trials.jsonl``; every
+abort unlinks a raced-in ``trials.jsonl``. Wholesale post-exit artifact forgery is out of
+scope without a container.
 
 The test-only ``mock_arm`` seam runs a local Python file via ``resolve_python()`` instead
 of a real harness CLI; EVERY test in ``benchmarks/test_runner.py`` uses it. The
@@ -35,12 +38,14 @@ real-harness command builder (``_real_command``) is best-effort and UNKNOWN-mark
 test exercises it, and ``codex`` / ``opencode`` presence on this host is UNKNOWN and not
 required.
 
-Standard library only: os, subprocess, tempfile, time, pathlib, typing.
+Standard library only: os, re, shutil, subprocess, tempfile, time, pathlib, typing.
+Teardown (``_rmtree``) is the shared helper in ``benchmarks/runner/_fsutil.py``.
 """
 
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -48,6 +53,7 @@ import time
 from pathlib import Path
 from typing import NamedTuple
 
+from benchmarks.runner._fsutil import _rmtree
 from benchmarks.runner.sandbox import resolve_python
 
 _STRATEGIES = ("control", "sefi-chain", "sefi-chain-sequential")
@@ -96,6 +102,33 @@ def _which(names: tuple[str, ...]) -> str | None:
             if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
                 return candidate
     return None
+
+
+# A drive-letter root (``C:\`` / ``C:/``) or a POSIX root (``/``). A pure-string test --
+# ``Path(...).is_absolute()`` alone misses ``/home/u/x`` on Windows.
+_ABS_LOOKING_RE = re.compile(r"^([A-Za-z]:[\\/]|/)")
+
+
+def _redact_arg(arg: str) -> str:
+    """Reduce one logged command-line arg to something free of operator-identifying paths.
+
+    An arg that is an existing path, or merely *looks* absolute (drive-letter / POSIX
+    root), collapses to its basename -- the scratch-dir prefix embeds the operator's home
+    dir (a ``C:\\Users`` / ``home`` / ``Users`` rooted path). A remaining arg that is a
+    real prompt STRING (not a path) is kept as-is except that a leading ``Path.home()``
+    prefix is rewritten to ``~``. Net: no home-dir substring reaches the copied raw log.
+    """
+    if _ABS_LOOKING_RE.match(arg):
+        return Path(arg).name
+    try:
+        if Path(arg).is_absolute() or Path(arg).exists():
+            return Path(arg).name
+    except (OSError, ValueError):
+        pass
+    home = str(Path.home())
+    if home and arg.startswith(home):
+        return "~" + arg[len(home):]
+    return arg
 
 
 def _real_command(strategy: str, harness: str, prompt_text: str) -> list[str]:
@@ -210,9 +243,13 @@ def run_arm(
             stderr = f"[run_arm] could not launch arm: {exc}\n"
         wall_time_s = max(0.0, time.monotonic() - start)
 
-        # Log the interpreter / binary BASENAME only -- the absolute path embeds the
-        # operator's home dir (benchmarks/README.md stance on personal paths).
-        logged_cmd = [Path(cmd[0]).name, *cmd[1:]] if cmd else []
+        # Redact operator-identifying paths from the logged command line: cmd[0] (the
+        # interpreter / binary) -> basename; every remaining arg through _redact_arg
+        # (basename for a path / absolute-looking arg, ``~`` for a home-prefixed string).
+        # benchmarks/README.md stance on personal paths.
+        logged_cmd = (
+            [Path(cmd[0]).name, *(_redact_arg(a) for a in cmd[1:])] if cmd else []
+        )
         raw_log_path.write_text(
             f"$ {' '.join(logged_cmd)}\n--- stdout ---\n{stdout}\n--- stderr ---\n{stderr}\n",
             encoding="utf-8",
@@ -246,7 +283,10 @@ def run_arm(
             raw_log_path=final_log_path,
         )
     finally:
-        shutil.rmtree(arm_scratch, ignore_errors=True)
+        # Same read-only-retry teardown sandbox.py uses (shared _fsutil._rmtree):
+        # ignore_errors=False, so a genuine failure to clear the arm scratch surfaces
+        # instead of being silently swallowed.
+        _rmtree(arm_scratch)
 
 
 def _as_text(value: str | bytes | None) -> str:

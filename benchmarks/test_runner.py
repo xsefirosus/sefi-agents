@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -75,6 +76,41 @@ def _resolve_tool(names: tuple[str, ...]) -> str | None:
 BASH = _resolve_tool(("bash.exe", "bash"))
 
 
+class _PinnedTempdirMixin:
+    """FIX F: pin every ``tempfile.mkdtemp`` a test triggers (sandbox.py, arms.py, and any
+    ``tempfile.TemporaryDirectory()`` in the test body) to a PRIVATE per-test dir, then
+    assert scratch leaks only against THAT dir. A concurrent runner / qa process sharing
+    the real ``%TEMP%`` can no longer redden the leak assertions with its own
+    ``sefi-bench-*`` / ``sefi-arm-*`` dirs. ``tempfile`` caches ``gettempdir()``, so the
+    module-level cache is swapped too and restored in ``tearDown``.
+    """
+
+    def setUp(self) -> None:
+        super().setUp()
+        self._pinned_tmp = tempfile.mkdtemp(prefix="sefi-runnertest-")
+        self._saved_tmp_env = {k: os.environ.get(k) for k in ("TMPDIR", "TEMP", "TMP")}
+        self._saved_tempdir = tempfile.tempdir
+        for key in ("TMPDIR", "TEMP", "TMP"):
+            os.environ[key] = self._pinned_tmp
+        tempfile.tempdir = self._pinned_tmp
+
+    def tearDown(self) -> None:
+        tempfile.tempdir = self._saved_tempdir
+        for key, value in self._saved_tmp_env.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+        shutil.rmtree(self._pinned_tmp, ignore_errors=True)
+        super().tearDown()
+
+    def _assert_no_scratch_leak(self, *, prefixes: tuple[str, ...] = ("sefi-bench-", "sefi-arm-")) -> None:
+        leaked = sorted(
+            p.name for p in Path(self._pinned_tmp).iterdir() if p.name.startswith(prefixes)
+        )
+        self.assertEqual(leaked, [], f"scratch dirs leaked this run: {leaked}")
+
+
 class ResolveTests(unittest.TestCase):
     def test_resolve_git_is_absolute_executable(self) -> None:
         path = resolve_git()
@@ -101,6 +137,22 @@ class SandboxTests(unittest.TestCase):
                 (repo / ".git" / "objects" / "info" / "alternates").exists(),
                 "clone must have its own object store (no alternates)",
             )
+
+    def test_origin_remote_and_origin_url_are_stripped(self) -> None:
+        # FIX A: the clone must not disclose the operator's absolute origin path to the
+        # arm. ``git remote`` is empty and ``.git/config`` names no ``file://`` url.
+        git = resolve_git()
+        with sandbox(REPO_ROOT, "HEAD") as repo:
+            proc = subprocess.run(
+                [git, "-C", str(repo), "remote"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            self.assertEqual(proc.stdout.strip(), "", "origin remote must be removed")
+            config_text = (repo / ".git" / "config").read_text(encoding="utf-8")
+            self.assertNotIn("file://", config_text)
+            self.assertNotIn("benchmark-runner", config_text)
 
     def test_checkout_line_endings_unset(self) -> None:
         git = resolve_git()
@@ -187,8 +239,32 @@ class SnapshotTests(unittest.TestCase):
         )
 
 
-class ArmsTests(unittest.TestCase):
+class ArmsTests(_PinnedTempdirMixin, unittest.TestCase):
     """Step 4: benchmarks/runner/arms.run_arm -- all via the --mock-arm seam."""
+
+    def test_raw_log_has_no_operator_path(self) -> None:
+        # FIX C: the copied raw log must not embed the operator's home dir via cmd[1:]
+        # (the arm-scratch prompt path lives under %TEMP%, itself under the home dir).
+        with sandbox(REPO_ROOT, "HEAD") as repo, tempfile.TemporaryDirectory() as out:
+            result = run_arm(
+                "control", "claude-code", SH_STRICT_PROMPT, repo,
+                timeout_s=5, mock_arm=MOCK_ARM, results_dir=Path(out),
+            )
+            text = Path(result.raw_log_path).read_text(encoding="utf-8")
+        self.assertNotIn(str(Path.home()), text)
+        self.assertNotIn("MARYRO", text)
+        self.assertNotIn("Mary Rose", text)
+
+    def test_timed_out_arm_leaves_no_arm_scratch(self) -> None:
+        # FIX D: arm-scratch teardown is the shared read-only-retry _rmtree, not a
+        # swallowing ignore_errors=True. A 0.1s-timeout arm still leaves zero sefi-arm-*
+        # dirs. Scoped to this test's pinned tempdir (FIX F).
+        with sandbox(REPO_ROOT, "HEAD") as repo, tempfile.TemporaryDirectory() as out:
+            run_arm(
+                "control", "claude-code", SH_STRICT_PROMPT, repo,
+                timeout_s=0.1, mock_arm=MOCK_ARM_SLOW, results_dir=Path(out),
+            )
+        self._assert_no_scratch_leak(prefixes=("sefi-arm-",))
 
     def test_mock_arm_completes_case_and_reports_runner_observed_facts(self) -> None:
         with sandbox(REPO_ROOT, "HEAD") as repo, tempfile.TemporaryDirectory() as out:
@@ -644,7 +720,7 @@ class BudgetScanTests(unittest.TestCase):
         self.assertIsInstance(read_cap(), float)
 
 
-class EndToEndTests(unittest.TestCase):
+class EndToEndTests(_PinnedTempdirMixin, unittest.TestCase):
     """Step 8: run.py -> trials.jsonl -> scorecard.py, the first real end-to-end."""
 
     def _run(
@@ -681,15 +757,10 @@ class EndToEndTests(unittest.TestCase):
             text=True,
         )
 
-    def setUp(self) -> None:
-        self._scratch_baseline = {
-            p.name for p in Path(tempfile.gettempdir()).glob("sefi-bench-*")
-        }
-
     def _no_leftover_scratch(self) -> None:
-        now = {p.name for p in Path(tempfile.gettempdir()).glob("sefi-bench-*")}
-        leaked = sorted(now - self._scratch_baseline)
-        self.assertEqual(leaked, [], f"sandbox scratch dirs leaked this run: {leaked}")
+        # FIX F: assert against this test's PRIVATE pinned tempdir, not a global
+        # %TEMP% glob a concurrent runner / qa process could pollute.
+        self._assert_no_scratch_leak()
 
     def test_green_run_scores_two_trials(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -899,6 +970,23 @@ class FatalAndPreflightTests(unittest.TestCase):
                 (out / "ABORTED.md").read_text(encoding="utf-8"),
             )
             self.assertFalse((out / "trials.jsonl").exists())
+            # FIX G: the dedicated baseline ref clone is built AFTER the pre-flight
+            # aborts, so an immediate pre-flight abort writes no ref.manifest.
+            self.assertFalse((out / "ref.manifest").exists())
+
+    def test_nonempty_out_dir_is_refused_and_contents_untouched(self) -> None:
+        # FIX B: a pre-populated --out -> SystemExit 2 BEFORE any mkdir/abort, with the
+        # existing bytes untouched and no ABORTED.md written.
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "run"
+            out.mkdir()
+            sentinel = out / "trials.jsonl"
+            sentinel.write_text('{"prior": "run"}\n', encoding="utf-8")
+            before = sentinel.read_bytes()
+            code = self._expect_usage_error(self._argv(out))
+            self.assertEqual(code, 2)
+            self.assertEqual(sentinel.read_bytes(), before, "prior artifacts must be untouched")
+            self.assertFalse((out / "ABORTED.md").exists(), "no ABORTED.md on a usage error")
 
     def test_mock_run_with_zero_est_cost_still_runs(self) -> None:
         from benchmarks.runner.run import main as run_main

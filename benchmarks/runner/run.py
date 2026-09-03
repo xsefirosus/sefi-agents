@@ -26,8 +26,9 @@ never told the results-dir path (``arms.py`` isolates all arm scratch). Wholesal
 artifact forgery -- an arm dropping its own ``trials.jsonl`` somewhere -- is NOT prevented
 without OS-level isolation (a container), which this version does not use. Mitigations:
 arm scratch is isolated from the results dir; the results-dir path is never disclosed to
-the arm; a stale ``trials.jsonl`` is removed at startup AND the runner refuses to finalize
-over a pre-existing ``trials.jsonl``.
+the arm; ``--out`` must be a new / empty directory (a non-empty one is refused with
+SystemExit 2, never cleaned); the runner refuses to finalize over a pre-existing
+``trials.jsonl`` and unlinks any raced-in one on an abort.
 
 Standard library only: argparse, json, math, os, re, shutil, subprocess, sys, tempfile,
 pathlib.
@@ -429,13 +430,16 @@ def main(argv: list[str] | None = None) -> int:
         parser.error(str(exc))
 
     out_dir = Path(args.out)
+    # Refuse a non-empty output dir (SystemExit 2) BEFORE mkdir -- the runner never
+    # deletes a prior run's artifacts (run-sefi-benchmark/SKILL.md:130-134,145). A
+    # nonexistent or empty --out proceeds.
+    if out_dir.exists() and any(out_dir.iterdir()):
+        parser.error(
+            f"output directory {out_dir} is not empty; choose a new empty directory"
+        )
     out_dir.mkdir(parents=True, exist_ok=True)
     partial = out_dir / "trials.partial.jsonl"
     final = out_dir / "trials.jsonl"
-    aborted_md = out_dir / "ABORTED.md"
-    for stale in (partial, final, aborted_md):
-        if stale.exists():
-            stale.unlink()
 
     try:
         pinned_ref = args.ref if args.ref else _git_head()
