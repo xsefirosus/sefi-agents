@@ -23,6 +23,7 @@ validate-script-refs.sh
 validate-routing.sh
 validate-model-map.sh
 validate-adapters.sh
+validate-rule-presence.sh
 check-unicode-safety.sh
 validate-comment-safety.sh
 validate-token-budget.sh

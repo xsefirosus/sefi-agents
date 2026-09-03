@@ -1526,5 +1526,98 @@ else
   echo "  SKIPPED (jq not on PATH)"
 fi
 
+echo
+echo "=== validate-rule-presence.sh (content-presence contract: a load-bearing rule sentence deleted or reworded past recognition while every path still resolves) ==="
+
+RP="$CORE/scripts/ci/validate-rule-presence.sh"
+RP_FIX="$CORE/scripts/ci/fixtures/rule-presence"
+
+# The pass fixture: the registered sentence is present (and soft-wrapped in the target,
+# so this also exercises the Markdown line-join step of the normalization).
+expect_code 0 "a manifest whose every sentence is present exits 0" \
+  bash "$RP" --manifest "$RP_FIX/pass/rule-presence.manifest" --base "$RP_FIX/pass"
+
+# The fail fixture: the exact failure this validator exists to catch -- a registered
+# sentence that is no longer in the file it names.
+expect_code 1 "a manifest with a missing sentence exits 1" \
+  bash "$RP" --manifest "$RP_FIX/fail/rule-presence.manifest" --base "$RP_FIX/fail"
+
+# An empty / comment-only manifest is a setup error, not a silent pass.
+RP_EMPTY="$(mktemp)"
+printf '# only a comment, no rows\n' > "$RP_EMPTY"
+expect_code 1 "a manifest with no registered rows exits 1" \
+  bash "$RP" --manifest "$RP_EMPTY" --base "$RP_FIX/pass"
+rm -f "$RP_EMPTY"
+
+# The real manifest against the real tree must be green in this checkout.
+expect_code 0 "the shipped rule-presence.manifest is satisfied by the current tree" \
+  bash "$RP"
+
+# Finding 6: a row naming a file absent under --base exits 1 -- never a silent skip of a
+# row whose source file could not be opened (validate-rule-presence.sh:76-79).
+expect_code 1 "a manifest row whose target file is missing exits 1" \
+  bash "$RP" --manifest "$RP_FIX/missing-target/rule-presence.manifest" --base "$RP_FIX/missing-target"
+
+# Finding 3 pin: the two halves of the registered sentence are separated by a blank line
+# in the target. A whole-file normalizer bridges that gap and FALSELY reports OK; the
+# paragraph-local normalizer must not, so this row misses and the run exits 1.
+expect_code 1 "a sentence split across a blank line in the target is not a match (paragraph-local join)" \
+  bash "$RP" --manifest "$RP_FIX/paragraph-split/rule-presence.manifest" --base "$RP_FIX/paragraph-split"
+
+# Whitespace-only-separator pin: awk RS="" paragraph mode splits ONLY on truly empty
+# lines. A separator holding a lone space (space-sep) or a lone tab (tab-sep) is a
+# Markdown paragraph break too; the normalizer's leading sed must blank it so the row
+# straddling it MISSES and the run exits 1. Without the sed both of these falsely pass.
+expect_code 1 "a sentence split across a space-only separator line is not a match" \
+  bash "$RP" --manifest "$RP_FIX/whitespace-split-space/rule-presence.manifest" --base "$RP_FIX/whitespace-split-space"
+expect_code 1 "a sentence split across a tab-only separator line is not a match" \
+  bash "$RP" --manifest "$RP_FIX/whitespace-split-tab/rule-presence.manifest" --base "$RP_FIX/whitespace-split-tab"
+
+# Finding 1 regression: run-all.sh forwards --strict (or CI_STRICT=1) to every validator.
+# This one has no warning tier, so it must tolerate the flag the way its siblings do --
+# not reject it as an unknown argument and turn CI_STRICT=1 run-all.sh red.
+expect_code 0 "--strict is accepted and ignored (parity with the siblings run-all.sh forwards it to)" \
+  bash "$RP" --strict
+
+# Finding 2 regression: a value-taking option given with no value must exit 1 AND must
+# terminate. An earlier revision spun forever -- 'set -u' without '-e' left a failed
+# 'shift 2' unconsumed and the 'while [ $# -gt 0 ]' loop never ended.
+if command -v timeout >/dev/null 2>&1; then
+  rp_hang_rc=0
+  timeout 8 bash "$RP" --manifest >/dev/null 2>&1 || rp_hang_rc=$?
+  if [ "$rp_hang_rc" -eq 1 ]; then
+    ok "--manifest with no following value exits 1 without hanging"
+  elif [ "$rp_hang_rc" -eq 124 ]; then
+    bad "--manifest with no following value HUNG (timeout fired) instead of exiting 1"
+  else
+    bad "--manifest with no following value: expected exit 1, got $rp_hang_rc"
+  fi
+else
+  echo "  SKIP: --manifest no-value hang guard (timeout(1) not on PATH)"
+fi
+
+# Step-3 cross-harness survival: install-opencode.sh is the one install transform that
+# rewrites files. Run it against a throwaway OPENCODE_HOME, then require every registered
+# sentence to still be a normalized substring of the TRANSFORMED output tree.
+RP_OC="$(mktemp -d)"
+# Capture the installer's own exit code FIRST. If the transform itself failed, the
+# survival check below would run against a partial tree and misattribute the install
+# error as "a sentence did not survive" -- assert the install succeeded before trusting
+# anything downstream of it.
+rp_oc_install_rc=0
+OPENCODE_HOME="$RP_OC" bash "$CORE/scripts/install-opencode.sh" >/dev/null 2>&1 || rp_oc_install_rc=$?
+if [ "$rp_oc_install_rc" -ne 0 ]; then
+  bad "install-opencode.sh failed (rc=$rp_oc_install_rc) -- cross-harness survival assertion could not run"
+else
+  rp_oc_rc=0
+  rp_oc_out="$(bash "$RP" --post-install "$RP_OC" 2>&1)" || rp_oc_rc=$?
+  if [ "$rp_oc_rc" -eq 0 ]; then
+    ok "every registered rule sentence survives the OpenCode agent transform ($rp_oc_out)"
+  else
+    bad "a registered rule sentence did not survive install-opencode.sh (rc=$rp_oc_rc): $rp_oc_out"
+  fi
+fi
+rm -rf "$RP_OC"
+
 if [ "$fail" -ne 0 ]; then echo "test-scripts: $fail failed, $pass passed"; exit 1; fi
 echo "test-scripts: OK ($pass passed)"

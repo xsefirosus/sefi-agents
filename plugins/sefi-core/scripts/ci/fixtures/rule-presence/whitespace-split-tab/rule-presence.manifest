@@ -1,0 +1,6 @@
+# whitespace-split-tab fixture for validate-rule-presence.sh -- pins the tab-only
+# separator half of the Finding: a separator holding a lone tab is a Markdown paragraph
+# break too, but awk RS="" ignored it before the normalizer got its leading sed.
+# sample.md holds the two halves of the registered sentence separated by a single-tab
+# line; the row must MISS and the run must exit 1 naming sample.md.
+sample.md	The reviewer never merges on its own authority
