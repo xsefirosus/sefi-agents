@@ -3,7 +3,7 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
-## [Unreleased] - 2026-08-31
+## [Unreleased] - 2026-09-02
 
 ### Added
 
@@ -158,6 +158,115 @@ Changelog; this project adheres to Semantic Versioning.
    dependency (`python3` or `python` 3.11+, stdlib only: `argparse` / `json` / `os` / `re`
    / `subprocess` / `sys` / `pathlib`); `check-route.py` is post-dispatch and NOT on
    `run-all.sh`'s validator list. No `version` field changed.
+
+8. **`run-sefi-benchmark` skill + `benchmarks/` harness (REDUCED delivery)** -- new skill
+   `plugins/sefi-core/skills/run-sefi-benchmark/SKILL.md` (14th skill) and a
+   project-root `benchmarks/` tree for a blinded paired A/B comparison of the full
+   sefi-agents chain against one strong model. Shipping: `benchmarks/README.md` (design of
+   record, trial-record JSONL schema, harness matrix with the `sefi-chain` vs
+   `sefi-chain-sequential` dispatch-asymmetry rule, and how to hand-author
+   `trials.jsonl`), `benchmarks/cases.json` with three frozen cases and their
+   `benchmarks/prompts/` + deterministic `benchmarks/cases/check_*.sh` acceptance checks
+   (exit 0/1, no model calls), and `benchmarks/scorecard.py` -- a minimal deterministic
+   scorer (Python 3 stdlib only, dev-only, never wired into CI, a loop, or a
+   dispatched-agent path) that emits paired treatment-minus-control point deltas plus a
+   separate route-correctness table, fail-closed on `integrity_ok`.
+   `benchmarks/fixtures/trials.jsonl` + `expected-scorecard.txt` back a determinism test
+   (`benchmarks/test_scorecard.py`, the one benchmark file `gate.sh` runs).
+   `run-sefi-benchmark` added to `install-hermes.sh`'s `SKILLS=` list; both READMEs,
+   `adapters/CODEX.md`, and `adapters/HERMES.md` bumped 13 -> 14 skills.
+   `docs/METRICS-PROVENANCE.md`, `docs/BUDGET.md`, and the `state/retro-ledger.md` header
+   record that a benchmark run is manual, out-of-loop, and NOT budget-enforced -- it has an
+   operator-tracked `benchmark_per_run_usd_cap: 15.00` in `config/budget.yml` that nothing
+   in the repo blocks a run from exceeding, verified after the fact from the summed trial
+   `cost_usd` on the scorecard -- and that a REJECT run is retained with `INVALID.md`
+   rather than deleted or silently re-run. No version bump; a chain loss on some task
+   classes is stated as an accepted outcome, not a harness failure. Adapted from
+   `Demonbane18/astral-orchestrator` (MIT).
+
+9. **`gate.sh` Python-branch guard** -- `plugins/sefi-core/scripts/gate.sh`: run `pytest`
+   only when a test file OR an explicit pytest config section exists (`pyproject.toml`
+   `[tool.pytest.ini_options]`, `pytest.ini` / `tox.ini` `[pytest]`, `setup.cfg`
+   `[tool:pytest]`), treating exit 5 as non-fatal via `--tolerate=5`; both pytest branches
+   pass `--ignore=.git --ignore=.worktrees`. The Shell and Python file scans exclude
+   `.git` and `.worktrees` in every branch. Needed because `benchmarks/scorecard.py` is
+   the first project-root `.py` and would otherwise trip the Python branch on a checkout
+   with stdlib tooling but no root suite. Three `test-scripts.sh` regression cases
+   (no-tests-stays-green, `[tool.pytest.ini_options]` + failing non-default-named test,
+   `tox.ini [pytest]` + failing test) and one `validate-no-personal-paths.sh` case (the
+   `benchmarks/__pycache__/*.pyc` exclusion is load-bearing on a home-directory checkout)
+   cover it. `.gitignore` gains `__pycache__/`, `*.pyc`, `.pytest_cache/`, `.ruff_cache/`,
+   `benchmarks/results/`; `validate-no-personal-paths.sh` scans `benchmarks/` for personal
+   paths while excluding `benchmarks/results/` and Python bytecode.
+
+10. **Phase 4-real benchmark runner (`benchmarks/runner/`)** -- the deferred
+   trial-integrity / execution half of the Phase 4 benchmark, built on branch
+   `feat/benchmark-runner` (cut from `feat/benchmark`, unmerged; no `version` change). A
+   `git` CLI + Python 3.11 standard-library-only package: `sandbox.py` (a real
+   `git clone --no-checkout --no-hardlinks --no-local` with its own object store, never a
+   `git worktree`; `.gitattributes` `* -text` + `core.eol=lf` forced checkout for a
+   reproducible manifest; `finally:` teardown), `snapshot.py` (out-of-process binary-mode
+   snapshot + allowlisted `diff`), `arms.py` (arm invocation with an enforced timeout and
+   cwd inside the sandbox; a test-only `--mock-arm` seam), `route.py` (out-of-process
+   route capture by shelling out to check-route.sh -- from `feat/route-evidence-live`,
+   absent here, so route capture fails closed), `integrity.py` (a fail-closed AND of
+   mandatory checks wrapped in `try/except -> False`; the only thing that sets
+   `integrity_ok`), `record.py` (records built from runner-observed values only -- no arm
+   stdout is ever a scoring input), and `run.py` (budget pre-flight from
+   `benchmark_per_run_usd_cap` in `config/budget.yml` + running ceiling;
+   `trials.partial.jsonl` -> `trials.jsonl` staging, so an aborted run writes `ABORTED.md`
+   and never a scoreable `trials.jsonl`). `benchmarks/test_runner.py` (52 tests, stdlib
+   only, zero model calls) runs under both `python -m unittest` and `python -m pytest` and
+   is auto-collected by `gate.sh`; `run-all.sh` stays Python-free. Docs updated:
+   `benchmarks/README.md` and `plugins/sefi-core/skills/run-sefi-benchmark/SKILL.md`
+   replace their "Trial integrity -- NOT IMPLEMENTED" sections with the runner design and
+   procedure, and `docs/METRICS-PROVENANCE.md` gains the out-of-process trust-boundary
+   note. Real positive route capture still requires `feat/route-evidence-live` merged or
+   rebased in first.
+
+   Security + QA fix pass on the runner: arm-facing scratch (prompt, session-echo, raw
+   log) is now isolated in a private `tempfile.mkdtemp` dir and the `--out` path is never
+   disclosed to the arm; the abort path removes any raced-in `trials.jsonl` and the runner
+   refuses to finalize over a pre-existing one; `session_record_ref` is trusted only when
+   the echoed id byte-equals the runner-generated id; `--harness` is validated as a usage
+   error (exit 2, no output dir); a fatal mid-run error now writes `ABORTED.md` and exits
+   0; a real run requires a positive `--est-cost-per-trial`; integrity check 1 compares
+   each trial's pre-manifest to a dedicated once-per-run baseline clone (no longer a
+   tautology); `model_calls` is documented as a synthetic floor, not a measurement;
+   `shutil.rmtree` uses `onexc` on Python >= 3.12; arm logs record the interpreter
+   basename only. The three frozen cases (`sh-strict-mode`, `json-trailing-newline`,
+   `notes-single-h1`) were **re-golden'd** -- their prompts' stale "boundaries are
+   ADVISORY / NOTHING enforces them" line was corrected to state the runner enforces
+   `allowed_paths`, so each `case_fingerprint` in `benchmarks/cases.json` was recomputed.
+
+### Notes
+
+- **Trial-integrity mechanism removed before merge; deferred to a future sandboxed
+  runner.** An earlier revision of this branch shipped a shell-based trust-fingerprint
+  verifier (a pinned trust root + pre-arm / post-arm fingerprint checks + an
+  `allowed_paths` diff) and a dev-only probe script for it. Four security + qa review
+  rounds could not make a shell-based integrity check sound, for two root causes a shell
+  script cannot fix: (a) a `git worktree` shares `.git` (including `.git/info/exclude`)
+  with its base, so there is no filesystem boundary between an arm and the trust root; and
+  (b) `core.autocrlf=true` in this project's own Windows system git config rewrites line
+  endings on checkout, so hash-pinning a checked-out file is not reproducible across the
+  platforms the project is developed on. The verifier, its trust-root and fingerprint
+  manifests, its probe script, and the `seed_paths` field of `cases.json` were all
+  removed. The scorer keeps its fail-closed `integrity_ok is True` filter and its
+  `excluded (integrity_ok not true): N` line unchanged -- because nothing in this version
+  sets `integrity_ok`, a real run's records omit it and score zero trials, which is the
+  intended behaviour until a sandboxed runner exists (an unverified score is worse than no
+  score). `benchmarks/README.md` has a "Trial integrity -- NOT IMPLEMENTED in this
+  version" section listing the requirements for that runner: a real filesystem sandbox
+  (container or a separate clone with its own `.git`, never a git worktree), an
+  out-of-process snapshot + diff taken from outside the arm's reach, line-ending-safe
+  hashing (committed `.gitattributes` or binary-safe hashing), and operator-written trial
+  records. This supersedes the round-1..4 "Phase 4 security + qa hardening" entries that
+  earlier drafts of this Unreleased section carried.
+- The three case `case_fingerprint` values in `benchmarks/cases.json` were recomputed
+  after the cheat-detector references were stripped from `benchmarks/prompts/*.md`; the
+  fixture's fake fingerprints are unaffected and the scorecard output is byte-identical to
+  `benchmarks/fixtures/expected-scorecard.txt`.
 
 ## [0.5.2] - 2026-08-29
 

@@ -9,6 +9,14 @@ Keyed by `target-path` -- the same keyspace as `state/metrics.md`, which is the 
 `retro-improve` edits. One keyspace by construction, so a row here joins to a verdict there
 without a mapping table.
 
+Benchmark runs are retained the same way, never overwritten. A run of the blinded paired
+A/B harness (`benchmarks/`, `plugins/sefi-core/skills/run-sefi-benchmark/SKILL.md`) whose
+reviewer verdict is REJECT is kept on disk under its `benchmarks/results/<date>-<slug>/`
+directory with an `INVALID.md` at the root explaining the defect. It is never deleted and
+never silently re-run to get a cleaner number: the invalid artifacts are the audit trail
+for why the harness or the run design changed. A result where the chain simply LOSES on
+some task classes is a valid outcome, not a REJECT and not an invalid run.
+
 <!-- status: applied | proposed | rejected | pending-evidence | reverted | skip -->
 <!-- commit: the SHA of the applied edit. This is what makes an edit undoable: `git revert <sha>`. -->
 <!-- before/after: PASS rate for target-path from state/metrics.md, as passes/verdicts. -->

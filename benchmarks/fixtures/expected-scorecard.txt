@@ -1,0 +1,72 @@
+sefi-agents benchmark scorecard
+source: trials.jsonl
+schema_version: 1
+trials: 14  (control=6, sefi-chain=4, sefi-chain-sequential=4)
+scored trials (integrity_ok is true): 14
+excluded (integrity_ok not true): 0 (integrity_ok false: 0, missing/other: 0)
+run cost: unknown (cost_usd missing on 14 scored trial(s)) -- ceiling $15.00 [config/budget.yml] not checkable
+
+== aggregate deltas (treatment minus control, paired on case_id+trial) ==
+
+-- sefi-chain vs control --
+  pairs:                 4
+  success_pp_delta:      +25.0
+  first_pass_pp_delta:   +25.0
+  rework_rate_pp_delta:  -25.0
+  wall_time_s_delta:     +17.750
+  model_calls_delta:     +2.000
+  input_tokens_delta:    +6325.0
+  output_tokens_delta:   +1237.5
+  quality_per_10k_tokens: control=89.63 treatment=51.88
+  quality_per_minute:    control=156.44 treatment=108.72
+
+-- sefi-chain-sequential vs control --
+  pairs:                 4
+  success_pp_delta:      +50.0
+  first_pass_pp_delta:   +50.0
+  rework_rate_pp_delta:  -50.0
+  wall_time_s_delta:     +35.750
+  model_calls_delta:     +2.000
+  input_tokens_delta:    null
+  output_tokens_delta:   null
+  quality_per_10k_tokens: control=null treatment=null
+  quality_per_minute:    control=null treatment=null
+
+== per-case deltas ==
+
+-- case: json-trailing-newline --
+  sefi-chain vs control: success_pp=+0.0 first_pass_pp=-50.0 rework_pp=+50.0 wall_s=+21.000 calls=+2.500 in_tok=+7400.0 out_tok=+1275.0
+  sefi-chain-sequential vs control: pairs=0
+
+-- case: notes-single-h1 --
+  sefi-chain vs control: pairs=0
+  sefi-chain-sequential vs control: success_pp=+50.0 first_pass_pp=+50.0 rework_pp=-50.0 wall_s=+35.500 calls=+2.000 in_tok=null out_tok=null
+
+-- case: sh-strict-mode --
+  sefi-chain vs control: success_pp=+50.0 first_pass_pp=+100.0 rework_pp=-100.0 wall_s=+14.500 calls=+1.500 in_tok=+5250.0 out_tok=+1200.0
+  sefi-chain-sequential vs control: success_pp=+50.0 first_pass_pp=+50.0 rework_pp=-50.0 wall_s=+36.000 calls=+2.000 in_tok=+7000.0 out_tok=+1550.0
+
+== route-correctness (separate axis; an outcome win does not imply a correct route) ==
+strategy=control
+  lanes: 6  graded_lanes: 4  route-correct: 4  route-incorrect: 0
+  trials with >=1 route-incorrect lane: 0 of 6
+  role=solo           observed=high-tier-model/high  expected=-/high  status=model=unchecked  (x2)
+  role=solo           observed=high-tier-model/high  expected=high-tier-model/high  status=OK  (x4)
+strategy=sefi-chain
+  lanes: 12  graded_lanes: 12  route-correct: 11  route-incorrect: 1
+  trials with >=1 route-incorrect lane: 1 of 4
+  role=implementer    observed=high-tier-model/mid  expected=high-tier-model/mid  status=OK  (x3)
+  role=implementer    observed=mid-tier-model/mid  expected=high-tier-model/mid  status=MISMATCH  (x1)
+  role=planner        observed=high-tier-model/high  expected=high-tier-model/high  status=OK  (x4)
+  role=reviewer       observed=high-tier-model/high  expected=high-tier-model/high  status=OK  (x4)
+strategy=sefi-chain-sequential
+  lanes: 12  graded_lanes: 6  route-correct: 6  route-incorrect: 0
+  trials with >=1 route-incorrect lane: 0 of 4
+  role=implementer    observed=high-tier-model/mid  expected=-/mid  status=model=unchecked  (x2)
+  role=implementer    observed=high-tier-model/mid  expected=high-tier-model/mid  status=OK  (x2)
+  role=planner        observed=high-tier-model/high  expected=-/high  status=model=unchecked  (x2)
+  role=planner        observed=high-tier-model/high  expected=high-tier-model/high  status=OK  (x2)
+  role=reviewer       observed=high-tier-model/high  expected=-/high  status=model=unchecked  (x2)
+  role=reviewer       observed=high-tier-model/high  expected=high-tier-model/high  status=OK  (x2)
+
+note: a result showing the chain LOSING on some task classes is an accepted outcome, not a harness failure.

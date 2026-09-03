@@ -11,10 +11,16 @@ docs/master-prompt-v4-provenance.md
 # never a vault note or a state ledger entry.
 .sefi/
 
-# Python bytecode and pytest scratch from running scripts/check-route.py and its
-# gate. __pycache__/*.pyc embeds an absolute build path -- never shipped, never committed.
-# (feat/benchmark carries the same three ignores for scripts/scorecard.py; the two
-# branches converge on merge.)
+# Benchmark run artifacts (benchmarks/README.md: blinded paired A/B harness). Raw trial
+# output, worktrees, and judge transcripts -- machine-local evidence with a leak boundary,
+# never committed. The design, cases, fixtures, and scorer under benchmarks/ ARE tracked;
+# a promoted scorecard is committed to benchmarks/published/ (NOT ignored).
+benchmarks/results/
+
+# Python bytecode and tooling scratch from running scripts/check-route.py, its gate, and
+# benchmarks/scorecard.py and its tests (dev-only tooling). __pycache__/*.pyc embeds an
+# absolute build path -- never shipped, never committed.
 __pycache__/
 *.pyc
 .pytest_cache/
+.ruff_cache/
