@@ -1,0 +1,3 @@
+{"type":"session_meta","payload":{"id":"77777777-7777-4777-8777-777777777777","cwd":"/workspace/repo"}}
+{"type":"response_item","payload":{"kind":"reasoning","inner":{"type":"turn_context","model":"gpt-5.6-luna","effort":"minimal"}}}
+{"type":"turn_context","payload":{"model":"gpt-5.6-terra","effort":"high","cwd":"/workspace/repo"}}

@@ -1977,5 +1977,442 @@ fi
 
 rm -rf "$RL_ROOT"
 
+echo
+echo "=== check-route.sh (Phase 3 deferred half: LIVE Codex requested-vs-observed route) ==="
+
+# check-route.sh is post-dispatch, not a CI validator -- it lives in scripts/, not
+# scripts/ci/, and is exercised here, never from run-all.sh's validators list. It is now a
+# thin interpreter-resolving shim over check-route.py (stdlib Python 3.11+, real json.loads
+# per rollout line + top-level dict access only). The live match/mismatch/invalid path is
+# CODEX-ONLY: claude-code stays `unavailable`, opencode/hermes stay `not-applicable` (every
+# tier resolves to `flexible`).
+#
+# The .sh shim drives the sentinel / thread-id / non-Codex / interpreter-skip cases below.
+# Because the shim forces argument 3 and beyond to be POSITIONAL with an argparse `--`
+# end-of-options marker (so an unquoted $CODEX_THREAD_ID cannot smuggle --rollout-file
+# through the supported entrypoint), the rollout-fixture verdict cases cannot go through the
+# shim any more -- they call check-route.py DIRECTLY (the contributor-test path), guarded on
+# a usable python3/python 3.11+.
+CRT="$CORE/scripts/check-route.sh"
+CRF="$CORE/scripts/ci/fixtures/check-route"
+CRPY="$CORE/scripts/check-route.py"
+PYBIN=""
+for _c in python3 python; do
+  command -v "$_c" >/dev/null 2>&1 || continue
+  "$_c" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)' >/dev/null 2>&1 || continue
+  PYBIN="$_c"; break
+done
+[ -n "$PYBIN" ] || echo "  SKIP: no python3/python 3.11+ for direct check-route.py cases"
+
+# --- still-valid non-Codex cases, through the .sh shim ------------------------------
+
+# claude-code: the CLI reports no per-agent model/usage -> unavailable, nonzero.
+crt_out="$(sh "$CRT" claude-code mid - 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"unavailable"'*'harness-exposes-no-route-readback'*)
+    [ "$crt_rc" -ne 0 ] && ok "claude-code mid - -> unavailable, exit $crt_rc" \
+      || bad "claude-code reported unavailable but exited 0" ;;
+  *) bad "claude-code did not report unavailable: $crt_out" ;;
+esac
+
+# opencode: every tier resolves to the 'flexible' sentinel (model-map.yml) -> not-applicable, exit 0.
+crt_out="$(sh "$CRT" opencode mid - 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"not-applicable"'*)
+    [ "$crt_rc" -eq 0 ] && ok "opencode mid - -> not-applicable, exit 0" \
+      || bad "opencode not-applicable but nonzero exit $crt_rc" ;;
+  *) bad "opencode did not report not-applicable: $crt_out" ;;
+esac
+
+# hermes: every tier resolves to 'flexible' too -> not-applicable, exit 0.
+crt_out="$(sh "$CRT" hermes mid - 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"not-applicable"'*)
+    [ "$crt_rc" -eq 0 ] && ok "hermes mid - -> not-applicable, exit 0" \
+      || bad "hermes not-applicable but nonzero exit $crt_rc" ;;
+  *) bad "hermes did not report not-applicable: $crt_out" ;;
+esac
+
+# A non-printable character in ANY argument -> exit 2, and NO JSON status line.
+crt_out="$(sh "$CRT" codex "$(printf 'mid\007')" - 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status"'*) bad "a non-printable arg reached a JSON status line -- must exit 2, no JSON: $crt_out" ;;
+  *)
+    [ "$crt_rc" -eq 2 ] && ok "a non-printable arg -> exit 2, no JSON line" \
+      || bad "a non-printable arg expected exit 2, got $crt_rc: $crt_out" ;;
+esac
+
+# An unknown harness -> exit 2, and NO JSON status line.
+crt_out="$(sh "$CRT" frobnicate mid - 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status"'*) bad "an unknown harness reached a JSON status line -- must exit 2, no JSON: $crt_out" ;;
+  *)
+    [ "$crt_rc" -eq 2 ] && ok "an unknown harness -> exit 2, no JSON line" \
+      || bad "an unknown harness expected exit 2, got $crt_rc: $crt_out" ;;
+esac
+
+# A usage error (wrong arg count) is exit 2, not a JSON status line.
+expect_code 2 "check-route.sh with too few args is a usage error" \
+  sh "$CRT" codex mid
+
+# --- LIVE Codex verdicts: DIRECT to check-route.py (contributor-test path) -----------
+# `model-for.sh codex mid` resolves to gpt-5.6-terra / high (config/model-map.yml:59-68);
+# the fixtures under $CRF are built to that baseline. A rollout file is fed via the hidden
+# `--rollout-file` option -- reachable ONLY by a direct `check-route.py` call, since the
+# shim now forces argument 3+ positional with an argparse `--` marker (an attacker-set
+# $CODEX_THREAD_ID, quoted or not, cannot reach --rollout-file). The POSITIONAL 3rd arg is
+# still never file-auto-detected.
+if [ -n "$PYBIN" ]; then
+
+crt_out="$("$PYBIN" "$CRPY" codex mid - --rollout-file "$CRF/match/rollout.jsonl" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"match"'*)
+    [ "$crt_rc" -eq 0 ] && ok "codex mid <match fixture> -> match, exit 0" \
+      || bad "codex match but exit $crt_rc" ;;
+  *) bad "codex <match fixture> did not report match: $crt_out" ;;
+esac
+
+crt_out="$("$PYBIN" "$CRPY" codex mid - --rollout-file "$CRF/mismatch/rollout.jsonl" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"mismatch"'*)
+    [ "$crt_rc" -ne 0 ] && ok "codex mid <mismatch fixture> -> mismatch, exit $crt_rc (STOP rule fires)" \
+      || bad "codex mismatch but exit 0 -- the orchestrator STOP rule would not fire" ;;
+  *) bad "codex <mismatch fixture> did not report mismatch: $crt_out" ;;
+esac
+
+# invalid, one per shape, asserting the reason substring for each.
+for pair in \
+  "invalid-not-json:rollout-unreadable" \
+  "invalid-no-turn-context:turn-context-missing" \
+  "invalid-two-turn-context:turn-context-malformed"; do
+  fx="${pair%%:*}"; why="${pair#*:}"
+  crt_out="$("$PYBIN" "$CRPY" codex mid - --rollout-file "$CRF/$fx/rollout.jsonl" 2>&1)"; crt_rc=$?
+  case "$crt_out" in
+    *'"status":"invalid"'*"$why"*)
+      [ "$crt_rc" -ne 0 ] && ok "codex mid <$fx> -> invalid / $why, exit $crt_rc" \
+        || bad "codex <$fx> invalid but exit 0" ;;
+    *) bad "codex <$fx> did not report invalid / $why: $crt_out" ;;
+  esac
+done
+
+# A rollout whose only content is a >4300-digit JSON integer raises a bare ValueError
+# (not JSONDecodeError) inside json.loads; deep nesting would raise RecursionError. The
+# widened except catches both -> one `invalid` / `rollout-unreadable` JSON line, exit
+# non-zero, NEVER an uncaught traceback that would print the interpreter's absolute path.
+HUGEINT="$(mktemp)"
+awk 'BEGIN { s=""; for (i=0;i<5000;i++) s=s "9"; print s }' > "$HUGEINT"
+crt_out="$("$PYBIN" "$CRPY" codex mid - --rollout-file "$HUGEINT" 2>&1)"; crt_rc=$?
+hugeint_lines="$(printf '%s\n' "$crt_out" | grep -c .)"
+case "$crt_out" in
+  *Traceback*|*'check-route.py"'*)
+    bad "a 5000-digit-int rollout produced a traceback instead of an invalid JSON line: $crt_out" ;;
+  *'"status":"invalid"'*'rollout-unreadable'*)
+    if [ "$crt_rc" -ne 0 ] && [ "$hugeint_lines" -eq 1 ]; then
+      ok "a 5000-digit-int rollout -> invalid / rollout-unreadable, one JSON line, exit $crt_rc, no traceback"
+    else
+      bad "5000-digit-int rollout: exit $crt_rc, $hugeint_lines line(s): $crt_out"
+    fi ;;
+  *) bad "5000-digit-int rollout did not report invalid / rollout-unreadable: $crt_out" ;;
+esac
+rm -f "$HUGEINT"
+
+# --- the top-level-only turn_context filter: two decoy CLASSES pin it ----------------
+# The filter (check-route.py: iterate lines, keep only records whose TOP-LEVEL
+# type=="turn_context" and payload is a dict) is the whole security premise.
+#
+# CLASS 1 -- substring-scan / nested-key-confusion. FOUR flattened-shape decoys
+# (`decoy-nested-model-string`, `decoy-nested-turn-context-obj`, `decoy-nested-after-real`,
+# `decoy-only-nested`) pin it: a real json.loads never treats a nested `"model"` string as
+# a key, and the nested `turn_context` objects here are FLATTENED
+# (`{"type":"turn_context","model":..,"effort":..}` with no `payload` key), so even a
+# recursive descent that KEPT the parser's 3-clause predicate would walk past them. They
+# stay valid JSON-parse-vs-substring regression cases; they are NOT load-bearing against a
+# faithful recursive descent.
+#
+# CLASS 2 -- recursive descent. TWO real-shape fixtures
+# (`decoy-realshape-nested-after-real`, `decoy-realshape-only-nested`) whose nested decoy is
+# an EXACT `{"type":"turn_context","payload":{"model":..,"effort":..}}` record -- the shape
+# the parser's predicate accepts. A descent that preserved the payload-dict clause would
+# read the nested route and redden their assertions (verified by hand: descend keeping all
+# 3 clauses, run this suite, confirm a real-shape assertion goes RED, revert).
+
+# Class 1, decoy 1: a free-text string field literally containing "model":"gpt-5.6-sol"
+# while the real last turn_context payload says gpt-5.6-luna. json.loads never treats that
+# nested string as a key -> must be `mismatch`, NEVER a wrong `match`.
+crt_out="$("$PYBIN" "$CRPY" codex mid - --rollout-file "$CRF/decoy-nested-model-string/rollout.jsonl" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"match"'*) bad "DECOY FAIL-OPEN: nested \"model\" string produced a wrong match: $crt_out" ;;
+  *'"status":"mismatch"'*)
+    [ "$crt_rc" -ne 0 ] && ok "codex mid <decoy-nested-model-string> -> mismatch (no fail-open), exit $crt_rc" \
+      || bad "decoy-nested-model-string mismatch but exit 0" ;;
+  *) bad "decoy-nested-model-string did not report mismatch: $crt_out" ;;
+esac
+
+# Class 1, decoy 2: a non-turn_context top-level line (type=="response_item") whose payload
+# nests a FLATTENED turn_context object with a downgraded model, while the real last
+# top-level turn_context says terra/high. Top-level-only dict access -> must `match` the
+# REAL route.
+crt_out="$("$PYBIN" "$CRPY" codex mid - --rollout-file "$CRF/decoy-nested-turn-context-obj/rollout.jsonl" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"mismatch"'*|*'"status":"invalid"'*)
+    bad "DECOY FAIL: descended into the nested turn_context object instead of the real route: $crt_out" ;;
+  *'"status":"match"'*)
+    [ "$crt_rc" -eq 0 ] && ok "codex mid <decoy-nested-turn-context-obj> -> match on the REAL route, exit 0" \
+      || bad "decoy-nested-turn-context-obj match but exit $crt_rc" ;;
+  *) bad "decoy-nested-turn-context-obj did not report match: $crt_out" ;;
+esac
+
+# Class 1, decoy 3: a REAL top-level turn_context with a DOWNGRADED model
+# (gpt-5.6-luna/medium), FOLLOWED by a later non-turn_context line whose payload nests a
+# FLATTENED turn_context carrying the EXPECTED good model (terra/high). Top-level-only ->
+# the last TOP-LEVEL turn_context is luna/medium -> `mismatch`.
+crt_out="$("$PYBIN" "$CRPY" codex mid - --rollout-file "$CRF/decoy-nested-after-real/rollout.jsonl" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"match"'*) bad "DECOY FAIL-OPEN: descended past the real downgraded route to a nested good model: $crt_out" ;;
+  *'"status":"mismatch"'*)
+    [ "$crt_rc" -ne 0 ] && ok "codex mid <decoy-nested-after-real> -> mismatch on the REAL downgraded route, exit $crt_rc" \
+      || bad "decoy-nested-after-real mismatch but exit 0" ;;
+  *) bad "decoy-nested-after-real did not report mismatch: $crt_out" ;;
+esac
+
+# Class 1, decoy 4: NO top-level turn_context at all -- the only turn_context objects are
+# FLATTENED and nested in payload.parent_context. Top-level-only -> `invalid` /
+# `turn-context-missing`.
+crt_out="$("$PYBIN" "$CRPY" codex mid - --rollout-file "$CRF/decoy-only-nested/rollout.jsonl" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"match"'*|*'"status":"mismatch"'*)
+    bad "DECOY FAIL: descended into a nested-only turn_context instead of reporting it missing: $crt_out" ;;
+  *'"status":"invalid"'*'turn-context-missing'*)
+    [ "$crt_rc" -ne 0 ] && ok "codex mid <decoy-only-nested> -> invalid / turn-context-missing, exit $crt_rc" \
+      || bad "decoy-only-nested invalid but exit 0" ;;
+  *) bad "decoy-only-nested did not report invalid / turn-context-missing: $crt_out" ;;
+esac
+
+# Class 2, real-shape 1 (load-bearing vs recursive descent): a REAL top-level turn_context
+# with a DOWNGRADED payload (gpt-5.6-luna/medium), FOLLOWED by a non-turn_context line whose
+# payload nests an EXACT-SHAPE `{"type":"turn_context","payload":{model,effort}}` record
+# carrying the EXPECTED good model (terra/high). Top-level-only -> the last TOP-LEVEL
+# turn_context is luna/medium -> `mismatch`. A faithful recursive descent (all 3 clauses
+# kept) would pick up the nested terra/high as "last" and wrongly report `match` -- this
+# assertion reddens under that mutation.
+crt_out="$("$PYBIN" "$CRPY" codex mid - --rollout-file "$CRF/decoy-realshape-nested-after-real/rollout.jsonl" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"match"'*) bad "DECOY FAIL-OPEN: descended past the real downgraded route to a nested real-shape good model: $crt_out" ;;
+  *'"status":"mismatch"'*)
+    [ "$crt_rc" -ne 0 ] && ok "codex mid <decoy-realshape-nested-after-real> -> mismatch on the REAL downgraded route, exit $crt_rc" \
+      || bad "decoy-realshape-nested-after-real mismatch but exit 0" ;;
+  *) bad "decoy-realshape-nested-after-real did not report mismatch: $crt_out" ;;
+esac
+
+# Class 2, real-shape 2 (load-bearing vs recursive descent): NO top-level turn_context; the
+# only turn_context records are EXACT-SHAPE and nested under payload.parent_context /
+# payload.inner. Top-level-only -> `invalid` / `turn-context-missing`. A faithful recursive
+# descent would find a nested real-shape record and emit `match` (or `mismatch` if it were
+# downgraded) instead -- either verdict reddens this assertion.
+crt_out="$("$PYBIN" "$CRPY" codex mid - --rollout-file "$CRF/decoy-realshape-only-nested/rollout.jsonl" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"match"'*|*'"status":"mismatch"'*)
+    bad "DECOY FAIL: descended into a nested-only real-shape turn_context instead of reporting it missing: $crt_out" ;;
+  *'"status":"invalid"'*'turn-context-missing'*)
+    [ "$crt_rc" -ne 0 ] && ok "codex mid <decoy-realshape-only-nested> -> invalid / turn-context-missing, exit $crt_rc" \
+      || bad "decoy-realshape-only-nested invalid but exit 0" ;;
+  *) bad "decoy-realshape-only-nested did not report invalid / turn-context-missing: $crt_out" ;;
+esac
+
+else
+  echo "  SKIP: LIVE Codex rollout-verdict + decoy cases (no direct python3/python 3.11+)"
+fi
+
+# thread-id placeholder / invalid.
+crt_out="$(sh "$CRT" codex mid - 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"unavailable"'*'thread-id-unavailable'*)
+    [ "$crt_rc" -ne 0 ] && ok "codex mid - -> unavailable / thread-id-unavailable, exit $crt_rc" \
+      || bad "codex mid - unavailable but exit 0" ;;
+  *) bad "codex mid - did not report unavailable / thread-id-unavailable: $crt_out" ;;
+esac
+
+crt_out="$(sh "$CRT" codex mid not-a-uuid 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"invalid"'*'thread-id-invalid'*)
+    [ "$crt_rc" -ne 0 ] && ok "codex mid not-a-uuid -> invalid / thread-id-invalid, exit $crt_rc" \
+      || bad "codex mid not-a-uuid invalid but exit 0" ;;
+  *) bad "codex mid not-a-uuid did not report invalid / thread-id-invalid: $crt_out" ;;
+esac
+
+# FIX A regression -- the shim forces argument 3+ POSITIONAL with an argparse `--` marker,
+# so a call site that expands $CODEX_THREAD_ID UNQUOTED cannot smuggle --rollout-file
+# through the supported entrypoint and force a `match`/exit 0 from an attacker-authored
+# rollout. The UNQUOTED expansion word-splits into `- --rollout-file X` -> three positionals
+# after `--` while `record` takes one -> argparse "unrecognized arguments" -> exit 2, no
+# JSON, fails closed.
+_smuggle="- --rollout-file $CRF/match/rollout.jsonl"
+crt_out="$(sh "$CRT" codex mid $_smuggle 2>&1)"; crt_rc=$?   # deliberately UNQUOTED $_smuggle
+case "$crt_out" in
+  *'"status":"match"'*) bad "SMUGGLE: an unquoted \$CODEX_THREAD_ID expansion injected --rollout-file through the shim -> wrong match: $crt_out" ;;
+  *)
+    [ "$crt_rc" -eq 2 ] && ok "shim forces arg 3+ positional: unquoted '- --rollout-file X' -> exit 2, no match" \
+      || bad "smuggle attempt: expected exit 2, got $crt_rc: $crt_out" ;;
+esac
+
+# Slot-1/2 twin: the shim puts `--` before EVERY positional, so a leading-dash word that
+# word-splits into the harness/tier slot cannot smuggle --rollout-file either. Load-bearing
+# against a refactor back to arg-1/arg-2 capture (bare `exec "$INTERP" "$PY" "$@"`).
+_smuggle12="--rollout-file $CRF/match/rollout.jsonl codex mid -"
+crt_out="$(sh "$CRT" $_smuggle12 2>&1)"; crt_rc=$?   # deliberately UNQUOTED -- leading-dash word lands in the harness slot
+case "$crt_out" in
+  *'"status":"match"'*) bad "SMUGGLE (slots 1-2): a leading-dash word in the harness/tier slot injected --rollout-file -> wrong match: $crt_out" ;;
+  *)
+    [ "$crt_rc" -eq 2 ] && ok "shim forces EVERY positional after --: unquoted '--rollout-file X codex mid -' -> exit 2, no match" \
+      || bad "slot-1-2 smuggle: expected exit 2, got $crt_rc: $crt_out" ;;
+esac
+
+# The QUOTED form is one positional -> a non-UUID thread id -> invalid / thread-id-invalid.
+crt_out="$(sh "$CRT" codex mid "$_smuggle" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"invalid"'*'thread-id-invalid'*)
+    [ "$crt_rc" -ne 0 ] && ok "quoted '- --rollout-file X' -> invalid / thread-id-invalid" \
+      || bad "quoted smuggle exit 0" ;;
+  *) bad "quoted smuggle did not report invalid / thread-id-invalid: $crt_out" ;;
+esac
+
+# CODEX_HOME sessions-dir resolution: a lowercase-UUID thread id, matched by rollout
+# FILENAME only. Two matches -> ambiguous; empty sessions/ -> no rollout; no sessions/ ->
+# sessions dir unavailable.
+CH_UUID="aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
+CH_TWO="$(mktemp -d)"; mkdir -p "$CH_TWO/sessions/nested"
+cp "$CRF/match/rollout.jsonl" "$CH_TWO/sessions/rollout-2026-a-$CH_UUID.jsonl"
+cp "$CRF/match/rollout.jsonl" "$CH_TWO/sessions/nested/rollout-2026-b-$CH_UUID.jsonl"
+crt_out="$(env CODEX_HOME="$CH_TWO" sh "$CRT" codex mid "$CH_UUID" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"invalid"'*'rollout-ambiguous'*)
+    [ "$crt_rc" -ne 0 ] && ok "CODEX_HOME with two rollout-*-<uuid>.jsonl -> invalid / rollout-ambiguous, exit $crt_rc" \
+      || bad "rollout-ambiguous but exit 0" ;;
+  *) bad "two matching rollouts did not report invalid / rollout-ambiguous: $crt_out" ;;
+esac
+rm -rf "$CH_TWO"
+
+CH_EMPTY="$(mktemp -d)"; mkdir -p "$CH_EMPTY/sessions"
+crt_out="$(env CODEX_HOME="$CH_EMPTY" sh "$CRT" codex mid "$CH_UUID" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"unavailable"'*'rollout-unavailable'*)
+    [ "$crt_rc" -ne 0 ] && ok "CODEX_HOME with an empty sessions/ -> unavailable / rollout-unavailable, exit $crt_rc" \
+      || bad "rollout-unavailable but exit 0" ;;
+  *) bad "empty sessions/ did not report unavailable / rollout-unavailable: $crt_out" ;;
+esac
+rm -rf "$CH_EMPTY"
+
+CH_NOSESS="$(mktemp -d)"
+crt_out="$(env CODEX_HOME="$CH_NOSESS" sh "$CRT" codex mid "$CH_UUID" 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status":"unavailable"'*'sessions-dir-unavailable'*)
+    [ "$crt_rc" -ne 0 ] && ok "CODEX_HOME with no sessions/ -> unavailable / sessions-dir-unavailable, exit $crt_rc" \
+      || bad "sessions-dir-unavailable but exit 0" ;;
+  *) bad "missing sessions/ did not report unavailable / sessions-dir-unavailable: $crt_out" ;;
+esac
+rm -rf "$CH_NOSESS"
+
+# No invocation may leak rollout free text. Every fixture carries a distinctive string in a
+# non-route field; none of it may appear on stdout/stderr. Direct check-route.py calls,
+# guarded on a usable interpreter.
+if [ -n "$PYBIN" ]; then
+  leak_out="$(
+    for fx in match mismatch invalid-no-turn-context decoy-nested-model-string \
+              decoy-nested-turn-context-obj decoy-nested-after-real decoy-only-nested \
+              decoy-realshape-nested-after-real decoy-realshape-only-nested; do
+      "$PYBIN" "$CRPY" codex mid - --rollout-file "$CRF/$fx/rollout.jsonl" 2>&1
+    done
+  )"
+  case "$leak_out" in
+    *"no turn_context record anywhere"*|*"here is the config I would use"*|*'"kind":"reasoning"'*|*"assistant said"*|*"replaying an earlier snapshot"*|*"no top-level turn_context anywhere"*|*"snapshot-replay-marker-alpha"*|*"nested-only-realshape-marker-beta"*)
+      bad "check-route leaked rollout free text into its output: $leak_out" ;;
+    *) ok "no invocation leaked rollout free text (only status/reason/model/effort emitted)" ;;
+  esac
+else
+  echo "  SKIP: rollout free-text leak check (no direct python3/python 3.11+)"
+fi
+
+# EXPECTED_MODEL / EXPECTED_EFFORT gate: a malformed config/model-map.yml value (injected
+# JSON) must be rejected at the tier-map trust boundary -- exit 2, NO JSON line. Stand up a
+# throwaway scripts/ + config/ pair (the shim, its .py parser, and model-for.sh) and let
+# the copied model-for.sh resolve against the malformed fixture map via its own
+# $HERE/../config/model-map.yml.
+GATEDIR="$(mktemp -d)"
+mkdir -p "$GATEDIR/scripts" "$GATEDIR/config"
+cp "$CRT" "$GATEDIR/scripts/check-route.sh"
+cp "$CORE/scripts/check-route.py" "$GATEDIR/scripts/check-route.py"
+cp "$CORE/scripts/model-for.sh" "$GATEDIR/scripts/model-for.sh"
+cp "$CRF/malformed-map/model-map.yml" "$GATEDIR/config/model-map.yml"
+crt_out="$(sh "$GATEDIR/scripts/check-route.sh" codex mid - 2>&1)"; crt_rc=$?
+case "$crt_out" in
+  *'"status"'*) bad "malformed model-map value reached a JSON status line -- must exit 2 with no JSON: $crt_out" ;;
+  *)
+    [ "$crt_rc" -eq 2 ] && ok "malformed model-map value -> exit 2, no JSON line" \
+      || bad "malformed model-map value expected exit 2, got $crt_rc: $crt_out" ;;
+esac
+rm -rf "$GATEDIR"
+
+# The shim's interpreter-skip path: with PATH stripped so neither `python3` nor `python`
+# resolves, the shim prints a "route check skipped" notice to stderr and exits 3 -- a
+# caller can tell "no interpreter" (3) from a real verdict (0/1) or a usage error (2).
+# SKIP (not bad) if a usable interpreter cannot actually be hidden in this test env.
+NOPY="$(mktemp -d)"
+SH_ABS="$(command -v sh)"
+np_out="$(env PATH="$NOPY" "$SH_ABS" "$CRT" codex mid - 2>&1)"; np_rc=$?
+case "$np_out" in
+  *'route check skipped'*)
+    [ "$np_rc" -eq 3 ] && ok "shim: no python3/python 3.11+ on PATH -> 'route check skipped', exit 3" \
+      || bad "shim printed the skip notice but exited $np_rc (want 3)" ;;
+  *'"status"'*)
+    echo "  SKIP: interpreter-hiding case (a python stayed reachable with PATH=$NOPY)" ;;
+  *)
+    echo "  SKIP: interpreter-hiding case (unexpected env: $np_out)" ;;
+esac
+rm -rf "$NOPY"
+
+echo
+echo "=== gate.sh Python pytest-config detection (Phase-4 FIX 11: fail-open guard, ported from feat/benchmark) ==="
+
+# gate.sh's config-section branch lets an explicit pytest config force an unconditional
+# `pytest -q` (only exit 5 tolerated). FIX 11 hardens three gaps:
+#   (1) a repo with .py source but NO tests and NO config must still stay green;
+#   (2) `[tool.pytest.ini_options]` pointing discovery at non-default filenames must catch
+#       a failing test (not be skipped by the filename guard);
+#   (3) tox.ini `[pytest]` is a real pytest config location and must be honored too.
+if command -v pytest >/dev/null 2>&1; then
+  GP="$(mktemp -d)"
+
+  mkdir -p "$GP/nosuite"
+  printf 'x = 1\n' > "$GP/nosuite/mod.py"
+  expect_code 0 "a repo with .py source but no tests and no pytest config passes the gate" \
+    bash -c "cd '$GP/nosuite' && bash '$CORE/scripts/gate.sh'"
+
+  mkdir -p "$GP/pyproj"
+  printf '[tool.pytest.ini_options]\npython_files = ["spec_*.py"]\n' > "$GP/pyproj/pyproject.toml"
+  printf 'def test_it():\n    assert False\n' > "$GP/pyproj/spec_thing.py"
+  gp_code=0
+  ( cd "$GP/pyproj" && bash "$CORE/scripts/gate.sh" ) >/dev/null 2>&1 || gp_code=$?
+  if [ "$gp_code" -ne 0 ]; then
+    ok "[tool.pytest.ini_options] + a failing non-default-named test reddens the gate (exit $gp_code)"
+  else
+    bad "[tool.pytest.ini_options] failing test did NOT redden the gate (exit 0)"
+  fi
+
+  mkdir -p "$GP/toxcfg"
+  printf '[pytest]\npython_files = spec_*.py\n' > "$GP/toxcfg/tox.ini"
+  printf 'def test_it():\n    assert False\n' > "$GP/toxcfg/spec_thing.py"
+  tx_code=0
+  ( cd "$GP/toxcfg" && bash "$CORE/scripts/gate.sh" ) >/dev/null 2>&1 || tx_code=$?
+  if [ "$tx_code" -ne 0 ]; then
+    ok "tox.ini [pytest] + a failing non-default-named test reddens the gate (exit $tx_code)"
+  else
+    bad "tox.ini [pytest] failing test did NOT redden the gate (exit 0) -- config location not honored"
+  fi
+
+  rm -rf "$GP"
+else
+  echo "  SKIP: gate.sh pytest-config assertions (pytest not on PATH)"
+fi
+
 if [ "$fail" -ne 0 ]; then echo "test-scripts: $fail failed, $pass passed"; exit 1; fi
 echo "test-scripts: OK ($pass passed)"

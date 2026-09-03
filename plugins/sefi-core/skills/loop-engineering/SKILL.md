@@ -64,7 +64,7 @@ that self-declared done lies.)
   resets. Detect it, don't retry, write the resume block, park the item in `inbox/` with
   reason `harness-limit`, and stop cleanly.
 - Metrics append (the persistence move): after every qa-engineer verdict, append one row to
-  `state/metrics.md` (`| date | target-path | loop | verdict | retries | note |`).
+  `state/metrics.md` (`| date | target-path | loop | verdict | retries | note | route |`).
   Append-only, keyed by the plugin-relative FILE PATH of the agent/skill -- the same path
   the retro loop edits, so there is one keyspace by construction.
 - Per-operation timeout classes: a long legitimate operation (multi-task dispatch, full

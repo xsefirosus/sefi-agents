@@ -206,7 +206,7 @@ fi
 
 echo
 echo "=== stage 9: persistence -- metrics row keyed to retro-improve's keyspace ==="
-echo "| $(date +%Y-%m-%d) | plugins/sefi-core/agents/software-engineer.md | morning-triage | $VERDICT | 0 | integration test |" >> state/metrics.md
+echo "| $(date +%Y-%m-%d) | plugins/sefi-core/agents/software-engineer.md | morning-triage | $VERDICT | 0 | integration test | n/a |" >> state/metrics.md
 target="$(tail -1 state/metrics.md | awk -F'|' '{gsub(/ /,"",$3); print $3}')"
 if [ -f "$ROOT/$target" ]; then
   ok "the metrics row's target-path resolves to a real file ($target)"

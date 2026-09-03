@@ -27,6 +27,7 @@ while [ "$#" -gt 0 ]; do
     --agent) AGENT="${2:-}"; shift 2 ;;
     --reasoning) FIELD="reasoning"; shift ;;
     -h|--help) sed -n '2,4p' "$0"; exit 0 ;;
+    --) shift; break ;;
     -*) echo "model-for: unknown arg $1" >&2; exit 2 ;;
     *)
       if [ -z "$HARNESS" ]; then HARNESS="$1"
@@ -35,6 +36,16 @@ while [ "$#" -gt 0 ]; do
       fi
       shift ;;
   esac
+done
+
+# Positionals after a literal `--` end-of-options marker: a caller passing an untrusted
+# harness/tier value guards it this way so a leading '-' is never read as a flag.
+while [ "$#" -gt 0 ]; do
+  if [ -z "$HARNESS" ]; then HARNESS="$1"
+  elif [ -z "$TIER" ]; then TIER="$1"
+  else echo "model-for: unexpected arg $1" >&2; exit 2
+  fi
+  shift
 done
 
 [ -f "$MAP" ] || { echo "model-for: model map not found at $MAP" >&2; exit 1; }
