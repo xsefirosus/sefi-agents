@@ -13,6 +13,13 @@
 | 0.5.1 | git-tag | 0.5.1 | 0.5.1 | match | git ls-remote --tags origin -> c7545ba refs/tags/v0.5.1 | a local tag that was never pushed to origin | 2026-08-30T18:58:58Z |
 | 0.5.1 | changelog | 0.5.1 | 0.5.1 | match | CHANGELOG.md:38 "## [0.5.1] - 2026-08-28" (historical entry retained) | a ### Added bullet with no dated heading above it | 2026-08-30T18:58:58Z |
 | 0.5.1 | github-release | 0.5.1 | unobserved | unobserved | gh release view v0.5.1 -> exit 1 "release not found" | a local or pushed tag with no release; a draft release | 2026-08-30T18:58:58Z |
+| 0.6.0 | plugin.json | 0.6.0 | 0.6.0 | match | plugins/sefi-core/.claude-plugin/plugin.json version key "0.6.0" (bumped in this release commit) | a README count or CHANGELOG heading that happens to agree | 2026-09-03T08:31:30Z |
+| 0.6.0 | marketplace.json | 0.6.0 | 0.6.0 | match | .claude-plugin/marketplace.json metadata.version "0.6.0" | updating one occurrence and assuming the other followed | 2026-09-03T08:31:30Z |
+| 0.6.0 | marketplace.json | 0.6.0 | 0.6.0 | match | .claude-plugin/marketplace.json plugins[0].version "0.6.0" | updating one occurrence and assuming the other followed | 2026-09-03T08:31:30Z |
+| 0.6.0 | changelog | 0.6.0 | 0.6.0 | match | CHANGELOG.md first versioned heading "## [0.6.0] - 2026-09-03" (above it: "## [Unreleased]") | a ### Added bullet with no dated heading above it | 2026-09-03T08:31:30Z |
+| 0.6.0 | git-tag | 0.6.0 | unobserved | unobserved | PENDING -- orchestrator tags v0.6.0 after this commit; git tag -l shows no v0.6.0 at commit time | a local tag that was never pushed to origin | 2026-09-03T08:31:30Z |
+| 0.6.0 | github-release | 0.6.0 | unobserved | unobserved | PENDING -- orchestrator creates the GitHub release after tagging; gh release view v0.6.0 -> release not found | a local or pushed tag with no release; a draft release | 2026-09-03T08:31:30Z |
+| 0.6.0 | github-marketplace-index | 0.6.0 | unobserved | unobserved | PENDING -- release commit not pushed at commit time; gh api raw marketplace.json on origin still reads 0.5.2 | install commands quoted only in a README | 2026-09-03T08:31:30Z |
 
 ## Notes
 
@@ -50,3 +57,15 @@
   them. The `0.5.2` / `changelog` row and the `0.5.2` / `github-marketplace-index` row
   cite command output or heading text with no brittle line number. Only the `0.5.1` /
   `changelog` row had drifted; it is corrected in the note above.
+- 2026-09-03: 0.6.0 release-prep rows appended (append-only; every 0.5.x row left
+  byte-for-byte intact). Three in-repo surfaces observed 0.6.0 in the release commit --
+  `plugin.json` `version`, `marketplace.json` (both `metadata.version` and
+  `plugins[0].version`), and the `CHANGELOG.md` top versioned heading
+  `## [0.6.0] - 2026-09-03`. `git-tag`, `github-release`, and `github-marketplace-index`
+  are `unobserved` (not `mismatch`): at commit time the release worktree branch
+  `release/0.6.0` is not tagged, not released, and not pushed -- the orchestrator
+  fast-forwards `main`, tags `v0.6.0`, pushes, and cuts the GitHub release as the next
+  step, after which those three rows get their own observed append.
+  `validate-release-ledger.sh` exits 0 with
+  `OK (latest 0.6.0, 3/6 surfaces observed, 3 warning(s))`; the three warnings are the
+  three PENDING surfaces above.
