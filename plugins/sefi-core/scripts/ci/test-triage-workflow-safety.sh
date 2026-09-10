@@ -91,9 +91,11 @@ else
     awk '
       /^  publish-report:[[:space:]]*(#.*)?$/ { publisher = 1; found_publisher = 1; next }
       publisher && /^  [^[:space:]#][^:]*:/ { publisher = 0 }
-      publisher {
+      # Job properties are indented four spaces. A step-level `if:` is indented at
+      # least eight spaces and must not satisfy this publication-authority check.
+      publisher && /^    if:[[:space:]]*/ {
         line = $0
-        sub(/^[[:space:]]*/, "", line)
+        sub(/^    /, "", line)
         sub(/[[:space:]]*(#.*)?$/, "", line)
         if (line == "if: github.event_name == '\''workflow_dispatch'\'' && inputs.publish_report == true") found = 1
       }
@@ -118,16 +120,28 @@ else
   expect "discover checkout disables persisted credentials" \
     awk '
       function finish_step() {
-        if (checkout && no_credentials) safe_checkout = 1
+        if (checkout) {
+          checkout_count++
+          if (persist_false != 1 || persist_other) unsafe_checkout = 1
+        }
         checkout = 0
-        no_credentials = 0
+        persist_false = 0
+        persist_other = 0
+        in_with = 0
       }
       /^  discover:[[:space:]]*(#.*)?$/ { discover = 1; next }
       discover && /^  [^[:space:]#][^:]*:/ { finish_step(); discover = 0 }
-      discover && /^      - / { finish_step(); next }
-      discover && /^[[:space:]]*uses:[[:space:]]*actions\/checkout@11bd71901bbe5b1630ceea73d27597364c9af683[[:space:]]*(#.*)?$/ { checkout = 1 }
-      discover && /^[[:space:]]*persist-credentials:[[:space:]]*false[[:space:]]*(#.*)?$/ { no_credentials = 1 }
-      END { finish_step(); exit !safe_checkout }
+      discover && /^      - / {
+        finish_step()
+        if ($0 ~ /^      -[[:space:]]+uses:[[:space:]]*actions\/checkout(@[^[:space:]#]+)?[[:space:]]*(#.*)?$/) checkout = 1
+        next
+      }
+      discover && /^[[:space:]]*uses:[[:space:]]*actions\/checkout(@[^[:space:]#]+)?[[:space:]]*(#.*)?$/ { checkout = 1 }
+      discover && checkout && /^        with:[[:space:]]*(#.*)?$/ { in_with = 1; next }
+      discover && checkout && in_with && /^        [^[:space:]#][^:]*:/ { in_with = 0 }
+      discover && checkout && in_with && /^          persist-credentials:[[:space:]]*false[[:space:]]*(#.*)?$/ { persist_false++; next }
+      discover && checkout && in_with && /^          persist-credentials:/ { persist_other = 1 }
+      END { finish_step(); exit !(checkout_count > 0 && !unsafe_checkout) }
     ' "$WORKFLOW"
 
   expect "discover OpenCode step has no GH_TOKEN or GITHUB_TOKEN" \
@@ -135,28 +149,39 @@ else
       function finish_step() {
         if (opencode) {
           saw_opencode = 1
-          if (github_token) unsafe_opencode = 1
+          if (step_github_token) unsafe_opencode = 1
         }
         opencode = 0
-        github_token = 0
+        step_github_token = 0
+        in_step = 0
       }
       /^  discover:[[:space:]]*(#.*)?$/ { discover = 1; next }
       discover && /^  [^[:space:]#][^:]*:/ { finish_step(); discover = 0 }
-      discover && /^      - / { finish_step(); next }
-      discover && /^[[:space:]]*(GH_TOKEN|GITHUB_TOKEN):/ { github_token = 1 }
-      discover && /^[[:space:]]+opencode[[:space:]]+run([[:space:]]|$)/ { opencode = 1 }
-      END { finish_step(); exit !(saw_opencode && !unsafe_opencode) }
+      discover && /^    env:[[:space:]]*(#.*)?$/ { job_env = 1; next }
+      discover && job_env && /^    [^[:space:]#][^:]*:/ { job_env = 0 }
+      discover && job_env && /^      (GH_TOKEN|GITHUB_TOKEN):/ { job_github_token = 1 }
+      discover && /^      - / {
+        finish_step()
+        in_step = 1
+        if ($0 ~ /opencode[[:space:]]+run([[:space:]]|$)/) opencode = 1
+        next
+      }
+      discover && in_step && /^[[:space:]]*(GH_TOKEN|GITHUB_TOKEN):/ { step_github_token = 1 }
+      discover && in_step && /^[[:space:]]+opencode[[:space:]]+run([[:space:]]|$)/ { opencode = 1 }
+      END { finish_step(); exit !(saw_opencode && !job_github_token && !unsafe_opencode) }
     ' "$WORKFLOW"
 
   expect "publish-report contains no Zen credential or OpenCode command" \
     awk '
       /^  publish-report:[[:space:]]*(#.*)?$/ { publisher = 1; found_publisher = 1; next }
       publisher && /^  [^[:space:]#][^:]*:/ { publisher = 0 }
-      publisher && /^[[:space:]]*OPENCODE_ZEN_API_KEY:/ { unsafe = 1 }
+      # Full-line comments are not executable configuration. Do not strip inline #:
+      # it may be literal quoted content that still carries an unsafe reference.
+      publisher && /^[[:space:]]*#/ { next }
       publisher {
-        line = $0
-        sub(/[[:space:]]*#.*/, "", line)
-        if (tolower(line) ~ /opencode/) unsafe = 1
+        line = tolower($0)
+        if (line ~ /opencode_zen_api_key/ || line ~ /secrets[.][a-z0-9_]*zen[a-z0-9_]*api[a-z0-9_]*key/) unsafe = 1
+        if (line ~ /opencode/) unsafe = 1
       }
       END { exit !(found_publisher && !unsafe) }
     ' "$WORKFLOW"
