@@ -93,10 +93,6 @@ jobs:
             npm exec --yes --package=opencode-ai@1.18.30 -- opencode "$@"
           }
 
-          # Do not inherit the key into the model process; OpenCode reads only its protected auth file.
-          unset OPENCODE_ZEN_API_KEY
-          opencode_cli auth list | grep -qi "OpenCode Zen"
-
           MODEL="${MODEL:-opencode/muse-spark-1.2-contributor-free}"
           case "$MODEL" in
             *[[:space:]]*|"") echo "MODEL must be a non-empty OpenCode provider/model id" >&2; exit 2 ;;
@@ -142,8 +138,12 @@ jobs:
           '      }' \
           '    }' \
           '  }' \
-          '  }' \
           '}')"
+          node -e 'JSON.parse(process.env.OPENCODE_CONFIG_CONTENT)'
+
+          # Do not inherit the key into the model process; OpenCode reads only its protected auth file.
+          unset OPENCODE_ZEN_API_KEY
+          opencode_cli --pure auth list | grep -qi "OpenCode Zen"
 
           # The agent has no file-read tool: pass only the bounded, untrusted data as one quoted arg.
           TRIAGE_INPUT="$(< state/triage-input.md)"
