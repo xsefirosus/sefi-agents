@@ -18,6 +18,14 @@ bad() { fail=$((fail + 1)); echo "  FAIL: $1" >&2; }
 
 echo "=== OpenCode triage workflow safety ==="
 
+for required_command in cmp diff find grep sed; do
+  if command -v "$required_command" >/dev/null 2>&1; then
+    ok "required scanner command is available: $required_command"
+  else
+    bad "required scanner command is unavailable: $required_command"
+  fi
+done
+
 if [ ! -f "$FIXTURE" ]; then
   bad "reviewed safe workflow fixture exists"
 elif [ ! -f "$WORKFLOW" ]; then
@@ -34,16 +42,30 @@ fi
 
 if [ ! -f "$INIT" ]; then
   bad "init command exists for template-reference check"
-elif rg -Fq 'templates/workflows/' "$INIT"; then
-  bad "init does not reference a workflow template distribution path"
 else
-  ok "init does not reference a workflow template distribution path"
+  if grep -Fq 'templates/workflows/' "$INIT"; then
+    bad "init does not reference a workflow template distribution path"
+  else
+    grep_status=$?
+    if [ "$grep_status" -eq 1 ]; then
+      ok "init does not reference a workflow template distribution path"
+    else
+      bad "init template-reference scanner failed (exit $grep_status)"
+    fi
+  fi
 fi
 
-if [ -d "$TEMPLATE_DIR" ] && find "$TEMPLATE_DIR" -type f \( -name '*.yml' -o -name '*.yaml' \) -print -quit | rg -q .; then
-  bad "no YAML workflow template is distributed from templates/workflows"
+if [ ! -d "$TEMPLATE_DIR" ]; then
+  bad "workflow template directory exists for scanner check"
+elif template_paths="$(find "$TEMPLATE_DIR" -type f \( -name '*.yml' -o -name '*.yaml' \) -print)"; then
+  if [ -n "$template_paths" ]; then
+    bad "no YAML workflow template is distributed from templates/workflows"
+  else
+    ok "no YAML workflow template is distributed from templates/workflows"
+  fi
 else
-  ok "no YAML workflow template is distributed from templates/workflows"
+  find_status=$?
+  bad "workflow template scanner failed (exit $find_status)"
 fi
 
 if [ "$fail" -ne 0 ]; then
