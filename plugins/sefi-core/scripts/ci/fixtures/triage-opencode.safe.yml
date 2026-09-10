@@ -24,6 +24,17 @@ jobs:
       contents: read
       issues: read
     steps:
+      - name: Verify public repository
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          PRIVATE="$(gh api repos/$GITHUB_REPOSITORY --jq .private)"
+          [ "$PRIVATE" = "false" ] || {
+            echo "OpenCode triage runs only for public repositories." >&2
+            exit 1
+          }
+
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
@@ -34,11 +45,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          PRIVATE="$(gh api repos/$GITHUB_REPOSITORY --jq .private)"
-          [ "$PRIVATE" = "false" ] || {
-            echo "OpenCode triage runs only for public repositories." >&2
-            exit 1
-          }
           {
             printf '%s\n' '# Recent workflow runs'
             gh run list --limit 25 --json databaseId,workflowName,conclusion,createdAt,url
