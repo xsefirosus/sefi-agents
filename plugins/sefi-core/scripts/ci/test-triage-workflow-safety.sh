@@ -36,36 +36,68 @@ else
     awk '
       $0 == "on:" { in_on = 1; next }
       in_on && $0 ~ /^[^[:space:]#]/ { in_on = 0 }
-      in_on && $0 ~ /^  workflow_dispatch:[[:space:]]*(#.*)?$/ { dispatch = 1 }
-      in_on && $0 ~ /^  schedule:[[:space:]]*(#.*)?$/ { schedule = 1 }
-      END { exit !(dispatch && !schedule) }
+      # Only first-level keys under `on:` are triggers. Nested dispatch inputs are
+      # deliberately ignored; every trigger other than workflow_dispatch is rejected.
+      in_on && $0 ~ /^  [^[:space:]#][^:]*:/ {
+        trigger = $0
+        sub(/^  /, "", trigger)
+        sub(/:.*/, "", trigger)
+        if (trigger == "workflow_dispatch") dispatch++
+        else unexpected_trigger = 1
+      }
+      END { exit !(dispatch == 1 && !unexpected_trigger) }
     ' "$WORKFLOW"
 
   for action in \
     'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' \
     'actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02' \
     'actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093'; do
-    expect "workflow uses exact pin $action" \
-      awk -v expected="$action" '
+    action_name="${action%@*}"
+    if awk -v action_name="$action_name" '
         {
           line = $0
           sub(/^[[:space:]]*/, "", line)
           sub(/[[:space:]]*(#.*)?$/, "", line)
-          if (line == "uses: " expected) found = 1
+          if (line ~ /^uses:[[:space:]]*/) {
+            sub(/^uses:[[:space:]]*/, "", line)
+            if (line == action_name || index(line, action_name "@") == 1) found = 1
+          }
         }
         END { exit !found }
-      ' "$WORKFLOW"
+      ' "$WORKFLOW"; then
+      ok "workflow contains $action_name"
+      expect "every $action_name occurrence uses exact pin $action" \
+        awk -v action_name="$action_name" -v expected="$action" '
+          {
+            line = $0
+            sub(/^[[:space:]]*/, "", line)
+            sub(/[[:space:]]*(#.*)?$/, "", line)
+            if (line ~ /^uses:[[:space:]]*/) {
+              sub(/^uses:[[:space:]]*/, "", line)
+              if (line == action_name || index(line, action_name "@") == 1) {
+                found++
+                if (line != expected) wrong_pin = 1
+              }
+            }
+          }
+          END { exit !(found && !wrong_pin) }
+        ' "$WORKFLOW"
+    else
+      bad "workflow contains $action_name"
+    fi
   done
 
   expect "publisher uses the exact manual-dispatch condition" \
     awk '
-      {
+      /^  publish-report:[[:space:]]*(#.*)?$/ { publisher = 1; found_publisher = 1; next }
+      publisher && /^  [^[:space:]#][^:]*:/ { publisher = 0 }
+      publisher {
         line = $0
         sub(/^[[:space:]]*/, "", line)
         sub(/[[:space:]]*(#.*)?$/, "", line)
         if (line == "if: github.event_name == '\''workflow_dispatch'\'' && inputs.publish_report == true") found = 1
       }
-      END { exit !found }
+      END { exit !(found_publisher && found) }
     ' "$WORKFLOW"
 
   expect "discover permissions are exactly actions, contents, and issues read" \
@@ -121,7 +153,11 @@ else
       /^  publish-report:[[:space:]]*(#.*)?$/ { publisher = 1; found_publisher = 1; next }
       publisher && /^  [^[:space:]#][^:]*:/ { publisher = 0 }
       publisher && /^[[:space:]]*OPENCODE_ZEN_API_KEY:/ { unsafe = 1 }
-      publisher && /^[[:space:]]+opencode[[:space:]]+run([[:space:]]|$)/ { unsafe = 1 }
+      publisher {
+        line = $0
+        sub(/[[:space:]]*#.*/, "", line)
+        if (tolower(line) ~ /opencode/) unsafe = 1
+      }
       END { exit !(found_publisher && !unsafe) }
     ' "$WORKFLOW"
 fi
