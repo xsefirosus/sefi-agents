@@ -104,8 +104,9 @@ jobs:
             *) echo "MODEL must be an opencode/provider-model id" >&2; exit 2 ;;
           esac
 
-          # Inline config has the highest regular configuration precedence. --auto may answer asks,
-          # but every explicit deny below remains enforced by OpenCode.
+          # --pure prevents repository-defined configuration and plugins from loading. The named
+          # inline primary agent is selected explicitly so project agents cannot replace this policy.
+          # --auto may answer asks, but every explicit deny below remains enforced by OpenCode.
           export OPENCODE_CONFIG_CONTENT="$(printf '%s\n' \
           '{' \
           '  "$schema": "https://opencode.ai/config.json",' \
@@ -114,26 +115,33 @@ jobs:
           '  "snapshot": false,' \
           '  "subagent_depth": 0,' \
           '  "enabled_providers": ["opencode"],' \
-          '  "permission": {' \
-          '    "*": "deny",' \
-          '    "bash": "deny",' \
-          '    "read": "deny",' \
-          '    "glob": "deny",' \
-          '    "grep": "deny",' \
-          '    "list": "deny",' \
-          '    "webfetch": "deny",' \
-          '    "websearch": "deny",' \
-          '    "task": "deny",' \
-          '    "skill": "deny",' \
-          '    "lsp": "deny",' \
-          '    "question": "deny",' \
-          '    "todowrite": "deny",' \
-          '    "doom_loop": "deny",' \
-          '    "external_directory": "deny",' \
-          '    "edit": {' \
-          '      "*": "deny",' \
-          '      "state/triage.md": "allow"' \
+          '  "default_agent": "sefi-triage",' \
+          '  "agent": {' \
+          '    "sefi-triage": {' \
+          '      "mode": "primary",' \
+          '      "permission": {' \
+          '        "*": "deny",' \
+          '        "bash": "deny",' \
+          '        "read": "deny",' \
+          '        "glob": "deny",' \
+          '        "grep": "deny",' \
+          '        "list": "deny",' \
+          '        "webfetch": "deny",' \
+          '        "websearch": "deny",' \
+          '        "task": "deny",' \
+          '        "skill": "deny",' \
+          '        "lsp": "deny",' \
+          '        "question": "deny",' \
+          '        "todowrite": "deny",' \
+          '        "doom_loop": "deny",' \
+          '        "external_directory": "deny",' \
+          '        "edit": {' \
+          '          "*": "deny",' \
+          '          "state/triage.md": "allow"' \
+          '        }' \
+          '      }' \
           '    }' \
+          '  }' \
           '  }' \
           '}')"
 
@@ -152,8 +160,8 @@ jobs:
           DRY RUN: report findings only."
           fi
           rm -f state/triage.md
-          # --auto cannot override the explicit denies in OPENCODE_CONFIG_CONTENT.
-          opencode_cli run --auto -m "$MODEL" "$PROMPT"
+          # --pure plus the named inline agent prevents project config or plugins from overriding denies.
+          opencode_cli --pure run --agent sefi-triage --auto -m "$MODEL" "$PROMPT"
 
       - name: Validate triage report
         run: |
