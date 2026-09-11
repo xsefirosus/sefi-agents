@@ -5,6 +5,21 @@ Changelog; this project adheres to Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-09-11
+
+### Added
+
+- Native Codex marketplace and plugin manifests, plus `install-codex.sh` for the supported
+  one-time installation path.
+
+### Changed
+
+- Codex installation now refreshes the Git marketplace, reinstalls `sefi-core`, and adds
+  only a managed Sefi routing block to global `AGENTS.md`. New Codex sessions route ordinary
+  prompts through Sefi without requiring a `/sefi:*` command each time.
+- Codex plugin hooks now retain Codex's one-time visible trust decision; the installer does
+  not write trust hashes or bypass hook trust.
+
 ## [0.6.1] - 2026-09-11
 
 ### Changed

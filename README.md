@@ -14,8 +14,8 @@ Thirteen AI agents -- a planner, a builder, a reviewer, a security checker, a wr
 and more -- that work as a team: plan, build, check, and remember, with spending limits
 and a human approving every merge.
 
-One install, no separate setup: no database, no server to run, nothing else to
-download. Just this plugin, plus the AI tool you already use.
+No database, server, or separate runtime: just this plugin and the AI tool you already
+use.
 
 **Install for Claude Code:**
 
@@ -27,6 +27,18 @@ download. Just this plugin, plus the AI tool you already use.
 
 Using OpenCode, Hermes Agent, or Codex instead? The install steps are different for each
 -- see [Where it runs](#works-with-your-harness) below, don't run the commands above.
+
+**Install for Codex:**
+
+```sh
+git clone https://github.com/xsefirosus/sefi-agents.git
+cd sefi-agents
+bash install-codex.sh
+```
+
+Then open a new Codex session and accept the one-time hook trust prompt when Codex shows
+it. From then on, ordinary prompts in every project load Sefi routing automatically; you
+do not need a `/sefi:*` command for each request.
 
 Or hand the setup to any coding agent -- this one detects which tool you're using and
 installs the right way for it, Claude Code or otherwise:
@@ -161,7 +173,7 @@ its own memory system on itself, but a fresh install starts empty.
 | Claude Code | plugin install (above) | full support |
 | OpenCode | [adapters/OPENCODE.md](adapters/OPENCODE.md) | can run unattended for scheduled jobs; reviewer and builder tiers both resolve to the same model by default, so the review is a second pass, not yet a second opinion; its triage, weekly-retro, and sync CI workflows run on their daily or weekly schedules and also support manual dispatch, with a free default model overridable at dispatch (see "CI loop workflows" in that file) |
 | Hermes Agent | [adapters/HERMES.md](adapters/HERMES.md) | one command; 13 of 15 skills install automatically, 2 need one manual step (see FAQ); same model-tier caveat as OpenCode, and tool restrictions are advisory only -- Hermes doesn't enforce them |
-| Codex | [adapters/CODEX.md](adapters/CODEX.md) | plugin marketplace install |
+| Codex | [adapters/CODEX.md](adapters/CODEX.md) | native plugin plus one-time global bootstrap; ordinary prompts route automatically afterward |
 
 ## Safety rails (all of them, in one place)
 
@@ -247,6 +259,12 @@ risky-looking content, and two of ours get flagged by mistake -- they *describe*
 patterns in order to guard against them, and the scanner can't yet tell the difference.
 The other 13 skills install fine; the installer prints the two-step manual fix for the
 rest. See [adapters/HERMES.md](adapters/HERMES.md) section 8.
+
+**Do I need a Sefi slash command for every Codex prompt?** No. Run `install-codex.sh` once,
+start a new Codex session, and accept the displayed hook-trust prompt. The installer adds
+only Sefi's marked routing block to your global Codex instructions; it preserves any
+instructions you already wrote. You can still use `/sefi:*` commands for their explicit
+actions, such as initialization or a discovery-only triage.
 
 **Do I need Obsidian?** No. The memory notes are plain text files; Obsidian just makes
 them nicer to browse.

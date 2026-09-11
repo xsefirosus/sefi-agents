@@ -8,7 +8,7 @@ ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
 cd "$ROOT"
 
 targets() {
-  for d in .claude-plugin plugins adapters; do [ -d "$d" ] && find "$d" -type f; done
+  for d in .agents .claude-plugin plugins adapters; do [ -d "$d" ] && find "$d" -type f; done
   # benchmarks/ is contributor tooling checked into the repo; a stray absolute home path
   # in a fixture, prompt, or the scorer would leak just like one in plugins/. Scan only
   # SHIPPED, tracked files -- exclude the git-ignored run-artifact dir benchmarks/results/
@@ -16,7 +16,7 @@ targets() {
   # embedded absolute build path is a compiler artifact, not shipped, and git-ignored.
   [ -d benchmarks ] && find benchmarks -type f -not -path 'benchmarks/results/*' -not -path '*/__pycache__/*' -not -name '*.pyc'
   for f in docs/LOOPS.md docs/ANTIPATTERNS.md docs/CHECKLIST.md docs/BUDGET.md docs/OPTIONAL-TOOLS.md \
-           README.md Install.md CHANGELOG.md LICENSE install.sh; do
+           README.md Install.md CHANGELOG.md LICENSE install.sh install-codex.sh; do
     [ -f "$f" ] && echo "$f"
   done
 }

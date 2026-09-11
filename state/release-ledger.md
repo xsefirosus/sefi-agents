@@ -33,6 +33,13 @@
 | 0.6.1 | git-tag | 0.6.1 | 0.6.1 | match | git ls-remote --tags origin v0.6.1 -> 5c86e7c354957d251b3b546e05b8bef5d7d8ca21 refs/tags/v0.6.1 | a local tag that was never pushed to origin | 2026-09-11T04:25:07Z |
 | 0.6.1 | github-release | 0.6.1 | 0.6.1 | match | gh release view v0.6.1 -> tagName v0.6.1, isDraft false, publishedAt 2026-09-11T04:24:45Z, url https://github.com/xsefirosus/sefi-agents/releases/tag/v0.6.1 | a local or pushed tag with no release | 2026-09-11T04:25:07Z |
 | 0.6.1 | github-marketplace-index | 0.6.1 | 0.6.1 | match | gh api repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main -> metadata.version 0.6.1, plugins[0].version 0.6.1 | install commands quoted only in a README | 2026-09-11T04:25:07Z |
+| 0.6.2 | plugin.json | 0.6.2 | 0.6.2 | match | plugins/sefi-core/.claude-plugin/plugin.json version key "0.6.2"; native Codex manifest version key also "0.6.2" | a README count or CHANGELOG heading that happens to agree | 2026-09-11T07:25:59Z |
+| 0.6.2 | marketplace.json | 0.6.2 | 0.6.2 | match | .claude-plugin/marketplace.json metadata.version "0.6.2" | updating one occurrence and assuming the other followed | 2026-09-11T07:25:59Z |
+| 0.6.2 | marketplace.json | 0.6.2 | 0.6.2 | match | .claude-plugin/marketplace.json plugins[0].version "0.6.2" | updating one occurrence and assuming the other followed | 2026-09-11T07:25:59Z |
+| 0.6.2 | changelog | 0.6.2 | 0.6.2 | match | CHANGELOG.md top versioned heading "## [0.6.2] - 2026-09-11" | a Changed bullet with no dated heading above it | 2026-09-11T07:25:59Z |
+| 0.6.2 | git-tag | 0.6.2 | unobserved | unobserved | PENDING before publication: git tag -l v0.6.2 and git ls-remote --tags origin v0.6.2 returned no tag | a local tag that was never pushed to origin | 2026-09-11T07:25:59Z |
+| 0.6.2 | github-release | 0.6.2 | unobserved | unobserved | PENDING before publication: gh release view v0.6.2 returned "release not found" | a local or pushed tag with no release | 2026-09-11T07:25:59Z |
+| 0.6.2 | github-marketplace-index | 0.6.2 | unobserved | unobserved | PENDING before publication: public main marketplace metadata.version remains 0.6.1 | install commands quoted only in a README | 2026-09-11T07:25:59Z |
 
 ## Notes
 

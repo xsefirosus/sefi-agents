@@ -1352,6 +1352,117 @@ fi
 rm -rf "$OC_TMP"
 
 echo
+echo "=== install-codex.sh (native Codex bootstrap) ==="
+
+# Codex resolves a marketplace entry with source:url by cloning that value as a separate
+# Git repository. sefi-core is a subdirectory of this repository, so the native marketplace
+# must use source:local with its repository-relative path instead.
+CODEX_MARKETPLACE="$ROOT/.agents/plugins/marketplace.json"
+if grep -qF '"source": "local"' "$CODEX_MARKETPLACE" \
+  && grep -qF '"path": "./plugins/sefi-core"' "$CODEX_MARKETPLACE"; then
+  ok "native Codex marketplace uses a local repository-relative sefi-core source"
+else
+  bad "native Codex marketplace does not use the required local repository-relative sefi-core source"
+fi
+
+# Codex plugins install skills and agents, but do not get permission to silently modify a
+# user's global instructions. The one-time bootstrap must therefore perform the normal CLI
+# marketplace refresh/install sequence, then own only its marked block in AGENTS.md. Stub
+# the CLI so this regression test proves the local file contract without touching a real
+# Codex profile.
+CODEX_TMP="$(mktemp -d)"
+CODEX_BIN="$CODEX_TMP/bin"
+CODEX_LOG="$CODEX_TMP/codex.log"
+mkdir -p "$CODEX_BIN"
+cat > "$CODEX_BIN/codex" <<'FAKECODEX'
+#!/usr/bin/env bash
+set -eu
+printf '%s\n' "$*" >> "${CODEX_TEST_LOG:?}"
+case "$*" in
+  'plugin marketplace list --json') printf '%s\n' '{"marketplaces":[]}' ;;
+  'plugin marketplace add xsefirosus/sefi-agents') : ;;
+  'plugin marketplace upgrade sefi-agents') : ;;
+  'plugin add sefi-core@sefi-agents') : ;;
+  *) echo "unexpected fake codex invocation: $*" >&2; exit 64 ;;
+esac
+FAKECODEX
+chmod +x "$CODEX_BIN/codex"
+CODEX_HOME_TMP="$CODEX_TMP/home"
+mkdir -p "$CODEX_HOME_TMP"
+printf '# Keep this user instruction.\n' > "$CODEX_HOME_TMP/AGENTS.md"
+
+codex_install_rc=0
+env PATH="$CODEX_BIN:$PATH" CODEX_HOME="$CODEX_HOME_TMP" CODEX_TEST_LOG="$CODEX_LOG" \
+  bash "$ROOT/install-codex.sh" >/dev/null 2>&1 || codex_install_rc=$?
+if [ "$codex_install_rc" -eq 0 ] \
+  && grep -qF '# Keep this user instruction.' "$CODEX_HOME_TMP/AGENTS.md" \
+  && grep -qF '<!-- sefi-agents:codex-bootstrap:start -->' "$CODEX_HOME_TMP/AGENTS.md" \
+  && grep -qF 'sefi-core:sefi-orchestration' "$CODEX_HOME_TMP/AGENTS.md"; then
+  ok "install-codex.sh preserves user instructions and adds the global Sefi routing block"
+else
+  bad "install-codex.sh did not preserve AGENTS.md and add the global Sefi routing block (exit $codex_install_rc)"
+fi
+
+if grep -qxF 'plugin marketplace add xsefirosus/sefi-agents' "$CODEX_LOG" \
+  && grep -qxF 'plugin marketplace upgrade sefi-agents' "$CODEX_LOG" \
+  && grep -qxF 'plugin add sefi-core@sefi-agents' "$CODEX_LOG"; then
+  ok "install-codex.sh adds, refreshes, and installs the Codex marketplace package"
+else
+  bad "install-codex.sh did not run the required Codex marketplace lifecycle"
+fi
+
+codex_second_rc=0
+env PATH="$CODEX_BIN:$PATH" CODEX_HOME="$CODEX_HOME_TMP" CODEX_TEST_LOG="$CODEX_LOG" \
+  bash "$ROOT/install-codex.sh" >/dev/null 2>&1 || codex_second_rc=$?
+marker_count="$(grep -cF '<!-- sefi-agents:codex-bootstrap:start -->' "$CODEX_HOME_TMP/AGENTS.md" 2>/dev/null || true)"
+if [ "$codex_second_rc" -eq 0 ] && [ "$marker_count" = "1" ]; then
+  ok "install-codex.sh is idempotent and never duplicates its managed instruction block"
+else
+  bad "install-codex.sh duplicated or failed to replace its managed instruction block (exit $codex_second_rc, markers=$marker_count)"
+fi
+
+# The generic fallback entry point must expose the same bootstrap under --target codex so
+# installers can use one command shape across harnesses.
+WRAPPER_HOME="$CODEX_TMP/wrapper-home"
+mkdir -p "$WRAPPER_HOME"
+wrapper_rc=0
+env PATH="$CODEX_BIN:$PATH" CODEX_HOME="$WRAPPER_HOME" CODEX_TEST_LOG="$CODEX_LOG" \
+  bash "$ROOT/install.sh" --target codex >/dev/null 2>&1 || wrapper_rc=$?
+if [ "$wrapper_rc" -eq 0 ] \
+  && grep -qF '<!-- sefi-agents:codex-bootstrap:start -->' "$WRAPPER_HOME/AGENTS.md"; then
+  ok "install.sh --target codex delegates to the Codex bootstrap"
+else
+  bad "install.sh --target codex did not delegate to the Codex bootstrap (exit $wrapper_rc)"
+fi
+
+# A pre-existing marketplace with a different source belongs to the user. The bootstrap
+# must not replace it and must leave global instructions untouched when it cannot establish
+# the required plugin source.
+cat > "$CODEX_BIN/codex" <<'FAKECONFLICT'
+#!/usr/bin/env bash
+set -eu
+case "$*" in
+  'plugin marketplace list --json') printf '%s\n' '{"marketplaces":[{"name":"sefi-agents","marketplaceSource":{"source":"https://example.invalid/not-sefi.git"}}]}' ;;
+  *) echo "unexpected fake codex invocation: $*" >&2; exit 64 ;;
+esac
+FAKECONFLICT
+chmod +x "$CODEX_BIN/codex"
+CONFLICT_HOME="$CODEX_TMP/conflict-home"
+mkdir -p "$CONFLICT_HOME"
+printf '# Untouched on source conflict.\n' > "$CONFLICT_HOME/AGENTS.md"
+conflict_rc=0
+env PATH="$CODEX_BIN:$PATH" CODEX_HOME="$CONFLICT_HOME" CODEX_TEST_LOG="$CODEX_LOG" \
+  bash "$ROOT/install-codex.sh" >/dev/null 2>&1 || conflict_rc=$?
+if [ "$conflict_rc" -ne 0 ] \
+  && grep -qF '# Untouched on source conflict.' "$CONFLICT_HOME/AGENTS.md" \
+  && ! grep -qF '<!-- sefi-agents:codex-bootstrap:start -->' "$CONFLICT_HOME/AGENTS.md"; then
+  ok "install-codex.sh refuses a conflicting marketplace without changing AGENTS.md"
+else
+  bad "install-codex.sh changed state despite a conflicting marketplace (exit $conflict_rc)"
+fi
+rm -rf "$CODEX_TMP"
+
+echo
 echo "=== install.sh --target claude wires hooks/hooks.json (live-caught 2026-08-19) ==="
 
 # Live-caught: neither installer ever touched hooks/ at all -- a dispatched agent with

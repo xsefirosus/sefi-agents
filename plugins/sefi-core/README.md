@@ -20,8 +20,9 @@ describes the package layout.
 - `commands/` -- `/sefi:init`, `/sefi:triage`, `/sefi:retro`, `/sefi:status`,
   `/sefi:loop-new`, `/sefi:route` (deterministic sefi-orchestration load, for when the
   auto-trigger doesn't fire).
-- `hooks/hooks.json` -- a SessionStart hook that injects the memory router. Auto-loaded;
-  do NOT also declare hooks in `plugin.json`.
+- `hooks/hooks.json` -- a SessionStart hook that injects the memory router. Codex discovers
+  it from the native plugin package and asks the user to trust it once; do NOT add a hook
+  declaration to `plugin.json`.
 - `config/model-map.yml` -- the ONE place a model identifier is written down. Agents
   declare a harness-neutral `tier:` (high/mid/low); this maps each tier to a concrete model
   per harness. A new model is an edit here, never a pass over 13 agent files.
