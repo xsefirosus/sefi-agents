@@ -60,19 +60,6 @@ cp "$CORE/templates/loops/morning-triage.loop.md" loops/morning-triage.loop.md
 cp "$CORE/templates/loops/weekly-retro.loop.md"   loops/weekly-retro.loop.md
 cp "$CORE/templates/loops/sync.loop.md"           loops/sync.loop.md
 
-# init.md deliberately does not distribute a headless cloud workflow. A fresh scaffold must
-# not gain a scheduled or credential-bearing runner merely by installing the plugin.
-if [ ! -e .github/workflows/triage-opencode.yml ]; then
-  ok "init scaffold does not install an OpenCode cloud workflow"
-else
-  bad "init scaffold unexpectedly installed an OpenCode cloud workflow"
-fi
-if grep -Fq 'templates/workflows/' "$CORE/commands/init.md"; then
-  bad "init command still references a workflow template distribution path"
-else
-  ok "init command explicitly leaves cloud workflows uninstalled"
-fi
-
 # init.md step 4: the worktree check-ignore gate must pass BEFORE any loop opens one.
 printf '.worktrees/\n' > .gitignore
 mkdir -p .worktrees/logs

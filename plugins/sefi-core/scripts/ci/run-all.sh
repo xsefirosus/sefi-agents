@@ -30,7 +30,7 @@ validate-comment-safety.sh
 validate-token-budget.sh
 test-scripts.sh
 test-integration.sh
-test-triage-workflow-safety.sh
+test-opencode-schedule-ownership.sh
 "
 
 fail=0
