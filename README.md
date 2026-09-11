@@ -84,7 +84,7 @@ and change -- grouped by how strong a model each one gets:
 evidence -- `security-engineer` checks anything touching logins, secrets, or outside
 input.
 
-**Builders (mid-strength model):** `engineering-manager` routes work and never codes --
+**Builders (mid-strength model):** `sefi-agents` routes work and never codes --
 `product-manager` turns a goal into a checkable plan -- `software-engineer` builds one
 piece at a time, in its own workspace -- `ui-ux-designer` handles interface work --
 `devops-engineer` runs CI/CD and scheduling -- `solutions-architect` designs automations
@@ -96,7 +96,7 @@ writes docs, claims double-checked -- `prompt-engineer` clarifies a raw request 
 
 ## The skills (15)
 
-Playbooks an agent loads only when the task needs it, not a 14th agent -- most load
+Playbooks an agent loads only when the task needs it, not another agent -- most load
 automatically, a few you call by name, and a named skill can never chain another one, so
 it can't silently escalate on its own:
 
@@ -119,8 +119,8 @@ invoked by name).
 
 Three things happen, not one: every request runs the left track below by you typing it;
 completely separately and unattended, the middle track runs the same build-and-check chain
-once a day against failed builds and new issues; and once a week, the right track looks at
-how things went and proposes small fixes to the agents themselves:
+once a day against failed builds and new issues; and once a week, the right track evaluates
+how things went and writes bounded improvement proposals:
 
 <img src="docs/assets/how-it-works.svg" alt="How sefi-agents works: the interactive request cycle on the left, the daily morning-triage loop in the middle (with the weekly sync loop noted below it as the same chain), and the weekly self-improvement loop on the right, feeding back into the same agents" width="100%">
 
@@ -128,9 +128,10 @@ how things went and proposes small fixes to the agents themselves:
   [Safety rails](#safety-rails-all-of-them-in-one-place)) -- and token efficiency is built
   into how each agent works: one-shot research windows, replies read wherever the answer
   lands instead of re-asking, short status updates by default (`terse-mode`).
-- The right track stays bounded on purpose -- at most 3 sentences changed per file per
-  week, every fix checked by qa-engineer *before* it ships -- and logs "nothing to change"
-  rather than fire without real evidence.
+- The right track stays bounded on purpose -- at most 3 sentences per file in a proposed
+  change, with qa-engineer evidence required before an edit can ship. This repository uses
+  proposal-only retro mode, so a human reviews and applies any proposed change; a no-op is
+  logged with evidence rather than invented work.
 - A "loop" is this same chain on a schedule instead of typed by you: **morning-triage**
   (daily), **sync** (weekly -- same chain, finds outdated or vulnerable dependencies
   instead of failed CI), and **weekly-retro** (weekly, the right track above). All three
@@ -229,9 +230,11 @@ caught the rest.
 
 **Does it work on Windows?** Yes -- it's tested on both Windows (Git Bash) and Linux.
 
-**Where does my data go?** Nowhere. Nothing here calls home or tracks you. If you use a
-free trial of some AI model, check [adapters/HERMES.md](adapters/HERMES.md) first: don't
-run private code through a model that might learn from your input.
+**Where does my data go?** Sefi-agents does not add telemetry or a separate hosted service.
+Your chosen AI harness and model provider still receive the prompts and repository content
+you send them. Free-window models may use submitted data under their own terms, so do not
+run private code through them; see [adapters/OPENCODE.md](adapters/OPENCODE.md) and
+[adapters/HERMES.md](adapters/HERMES.md).
 
 **Can it merge or deploy something by itself?** No. It opens a pull request and stops,
 every time -- that rule is checked automatically, not just written down.
@@ -266,12 +269,11 @@ bash plugins/sefi-core/scripts/ci/run-all.sh
 Those checks are the actual contribution guide: length limits, short descriptions,
 nothing broken or unused, and the honesty rule present in every agent and skill.
 
-This repo ships broad-auto-allow permission defaults for Claude Code, OpenCode, and Codex
-(`.claude/settings.json`, `opencode.json`, `.codex/config.toml`) so an unattended session
-doesn't stall on a routine prompt -- with a deny list for force-push, hard resets, branch
-deletion, `rm -rf`, and credential files. Known gaps stated in those files themselves, not
-hidden: Codex has no per-command deny list, and Hermes gets no config at all since it
-doesn't read one.
+This repo ships broad automation defaults for Claude Code and OpenCode, with deny patterns
+for force-push, hard resets, branch deletion, `rm -rf`, and credential files. Codex uses
+an on-failure approval policy and workspace-write sandbox instead; it has no per-command
+deny list. Hermes reads no equivalent project configuration. Each limitation is stated in
+the relevant adapter or configuration file.
 
 ## License
 
