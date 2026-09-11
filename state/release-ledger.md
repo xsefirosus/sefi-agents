@@ -40,6 +40,9 @@
 | 0.6.2 | git-tag | 0.6.2 | unobserved | unobserved | PENDING before publication: git tag -l v0.6.2 and git ls-remote --tags origin v0.6.2 returned no tag | a local tag that was never pushed to origin | 2026-09-11T07:25:59Z |
 | 0.6.2 | github-release | 0.6.2 | unobserved | unobserved | PENDING before publication: gh release view v0.6.2 returned "release not found" | a local or pushed tag with no release | 2026-09-11T07:25:59Z |
 | 0.6.2 | github-marketplace-index | 0.6.2 | unobserved | unobserved | PENDING before publication: public main marketplace metadata.version remains 0.6.1 | install commands quoted only in a README | 2026-09-11T07:25:59Z |
+| 0.6.2 | git-tag | 0.6.2 | 0.6.2 | match | git rev-parse v0.6.2^{commit} -> 97039abc3b1a30e624d7780a4200f49e34c7f5a9; git ls-remote --tags origin v0.6.2 -> 9486ccae779c29dc5472fa3e9eaab9b22d7a8587 refs/tags/v0.6.2 | a local tag that was never pushed to origin | 2026-09-11T07:44:30Z |
+| 0.6.2 | github-release | 0.6.2 | 0.6.2 | match | gh release view v0.6.2 -> tagName v0.6.2, isDraft false, publishedAt 2026-09-11T07:44:30Z, url https://github.com/xsefirosus/sefi-agents/releases/tag/v0.6.2 | a local or pushed tag with no release | 2026-09-11T07:44:30Z |
+| 0.6.2 | github-marketplace-index | 0.6.2 | 0.6.2 | match | gh api repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main -> metadata.version 0.6.2, plugins[0].version 0.6.2 | install commands quoted only in a README | 2026-09-11T07:44:30Z |
 
 ## Notes
 
