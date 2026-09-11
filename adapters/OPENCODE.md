@@ -194,6 +194,11 @@ uses). No CLI env-var contract for the Zen API key could be verified from primar
 sources, so each workflow writes `$HOME/.local/share/opencode/auth.json` from that
 secret at runtime, then fails fast via `opencode auth list` before any model call.
 
+Repository prerequisite: under Settings > Actions > General, set **Workflow permissions**
+to **Read and write permissions** and enable **Allow GitHub Actions to create and approve
+pull requests**. The loop's `GITHUB_TOKEN` then creates its review pull request after a
+state change; the workflow never approves, merges, or deploys it.
+
 Privacy caveat inherited from "Model tiers and reasoning"'s **Privacy** note, generalized
 to whichever model you dispatch: a free-window model may train its upstream provider's
 future models under that model's own terms. These workflows must only ever operate on
