@@ -171,11 +171,11 @@ Three GitHub Actions workflows run this repo's own loops headlessly on OpenCode:
 (weekly-retro), and `sync-opencode.yml` (sync) -- mirrors of the Claude-based
 `triage.yml`/`retro.yml`/`sync.yml`.
 
-Manual dispatch only, no cron schedule, on purpose: those Claude-based workflows already
-run on a schedule as of the 2026-08-23 audit remediation, and a second scheduled runner
-over the same loop and the same `state/` files multiplies untested collision risk
-(`docs/LOOP-FAILURE-MODES.md` S3), not coverage. Enabling a schedule here is a separate
-future owner decision.
+Manual dispatch only, no cron schedule, on purpose: OpenCode's runner does not expose a
+measurable, enforceable usage ledger. A second scheduled runner over the same loop and
+the same `state/` files would also multiply untested collision risk
+(`docs/LOOP-FAILURE-MODES.md` S3), not coverage. Enabling a schedule is a separate future
+owner decision after both a usage ledger and a reviewed runtime boundary exist.
 
 They default to `opencode/muse-spark-1.2-contributor-free` (live-verified on Zen,
 2026-08-24) -- a CI-only exception to `config/model-map.yml`'s shipped `flexible`

@@ -26,9 +26,9 @@ the project root, never overwriting existing files, and report what was skipped.
    - `templates/loops/sync.loop.md` -> `loops/sync.loop.md`
    - `templates/config/sefi.config.yml` -> `config/sefi.config.yml`
    - `templates/config/budget.yml` -> `config/budget.yml`
-3. Copy `templates/workflows/triage-opencode.yml` -> `.github/workflows/triage-opencode.yml`
-   ONLY if the user confirms (it schedules a cloud job and requires
-   `OPENCODE_ZEN_API_KEY`).
+3. Do not install a cloud workflow. The bundled loops depend on this repository's runtime;
+   a portable, pinned runtime bootstrap must be designed and reviewed before a new project
+   schedules OpenCode or any other headless agent.
 4. Copy `templates/hooks/pre-push` -> `.git/hooks/pre-push` and `chmod +x` it. Local-only
    (git never tracks `.git/hooks/`), so re-run this step after every fresh clone. Refuses
    a direct push to `main`/`master` -- the first deterministic backstop for
