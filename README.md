@@ -196,26 +196,24 @@ validate-budget: OK (all caps present and bounded)
 validate-config-wired: OK (16 config keys, all wired)
 validate-no-personal-paths: OK (no personal paths in shipped files)
 validate-no-orphans: OK (references, templates, agents all wired)
-validate-links: OK (61 files scanned, all repo-path references resolve; bare script names checked)
-validate-script-refs: OK (46 files scanned, every scripts/*.sh reference carries ${CLAUDE_PLUGIN_ROOT}/)
+validate-links: OK (64 files scanned, all repo-path references resolve; bare script names checked)
+validate-script-refs: OK (49 files scanned, every scripts/*.sh reference carries ${CLAUDE_PLUGIN_ROOT}/)
+validate-release-ledger: OK (latest 0.6.1, 6/6 surfaces observed, 0 warning(s))
 validate-routing: OK (routing-table agents exist, fixtures resolve, no duplicate triggers)
-validate-model-map: OK (13 agents, 4 harnesses, 44 scripts parse; 2 warning(s))
+validate-model-map: OK (13 agents, 4 harnesses, 48 scripts parse; 2 warning(s))
 validate-adapters: OK (install-hermes.sh skill list matches disk, adapter doc paths resolve)
-check-unicode-safety: OK (132 files scanned, ASCII-clean)
+validate-rule-presence: OK (28 sentences across 17 files)
+check-unicode-safety: OK (164 files scanned, ASCII-clean)
 validate-comment-safety: OK (2 file(s) scanned)
-validate-token-budget: OK (all within token budgets; agents total 8316 words)
-test-scripts: OK (160 passed)
+validate-token-budget: OK (all within token budgets; agents total 8320 words)
+test-scripts: OK (233 passed)
 test-integration: OK (33 passed) -- full loop skeleton executed end to end
+test-opencode-schedule-ownership: PASS (9 passed)
 CI: all validators passed
 ```
 
-- `test-scripts` reads 160 on this authoring machine (2 skipped: shellcheck not on
-  PATH, jq-missing stub PATH not constructable here) -- expect 162 on an environment
-  with both present; nothing was removed, only skipped by toolchain, same as the
-  count on `main`.
-- The last two lines matter most: one proves every script works by itself, the other
-  proves the whole cycle works together, end to end, in a real test project -- with a real
-  check that nothing merged itself.
+- The last three result lines matter most: they prove the scripts, full loop skeleton,
+  and scheduled-workflow ownership checks pass.
 - This proves the machinery works, not that the AI always makes good calls -- every
   agent's part in that test is scripted, not judged.
 - Every agent and skill has a length limit, and going over it fails the build. Exact
