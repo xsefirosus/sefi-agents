@@ -15,6 +15,12 @@ on:
         description: "Create a PR containing the validated triage report"
         type: boolean
         default: false
+  schedule:
+    - cron: "0 6 * * *"
+
+concurrency:
+  group: sefi-morning-triage-opencode
+  cancel-in-progress: false
 
 jobs:
   discover:

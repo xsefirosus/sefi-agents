@@ -40,6 +40,13 @@ else
     | sed -n '1,80p' || true
 fi
 
+if grep -Fqx '  schedule:' "$FIXTURE" \
+  && grep -Fqx '    - cron: "0 6 * * *"' "$FIXTURE"; then
+  ok "reviewed fixture declares the daily 06:00 UTC triage schedule"
+else
+  bad "reviewed fixture declares the daily 06:00 UTC triage schedule"
+fi
+
 if [ ! -f "$INIT" ]; then
   bad "init command exists for template-reference check"
 else
