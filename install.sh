@@ -21,7 +21,7 @@
 # which this installer does not create. That's a stated scope boundary: this script's
 # `claude` target was never designed for a cloud session, and doesn't claim to cover one.
 #
-# Usage: ./install.sh --target <claude|hermes|opencode> [--force] [--copy]
+# Usage: ./install.sh --target <claude|hermes|opencode|codex> [--force] [--copy]
 set -euo pipefail
 
 TARGET=""
@@ -33,16 +33,24 @@ while [ "$#" -gt 0 ]; do
     --target) TARGET="${2:-}"; shift 2 ;;
     --force)  FORCE=1; shift ;;
     --copy)   MODE="copy"; shift ;;
-    -h|--help) echo "usage: $0 --target <claude|hermes|opencode> [--force] [--copy]"; exit 0 ;;
+    -h|--help) echo "usage: $0 --target <claude|hermes|opencode|codex> [--force] [--copy]"; exit 0 ;;
     *) echo "install.sh: unknown arg $1" >&2; exit 2 ;;
   esac
 done
 
-[ -n "$TARGET" ] || { echo "install.sh: --target is required (claude|hermes|opencode)" >&2; exit 2; }
+[ -n "$TARGET" ] || { echo "install.sh: --target is required (claude|hermes|opencode|codex)" >&2; exit 2; }
 
 # Resolve the plugin source root (this script's directory).
 SRC="$(cd "$(dirname "$0")" && pwd)"
 CORE="$SRC/plugins/sefi-core"
+
+if [ "$TARGET" = "codex" ]; then
+  [ "$FORCE" -eq 0 ] && [ "$MODE" = "symlink" ] || {
+    echo "install.sh: --force and --copy do not apply to the Codex bootstrap" >&2
+    exit 2
+  }
+  exec bash "$SRC/install-codex.sh"
+fi
 
 # Fail fast if a required source dir is missing.
 for d in agents skills commands scripts; do

@@ -5,17 +5,29 @@ hook-event maps live in `skills/sefi-orchestration/references/harness-actions.md
 
 ## 1. Install
 
-Codex has a real plugin marketplace that consumes this repo's existing
-`.claude-plugin/marketplace.json` unchanged. Live-verified end to end:
+Codex has a native marketplace and plugin manifest in `.agents/plugins/marketplace.json`
+and `plugins/sefi-core/.codex-plugin/plugin.json`. Install it with the one-time bootstrap:
 
 ```sh
-codex plugin marketplace add xsefirosus/sefi-agents
-codex plugin add sefi-core@sefi-agents
+git clone https://github.com/xsefirosus/sefi-agents.git
+cd sefi-agents
+bash install-codex.sh
 ```
 
-The first registers the marketplace; the second installs all 13 agents, 14 skills,
-hooks, commands, and templates into `~/.codex/plugins/cache/sefi-agents/sefi-core/
-<version>/`.
+The script registers the marketplace when needed, refreshes its Git snapshot, reinstalls
+`sefi-core@sefi-agents`, and writes only Sefi's marked block to
+`${CODEX_HOME:-~/.codex}/AGENTS.md`. It preserves every other global instruction. Start a
+new Codex session afterward and accept the one-time Sefi hook-trust prompt when Codex
+shows it.
+
+That global instruction is the always-on activation point: every normal user prompt in
+every project loads `sefi-core:sefi-orchestration` before work begins. You do not need a
+`/sefi:*` command for each prompt. The routing skill still uses its documented trivial-task
+exception, so a short question does not mechanically spawn specialists.
+
+The installed package contains all 13 agents, 15 skills, hooks, commands, and templates.
+Re-run `bash install-codex.sh` after an update; it refreshes the marketplace and replaces
+only its own marked instruction block.
 
 ## 2. Subagents (multi_agent)
 
@@ -39,10 +51,11 @@ Installed plugins show up in
 Headless: `codex exec`. Sandbox and approval: `-s/--sandbox` and `-a/--ask-for-approval`
 (unattended loops usually want `--ask-for-approval never` for routine calls).
 
-Hooks: the Codex marketplace path installs hooks with the plugin, but `install.sh` does not
--- it links `agents/`, `skills/`, and `commands/` only. If you installed by hand, wire
-`scripts/inject-memory.sh` to a session-start event yourself, or accept that the
-memory-protocol READ ladder retrieves vault content without it.
+Hooks: Codex discovers `hooks/hooks.json` from the native plugin package but requires a
+visible one-time trust decision before it executes plugin commands. The bootstrap never
+writes a trust hash and never uses Codex's hook-trust bypass. If you decline the prompt,
+the global `AGENTS.md` routing instruction still works; only the SessionStart memory/role
+injection is unavailable until you accept trust in a later new session.
 
 The cross-project memory mirror (`memory-protocol/SKILL.md` WRITE step 4) needs none of
 the hook wiring above -- `resolve-shared-memory-path.sh` and `write-shared-memory-mirror.sh`
@@ -65,12 +78,16 @@ Codex-created sandbox worktree is left alone.
 First stop: `codex doctor` (Diagnose local Codex installation, config, auth, and runtime
 health).
 
-- **Marketplace add fails** -- check network and git access to `github.com`.
-- **Plugin add reports marketplace not found** -- run `codex plugin marketplace list`
-  to confirm the previous add registered, then retry the `plugin add`.
-- **Agents do not seem to load** -- `codex doctor`'s Configuration section shows
-  `config.toml parse: ok` and the installed plugin count; re-run
-  `codex plugin add sefi-core@sefi-agents` from a clean shell if the count is wrong.
+- **Bootstrap fails before install** -- confirm `codex` is on `PATH`, then run
+  `codex doctor` and retry `bash install-codex.sh`.
+- **Marketplace source conflict** -- the bootstrap refuses to replace an existing
+  `sefi-agents` marketplace that points somewhere else. Inspect
+  `codex plugin marketplace list --json`, correct that configuration yourself, then retry.
+- **Sefi does not route a new prompt** -- start a new session and inspect
+  `${CODEX_HOME:-~/.codex}/AGENTS.md` for the one managed Sefi block. Re-run the bootstrap
+  if it is missing.
+- **Hook trust was declined** -- start another new session and accept Codex's Sefi hook
+  trust prompt. Routing does not require this step; memory SessionStart injection does.
 
 ## Credentials
 

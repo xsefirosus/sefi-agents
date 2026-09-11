@@ -17,8 +17,8 @@ available path, then stop and report.
 - Stop and report on any failure; do not attempt privileged installs.
 
 ## Success Criteria (know this before you start)
-- [ ] The sefi-core plugin is installed, or the fallback `install.sh` has linked
-      agents/skills/commands.
+- [ ] The sefi-core plugin is installed, or the fallback installer has completed.
+- [ ] On Codex, `$CODEX_HOME/AGENTS.md` contains the managed Sefi bootstrap block.
 - [ ] `/sefi:init` has been run, so `memory/`, `state/`, `inbox/`, `loops/`, and `config/`
       exist in the project.
 - [ ] `.worktrees/` is git-ignored and `.worktrees/logs/` exists.
@@ -28,8 +28,12 @@ available path, then stop and report.
 1. Harness detection: is this Claude Code, Hermes, OpenCode, or Codex?
    - Claude Code: `/plugin marketplace add xsefirosus/sefi-agents` then
      `/plugin install sefi-core@sefi-agents`.
-   - Hermes / OpenCode / Codex: use `./install.sh --target <hermes|opencode|claude>`; see the
-     matching file under `adapters/`. If the required CLI is missing, stop and report.
+   - Hermes: use `./install.sh --target hermes`; see `adapters/HERMES.md`.
+   - OpenCode: use `./install.sh --target opencode`; see `adapters/OPENCODE.md`.
+   - Codex: use `./install-codex.sh` (or `./install.sh --target codex`), then start a new
+     session and accept Codex's one-time Sefi hook-trust prompt. This is a one-time
+     installation action, not a command required for each prompt. See `adapters/CODEX.md`.
+     If the required CLI is missing, stop and report.
 2. Project state: is this a fresh repo or one with `.worktrees/` already present?
    - Fresh: proceed to `/sefi:init`.
    - Already scaffolded: run `/sefi:init` anyway; it copies only what is missing and reports
@@ -45,6 +49,7 @@ available path, then stop and report.
 ## Verification
 - Confirm `memory/index.md`, `state/metrics.md`, `config/budget.yml`, and the two
   `loops/*.loop.md` exist.
+- On Codex, confirm the managed Sefi block is present once in `$CODEX_HOME/AGENTS.md`.
 - Confirm `git check-ignore -q .worktrees` succeeds.
 - Confirm no pre-existing file was modified (only new files were added).
 
