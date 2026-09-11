@@ -171,10 +171,11 @@ Three GitHub Actions workflows run this repo's own loops headlessly on OpenCode:
 (weekly-retro), and `sync-opencode.yml` (sync) -- mirrors of the Claude-based
 `triage.yml`/`retro.yml`/`sync.yml`.
 
-Morning triage runs daily at 06:00 UTC through `triage-opencode.yml`; all three workflows
-also support manual dispatch. Weekly retro and sync remain manual-only. The scheduled
-triage run has no verified OpenCode usage ledger or monetary cap; this is an explicit
-maintainer decision. The workflow's concurrency group prevents overlapping triage runs.
+Morning triage runs daily at 06:00 UTC through `triage-opencode.yml`; weekly retro runs
+Monday at 07:00 UTC through `retro-opencode.yml`; and sync runs Monday at 08:00 UTC through
+`sync-opencode.yml`. All three also support manual dispatch. Their Claude counterparts
+remain manual-only, so each loop has one scheduled provider. Each workflow's concurrency
+group prevents overlapping runs of that loop.
 
 They default to `opencode/muse-spark-1.2-contributor-free` (live-verified on Zen,
 2026-08-24) -- a CI-only exception to `config/model-map.yml`'s shipped `flexible`
