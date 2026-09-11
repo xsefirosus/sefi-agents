@@ -52,9 +52,17 @@ done
 
 if [ -n "$AGENT" ]; then
   [ -f "$AGENT" ] || { echo "model-for: agent file $AGENT not found" >&2; exit 1; }
-  TIER="$(awk 'NR==1 && $0!="---"{exit} NR==1{next} /^---[[:space:]]*$/{exit} {print}' "$AGENT" \
+  agent_frontmatter="$(awk 'NR==1 && $0!="---"{exit} NR==1{next} /^---[[:space:]]*$/{exit} {print}' "$AGENT")"
+  TIER="$(printf '%s\n' "$agent_frontmatter" \
     | sed -n 's/^tier:[[:space:]]*\([a-z]*\).*/\1/p' | head -1)"
   [ -n "$TIER" ] || { echo "model-for: $AGENT declares no 'tier:' line" >&2; exit 1; }
+  agent_name="$(printf '%s\n' "$agent_frontmatter" | sed -n 's/^name:[[:space:]]*\([a-z0-9-]*\).*/\1/p' | head -1)"
+  # The Sefi engineering-manager role is the top-level orchestrator on Codex. It receives
+  # the dedicated map entry rather than the generic mid-tier used by the same role on the
+  # other harnesses.
+  if [ "$HARNESS" = "codex" ] && [ "$agent_name" = "sefi-agents" ]; then
+    TIER="orchestrator"
+  fi
 fi
 
 [ -n "$HARNESS" ] || { echo "model-for: usage: model-for.sh <harness> <tier>" >&2; exit 2; }

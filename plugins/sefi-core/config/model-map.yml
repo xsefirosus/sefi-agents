@@ -45,10 +45,13 @@ claude-code:
   low_reasoning: none
 
 codex:
-  # Web-verified 2026-08-11. GPT-5.6 ships as a three-model family that maps 1:1 onto these
-  # tiers: Sol is the flagship, Terra the balanced workhorse, Luna the fast/cheap option --
-  # "Terra as default, Sol for the hard parts, Luna for volume". Using Sol for `high` is
-  # what keeps the qa-engineer a genuinely stronger judge than the software-engineer.
+  # The Sefi orchestrator is the only non-tier override: routing and sequencing use Astra
+  # at high reasoning. The named Sefi specialists use Sol for adversarial review/security,
+  # Terra for build and planning work, and Luna for bounded research and writing work.
+  orchestrator: gpt-6-astra
+  orchestrator_reasoning: high
+  # GPT-5.6 ships as a three-model family that maps 1:1 onto the specialist tiers: Sol is
+  # the flagship, Terra the balanced workhorse, and Luna the fast/cheap option.
   #
   # Use the explicit ids, never the bare `gpt-5.6` alias: that alias routes to gpt-5.6-sol
   # today and adds a routing question to any diagnostic.
@@ -59,13 +62,11 @@ codex:
   high: gpt-5.6-sol
   mid: gpt-5.6-terra
   low: gpt-5.6-luna
+  # The approved Codex policy uses high reasoning for every Sefi specialist.
   # `model_reasoning_effort` accepts minimal|low|medium|high|xhigh.
-  # CAVEAT: xhigh is only available on top-tier coding models (the codex-max tier). If a
-  # dispatch on gpt-5.6-sol rejects or silently ignores xhigh, drop this one value to
-  # "high" -- it is the single field to change, which is the point of this file.
-  high_reasoning: xhigh
+  high_reasoning: high
   mid_reasoning: high
-  low_reasoning: medium
+  low_reasoning: high
 
 opencode:
   # deepseek-v4-flash-free was web-verified real on OpenCode Zen on 2026-08-11 (200K
