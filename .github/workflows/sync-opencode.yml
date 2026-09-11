@@ -132,7 +132,10 @@ jobs:
           fi
           BRANCH="sync/$(date +%Y-%m-%d-%H%M)"
           git checkout -b "$BRANCH"
-          git add state/ memory/ inbox/
+          git add state/ memory/
+          if [ -d inbox ]; then
+            git add inbox/
+          fi
           git commit -m "chore(sync): dependency-upkeep cycle $(date +%Y-%m-%d)"
           git push -u origin "$BRANCH"
           gh pr create --fill --base main --head "$BRANCH" \

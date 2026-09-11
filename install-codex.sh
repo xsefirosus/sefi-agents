@@ -35,7 +35,7 @@ fi
 codex plugin marketplace upgrade "$MARKETPLACE"
 codex plugin add "$PLUGIN"
 
-[ -d "$CORE/agents" ] && [ -x "$MODEL_FOR" ] || {
+[ -d "$CORE/agents" ] && [ -f "$MODEL_FOR" ] || {
   echo "install-codex.sh: bundled Sefi agent sources or model resolver are missing" >&2
   exit 1
 }

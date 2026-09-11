@@ -39,6 +39,21 @@ expect_full_loop() {
   fi
 }
 
+# `inbox/` is optional: a discovery-only loop normally changes only state/. Git exits 128
+# when asked to add a path that does not exist, so every loop must stage state/memory first
+# and include inbox only when it is present.
+expect_safe_state_staging() {
+  local workflow="$1" label="$2"
+  if ! grep -Fq 'git add state/ memory/ inbox/' "$workflow" \
+    && grep -Fq 'git add state/ memory/' "$workflow" \
+    && grep -Fq 'if [ -d inbox ]; then' "$workflow" \
+    && grep -Fq 'git add inbox/' "$workflow"; then
+    ok "$label safely stages the optional inbox directory"
+  else
+    bad "$label does not safely stage the optional inbox directory"
+  fi
+}
+
 echo "=== OpenCode schedule ownership ==="
 
 expect_schedule "$ROOT/.github/workflows/triage-opencode.yml" '0 6 * * *' 'morning-triage'
@@ -50,6 +65,12 @@ expect_no_schedule "$ROOT/.github/workflows/sync.yml" 'sync'
 expect_full_loop "$ROOT/.github/workflows/triage-opencode.yml" 'morning-triage'
 expect_full_loop "$ROOT/.github/workflows/retro-opencode.yml" 'weekly-retro'
 expect_full_loop "$ROOT/.github/workflows/sync-opencode.yml" 'sync'
+expect_safe_state_staging "$ROOT/.github/workflows/triage.yml" 'morning-triage Claude workflow'
+expect_safe_state_staging "$ROOT/.github/workflows/retro.yml" 'weekly-retro Claude workflow'
+expect_safe_state_staging "$ROOT/.github/workflows/sync.yml" 'sync Claude workflow'
+expect_safe_state_staging "$ROOT/.github/workflows/triage-opencode.yml" 'morning-triage OpenCode workflow'
+expect_safe_state_staging "$ROOT/.github/workflows/retro-opencode.yml" 'weekly-retro OpenCode workflow'
+expect_safe_state_staging "$ROOT/.github/workflows/sync-opencode.yml" 'sync OpenCode workflow'
 
 if [ "$fail" -ne 0 ]; then
   echo "opencode-schedule-ownership: FAILED ($fail failed, $pass passed)" >&2
