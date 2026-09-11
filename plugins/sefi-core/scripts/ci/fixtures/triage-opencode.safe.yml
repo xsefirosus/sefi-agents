@@ -81,10 +81,12 @@ jobs:
           export HOME="$RUNNER_TEMP/opencode-home"
           AUTH_DIR="$HOME/.local/share/opencode"
           AUTH_FILE="$AUTH_DIR/auth.json"
+          AGENT_WORKDIR="$(mktemp -d "$RUNNER_TEMP/sefi-triage.XXXXXX")"
           umask 077
-          trap 'rm -f "$AUTH_FILE"; rmdir "$AUTH_DIR" 2>/dev/null || true' EXIT
+          trap 'rm -f "$AUTH_FILE"; rmdir "$AUTH_DIR" 2>/dev/null || true; rm -rf -- "$AGENT_WORKDIR"' EXIT
           mkdir -p "$AUTH_DIR"
           chmod 700 "$AUTH_DIR"
+          mkdir -p "$AGENT_WORKDIR/state"
           node -e 'process.stdout.write(JSON.stringify({opencode:{type:"api",key:process.env.OPENCODE_ZEN_API_KEY}}))' > "$AUTH_FILE"
           chmod 600 "$AUTH_FILE"
 
@@ -100,8 +102,9 @@ jobs:
             *) echo "MODEL must be an opencode/provider-model id" >&2; exit 2 ;;
           esac
 
-          # --pure prevents repository-defined configuration and plugins from loading. The named
-          # inline primary agent is selected explicitly so project agents cannot replace this policy.
+          # Run OpenCode from a fresh, non-repository directory. This prevents it discovering
+          # project opencode.json/.opencode content; --pure additionally disables external plugins.
+          # The named inline primary agent is selected explicitly so its policy is unambiguous.
           # --auto may answer asks, but every explicit deny below remains enforced by OpenCode.
           export OPENCODE_CONFIG_CONTENT="$(printf '%s\n' \
           '{' \
@@ -143,7 +146,7 @@ jobs:
 
           # Do not inherit the key into the model process; OpenCode reads only its protected auth file.
           unset OPENCODE_ZEN_API_KEY
-          opencode_cli --pure auth list | grep -qi "OpenCode Zen"
+          (cd "$AGENT_WORKDIR" && opencode_cli --pure auth list | grep -qi "OpenCode Zen")
 
           # The agent has no file-read tool: pass only the bounded, untrusted data as one quoted arg.
           TRIAGE_INPUT="$(< state/triage-input.md)"
@@ -159,9 +162,13 @@ jobs:
             PROMPT="${PROMPT}
           DRY RUN: report findings only."
           fi
-          rm -f state/triage.md
-          # --pure plus the named inline agent prevents project config or plugins from overriding denies.
-          opencode_cli --pure run --agent sefi-triage --auto -m "$MODEL" "$PROMPT"
+          # The model can edit only this fresh temporary workspace, never the checkout.
+          opencode_cli --pure run --dir "$AGENT_WORKDIR" --agent sefi-triage --auto -m "$MODEL" "$PROMPT"
+          AGENT_REPORT="$AGENT_WORKDIR/state/triage.md"
+          [ -f "$AGENT_REPORT" ] && [ ! -L "$AGENT_REPORT" ]
+          [ "$(wc -c < "$AGENT_REPORT")" -le 65536 ]
+          grep -q '[^[:space:]]' "$AGENT_REPORT"
+          install -m 600 "$AGENT_REPORT" state/triage.md
 
       - name: Validate triage report
         run: |
