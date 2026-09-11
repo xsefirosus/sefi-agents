@@ -1,17 +1,12 @@
 # sefi-sync -- the sync loop (dependency upkeep), running against this repo.
 #
-# Scheduled per the owner's decision (2026-08-23 audit remediation). No dedicated slash
-# command exists for this loop (unlike /sefi:triage and /sefi:retro) -- the prompt
-# instructs the agent to follow loops/sync.loop.md directly rather than inventing a
-# /sefi:sync command that isn't shipped.
+# MANUAL DISPATCH ONLY. The Monday sync schedule runs through sync-opencode.yml, keeping
+# a single scheduled runner for this loop and its state files. No dedicated slash command
+# exists for this loop (unlike /sefi:triage and /sefi:retro).
 name: sefi-sync
 
 on:
   workflow_dispatch: {}
-  schedule:
-    - cron: "0 8 * * 1"   # Monday 08:00 UTC -- an hour after weekly-retro's 07:00 slot,
-                           # per sync.loop.md's own Trigger section, so the two never
-                           # contend for the same worktree budget.
 
 permissions:
   contents: write
