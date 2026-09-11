@@ -1,9 +1,8 @@
 # sefi-morning-triage -- the morning-triage loop, running against this repo.
 #
-# MANUAL DISPATCH ONLY. The daily morning-triage run is scheduled through
-# triage-opencode.yml at 06:00 UTC; this Claude-based workflow remains available for
-# manual dispatch. Keeping the cron in one workflow avoids duplicate scheduled runners
-# operating on the same loop and state/ files.
+# MANUAL DISPATCH ONLY. The OpenCode triage workflow is also manual-only: unattended
+# model usage stays disabled until the runner exposes a measurable, enforceable usage
+# ledger. Keeping both workflows manual avoids duplicate runners over the same state files.
 #
 # This workflow has no `schedule:` trigger, so its dry-run default applies only to a
 # manual `workflow_dispatch`.
