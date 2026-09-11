@@ -164,18 +164,17 @@ through a free-window model.
 
 Override the whole table with `--model-map <path>` or by editing the `opencode:` block.
 
-## CI loop workflows (manual dispatch)
+## CI loop workflows
 
 Three GitHub Actions workflows run this repo's own loops headlessly on OpenCode:
 `.github/workflows/triage-opencode.yml` (morning-triage), `retro-opencode.yml`
 (weekly-retro), and `sync-opencode.yml` (sync) -- mirrors of the Claude-based
 `triage.yml`/`retro.yml`/`sync.yml`.
 
-Manual dispatch only, no cron schedule, on purpose: OpenCode's runner does not expose a
-measurable, enforceable usage ledger. A second scheduled runner over the same loop and
-the same `state/` files would also multiply untested collision risk
-(`docs/LOOP-FAILURE-MODES.md` S3), not coverage. Enabling a schedule is a separate future
-owner decision after both a usage ledger and a reviewed runtime boundary exist.
+Morning triage runs daily at 06:00 UTC through `triage-opencode.yml`; all three workflows
+also support manual dispatch. Weekly retro and sync remain manual-only. The scheduled
+triage run has no verified OpenCode usage ledger or monetary cap; this is an explicit
+maintainer decision. The workflow's concurrency group prevents overlapping triage runs.
 
 They default to `opencode/muse-spark-1.2-contributor-free` (live-verified on Zen,
 2026-08-24) -- a CI-only exception to `config/model-map.yml`'s shipped `flexible`

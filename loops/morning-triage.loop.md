@@ -6,8 +6,8 @@ requires-tools: git, gh, rg
 <!-- probed by scripts/probe-tools.sh --loop before the Discovery move runs. gh reads CI status and issues in the Discovery move; without it discovery degrades to commits + prior state only, and says so. -->
 
 ## Trigger (SCHEDULING)
-manual: `workflow_dispatch` via `.github/workflows/triage-opencode.yml`; no unattended
-schedule until the runner exposes a measurable, enforceable OpenCode usage ledger.
+cloud: cron `0 6 * * *` via `.github/workflows/triage-opencode.yml`; manual
+`workflow_dispatch` remains available. OpenCode spending is not yet measurably capped.
 
 ## Discovery
 skill: loop-engineering (discovery move)   agent: support-engineer   inputs read: failed CI, issues in the last 24h, commits since the last run, and the prior `state/triage.md`. Judge each finding's actionability; drop the noise.
