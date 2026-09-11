@@ -1,12 +1,8 @@
 # sefi-morning-triage-opencode -- the morning-triage loop on OpenCode, against this repo.
 #
-# MANUAL DISPATCH ONLY (workflow_dispatch, no schedule:) by design. The Claude-based
-# triage.yml already runs on cron as of the 2026-08-23 audit remediation; adding a second
-# scheduled runner over the same loop and the same state/ files would multiply the
-# untested-collision risk (docs/LOOP-FAILURE-MODES.md S3) rather than the coverage -- the
-# acting_on lock is the only defense and has never run live even for the Claude-only case.
-# Manual dispatch is a deliberate, smaller first step; enabling a schedule here is a
-# separate future owner decision, not this file's to make.
+# Scheduled daily at 06:00 UTC. The Claude-based triage.yml remains available for manual
+# dispatch; keeping the cron in this workflow prevents duplicate runners over the same
+# loop and state files.
 #
 # DEFAULT MODEL -- overridable per dispatch via the model input; CI-only exception to
 # config/model-map.yml. The shipped default, opencode/muse-spark-1.2-contributor-free,

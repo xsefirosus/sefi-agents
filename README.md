@@ -177,6 +177,11 @@ its own memory system on itself, but a fresh install starts empty.
 | Hermes Agent | [adapters/HERMES.md](adapters/HERMES.md) | one command; 13 of 15 skills install automatically, 2 need one manual step (see FAQ); same model-tier caveat as OpenCode, and tool restrictions are advisory only -- Hermes doesn't enforce them |
 | Codex | [adapters/CODEX.md](adapters/CODEX.md) | native plugin plus one-time global bootstrap; ordinary prompts route automatically afterward |
 
+**Hosted loop prerequisite:** To let this repository's scheduled OpenCode loops create
+their review pull requests, set GitHub Actions workflow permissions to **Read and write**
+and enable **Allow GitHub Actions to create and approve pull requests** in the repository
+Actions settings. The workflows create pull requests but never merge them.
+
 ## Safety rails (all of them, in one place)
 
 - The agent that writes code never approves its own work -- a separate reviewer checks
@@ -221,9 +226,9 @@ validate-rule-presence: OK (28 sentences across 17 files)
 check-unicode-safety: OK (167 files scanned, ASCII-clean)
 validate-comment-safety: OK (2 file(s) scanned)
 validate-token-budget: OK (all within token budgets; agents total 8320 words)
-test-scripts: OK (240 passed)
+test-scripts: OK (241 passed)
 test-integration: OK (33 passed) -- full loop skeleton executed end to end
-test-opencode-schedule-ownership: PASS (9 passed)
+test-opencode-schedule-ownership: PASS (15 passed)
 CI: all validators passed
 ```
 
