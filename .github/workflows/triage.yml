@@ -1,21 +1,12 @@
 # sefi-morning-triage -- the morning-triage loop, running against this repo.
 #
-# SCHEDULED, as of the 2026-08-23 audit remediation. Previously manual-trigger-only: this
-# repo's loops had never completed a cycle end to end, state/metrics.md had zero real
-# rows, and retro-improve had no target to select -- a deadlock, since improvement.enabled's
-# flip condition in config/sefi.config.yml is "once weekly-retro has run a few cycles",
-# which itself could never happen while nothing ran on a schedule. The owner accepted that
-# risk explicitly and enabled all three loop schedules together (this file, retro.yml,
-# sync.yml) rather than staying manual-only indefinitely.
+# MANUAL DISPATCH ONLY. The daily morning-triage run is scheduled through
+# triage-opencode.yml at 06:00 UTC; this Claude-based workflow remains available for
+# manual dispatch. Keeping the cron in one workflow avoids duplicate scheduled runners
+# operating on the same loop and state/ files.
 #
-# A `schedule` trigger carries no `inputs`, so `DRY_RUN: ${{ inputs.dry_run }}` below
-# resolves empty on every scheduled firing -- the dry_run default only protects a manual
-# `workflow_dispatch`. Scheduled runs open real PRs from the first firing; this is
-# intentional, not an oversight to patch, because a dry scheduled run would produce no
-# qa-engineer verdict and leave state/metrics.md exactly as empty as before.
-#
-# To go back to manual-only: comment out the `schedule:` block below, no other change
-# needed.
+# This workflow has no `schedule:` trigger, so its dry-run default applies only to a
+# manual `workflow_dispatch`.
 name: sefi-morning-triage
 
 on:
@@ -25,8 +16,6 @@ on:
         description: "Discovery only -- report findings, open no PR"
         type: boolean
         default: true
-  schedule:
-    - cron: "0 6 * * *"   # daily 06:00 UTC
 
 permissions:
   contents: write

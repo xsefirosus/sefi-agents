@@ -1,11 +1,7 @@
 # sefi-weekly-retro -- the weekly-retro loop, running against this repo.
 #
-# Scheduled per the owner's decision (2026-08-23 audit remediation): enabled alongside
-# morning-triage and sync rather than dispatched-only first. loops/weekly-retro.loop.md
-# declared "cloud: cron 0 7 * * 1 via a workflow file" with no such file existing --
-# validate-loops.sh's workflow-existence check only fires on a *named* path, so a vaguely
-# worded declaration slipped past it. This file, plus loop-spec step 9 naming it, closes
-# that gap.
+# MANUAL DISPATCH ONLY. The Monday weekly-retro schedule runs through
+# retro-opencode.yml, keeping a single scheduled runner for this loop and its state files.
 #
 # improvement.enabled is false in config/sefi.config.yml, deliberately (commands/init.md's
 # shared-install guardrail). This loop therefore writes PROPOSALS to
@@ -15,10 +11,6 @@ name: sefi-weekly-retro
 
 on:
   workflow_dispatch: {}
-  schedule:
-    - cron: "0 7 * * 1"   # Monday 07:00 UTC. An hour before sync's 08:00 slot on
-                           # purpose, so the two never contend for the same worktree
-                           # budget (max_parallel_worktrees, config/budget.yml).
 
 permissions:
   contents: write

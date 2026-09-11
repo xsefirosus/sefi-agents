@@ -35,6 +35,8 @@ on:
         description: "Any provider/model id listed by 'opencode models'. Default is a free model verified live 2026-08-24."
         type: string
         default: opencode/muse-spark-1.2-contributor-free
+  schedule:
+    - cron: "0 6 * * *"
 
 permissions:
   contents: write
