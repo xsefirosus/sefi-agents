@@ -23,6 +23,13 @@
 | 0.6.0 | git-tag | 0.6.0 | 0.6.0 | match | git tag -l v0.6.0 -> v0.6.0 ; git ls-remote --tags origin v0.6.0 -> 192a96ad2e3eacbe3e8d3f5a8c36a586482f3a64 refs/tags/v0.6.0 ; git rev-parse v0.6.0^{commit} -> 9d5813e7d1bf93d2c6dfc842ad9719d893d7aec9 (ancestor of origin/main @ fab099b, pushed) | a local tag that was never pushed to origin | 2026-09-03T17:06:31Z |
 | 0.6.0 | github-release | 0.6.0 | 0.6.0 | match | gh release view v0.6.0 --json tagName,isDraft,url,publishedAt -> tagName=v0.6.0, url=https://github.com/xsefirosus/sefi-agents/releases/tag/v0.6.0, publishedAt=2026-09-03T17:03:41Z, isDraft=false | a local or pushed tag with no release; a draft release | 2026-09-03T17:06:31Z |
 | 0.6.0 | github-marketplace-index | 0.6.0 | 0.6.0 | match | gh api repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main (Accept: raw) -> metadata.version 0.6.0, plugins[0].version 0.6.0 | install commands quoted only in a README | 2026-09-03T17:06:31Z |
+| 0.6.1 | plugin.json | 0.6.1 | 0.6.1 | match | plugins/sefi-core/.claude-plugin/plugin.json:3 "version": "0.6.1" | a README count or CHANGELOG heading that happens to agree | 2026-09-11T04:09:44Z |
+| 0.6.1 | marketplace.json | 0.6.1 | 0.6.1 | match | .claude-plugin/marketplace.json:4 metadata.version "0.6.1" | updating one occurrence and assuming the other followed | 2026-09-11T04:09:44Z |
+| 0.6.1 | marketplace.json | 0.6.1 | 0.6.1 | match | .claude-plugin/marketplace.json:10 plugins[0].version "0.6.1" | updating one occurrence and assuming the other followed | 2026-09-11T04:09:44Z |
+| 0.6.1 | changelog | 0.6.1 | 0.6.1 | match | CHANGELOG.md:7 "## [0.6.1] - 2026-09-11" | a ### Changed bullet with no dated heading above it | 2026-09-11T04:09:44Z |
+| 0.6.1 | git-tag | 0.6.1 | unobserved | unobserved | PENDING before publication: no v0.6.1 tag exists locally or on origin | a local tag that was never pushed to origin | 2026-09-11T04:09:44Z |
+| 0.6.1 | github-release | 0.6.1 | unobserved | unobserved | PENDING before publication: gh release view v0.6.1 returns release not found | a local or pushed tag with no release | 2026-09-11T04:09:44Z |
+| 0.6.1 | github-marketplace-index | 0.6.1 | unobserved | unobserved | PENDING before publication: public main has not yet received the 0.6.1 manifest | install commands quoted only in a README | 2026-09-11T04:09:44Z |
 
 ## Notes
 

@@ -5,6 +5,16 @@ Changelog; this project adheres to Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-09-11
+
+### Changed
+
+- Morning triage now runs daily at 06:00 UTC on OpenCode; weekly retro and sync run on
+  OpenCode each Monday at 07:00 UTC and 08:00 UTC, respectively. The Claude workflows
+  remain available for manual dispatch only, so each loop has one scheduled runner.
+- Updated the README's OpenCode harness entry to describe the scheduled workflows and
+  their manual-dispatch option accurately.
+
 ## [0.6.0] - 2026-09-03
 
 - Astral-orchestrator adoption, Phases 1-4: content-presence contract test
