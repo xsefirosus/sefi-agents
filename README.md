@@ -183,8 +183,8 @@ its own memory system on itself, but a fresh install starts empty.
 
 ## Proof
 
-This project checks itself. The same checks run on every push (badge above), and you can
-run them yourself, in one command:
+This project checks itself. The same checks run on every push to `main` and on every pull
+request (badge above), and you can run them yourself, in one command:
 
 ```
 $ bash plugins/sefi-core/scripts/ci/run-all.sh
