@@ -5,6 +5,15 @@ Changelog; this project adheres to Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.6.3] - 2026-09-11
+
+### Changed
+
+- Codex bootstrap now applies the approved per-specialist model policy to Sefi custom
+  agents: Astra/high for orchestration, Sol/high for QA and security, Terra/high for build
+  and planning, and Luna/high for lightweight specialists. It leaves the user's global
+  default model and unrelated custom agents unchanged.
+
 ## [0.6.2] - 2026-09-11
 
 ### Added

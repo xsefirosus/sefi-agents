@@ -27,7 +27,7 @@ exception, so a short question does not mechanically spawn specialists.
 
 The installed package contains all 13 agents, 15 skills, hooks, commands, and templates.
 Re-run `bash install-codex.sh` after an update; it refreshes the marketplace and replaces
-only its own marked instruction block.
+only its own marked instruction block and Sefi's own custom-agent model fields.
 
 ## 2. Subagents (multi_agent)
 
@@ -88,6 +88,10 @@ health).
   if it is missing.
 - **Hook trust was declined** -- start another new session and accept Codex's Sefi hook
   trust prompt. Routing does not require this step; memory SessionStart injection does.
+- **Sefi specialist has the wrong model** -- re-run `bash install-codex.sh`. It updates
+  only `model` and `model_reasoning_effort` in Sefi's 13 custom-agent profiles under
+  `${CODEX_HOME:-~/.codex}/agents`; it does not change your global Codex default or any
+  unrelated custom agent.
 
 ## Credentials
 
@@ -96,29 +100,29 @@ sefi stores no credentials -- rotate at this harness's own config or your CI sec
 
 ## Model tiers and reasoning
 
-Verified 2026-08-11. GPT-5.6 ships as a three-model family that lines up 1:1 with the tiers:
+The bootstrap configures these exact custom-agent overrides, all at high reasoning:
 
-| Tier | Model | Reasoning | Used by |
+| Role | Model | Reasoning | Used by |
 |---|---|---|---|
-| high | `gpt-5.6-sol` | `xhigh` | qa-engineer, security-engineer |
-| mid | `gpt-5.6-terra` | `high` | 7 agents incl. software-engineer |
-| low | `gpt-5.6-luna` | `medium` | 5 haiku-tier agents |
+| orchestration | `gpt-6-astra` | `high` | sefi-agents / engineering-manager |
+| high | `gpt-5.6-sol` | `high` | qa-engineer, security-engineer |
+| mid | `gpt-5.6-terra` | `high` | software-engineer, product-manager, ui-ux-designer, devops-engineer, solutions-architect |
+| low | `gpt-5.6-luna` | `high` | prompt-engineer, research-analyst, support-engineer, knowledge-manager, technical-writer |
 
-Sol is the flagship, Terra the balanced workhorse, Luna the fast/cheap option -- "Terra as
-default, Sol for the hard parts, Luna for volume". Putting Sol on `high` is what keeps the
-qa-engineer a genuinely stronger judge than the software-engineer it reviews.
+The plugin does not change the model of the top-level conversation you start. It assigns
+the selected model only when Codex dispatches one of these Sefi custom agents.
 
 Use the explicit ids. The bare `gpt-5.6` alias routes to `gpt-5.6-sol` today, which adds a
 routing question to any diagnostic.
 
-**Deadline:** `gpt-5.4` and `gpt-5.4-mini` retire from Codex on **2026-08-31**. The
-documented replacements are `gpt-5.4` -> `gpt-5.6-terra` and `gpt-5.4-mini` ->
-`gpt-5.6-luna`.
-
 ### Reasoning effort
 
-`model_reasoning_effort` accepts `minimal | low | medium | high | xhigh`. Set it in
-`~/.codex/config.toml`:
+`model_reasoning_effort` is set to `high` directly in each Sefi custom-agent profile.
+Codex applies a custom agent's explicit model and effort when that specialist is dispatched;
+your global `config.toml` settings remain the defaults for your own top-level and unrelated
+agents.
+
+If you want the same baseline for non-Sefi work, set it yourself in `~/.codex/config.toml`:
 
 ```toml
 model = "gpt-5.6-terra"          # mid tier: the default
@@ -126,26 +130,24 @@ model_reasoning_effort = "high"
 review_model = "gpt-5.6-sol"     # high tier: the adversarial judge
 ```
 
-`xhigh` is only available on top-tier (codex-max) coding models, so an effort setting can
-silently constrain which models make sense for a profile. If a dispatch on `gpt-5.6-sol`
-rejects or ignores `xhigh`, lower `codex.high_reasoning` in the model map to `high` -- one
-line, which is the point of the map.
-
 ### Baking the models in
 
-The Codex marketplace path reads agent files directly with no transform step, so nothing
-rewrites `model:` for Codex automatically, and `model:` is advisory here in any case. To
-bake in the ids first:
+`install-codex.sh` is the supported path. After Codex creates its Sefi custom-agent
+profiles, the bootstrap resolves each profile through `config/model-map.yml` and writes
+only its `model` and `model_reasoning_effort` fields. The `sefi-agents` profile is the
+deliberate orchestration exception and resolves to Astra; the other profiles resolve from
+their high/mid/low tier.
+
+`apply-model-map.sh` remains available for an isolated converted copy of the Markdown
+agent sources:
 
 ```sh
 bash plugins/sefi-core/scripts/apply-model-map.sh codex plugins/sefi-core/agents <dst-dir>
 ```
 
-It resolves each agent's `tier:` through `plugins/sefi-core/config/model-map.yml`, writes
-the Codex model, drops the `tier:` line, preserves everything else byte-for-byte, and
-prints the matching `config.toml` block. Reasoning effort is deliberately NOT written into
-frontmatter: Codex reads it from `config.toml`, so an agent-file field would be inert while
-looking wired.
+It resolves each agent through `plugins/sefi-core/config/model-map.yml`, including the
+Codex orchestration exception, writes the model, drops the `tier:` line, and preserves
+everything else byte-for-byte.
 
 ## Session rollout
 

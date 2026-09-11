@@ -43,6 +43,13 @@
 | 0.6.2 | git-tag | 0.6.2 | 0.6.2 | match | git rev-parse v0.6.2^{commit} -> 97039abc3b1a30e624d7780a4200f49e34c7f5a9; git ls-remote --tags origin v0.6.2 -> 9486ccae779c29dc5472fa3e9eaab9b22d7a8587 refs/tags/v0.6.2 | a local tag that was never pushed to origin | 2026-09-11T07:44:30Z |
 | 0.6.2 | github-release | 0.6.2 | 0.6.2 | match | gh release view v0.6.2 -> tagName v0.6.2, isDraft false, publishedAt 2026-09-11T07:44:30Z, url https://github.com/xsefirosus/sefi-agents/releases/tag/v0.6.2 | a local or pushed tag with no release | 2026-09-11T07:44:30Z |
 | 0.6.2 | github-marketplace-index | 0.6.2 | 0.6.2 | match | gh api repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main -> metadata.version 0.6.2, plugins[0].version 0.6.2 | install commands quoted only in a README | 2026-09-11T07:44:30Z |
+| 0.6.3 | plugin.json | 0.6.3 | 0.6.3 | match | plugins/sefi-core/.claude-plugin/plugin.json version key "0.6.3"; native Codex manifest version key also "0.6.3" | a README count or CHANGELOG heading that happens to agree | 2026-09-11T08:57:45Z |
+| 0.6.3 | marketplace.json | 0.6.3 | 0.6.3 | match | .claude-plugin/marketplace.json metadata.version "0.6.3" | updating one occurrence and assuming the other followed | 2026-09-11T08:57:45Z |
+| 0.6.3 | marketplace.json | 0.6.3 | 0.6.3 | match | .claude-plugin/marketplace.json plugins[0].version "0.6.3" | updating one occurrence and assuming the other followed | 2026-09-11T08:57:45Z |
+| 0.6.3 | changelog | 0.6.3 | 0.6.3 | match | CHANGELOG.md top versioned heading "## [0.6.3] - 2026-09-11" | a Changed bullet with no dated heading above it | 2026-09-11T08:57:45Z |
+| 0.6.3 | git-tag | 0.6.3 | unobserved | unobserved | PENDING before publication: git tag -l v0.6.3 and git ls-remote --tags origin v0.6.3 returned no tag | a local tag that was never pushed to origin | 2026-09-11T08:57:45Z |
+| 0.6.3 | github-release | 0.6.3 | unobserved | unobserved | PENDING before publication: gh release view v0.6.3 returned "release not found" | a local or pushed tag with no release | 2026-09-11T08:57:45Z |
+| 0.6.3 | github-marketplace-index | 0.6.3 | unobserved | unobserved | PENDING before publication: public main marketplace metadata.version remains 0.6.2 | install commands quoted only in a README | 2026-09-11T08:57:45Z |
 
 ## Notes
 

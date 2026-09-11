@@ -38,7 +38,9 @@ bash install-codex.sh
 
 Then open a new Codex session and accept the one-time hook trust prompt when Codex shows
 it. From then on, ordinary prompts in every project load Sefi routing automatically; you
-do not need a `/sefi:*` command for each request.
+do not need a `/sefi:*` command for each request. Sefi subagents use the configured Codex
+model policy: Astra for orchestration, Sol for QA/security, Terra for build/planning, and
+Luna for research and writing.
 
 Or hand the setup to any coding agent -- this one detects which tool you're using and
 installs the right way for it, Claude Code or otherwise:

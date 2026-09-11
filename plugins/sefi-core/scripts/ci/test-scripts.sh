@@ -1390,6 +1390,14 @@ chmod +x "$CODEX_BIN/codex"
 CODEX_HOME_TMP="$CODEX_TMP/home"
 mkdir -p "$CODEX_HOME_TMP"
 printf '# Keep this user instruction.\n' > "$CODEX_HOME_TMP/AGENTS.md"
+mkdir -p "$CODEX_HOME_TMP/agents"
+for codex_agent in devops-engineer knowledge-manager product-manager prompt-engineer qa-engineer research-analyst security-engineer sefi-agents software-engineer solutions-architect support-engineer technical-writer ui-ux-designer; do
+  cat > "$CODEX_HOME_TMP/agents/$codex_agent.toml" <<EOF
+name = "$codex_agent"
+description = "Sefi fixture $codex_agent"
+developer_instructions = "fixture"
+EOF
+done
 
 codex_install_rc=0
 env PATH="$CODEX_BIN:$PATH" CODEX_HOME="$CODEX_HOME_TMP" CODEX_TEST_LOG="$CODEX_LOG" \
@@ -1401,6 +1409,25 @@ if [ "$codex_install_rc" -eq 0 ] \
   ok "install-codex.sh preserves user instructions and adds the global Sefi routing block"
 else
   bad "install-codex.sh did not preserve AGENTS.md and add the global Sefi routing block (exit $codex_install_rc)"
+fi
+
+# A Sefi specialist dispatched through Codex must receive the exact model and reasoning
+# effort the published policy assigns it. This is deliberately per named specialist rather
+# than a global [agents] default, so an unrelated user's Codex subagents are not retuned.
+codex_all_high=1
+for codex_profile in "$CODEX_HOME_TMP"/agents/*.toml; do
+  grep -qF 'model_reasoning_effort = "high"' "$codex_profile" || codex_all_high=0
+done
+if grep -qF 'model = "gpt-6-astra"' "$CODEX_HOME_TMP/agents/sefi-agents.toml" \
+  && grep -qF 'model_reasoning_effort = "high"' "$CODEX_HOME_TMP/agents/sefi-agents.toml" \
+  && grep -qF 'model = "gpt-5.6-sol"' "$CODEX_HOME_TMP/agents/qa-engineer.toml" \
+  && grep -qF 'model = "gpt-5.6-sol"' "$CODEX_HOME_TMP/agents/security-engineer.toml" \
+  && grep -qF 'model = "gpt-5.6-terra"' "$CODEX_HOME_TMP/agents/software-engineer.toml" \
+  && grep -qF 'model = "gpt-5.6-luna"' "$CODEX_HOME_TMP/agents/research-analyst.toml" \
+  && [ "$codex_all_high" -eq 1 ]; then
+  ok "install-codex.sh pins the approved Codex model and high reasoning for each Sefi specialist"
+else
+  bad "install-codex.sh did not pin the approved Codex model policy for Sefi specialists"
 fi
 
 if grep -qxF 'plugin marketplace add xsefirosus/sefi-agents' "$CODEX_LOG" \
@@ -1425,6 +1452,8 @@ fi
 # installers can use one command shape across harnesses.
 WRAPPER_HOME="$CODEX_TMP/wrapper-home"
 mkdir -p "$WRAPPER_HOME"
+mkdir -p "$WRAPPER_HOME/agents"
+cp "$CODEX_HOME_TMP"/agents/*.toml "$WRAPPER_HOME/agents/"
 wrapper_rc=0
 env PATH="$CODEX_BIN:$PATH" CODEX_HOME="$WRAPPER_HOME" CODEX_TEST_LOG="$CODEX_LOG" \
   bash "$ROOT/install.sh" --target codex >/dev/null 2>&1 || wrapper_rc=$?
