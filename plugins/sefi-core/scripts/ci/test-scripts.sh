@@ -1354,6 +1354,16 @@ rm -rf "$OC_TMP"
 echo
 echo "=== install-codex.sh (native Codex bootstrap) ==="
 
+# The resolver is invoked explicitly through `bash`, so it only needs to be a readable
+# file. Requiring its executable bit fails on Linux checkouts when Git tracks it as 100644;
+# Git Bash on Windows masks that distinction. Keep the portable guard as a regression test.
+if grep -qF '[ -d "$CORE/agents" ] && [ -f "$MODEL_FOR" ]' "$ROOT/install-codex.sh" \
+  && ! grep -qF '[ -x "$MODEL_FOR" ]' "$ROOT/install-codex.sh"; then
+  ok "install-codex.sh accepts a non-executable resolver invoked through bash"
+else
+  bad "install-codex.sh requires an executable resolver even though it invokes bash explicitly"
+fi
+
 # Codex resolves a marketplace entry with source:url by cloning that value as a separate
 # Git repository. sefi-core is a subdirectory of this repository, so the native marketplace
 # must use source:local with its repository-relative path instead.
