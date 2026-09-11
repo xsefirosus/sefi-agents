@@ -30,6 +30,9 @@
 | 0.6.1 | git-tag | 0.6.1 | unobserved | unobserved | PENDING before publication: no v0.6.1 tag exists locally or on origin | a local tag that was never pushed to origin | 2026-09-11T04:09:44Z |
 | 0.6.1 | github-release | 0.6.1 | unobserved | unobserved | PENDING before publication: gh release view v0.6.1 returns release not found | a local or pushed tag with no release | 2026-09-11T04:09:44Z |
 | 0.6.1 | github-marketplace-index | 0.6.1 | unobserved | unobserved | PENDING before publication: public main has not yet received the 0.6.1 manifest | install commands quoted only in a README | 2026-09-11T04:09:44Z |
+| 0.6.1 | git-tag | 0.6.1 | 0.6.1 | match | git ls-remote --tags origin v0.6.1 -> 5c86e7c354957d251b3b546e05b8bef5d7d8ca21 refs/tags/v0.6.1 | a local tag that was never pushed to origin | 2026-09-11T04:25:07Z |
+| 0.6.1 | github-release | 0.6.1 | 0.6.1 | match | gh release view v0.6.1 -> tagName v0.6.1, isDraft false, publishedAt 2026-09-11T04:24:45Z, url https://github.com/xsefirosus/sefi-agents/releases/tag/v0.6.1 | a local or pushed tag with no release | 2026-09-11T04:25:07Z |
+| 0.6.1 | github-marketplace-index | 0.6.1 | 0.6.1 | match | gh api repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main -> metadata.version 0.6.1, plugins[0].version 0.6.1 | install commands quoted only in a README | 2026-09-11T04:25:07Z |
 
 ## Notes
 
