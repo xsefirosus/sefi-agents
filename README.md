@@ -57,7 +57,7 @@ installs the right way for it, Claude Code or otherwise:
 [How a request gets done](#how-a-request-actually-gets-done) --
 [Memory](#memory-that-survives-the-session) -- [Where it runs](#works-with-your-harness) --
 [Safety rules](#safety-rails-all-of-them-in-one-place) -- [Proof](#proof) -- [FAQ](#faq) --
-[Contributing](#contributing) -- [License](#license)
+[Contributing](#contributing) -- [Credits](#credits) -- [License](#license)
 
 ## Why this exists
 
@@ -309,6 +309,13 @@ for force-push, hard resets, branch deletion, `rm -rf`, and credential files. Co
 an on-failure approval policy and workspace-write sandbox instead; it has no per-command
 deny list. Hermes reads no equivalent project configuration. Each limitation is stated in
 the relevant adapter or configuration file.
+
+## Credits
+
+Sefi-agents re-expresses ideas from open-source projects and research. Direct
+adaptations and the full research list are acknowledged in [CREDITS.md](CREDITS.md).
+Each project keeps its own license; this repository does not vendor their code unless a
+file says otherwise.
 
 ## License
 
