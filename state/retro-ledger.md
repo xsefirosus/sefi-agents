@@ -23,6 +23,7 @@ some task classes is a valid outcome, not a REJECT and not an invalid run.
 
 | date | target-path | status | commit | evidence | before | after |
 |------|-------------|--------|--------|----------|--------|-------|
+| 2026-09-11 | n/a | skip | 3b6e5a8561e3809bae63c057fa92caf717c0b334 | SKIP: no REJECT/gate-failure/contradiction; metrics 3/3 PASS (worst 100%); no METRICS-PROVENANCE promotion met; improvement.enabled:false | 3/3 PASS | n/a |
 
 ## How this file is read (before proposing anything)
 
