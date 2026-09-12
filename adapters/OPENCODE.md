@@ -171,6 +171,12 @@ Three GitHub Actions workflows run this repo's own loops headlessly on OpenCode:
 (weekly-retro), and `sync-opencode.yml` (sync) -- mirrors of the Claude-based
 `triage.yml`/`retro.yml`/`sync.yml`.
 
+These are optional OpenCode Zen examples, not a required provider choice. A local clone
+does not create scheduled workflows. Fork this repository or push your clone to a GitHub
+repository you control to run them; they maintain that repository only. To run scheduled
+loops through another provider, configure that provider's equivalent workflow in your own
+repository.
+
 Morning triage runs daily at 06:00 UTC through `triage-opencode.yml`; weekly retro runs
 Monday at 07:00 UTC through `retro-opencode.yml`; and sync runs Monday at 08:00 UTC through
 `sync-opencode.yml`. All three also support manual dispatch. Their Claude counterparts

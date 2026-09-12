@@ -177,10 +177,16 @@ its own memory system on itself, but a fresh install starts empty.
 | Hermes Agent | [adapters/HERMES.md](adapters/HERMES.md) | one command; 13 of 15 skills install automatically, 2 need one manual step (see FAQ); same model-tier caveat as OpenCode, and tool restrictions are advisory only -- Hermes doesn't enforce them |
 | Codex | [adapters/CODEX.md](adapters/CODEX.md) | native plugin plus one-time global bootstrap; ordinary prompts route automatically afterward |
 
-**Hosted loop prerequisite:** To let this repository's scheduled OpenCode loops create
-their review pull requests, set GitHub Actions workflow permissions to **Read and write**
-and enable **Allow GitHub Actions to create and approve pull requests** in the repository
-Actions settings. The workflows create pull requests but never merge them.
+**Local or hosted loops:** Clone this repository for local Sefi use. To run scheduled
+triage, retro, and sync, fork it or push your clone to a GitHub repository you control.
+Those workflows maintain only the repository that contains them.
+
+**Choose your provider:** Sefi does not prescribe an LLM provider. The included hosted
+workflows are OpenCode Zen examples. To use them, add `OPENCODE_ZEN_API_KEY`, set GitHub
+Actions workflow permissions to **Read and write**, and enable **Allow GitHub Actions to
+create and approve pull requests**. To use another provider, configure that provider's
+equivalent workflow in your own repository. The workflows create pull requests but never
+merge them.
 
 ## Safety rails (all of them, in one place)
 
