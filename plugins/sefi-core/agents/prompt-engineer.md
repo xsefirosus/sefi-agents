@@ -4,7 +4,6 @@ description: Use as Stage 0 on an interactive human message, before the engineer
 tools: Read, Grep, Glob
 disallowedTools: Write, Edit, MultiEdit, Bash
 tier: low   # harness-neutral; see config/model-map.yml (edit there, not in 13 agent files)
-model: haiku   # advisory; an OMITTED model silently inherits the session's most expensive tier -- always name it. Ignored on runtimes that set the model globally.
 keywords: prompt, intent, restate, clarify, stage-0, ambiguity
 managed-by: sefi-agents
 ---

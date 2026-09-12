@@ -1,0 +1,14 @@
+schema: sefi-adapter/v1
+id: opencode
+verification: verified
+support: shipped
+install_method: native
+agent_format: markdown-frontmatter
+permission_transform: transformed
+hook_strategy: permission-map
+delegation: subagent
+headless: run
+model_strategy: flexible
+route_evidence: not-applicable
+driver: opencode-native
+destination: ${HOME}/.config/opencode

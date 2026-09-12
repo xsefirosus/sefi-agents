@@ -1,0 +1,14 @@
+schema: sefi-adapter/v1
+id: hermes
+verification: verified
+support: shipped
+install_method: filesystem
+agent_format: markdown-frontmatter
+permission_transform: none
+hook_strategy: none
+delegation: sequential
+headless: gateway
+model_strategy: flexible
+route_evidence: not-applicable
+driver: filesystem
+destination: ${HOME}/.hermes

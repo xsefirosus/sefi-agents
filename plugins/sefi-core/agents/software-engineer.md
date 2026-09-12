@@ -4,7 +4,6 @@ description: Use when an approved plan slice needs to be built. The full-stack g
 tools: Read, Grep, Glob, Bash, Write, Edit, MultiEdit
 disallowedTools: WebFetch, WebSearch
 tier: mid   # harness-neutral; see config/model-map.yml (edit there, not in 13 agent files)
-model: sonnet   # advisory; an OMITTED model silently inherits the session's most expensive tier -- always name it. Ignored on runtimes that set the model globally.
 keywords: software, engineer, full-stack, generator, build, worktree, gate, code
 managed-by: sefi-agents
 ---

@@ -4,15 +4,9 @@
 #   1. every agent declares a `tier:` in {high,mid,low}
 #   2. every declared tier resolves to a model AND a reasoning effort for EVERY harness in
 #      the map (a new harness or a new tier cannot leave a hole)
-#   3. the literal `model:` in each agent equals what the map gives for claude-code at that
-#      agent's tier -- the two fields coexist because the Claude Code plugin path has no
-#      install step that could rewrite files, and two fields that can disagree will
+#   3. claude-code and codex both resolve their explicit `orchestrator` route; Claude also
+#      resolves its explicit `orchestrator_fallback`
 #   4. every shell script parses (`bash -n`)
-#
-# On (3): Claude Code reads agents/*.md directly out of the plugin, so its model must be
-# literally correct on disk. Every other harness gets rewritten at install time. That makes
-# `model:` a derived value with a literal representation, and derived values drift unless
-# something checks them.
 #
 # Also WARNS (never errors) when a harness maps two tiers to the same identifier: that
 # collapses generator/evaluator separation to instructions-only. On a single-model harness
@@ -64,16 +58,20 @@ for f in "$CORE"/agents/*.md; do
     esac
   done
 
-  # (3) the literal Claude Code model must match the map.
-  model="$(printf '%s\n' "$fm" | sed -n 's/^model:[[:space:]]*\([A-Za-z0-9._-]*\).*/\1/p' | head -1)"
-  expected="$(bash "$MODEL_FOR" claude-code "$tier" 2>/dev/null || printf '')"
-  if [ -n "$expected" ] && [ "$model" != "$expected" ]; then
-    echo "ERROR: $rel - tier '$tier' maps to claude-code model '$expected', but the file says 'model: $model'"
-    errors=$((errors + 1))
-  fi
 done
 
 [ "$agent_count" -gt 0 ] || { echo "ERROR: no agent files found"; exit 1; }
+
+for h in claude-code codex; do
+  if ! bash "$MODEL_FOR" "$h" orchestrator >/dev/null 2>&1; then
+    echo "ERROR: harness '$h' has no orchestrator mapping"
+    errors=$((errors + 1))
+  fi
+done
+if ! bash "$MODEL_FOR" claude-code orchestrator --fallback >/dev/null 2>&1; then
+  echo "ERROR: claude-code has no orchestrator fallback mapping"
+  errors=$((errors + 1))
+fi
 
 # Generator/evaluator separation warning, per harness.
 for h in $harnesses; do

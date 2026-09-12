@@ -50,10 +50,10 @@ for f in "$SRC"/*.md; do
   awk -v model="$model" '
     BEGIN { in_fm = -1 }
     in_fm == -1 && /^---$/ { in_fm = 0; print; next }
-    in_fm == 0  && /^---$/ { in_fm = 1; print; next }
+    in_fm == 0  && /^---$/ { print "model: " model; in_fm = 1; print; next }
     in_fm == 0 {
       if (/^tier:[[:space:]]*/) { next }                       # our field, not a harness field
-      if (/^model:[[:space:]]*/) { print "model: " model; next }
+      if (/^model:[[:space:]]*/) { next }
       print; next
     }
     { print }

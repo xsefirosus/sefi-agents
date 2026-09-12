@@ -13,21 +13,21 @@ User instructions always override this skill.
 All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never guess.
 
 ## Roster (summary; full detail in `references/roster.md`)
-| Agent | Use for | Cost |
+| Agent | Use for | Tier |
 |---|---|---|
-| sefi-agents | route, dispatch, enforce contracts and budgets | sonnet |
-| research-analyst | gather web/repo/doc context as a digest | haiku |
-| product-manager | turn a goal into a checkable plan file | sonnet |
-| ui-ux-designer | build, audit, redesign, or study a UI, direction-first | sonnet |
-| software-engineer | build one full-stack plan slice in a worktree | sonnet |
-| qa-engineer | adversarial PASS/REJECT against evidence | opus |
-| security-engineer | security gate on diffs at trust boundaries | opus |
-| devops-engineer | CI/CD, worktrees, scheduling, budget plumbing | sonnet |
-| support-engineer | inbox/issue intake, triage, consume-before-act | haiku |
-| knowledge-manager | vault distill / promote / router / contradiction | haiku |
-| technical-writer | user-facing docs, changelogs, guides | haiku |
-| solutions-architect | n8n / Make / GHL / RAG / Vapi specs | sonnet |
-| prompt-engineer | Stage 0 -- restate a raw human message before routing | haiku |
+| sefi-agents | route, dispatch, enforce contracts and budgets | mid |
+| research-analyst | gather web/repo/doc context as a digest | low |
+| product-manager | turn a goal into a checkable plan file | mid |
+| ui-ux-designer | build, audit, redesign, or study a UI, direction-first | mid |
+| software-engineer | build one full-stack plan slice in a worktree | mid |
+| qa-engineer | adversarial PASS/REJECT against evidence | high |
+| security-engineer | security gate on diffs at trust boundaries | high |
+| devops-engineer | CI/CD, worktrees, scheduling, budget plumbing | mid |
+| support-engineer | inbox/issue intake, triage, consume-before-act | low |
+| knowledge-manager | vault distill / promote / router / contradiction | low |
+| technical-writer | user-facing docs, changelogs, guides | low |
+| solutions-architect | n8n / Make / GHL / RAG / Vapi specs | mid |
+| prompt-engineer | Stage 0 -- restate a raw human message before routing | low |
 
 Read `references/roster.md` for each agent's skills, gates, and cost tier; do not inline
 it here. At 13 files the roster sits past the ~10-12 flat-folder boundary: it stays flat
@@ -45,6 +45,16 @@ routing key highest-to-lowest: per-message override -> per-project config -> glo
 default -> hardcoded fallback. Agent identity travels as a field; a new trigger or loop is
 one appended row, not new branching. A non-interactive or scheduled trigger sets
 `skip_clarification` / `non_interactive`.
+
+## Model dispatch
+
+Resolve the orchestrator and every role tier through
+`${CLAUDE_PLUGIN_ROOT}/scripts/model-for.sh` and `config/model-map.yml`; do not duplicate
+provider identifiers in prompts or this skill. For Claude orchestration, request the
+configured high effort through that contract. Start with the configured orchestrator
+mapping. Retry exactly once with `model-for.sh claude-code orchestrator --fallback` only
+when the harness reports the primary model unavailable. Do not retry or switch models for
+any other failure, and do not claim a model is account-available before the harness runs.
 
 ## Handoff rule
 Each stage's output file must be self-contained. Name the specific upstream output file a

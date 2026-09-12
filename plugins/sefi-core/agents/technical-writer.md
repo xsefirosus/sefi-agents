@@ -4,7 +4,6 @@ description: Use when user-facing prose needs writing or revising -- READMEs, ch
 tools: Read, Grep, Glob, Write, Edit
 disallowedTools: Bash, WebFetch, WebSearch
 tier: low   # harness-neutral; see config/model-map.yml (edit there, not in 13 agent files)
-model: haiku   # advisory; an OMITTED model silently inherits the session's most expensive tier -- always name it. Ignored on runtimes that set the model globally.
 keywords: technical, writer, docs, readme, changelog, guides, prose
 managed-by: sefi-agents
 ---

@@ -4,7 +4,6 @@ description: Use when a task needs external or repository context gathered befor
 tools: Read, Grep, Glob, Bash, WebFetch, WebSearch
 disallowedTools: Write, Edit, MultiEdit
 tier: low   # harness-neutral; see config/model-map.yml (edit there, not in 13 agent files)
-model: haiku   # advisory; an OMITTED model silently inherits the session's most expensive tier -- always name it. Ignored on runtimes that set the model globally.
 keywords: research, analyst, context, web, docs, discovery, sources
 managed-by: sefi-agents
 ---

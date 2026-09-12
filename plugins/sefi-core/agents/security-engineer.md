@@ -4,7 +4,6 @@ description: Use when a diff, dependency change, or config touching a trust boun
 tools: Read, Grep, Glob, Bash
 disallowedTools: Write, Edit, MultiEdit
 tier: high   # harness-neutral; see config/model-map.yml (edit there, not in 13 agent files)
-model: opus   # advisory; an OMITTED model silently inherits the session's most expensive tier -- always name it. Ignored on runtimes that set the model globally.
 keywords: security, review, secrets, injection, dependencies, trust-boundary, authz
 managed-by: sefi-agents
 ---

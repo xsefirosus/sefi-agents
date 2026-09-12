@@ -183,8 +183,9 @@ transform_agent() {
     # First ---: start of frontmatter.
     in_fm == -1 && /^---$/ { in_fm = 0; print; next }
 
-    # Second ---: end of frontmatter. Emit mode: and the permission block right before it.
+    # Second ---: end of frontmatter. Emit mapped model, mode, and permission block right before it.
     in_fm == 0 && /^---$/ {
+      emit_model_fields()
       if (fm_name == "sefi-agents" || fm_name == "engineering-manager") { print "mode: primary" }
       else { print "mode: subagent" }
       emit_permission_block(); print; in_fm = 1; next
@@ -211,29 +212,6 @@ transform_agent() {
       if (/^tier:[[:space:]]*/) {
         next   # harness-neutral input, not an OpenCode field; consumed to pick MODEL.
       }
-      if (/^model:[[:space:]]*/) {
-        # The Claude Code alias is replaced, not dropped. Dropping it (the v0.2.2 fix)
-        # stopped the crash but made every agent inherit ONE session model, which
-        # collapses generator/evaluator separation: the qa-engineer and the
-        # software-engineer it judges ran on the identical model, so the routing
-        # table rule "different model where possible" was never possible here.
-        #
-        # EXCEPT when the map itself says "flexible" (v0.3.18): that is a deliberate
-        # per-tier choice, not a missing/unresolvable value, so the drop below is by
-        # design -- the users own OpenCode model selection governs instead.
-        if (MODEL != "" && MODEL != "flexible") { print "model: " MODEL }
-        # Some OpenCode versions exclude DeepSeek models from the reasoning-effort system
-        # and need options.reasoningEffort set per agent, so it is written here rather than
-        # assumed. Effort scales with tier: the high tier is the adversarial judge and the
-        # long agent loop, which is where more reasoning actually pays for itself. Not
-        # written for "flexible" either: an effort value tuned for one models own dial is
-        # meaningless (or rejected) on a model this file has no knowledge of.
-        if (REASONING != "" && REASONING != "none" && MODEL != "flexible") {
-          print "options:"
-          print "  reasoningEffort: " REASONING
-        }
-        next
-      }
       # Every other frontmatter line (description, keywords, managed-by, comments,
       # blank lines) is kept verbatim.
       print; next
@@ -259,6 +237,14 @@ transform_agent() {
       print_perm_line("lsp",               "")
       print_perm_line("doom_loop",         "")
       print_perm_line("skill",             "")
+    }
+
+    function emit_model_fields() {
+      if (MODEL != "" && MODEL != "flexible") { print "model: " MODEL }
+      if (REASONING != "" && REASONING != "none" && MODEL != "flexible") {
+        print "options:"
+        print "  reasoningEffort: " REASONING
+      }
     }
 
     function print_perm_line(key, sources,   parts, n, j, allow, deny_hit) {

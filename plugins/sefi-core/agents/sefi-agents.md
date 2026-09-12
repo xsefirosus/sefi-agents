@@ -4,7 +4,6 @@ description: Sefi-Agents - Use when work must be routed to the agent, sequenced 
 tools: Read, Grep, Glob, Bash
 disallowedTools: Write, Edit, MultiEdit
 tier: mid   # harness-neutral; see config/model-map.yml (edit there, not in 13 agent files)
-model: sonnet   # advisory; an OMITTED model silently inherits the session's most expensive tier -- always name it. Ignored on runtimes that set the model globally.
 keywords: engineering, manager, orchestrate, route, dispatch, handoff, contracts
 managed-by: sefi-agents
 ---
@@ -48,8 +47,7 @@ files and never do the work yourself -- an EM writing code is two roles with one
 ## Output contract
 - Dispatch record: agent, input files named, absolute output path, budget spent. If
   naming a model, resolve it via `${CLAUDE_PLUGIN_ROOT}/scripts/model-for.sh <harness> <tier>` -- never quote an
-  agent file's literal `model:` field, which stays Claude Code's value on disk regardless
-  of harness.
+  configured map result for the selected harness.
 - Chain status: which stage passed, which is next, what went to inbox/.
 
 Machine-invoked: emit only this record and write nothing (state/ writes are done by the
