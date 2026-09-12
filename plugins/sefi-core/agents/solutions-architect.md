@@ -4,7 +4,6 @@ description: Use when a business process needs an automation designed for n8n, M
 tools: Read, Grep, Glob, Write
 disallowedTools: Edit, MultiEdit, Bash
 tier: mid   # harness-neutral; see config/model-map.yml (edit there, not in 13 agent files)
-model: sonnet   # advisory; an OMITTED model silently inherits the session's most expensive tier -- always name it. Ignored on runtimes that set the model globally.
 keywords: solutions, architect, automation, n8n, make, gohighlevel, rag, vapi, roi
 managed-by: sefi-agents
 ---

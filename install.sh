@@ -21,35 +21,64 @@
 # which this installer does not create. That's a stated scope boundary: this script's
 # `claude` target was never designed for a cloud session, and doesn't claim to cover one.
 #
-# Usage: ./install.sh --target <claude|hermes|opencode|codex> [--force] [--copy]
+# Usage: ./install.sh --target <adapter-id> | --adapter <manifest-path> [--model-map <path>] [--force] [--copy]
 set -euo pipefail
 
 TARGET=""
+ADAPTER=""
+MODEL_MAP=""
 FORCE=0
 MODE="symlink"
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --target) TARGET="${2:-}"; shift 2 ;;
+    --adapter) ADAPTER="${2:-}"; shift 2 ;;
+    --model-map) MODEL_MAP="${2:-}"; shift 2 ;;
     --force)  FORCE=1; shift ;;
     --copy)   MODE="copy"; shift ;;
-    -h|--help) echo "usage: $0 --target <claude|hermes|opencode|codex> [--force] [--copy]"; exit 0 ;;
+    -h|--help) echo "usage: $0 (--target <adapter-id> | --adapter <manifest-path>) [--model-map <path>] [--force] [--copy]"; exit 0 ;;
     *) echo "install.sh: unknown arg $1" >&2; exit 2 ;;
   esac
 done
 
-[ -n "$TARGET" ] || { echo "install.sh: --target is required (claude|hermes|opencode|codex)" >&2; exit 2; }
+[ -z "$TARGET" ] || [ -z "$ADAPTER" ] || { echo "install.sh: use either --target or --adapter, not both" >&2; exit 2; }
+[ -n "$TARGET$ADAPTER" ] || { echo "install.sh: --target or --adapter is required" >&2; exit 2; }
 
 # Resolve the plugin source root (this script's directory).
 SRC="$(cd "$(dirname "$0")" && pwd)"
 CORE="$SRC/plugins/sefi-core"
+MANIFEST_HELPER="$CORE/scripts/adapter-manifest.sh"
+[ -f "$MANIFEST_HELPER" ] || { echo "install.sh: adapter manifest driver is missing" >&2; exit 1; }
+# shellcheck source=plugins/sefi-core/scripts/adapter-manifest.sh
+source "$MANIFEST_HELPER"
 
-if [ "$TARGET" = "codex" ]; then
+if [ -n "$TARGET" ]; then
+  [ "$TARGET" = "claude" ] && TARGET="claude-code"
+  ADAPTER="$SRC/adapters/manifests/$TARGET.yml"
+fi
+adapter_manifest_load "$ADAPTER" || exit 2
+
+if [ -z "$TARGET" ] && [ "$ADAPTER_SUPPORT" != "custom" ]; then
+  echo "install.sh: --adapter accepts only locally usable custom manifests" >&2
+  exit 2
+fi
+
+TARGET="$ADAPTER_ID"
+
+if [ -n "$MODEL_MAP" ] && [ ! -f "$MODEL_MAP" ]; then
+  echo "install.sh: model map not found at $MODEL_MAP" >&2
+  exit 2
+fi
+
+if [ "$ADAPTER_DRIVER" = "codex-bootstrap" ]; then
   [ "$FORCE" -eq 0 ] && [ "$MODE" = "symlink" ] || {
     echo "install.sh: --force and --copy do not apply to the Codex bootstrap" >&2
     exit 2
   }
-  exec bash "$SRC/install-codex.sh"
+  codex_args=()
+  [ -n "$MODEL_MAP" ] && codex_args+=(--model-map "$MODEL_MAP")
+  exec bash "$SRC/install-codex.sh" "${codex_args[@]}"
 fi
 
 # Fail fast if a required source dir is missing.
@@ -57,13 +86,10 @@ for d in agents skills commands scripts; do
   [ -d "$CORE/$d" ] || { echo "install.sh: missing required source dir $CORE/$d" >&2; exit 1; }
 done
 
-# Pick the destination base per harness.
-case "$TARGET" in
-  claude)   DEST="$HOME/.claude" ;;
-  hermes)   DEST="${HERMES_HOME:-$HOME/.hermes}" ;;
-  opencode) DEST="${OPENCODE_HOME:-$HOME/.config/opencode}" ;;
-  *) echo "install.sh: unknown target '$TARGET'" >&2; exit 2 ;;
-esac
+# Resolve the manifest's portable ${HOME}/... destination. Preserve the historic
+# environment overrides for the two fallback filesystem harnesses.
+DEST="$HOME/${ADAPTER_DESTINATION#\$\{HOME\}/}"
+if [ "$TARGET" = "hermes" ] && [ -n "${HERMES_HOME:-}" ]; then DEST="$HERMES_HOME"; fi
 
 # On Cygwin/MSYS, normalize a Windows-style HOME to a POSIX path.
 if command -v cygpath >/dev/null 2>&1; then
@@ -172,7 +198,7 @@ link_one() {
 }
 
 rc=0
-if [ "$TARGET" = "opencode" ]; then
+if [ "$ADAPTER_DRIVER" = "opencode-native" ]; then
   # OpenCode's `tools` field is a strictly-typed object (not a string), and the
   # agent files in this repo use a comma-separated string. A raw copy or symlink
   # fails OpenCode's schema validation. Route the opencode target through the
@@ -181,6 +207,7 @@ if [ "$TARGET" = "opencode" ]; then
   # (opencode install is always a real copy, never a symlink).
   opencode_args=()
   [ "$FORCE" -eq 1 ] && opencode_args+=(--force)
+  [ -n "$MODEL_MAP" ] && opencode_args+=(--model-map "$MODEL_MAP")
   bash "$CORE/scripts/install-opencode.sh" "${opencode_args[@]}" || rc=1
 else
   for sub in agents skills commands scripts; do
@@ -208,7 +235,7 @@ else
   # Hook wiring is independent of MODE (it edits settings.json, not the copied/symlinked
   # agent files) and independent of rc for the same reason as the substitution pass above:
   # a skills/ conflict has nothing to do with whether hooks should be wired.
-  [ "$TARGET" = "claude" ] && wire_claude_settings
+  [ "$TARGET" = "claude-code" ] && wire_claude_settings
 fi
 
 if [ "$rc" -ne 0 ]; then

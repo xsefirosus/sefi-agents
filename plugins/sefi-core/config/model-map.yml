@@ -34,15 +34,17 @@
 # single-model free window it is an honest constraint rather than a mistake.
 
 claude-code:
-  # Verified: native Claude Code tier aliases.
-  # Claude Code exposes no per-agent reasoning dial, so reasoning is "none" here -- stated
-  # rather than left blank, so a missing value is never mistaken for an unset one.
+  # The orchestration entry point resolves through this map. Fallback is an explicit
+  # runtime-only choice after the harness reports the primary model unavailable.
+  orchestrator: fable
+  orchestrator_fallback: opus
+  orchestrator_reasoning: high
   high: opus
   mid: sonnet
   low: haiku
-  high_reasoning: none
-  mid_reasoning: none
-  low_reasoning: none
+  high_reasoning: high
+  mid_reasoning: high
+  low_reasoning: high
 
 codex:
   # The Sefi orchestrator is the only non-tier override: routing and sequencing use Astra

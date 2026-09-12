@@ -1,0 +1,14 @@
+schema: sefi-adapter/v1
+id: claude-code
+verification: verified
+support: shipped
+install_method: filesystem
+agent_format: markdown-frontmatter
+permission_transform: native
+hook_strategy: settings-json
+delegation: native-task
+headless: cli-print
+model_strategy: mapped
+route_evidence: unavailable
+driver: filesystem
+destination: ${HOME}/.claude

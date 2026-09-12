@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# validate-agents.sh -- each agent frontmatter has name/description/tools/model/managed-by;
-# model in {haiku,sonnet,opus}; description <= 2 sentences; description contains no ": "
+# validate-agents.sh -- each agent frontmatter has name/description/tools/tier/managed-by;
+# tier in {high,mid,low}; description <= 2 sentences; description contains no ": "
 # (colon+space breaks YAML plain-scalar parsing -- use " -- " instead); body carries the
 # anti-hallucination pointer line (the canonical rule lives in skills/anti-hallucination).
 set -uo pipefail
@@ -17,16 +17,21 @@ for f in "$DIR"/*.md; do
   rel="plugins/sefi-core/agents/$(basename "$f")"
   fm="$(awk 'NR==1 && $0!="---"{exit} NR==1{next} /^---[[:space:]]*$/{exit} {print}' "$f")"
 
-  for key in name description tools model managed-by; do
+  for key in name description tools tier managed-by; do
     printf '%s\n' "$fm" | grep -q "^$key:" \
       || { echo "ERROR: $rel - missing frontmatter key '$key'"; errors=$((errors + 1)); }
   done
 
-  model="$(printf '%s\n' "$fm" | sed -n 's/^model:[[:space:]]*\([A-Za-z]*\).*/\1/p' | head -1)"
-  case "$model" in
-    haiku|sonnet|opus) : ;;
-    *) echo "ERROR: $rel - model '$model' not in {haiku,sonnet,opus}"; errors=$((errors + 1)) ;;
+  tier="$(printf '%s\n' "$fm" | sed -n 's/^tier:[[:space:]]*\([a-z]*\).*/\1/p' | head -1)"
+  case "$tier" in
+    high|mid|low) : ;;
+    *) echo "ERROR: $rel - tier '$tier' not in {high,mid,low}"; errors=$((errors + 1)) ;;
   esac
+
+  if printf '%s\n' "$fm" | grep -q '^model:'; then
+    echo "ERROR: $rel - canonical agents must not declare a provider model"
+    errors=$((errors + 1))
+  fi
 
   mb="$(printf '%s\n' "$fm" | sed -n 's/^managed-by:[[:space:]]*//p' | head -1)"
   [ "$mb" = "sefi-agents" ] \

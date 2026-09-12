@@ -13,8 +13,27 @@ CORE="$ROOT/plugins/sefi-core"
 INSTALL_HERMES="$CORE/scripts/install-hermes.sh"
 CODEX_PLUGIN="$CORE/.codex-plugin/plugin.json"
 CODEX_MARKETPLACE="$ROOT/.agents/plugins/marketplace.json"
+MANIFEST_DIR="$ROOT/adapters/manifests"
+MANIFEST_HELPER="$CORE/scripts/adapter-manifest.sh"
 
 errors=0
+
+# Adapter manifests are the stable installer contract. A shipped manifest is verified;
+# custom/local manifests are accepted only through install.sh --adapter and never listed
+# here as supported harnesses.
+[ -f "$MANIFEST_HELPER" ] || { echo "ERROR: adapter manifest driver is missing: $MANIFEST_HELPER"; exit 1; }
+# shellcheck source=plugins/sefi-core/scripts/adapter-manifest.sh
+source "$MANIFEST_HELPER"
+for id in claude-code codex opencode hermes; do
+  manifest="$MANIFEST_DIR/$id.yml"
+  if ! adapter_manifest_load "$manifest"; then
+    echo "ERROR: invalid shipped adapter manifest: $manifest"
+    errors=$((errors + 1))
+  elif [ "$ADAPTER_ID" != "$id" ] || [ "$ADAPTER_VERIFICATION" != "verified" ] || [ "$ADAPTER_SUPPORT" != "shipped" ]; then
+    echo "ERROR: shipped adapter manifest has inconsistent id/support status: $manifest"
+    errors=$((errors + 1))
+  fi
+done
 
 # 1. install-hermes.sh's SKILLS= list vs actual skill directories, both directions.
 listed="$(grep '^SKILLS=' "$INSTALL_HERMES" | sed -E 's/^SKILLS="(.*)"$/\1/' | tr ' ' '\n' | sort)"

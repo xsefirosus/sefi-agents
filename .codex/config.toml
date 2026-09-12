@@ -2,9 +2,10 @@
 # forks it, once they trust the project in Codex (Codex skips this whole file for an
 # untrusted project; that trust step is the one confirmation this file cannot bypass).
 #
-# approval_policy = "on-failure": routine commands run unattended, same as before, but a
-# command that actually fails or needs escalation surfaces for a decision instead of
-# passing silently. Softened from "never" (0.3.26) after an audit named the real trade-off
+# approval_policy = "on-request": commands needing broader authority surface for a
+# decision when requested. This keeps an interactive checkpoint available rather than
+# relying on a failure after a command has already run. Softened from "never" (0.3.26)
+# after an audit named the real trade-off
 # plainly: Codex has no per-command allow/deny list the way Claude Code and OpenCode do --
 # sandbox_mode constrains WHERE writes can happen, not WHICH commands are dangerous within
 # that scope -- so "never" removed the one interactive checkpoint Codex had left, on the
@@ -15,10 +16,10 @@
 # Known gap, unchanged by this setting and stated honestly rather than hidden (this repo's
 # own adapters/CODEX.md already documents it): a force-push, git reset --hard, branch
 # delete, or rm -rf all succeed silently within workspace-write scope -- none of them
-# require an escalation, so none of them trigger a prompt under "on-failure" either. This
+# require an escalation, so this file cannot guarantee a prompt for them either. This
 # file cannot close that gap by itself. The repo-level backstop that does not depend on
 # this file is templates/hooks/pre-push (installed by /sefi:init step 4), which refuses a
 # direct push to main/master -- real protection for the force-push/branch-delete family
 # specifically, though it can still be bypassed with --no-verify by a Bash-capable agent.
-approval_policy = "on-failure"
+approval_policy = "on-request"
 sandbox_mode = "workspace-write"

@@ -2679,5 +2679,115 @@ else
   echo "  SKIP: gate.sh pytest-config assertions (pytest not on PATH)"
 fi
 
+echo
+echo "=== adapter manifests and harness-neutral model contract (v0.7.0) ==="
+
+# Shipped adapters are explicit, complete contracts. The validator must reject an
+# incomplete custom manifest before an installer has a chance to write its destination.
+expect_code 0 "the four shipped adapter manifests validate" \
+  bash "$CORE/scripts/ci/validate-adapters.sh"
+
+ADAPTER_TMP="$(mktemp -d)"
+CUSTOM_MANIFEST="$ADAPTER_TMP/custom.yml"
+cat > "$CUSTOM_MANIFEST" <<'MANIFEST'
+schema: sefi-adapter/v1
+id: custom-local
+verification: local
+support: custom
+install_method: filesystem
+agent_format: markdown-frontmatter
+permission_transform: none
+hook_strategy: none
+delegation: sequential
+headless: none
+model_strategy: flexible
+route_evidence: none
+driver: filesystem
+destination: ${HOME}/.custom-sefi
+MANIFEST
+
+CUSTOM_HOME="$ADAPTER_TMP/home"
+if HOME="$CUSTOM_HOME" bash "$ROOT/install.sh" --adapter "$CUSTOM_MANIFEST" --copy >/dev/null 2>&1 \
+   && [ -f "$CUSTOM_HOME/.custom-sefi/agents/software-engineer.md" ]; then
+  ok "a complete custom filesystem adapter installs through --adapter without becoming a shipped harness"
+else
+  bad "a complete custom filesystem adapter did not install through --adapter"
+fi
+
+INCOMPLETE_MANIFEST="$ADAPTER_TMP/incomplete.yml"
+grep -v '^headless:' "$CUSTOM_MANIFEST" > "$INCOMPLETE_MANIFEST"
+incomplete_rc=0
+INCOMPLETE_HOME="$ADAPTER_TMP/incomplete-home"
+HOME="$INCOMPLETE_HOME" bash "$ROOT/install.sh" --adapter "$INCOMPLETE_MANIFEST" --copy >/dev/null 2>&1 || incomplete_rc=$?
+if [ "$incomplete_rc" -ne 0 ] && [ ! -e "$INCOMPLETE_HOME/.custom-sefi" ]; then
+  ok "an incomplete adapter manifest fails closed before destination writes"
+else
+  bad "an incomplete adapter manifest wrote a destination or exited zero (exit $incomplete_rc)"
+fi
+
+expect_code 2 "an unknown adapter target fails closed" \
+  bash "$ROOT/install.sh" --target no-such-adapter
+rm -rf "$ADAPTER_TMP"
+
+# The resolver owns provider identifiers. Claude gets an explicit orchestrator mapping
+# and a separately-addressable fallback; ordinary errors never select that fallback.
+claude_orchestrator="$(bash "$CORE/scripts/model-for.sh" claude-code orchestrator 2>/dev/null || true)"
+[ "$claude_orchestrator" = "fable" ] \
+  && ok "model-for resolves Claude's configured orchestrator" \
+  || bad "model-for Claude orchestrator was '$claude_orchestrator', wanted fable"
+claude_fallback="$(bash "$CORE/scripts/model-for.sh" claude-code orchestrator --fallback 2>/dev/null || true)"
+[ "$claude_fallback" = "opus" ] \
+  && ok "model-for --fallback returns only Claude's configured orchestrator fallback" \
+  || bad "model-for Claude fallback was '$claude_fallback', wanted opus"
+claude_effort="$(bash "$CORE/scripts/model-for.sh" claude-code high --reasoning 2>/dev/null || true)"
+[ "$claude_effort" = "high" ] \
+  && ok "all Claude dispatch tiers resolve high reasoning through the map" \
+  || bad "model-for Claude high reasoning was '$claude_effort', wanted high"
+
+# Codex must consume a caller-provided map at the bootstrap seam, not only through the
+# generic resolver. Its fake CLI fixture already proves the profile rewrite path above.
+CODEX_OVERRIDE_TMP="$(mktemp -d)"
+CODEX_OVERRIDE_MAP="$CODEX_OVERRIDE_TMP/model-map.yml"
+cat > "$CODEX_OVERRIDE_MAP" <<'MAP'
+codex:
+  orchestrator: custom/orchestrator
+  orchestrator_reasoning: high
+  high: custom/high
+  high_reasoning: high
+  mid: custom/mid
+  mid_reasoning: high
+  low: custom/low
+  low_reasoning: high
+MAP
+CODEX_OVERRIDE_BIN="$CODEX_OVERRIDE_TMP/bin"
+CODEX_OVERRIDE_HOME="$CODEX_OVERRIDE_TMP/home"
+mkdir -p "$CODEX_OVERRIDE_BIN" "$CODEX_OVERRIDE_HOME/agents"
+cat > "$CODEX_OVERRIDE_BIN/codex" <<'FAKECODEXOVERRIDE'
+#!/usr/bin/env bash
+case "$*" in
+  'plugin marketplace list --json') printf '%s\n' '{"marketplaces":[]}' ;;
+  'plugin marketplace add xsefirosus/sefi-agents'|'plugin marketplace upgrade sefi-agents'|'plugin add sefi-core@sefi-agents') : ;;
+  *) exit 64 ;;
+esac
+FAKECODEXOVERRIDE
+chmod +x "$CODEX_OVERRIDE_BIN/codex"
+for source_agent in "$CORE"/agents/*.md; do
+  override_name="$(sed -n 's/^name:[[:space:]]*\([a-z0-9-]*\).*/\1/p' "$source_agent" | head -1)"
+  printf 'name = "%s"\ndeveloper_instructions = "fixture"\n' "$override_name" > "$CODEX_OVERRIDE_HOME/agents/$override_name.toml"
+done
+override_rc=0
+env PATH="$CODEX_OVERRIDE_BIN:$PATH" CODEX_HOME="$CODEX_OVERRIDE_HOME" \
+  bash "$ROOT/install-codex.sh" --model-map "$CODEX_OVERRIDE_MAP" >/dev/null 2>&1 || override_rc=$?
+if [ "$override_rc" -eq 0 ] \
+   && grep -qF 'model = "custom/orchestrator"' "$CODEX_OVERRIDE_HOME/agents/sefi-agents.toml" \
+   && grep -qF 'model = "custom/high"' "$CODEX_OVERRIDE_HOME/agents/qa-engineer.toml" \
+   && grep -qF 'model = "custom/mid"' "$CODEX_OVERRIDE_HOME/agents/software-engineer.toml" \
+   && grep -qF 'model = "custom/low"' "$CODEX_OVERRIDE_HOME/agents/research-analyst.toml"; then
+  ok "install-codex.sh consumes --model-map when writing every Sefi profile"
+else
+  bad "install-codex.sh did not consume --model-map (exit $override_rc)"
+fi
+rm -rf "$CODEX_OVERRIDE_TMP"
+
 if [ "$fail" -ne 0 ]; then echo "test-scripts: $fail failed, $pass passed"; exit 1; fi
 echo "test-scripts: OK ($pass passed)"

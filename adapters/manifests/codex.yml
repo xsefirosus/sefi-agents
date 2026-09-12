@@ -1,0 +1,14 @@
+schema: sefi-adapter/v1
+id: codex
+verification: verified
+support: shipped
+install_method: native
+agent_format: toml-profile
+permission_transform: native
+hook_strategy: config
+delegation: multi-agent
+headless: exec
+model_strategy: mapped
+route_evidence: rollout
+driver: codex-bootstrap
+destination: ${HOME}/.codex

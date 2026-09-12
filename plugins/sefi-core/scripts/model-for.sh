@@ -20,12 +20,14 @@ HARNESS=""
 TIER=""
 
 FIELD="model"
+FALLBACK=0
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --map)   MAP="${2:-}"; shift 2 ;;
     --agent) AGENT="${2:-}"; shift 2 ;;
     --reasoning) FIELD="reasoning"; shift ;;
+    --fallback) FALLBACK=1; shift ;;
     -h|--help) sed -n '2,4p' "$0"; exit 0 ;;
     --) shift; break ;;
     -*) echo "model-for: unknown arg $1" >&2; exit 2 ;;
@@ -67,10 +69,12 @@ fi
 
 [ -n "$HARNESS" ] || { echo "model-for: usage: model-for.sh <harness> <tier>" >&2; exit 2; }
 [ -n "$TIER" ]    || { echo "model-for: usage: model-for.sh <harness> <tier>" >&2; exit 2; }
+[ "$FALLBACK" -eq 0 ] || [ "$TIER" = "orchestrator" ] || { echo "model-for: --fallback is only valid for the orchestrator tier" >&2; exit 2; }
 
 # --reasoning reads `<tier>_reasoning`; the default reads the bare `<tier>` key.
 lookup="$TIER"
 [ "$FIELD" = "reasoning" ] && lookup="${TIER}_reasoning"
+[ "$FALLBACK" -eq 0 ] || lookup="${TIER}_fallback"
 
 result="$(awk -v h="$HARNESS" -v t="$lookup" '
   /^[[:space:]]*#/ { next }

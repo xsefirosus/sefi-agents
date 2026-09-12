@@ -12,6 +12,17 @@ END='<!-- sefi-agents:codex-bootstrap:end -->'
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CORE="$SCRIPT_DIR/plugins/sefi-core"
 MODEL_FOR="$CORE/scripts/model-for.sh"
+MODEL_MAP=""
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --model-map) MODEL_MAP="${2:-}"; shift 2 ;;
+    -h|--help) echo "usage: $0 [--model-map <path>]"; exit 0 ;;
+    *) echo "install-codex.sh: unknown arg $1" >&2; exit 2 ;;
+  esac
+done
+
+[ -z "$MODEL_MAP" ] || [ -f "$MODEL_MAP" ] || { echo "install-codex.sh: model map not found at $MODEL_MAP" >&2; exit 2; }
 
 command -v codex >/dev/null 2>&1 || {
   echo "install-codex.sh: Codex CLI not found on PATH" >&2
@@ -129,8 +140,10 @@ mv "$output_file" "$AGENTS_FILE"
 # fields for Sefi's own named profiles.
 for source_agent in "$CORE"/agents/*.md; do
   agent_name="$(sed -n 's/^name:[[:space:]]*\([a-z0-9-]*\).*/\1/p' "$source_agent" | head -1)"
-  agent_model="$(bash "$MODEL_FOR" --agent "$source_agent" codex)" || exit 1
-  agent_effort="$(bash "$MODEL_FOR" --agent "$source_agent" codex --reasoning)" || exit 1
+  resolver_args=()
+  [ -n "$MODEL_MAP" ] && resolver_args+=(--map "$MODEL_MAP")
+  agent_model="$(bash "$MODEL_FOR" --agent "$source_agent" codex "${resolver_args[@]}")" || exit 1
+  agent_effort="$(bash "$MODEL_FOR" --agent "$source_agent" codex --reasoning "${resolver_args[@]}")" || exit 1
   agent_profile="$CODEX_AGENTS_DIR/$agent_name.toml"
   agent_tmp="$(mktemp "$CODEX_AGENTS_DIR/.sefi-agent.XXXXXX")"
   awk -v model="$agent_model" -v effort="$agent_effort" '

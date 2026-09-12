@@ -4,7 +4,6 @@ description: Use when inbox items, issues, or incoming reports need intake, tria
 tools: Read, Grep, Glob, Bash
 disallowedTools: Write, Edit, MultiEdit, WebFetch, WebSearch
 tier: low   # harness-neutral; see config/model-map.yml (edit there, not in 13 agent files)
-model: haiku   # advisory; an OMITTED model silently inherits the session's most expensive tier -- always name it. Ignored on runtimes that set the model globally.
 keywords: support, triage, inbox, intake, issues, routing, classification
 managed-by: sefi-agents
 ---
