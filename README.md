@@ -17,6 +17,10 @@ and a human approving every merge.
 No database, server, or separate runtime: just this plugin and the AI tool you already
 use.
 
+<p align="center">
+  <img src="docs/assets/sefi-orchestration.gif" alt="Sefi orchestration flow from prompt and intent through parallel plan slices, specialists, QA retries, human approval, maintenance, and memory" width="100%">
+</p>
+
 **Install for Claude Code:**
 
 ```
