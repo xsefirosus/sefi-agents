@@ -224,6 +224,46 @@ expect_code 1 "without the benchmarks exclusions the identical tree is flagged (
 rm -rf "$NPT"
 
 echo
+echo "=== state/ and memory/ personal-path scan; tracked Markdown only ==="
+
+# Active state and memory notes ship in the repository too. A path in either must be
+# caught even though these directories are not plugin or adapter source trees.
+for note_path in state/leak.md memory/daily/leak.md; do
+  NPS="$(mktemp -d)"
+  mkdir -p "$NPS/plugins/sefi-core/scripts/ci" "$(dirname "$NPS/$note_path")"
+  cp "$VNP" "$NPS/plugins/sefi-core/scripts/ci/validate-no-personal-paths.sh"
+  printf 'leak: C:\\Users\\Mary Rose\\private\n' > "$NPS/$note_path"
+  git -C "$NPS" init -q
+  git -C "$NPS" add "$note_path"
+  expect_code 1 "a tracked $note_path personal path is flagged" \
+    bash "$NPS/plugins/sefi-core/scripts/ci/validate-no-personal-paths.sh"
+  rm -rf "$NPS"
+done
+
+echo
+echo "=== validate-links.sh tracked-target enforcement ==="
+
+VLINK="$CORE/scripts/ci/validate-links.sh"
+LNT="$(mktemp -d)"
+mkdir -p "$LNT/plugins/sefi-core/scripts/ci" "$LNT/docs/archive"
+cp "$VLINK" "$LNT/plugins/sefi-core/scripts/ci/validate-links.sh"
+git -C "$LNT" init -q
+printf '[coverage](docs/archive/REPO-COVERAGE.md)\n' > "$LNT/docs/source.md"
+printf '# local-only coverage\n' > "$LNT/docs/archive/REPO-COVERAGE.md"
+git -C "$LNT" add docs/source.md
+expect_code 1 "a repo-relative link to an untracked local target is rejected" \
+  bash "$LNT/plugins/sefi-core/scripts/ci/validate-links.sh"
+
+printf '# Topic\n' > "$LNT/docs/tracked.md"
+printf '[topic](docs/tracked.md#topic)\n' > "$LNT/docs/anchor.md"
+git -C "$LNT" add docs/tracked.md docs/anchor.md
+rm -f "$LNT/docs/source.md"
+git -C "$LNT" rm -q --cached docs/source.md
+expect_code 0 "a repo-relative link to a tracked target with an anchor passes" \
+  bash "$LNT/plugins/sefi-core/scripts/ci/validate-links.sh"
+rm -rf "$LNT"
+
+echo
 echo "=== compress-output.sh (2026-08-11 audit: a failure could report zero diagnostics) ==="
 
 CW="$(mktemp -d)"

@@ -9,6 +9,10 @@ cd "$ROOT"
 
 targets() {
   for d in .agents .claude-plugin plugins adapters; do [ -d "$d" ] && find "$d" -type f; done
+  # State and memory Markdown are committed operational records, so scan every tracked
+  # note. Other state/memory files are generated or machine data and remain outside this
+  # validator's Markdown-document contract.
+  git ls-files -- state memory | grep -E '\.md$' || true
   # benchmarks/ is contributor tooling checked into the repo; a stray absolute home path
   # in a fixture, prompt, or the scorer would leak just like one in plugins/. Scan only
   # SHIPPED, tracked files -- exclude the git-ignored run-artifact dir benchmarks/results/

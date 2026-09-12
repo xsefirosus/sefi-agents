@@ -31,11 +31,13 @@ resolves() {
   # scripts/gen-router.sh at the plugin root, and references/roster.md relative to the
   # referencing file's own directory (that is how sefi-orchestration/SKILL.md names its
   # own references).
-  local ref="$1" src="$2" dir
+  local ref="$1" src="$2" dir candidate
+  # Anchors name locations inside the same tracked document, not a separate file.
+  ref="${ref%%#*}"
   dir="$(dirname "$src")"
-  [ -e "$ref" ] && return 0
-  [ -e "$CORE/$ref" ] && return 0
-  [ -e "$dir/$ref" ] && return 0
+  for candidate in "$ref" "$CORE/$ref" "$dir/$ref"; do
+    [ -e "$candidate" ] && git ls-files --error-unmatch -- "$candidate" >/dev/null 2>&1 && return 0
+  done
   return 1
 }
 
