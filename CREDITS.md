@@ -21,8 +21,7 @@ license and terms.
 
 ## Research influences
 
-The projects below were reviewed as research inputs. The adoption and exclusion record is
-kept in [docs/archive/REPO-COVERAGE.md](docs/archive/REPO-COVERAGE.md).
+The projects below were reviewed as research inputs.
 
 ### Agent orchestration and delivery
 

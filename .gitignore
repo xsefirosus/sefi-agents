@@ -3,6 +3,7 @@ docs/archive/
 docs/superpowers/
 docs/master-prompt-FINAL-v4.md
 docs/master-prompt-v4-provenance.md
+.codex-remote-attachments/
 
 # Loop worktrees (docs/LOOPS.md worktree procedure) -- project-local, never global.
 .worktrees/
