@@ -246,7 +246,7 @@ validate-rule-presence: OK (28 sentences across 17 files)
 check-unicode-safety: OK (167 files scanned, ASCII-clean)
 validate-comment-safety: OK (2 file(s) scanned)
 validate-token-budget: OK (all within token budgets; agents total 8320 words)
-test-scripts: OK (263 passed)
+test-scripts: OK (259 passed on GitHub Actions; 263 on the verified Git Bash run; optional-tool cases vary by host)
 test-integration: OK (33 passed) -- full loop skeleton executed end to end
 test-opencode-schedule-ownership: PASS (15 passed)
 CI: all validators passed
