@@ -63,6 +63,7 @@
 | 0.7.0 | git-tag | 0.7.0 | 0.7.0 | match | git rev-parse v0.7.0^{commit} -> b4695419cd8be7a65586c4c223fcf42342a8223e; git ls-remote --tags origin refs/tags/v0.7.0 -> 8162a48db04bc2abeb3b7496678bad7440b50083 refs/tags/v0.7.0 and b4695419cd8be7a65586c4c223fcf42342a8223e refs/tags/v0.7.0^{} | a local tag that was never pushed to origin | 2026-09-13T04:09:24Z |
 | 0.7.0 | github-release | 0.7.0 | unobserved | unobserved | gh release view v0.7.0 -> exit 1 "release not found" | a local or pushed tag with no release; a draft release | 2026-09-13T04:09:24Z |
 | 0.7.0 | github-marketplace-index | 0.7.0 | 0.7.0 | match | gh api repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main (Accept: raw) -> metadata.version 0.7.0, plugins[0].version 0.7.0 | install commands quoted only in a README | 2026-09-13T04:09:24Z |
+| 0.7.0 | github-release | 0.7.0 | 0.7.0 | match | gh release view v0.7.0 --json tagName,isDraft,url,publishedAt,name -> tagName=v0.7.0, name=v0.7.0, isDraft=false, publishedAt=2026-09-13T06:06:10Z, url=https://github.com/xsefirosus/sefi-agents/releases/tag/v0.7.0 | a local or pushed tag with no release; a draft release | 2026-09-13T06:06:17Z |
 
 ## Notes
 
