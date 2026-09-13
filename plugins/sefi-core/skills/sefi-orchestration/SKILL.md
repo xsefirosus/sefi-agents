@@ -52,9 +52,11 @@ Resolve the orchestrator and every role tier through
 `${CLAUDE_PLUGIN_ROOT}/scripts/model-for.sh` and `config/model-map.yml`; do not duplicate
 provider identifiers in prompts or this skill. For Claude orchestration, request the
 configured high effort through that contract. Start with the configured orchestrator
-mapping. Retry exactly once with `model-for.sh claude-code orchestrator --fallback` only
-when the harness reports the primary model unavailable. Do not retry or switch models for
-any other failure, and do not claim a model is account-available before the harness runs.
+mapping. Retry exactly once only when the harness reports the primary model unavailable:
+call `model-for.sh claude-code orchestrator --fallback --failure-class model-unavailable
+--attempt 1`. That command rejects a second attempt and every other failure class. Do not
+retry or switch models for any other failure, and do not claim a model is account-available
+before the harness runs.
 
 ## Handoff rule
 Each stage's output file must be self-contained. Name the specific upstream output file a

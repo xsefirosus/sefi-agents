@@ -197,6 +197,30 @@ link_one() {
   fi
 }
 
+materialize_mapped_agents() {
+  # Canonical agents deliberately carry only a harness-neutral tier. A filesystem adapter
+  # that declares model_strategy: mapped must therefore generate real agent files rather
+  # than symlinking the canonical sources, otherwise --model-map would be accepted but inert.
+  local target="$DEST/agents"
+  local staging map_args=()
+  if [ -e "$target" ] || [ -L "$target" ]; then
+    if [ "$FORCE" -ne 1 ]; then
+      echo "install.sh: refusing to overwrite $target (use --force)" >&2
+      return 1
+    fi
+  fi
+  staging="$(mktemp -d "$DEST/.sefi-agents.XXXXXX")" || return 1
+  [ -n "$MODEL_MAP" ] && map_args+=(--map "$MODEL_MAP")
+  if ! bash "$CORE/scripts/apply-model-map.sh" "$TARGET" "$CORE/agents" "$staging/agents" "${map_args[@]}"; then
+    rm -rf "$staging"
+    return 1
+  fi
+  if [ -e "$target" ] || [ -L "$target" ]; then rm -rf "$target"; fi
+  mv "$staging/agents" "$target"
+  rmdir "$staging"
+  echo "generated mapped agents -> $target"
+}
+
 rc=0
 if [ "$ADAPTER_DRIVER" = "opencode-native" ]; then
   # OpenCode's `tools` field is a strictly-typed object (not a string), and the
@@ -210,7 +234,13 @@ if [ "$ADAPTER_DRIVER" = "opencode-native" ]; then
   [ -n "$MODEL_MAP" ] && opencode_args+=(--model-map "$MODEL_MAP")
   bash "$CORE/scripts/install-opencode.sh" "${opencode_args[@]}" || rc=1
 else
-  for sub in agents skills commands scripts; do
+  if [ "$ADAPTER_MODEL_STRATEGY" = "mapped" ]; then
+    materialize_mapped_agents || rc=1
+    subdirs=(skills commands scripts)
+  else
+    subdirs=(agents skills commands scripts)
+  fi
+  for sub in "${subdirs[@]}"; do
     link_one "$sub" || rc=1
   done
   # Copy mode produces independent files (unlike a symlink, which still points back at
