@@ -81,9 +81,35 @@ SKILLS_SRC="$CORE/skills"
 COMMANDS_SRC="$CORE/commands"
 SCRIPTS_SRC="$CORE/scripts"
 
+agent_model() {
+  # agent_model <src-path> -- resolve this agent's tier to an OpenCode model id. A map
+  # resolution error is a requested-policy failure, never a silent session-model fallback.
+  local map_args=()
+  [ -n "$MODEL_MAP" ] && map_args+=(--map "$MODEL_MAP")
+  bash "$HERE/model-for.sh" --agent "$1" opencode "${map_args[@]}"
+}
+
+agent_reasoning() {
+  # agent_reasoning <src-path> -- resolve the corresponding OpenCode reasoning effort.
+  # A caller map may intentionally omit effort keys because OpenCode accepts no effort
+  # field; that is equivalent to "none", unlike a missing model tier which is fatal.
+  local map_args=()
+  [ -n "$MODEL_MAP" ] && map_args+=(--map "$MODEL_MAP")
+  bash "$HERE/model-for.sh" --agent "$1" opencode --reasoning "${map_args[@]}" 2>/dev/null || printf 'none\n'
+}
+
 # Fail fast if a required source dir is missing.
 for d in "$AGENTS_SRC" "$SKILLS_SRC" "$COMMANDS_SRC" "$SCRIPTS_SRC"; do
   [ -d "$d" ] || { echo "install-opencode.sh: missing required source dir $d" >&2; exit 1; }
+done
+[ -z "$MODEL_MAP" ] || [ -f "$MODEL_MAP" ] || { echo "install-opencode.sh: model map not found at $MODEL_MAP" >&2; exit 2; }
+
+# Resolve every agent before creating a destination. A malformed caller map must never
+# degrade into an apparently successful install that silently inherits one session model.
+for src in "$AGENTS_SRC"/*.md; do
+  [ -f "$src" ] || continue
+  agent_model "$src" >/dev/null || { echo "install-opencode.sh: cannot resolve model for $(basename "$src")" >&2; exit 1; }
+  agent_reasoning "$src" >/dev/null || { echo "install-opencode.sh: cannot resolve reasoning for $(basename "$src")" >&2; exit 1; }
 done
 
 # Pick the destination base (mirrors install.sh's opencode target).
@@ -161,23 +187,14 @@ check_target() {
 #       (c) else: use the fixed fallback table, with engineering-manager
 #           specifically getting task: allow (it is this repo's sole dispatcher
 #           agent -- every other agent's own Role text says it does not delegate).
-agent_model() {
-  # agent_model <src-path> -- resolve this agent's tier to an OpenCode model id via
-  # config/model-map.yml. Empty on failure, which drops the field and restores the old
-  # fall-back-to-session-model behavior rather than emitting a broken value.
-  bash "$HERE/model-for.sh" --agent "$1" opencode ${MODEL_MAP:+--map "$MODEL_MAP"} 2>/dev/null || printf ''
-}
-
-agent_reasoning() {
-  # agent_reasoning <src-path> -- resolve this agent's tier to an OpenCode reasoning effort.
-  bash "$HERE/model-for.sh" --agent "$1" opencode --reasoning ${MODEL_MAP:+--map "$MODEL_MAP"} 2>/dev/null || printf ''
-}
-
 transform_agent() {
   # transform_agent <src-path> <dst-path>
   local src="$1"
   local dst="$2"
-  awk -v MODEL="$(agent_model "$src")" -v REASONING="$(agent_reasoning "$src")" '
+  local model reasoning
+  model="$(agent_model "$src")" || return 1
+  reasoning="$(agent_reasoning "$src")" || return 1
+  awk -v MODEL="$model" -v REASONING="$reasoning" '
     BEGIN { in_fm = -1 }
 
     # First ---: start of frontmatter.

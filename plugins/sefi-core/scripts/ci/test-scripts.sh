@@ -2727,6 +2727,39 @@ fi
 
 expect_code 2 "an unknown adapter target fails closed" \
   bash "$ROOT/install.sh" --target no-such-adapter
+
+TRAVERSAL_MANIFEST="$ADAPTER_TMP/traversal.yml"
+sed 's#destination: \${HOME}/.custom-sefi#destination: \${HOME}/../outside#' "$CUSTOM_MANIFEST" > "$TRAVERSAL_MANIFEST"
+TRAVERSAL_HOME="$ADAPTER_TMP/traversal-home"
+traversal_rc=0
+HOME="$TRAVERSAL_HOME" bash "$ROOT/install.sh" --adapter "$TRAVERSAL_MANIFEST" --copy >/dev/null 2>&1 || traversal_rc=$?
+if [ "$traversal_rc" -eq 2 ] && [ ! -e "$ADAPTER_TMP/outside" ]; then
+  ok "a traversal destination is rejected before it can escape HOME"
+else
+  bad "a traversal destination was accepted or wrote outside HOME (exit $traversal_rc)"
+fi
+
+TYPO_MANIFEST="$ADAPTER_TMP/typo.yml"
+sed 's/^model_strategy: flexible$/model_strategy: mappped/' "$CUSTOM_MANIFEST" > "$TYPO_MANIFEST"
+typo_rc=0
+HOME="$ADAPTER_TMP/typo-home" bash "$ROOT/install.sh" --adapter "$TYPO_MANIFEST" --copy >/dev/null 2>&1 || typo_rc=$?
+if [ "$typo_rc" -eq 2 ] && [ ! -e "$ADAPTER_TMP/typo-home/.custom-sefi" ]; then
+  ok "an invalid model strategy fails before destination writes"
+else
+  bad "an invalid model strategy was accepted or wrote a destination (exit $typo_rc)"
+fi
+
+# A no-force filesystem install must preflight every destination: a later conflict cannot
+# leave an earlier agents/ copy behind as partial state.
+ATOMIC_HOME="$ADAPTER_TMP/atomic-home"
+mkdir -p "$ATOMIC_HOME/.custom-sefi/skills"
+atomic_rc=0
+HOME="$ATOMIC_HOME" bash "$ROOT/install.sh" --adapter "$CUSTOM_MANIFEST" --copy >/dev/null 2>&1 || atomic_rc=$?
+if [ "$atomic_rc" -ne 0 ] && [ ! -e "$ATOMIC_HOME/.custom-sefi/agents" ]; then
+  ok "a filesystem conflict is rejected before any destination subtree is written"
+else
+  bad "a filesystem conflict left partial output (exit $atomic_rc)"
+fi
 rm -rf "$ADAPTER_TMP"
 
 # The resolver owns provider identifiers. Claude gets an explicit orchestrator mapping
@@ -2735,7 +2768,8 @@ claude_orchestrator="$(bash "$CORE/scripts/model-for.sh" claude-code orchestrato
 [ "$claude_orchestrator" = "fable" ] \
   && ok "model-for resolves Claude's configured orchestrator" \
   || bad "model-for Claude orchestrator was '$claude_orchestrator', wanted fable"
-claude_fallback="$(bash "$CORE/scripts/model-for.sh" claude-code orchestrator --fallback --failure-class model-unavailable --attempt 1 2>/dev/null || true)"
+FALLBACK_TMP="$(mktemp -d)"
+claude_fallback="$(bash "$CORE/scripts/model-for.sh" claude-code orchestrator --fallback --failure-class model-unavailable --attempt 1 --retry-state "$FALLBACK_TMP/first" 2>/dev/null || true)"
 [ "$claude_fallback" = "opus" ] \
   && ok "model-for returns Claude's fallback only for the first model-unavailable retry" \
   || bad "model-for Claude fallback was '$claude_fallback', wanted opus"
@@ -2743,24 +2777,32 @@ claude_agent_orchestrator="$(bash "$CORE/scripts/model-for.sh" --agent "$CORE/ag
 [ "$claude_agent_orchestrator" = "fable" ] \
   && ok "model-for resolves the canonical Claude Sefi agent through the orchestrator mapping" \
   || bad "model-for Claude Sefi agent was '$claude_agent_orchestrator', wanted fable"
-claude_agent_fallback="$(bash "$CORE/scripts/model-for.sh" --agent "$CORE/agents/sefi-agents.md" claude-code --fallback --failure-class model-unavailable --attempt 1 2>/dev/null || true)"
+claude_agent_fallback="$(bash "$CORE/scripts/model-for.sh" --agent "$CORE/agents/sefi-agents.md" claude-code --fallback --failure-class model-unavailable --attempt 1 --retry-state "$FALLBACK_TMP/agent" 2>/dev/null || true)"
 [ "$claude_agent_fallback" = "opus" ] \
   && ok "the canonical Claude Sefi agent receives the configured fallback on its first unavailable-model retry" \
   || bad "model-for Claude Sefi fallback was '$claude_agent_fallback', wanted opus"
-second_retry_out="$(bash "$CORE/scripts/model-for.sh" claude-code orchestrator --fallback --failure-class model-unavailable --attempt 2 2>&1)"
+second_retry_out="$(bash "$CORE/scripts/model-for.sh" claude-code orchestrator --fallback --failure-class model-unavailable --attempt 2 --retry-state "$FALLBACK_TMP/second" 2>&1)"
 second_retry_rc=$?
 if [ "$second_retry_rc" -eq 2 ] && printf '%s' "$second_retry_out" | grep -qF 'retry attempt must be exactly 1'; then
   ok "a second Claude fallback retry is rejected by the retry gate"
 else
   bad "a second Claude fallback retry did not reach the retry gate (exit $second_retry_rc: $second_retry_out)"
 fi
-other_failure_out="$(bash "$CORE/scripts/model-for.sh" claude-code orchestrator --fallback --failure-class provider-error --attempt 1 2>&1)"
+other_failure_out="$(bash "$CORE/scripts/model-for.sh" claude-code orchestrator --fallback --failure-class provider-error --attempt 1 --retry-state "$FALLBACK_TMP/other" 2>&1)"
 other_failure_rc=$?
 if [ "$other_failure_rc" -eq 2 ] && printf '%s' "$other_failure_out" | grep -qF 'requires failure class model-unavailable'; then
   ok "a non-availability Claude failure never selects the fallback"
 else
   bad "a non-availability Claude failure did not reach the fallback gate (exit $other_failure_rc: $other_failure_out)"
 fi
+consumed_retry_out="$(bash "$CORE/scripts/model-for.sh" claude-code orchestrator --fallback --failure-class model-unavailable --attempt 1 --retry-state "$FALLBACK_TMP/first" 2>&1)"
+consumed_retry_rc=$?
+if [ "$consumed_retry_rc" -eq 2 ] && printf '%s' "$consumed_retry_out" | grep -qF 'retry state already consumed'; then
+  ok "a fallback retry state cannot be consumed twice"
+else
+  bad "a fallback retry state was reusable (exit $consumed_retry_rc: $consumed_retry_out)"
+fi
+rm -rf "$FALLBACK_TMP"
 claude_effort="$(bash "$CORE/scripts/model-for.sh" claude-code high --reasoning 2>/dev/null || true)"
 [ "$claude_effort" = "high" ] \
   && ok "all Claude dispatch tiers resolve high reasoning through the map" \
@@ -2795,6 +2837,24 @@ else
   bad "install.sh did not materialize the caller-provided Claude model map (exit $claude_override_rc)"
 fi
 rm -rf "$CLAUDE_OVERRIDE_TMP"
+
+# A malformed caller-supplied OpenCode map is a requested policy failure, not a signal to
+# silently fall back to the session model.
+OPENCODE_OVERRIDE_TMP="$(mktemp -d)"
+OPENCODE_BROKEN_MAP="$OPENCODE_OVERRIDE_TMP/model-map.yml"
+cat > "$OPENCODE_BROKEN_MAP" <<'MAP'
+opencode:
+  high: flexible
+  high_reasoning: none
+MAP
+opencode_broken_rc=0
+HOME="$OPENCODE_OVERRIDE_TMP/home" bash "$ROOT/install.sh" --target opencode --model-map "$OPENCODE_BROKEN_MAP" >/dev/null 2>&1 || opencode_broken_rc=$?
+if [ "$opencode_broken_rc" -ne 0 ] && [ ! -e "$OPENCODE_OVERRIDE_TMP/home/.config/opencode/agents" ]; then
+  ok "a malformed OpenCode map fails before agents are written"
+else
+  bad "a malformed OpenCode map silently installed agents (exit $opencode_broken_rc)"
+fi
+rm -rf "$OPENCODE_OVERRIDE_TMP"
 
 # Codex must consume a caller-provided map at the bootstrap seam, not only through the
 # generic resolver. Its fake CLI fixture already proves the profile rewrite path above.
