@@ -68,7 +68,7 @@ for h in claude-code codex; do
     errors=$((errors + 1))
   fi
 done
-if ! bash "$MODEL_FOR" claude-code orchestrator --fallback >/dev/null 2>&1; then
+if ! bash "$MODEL_FOR" claude-code orchestrator --fallback --failure-class model-unavailable --attempt 1 >/dev/null 2>&1; then
   echo "ERROR: claude-code has no orchestrator fallback mapping"
   errors=$((errors + 1))
 fi

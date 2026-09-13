@@ -21,6 +21,8 @@ TIER=""
 
 FIELD="model"
 FALLBACK=0
+FAILURE_CLASS=""
+ATTEMPT=""
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -28,6 +30,8 @@ while [ "$#" -gt 0 ]; do
     --agent) AGENT="${2:-}"; shift 2 ;;
     --reasoning) FIELD="reasoning"; shift ;;
     --fallback) FALLBACK=1; shift ;;
+    --failure-class) FAILURE_CLASS="${2:-}"; shift 2 ;;
+    --attempt) ATTEMPT="${2:-}"; shift 2 ;;
     -h|--help) sed -n '2,4p' "$0"; exit 0 ;;
     --) shift; break ;;
     -*) echo "model-for: unknown arg $1" >&2; exit 2 ;;
@@ -59,17 +63,28 @@ if [ -n "$AGENT" ]; then
     | sed -n 's/^tier:[[:space:]]*\([a-z]*\).*/\1/p' | head -1)"
   [ -n "$TIER" ] || { echo "model-for: $AGENT declares no 'tier:' line" >&2; exit 1; }
   agent_name="$(printf '%s\n' "$agent_frontmatter" | sed -n 's/^name:[[:space:]]*\([a-z0-9-]*\).*/\1/p' | head -1)"
-  # The Sefi engineering-manager role is the top-level orchestrator on Codex. It receives
-  # the dedicated map entry rather than the generic mid-tier used by the same role on the
-  # other harnesses.
-  if [ "$HARNESS" = "codex" ] && [ "$agent_name" = "sefi-agents" ]; then
+  # The Sefi engineering-manager role is the top-level orchestrator wherever that
+  # harness declares an explicit orchestrator mapping. A harness with no such key keeps
+  # the agent's ordinary tier rather than silently borrowing another harness's policy.
+  if [ -n "$HARNESS" ] && [ "$agent_name" = "sefi-agents" ] \
+     && awk -v h="$HARNESS" '
+       /^[a-z][a-z0-9-]*:[[:space:]]*$/ { block=$1; sub(/:$/, "", block); inblock=(block==h); next }
+       inblock && /^[[:space:]]+orchestrator:[[:space:]]*[^[:space:]]/ { found=1; exit }
+       END { exit(found ? 0 : 1) }
+     ' "$MAP"; then
     TIER="orchestrator"
   fi
 fi
 
 [ -n "$HARNESS" ] || { echo "model-for: usage: model-for.sh <harness> <tier>" >&2; exit 2; }
 [ -n "$TIER" ]    || { echo "model-for: usage: model-for.sh <harness> <tier>" >&2; exit 2; }
-[ "$FALLBACK" -eq 0 ] || [ "$TIER" = "orchestrator" ] || { echo "model-for: --fallback is only valid for the orchestrator tier" >&2; exit 2; }
+if [ "$FALLBACK" -eq 1 ]; then
+  [ "$FIELD" = "model" ] || { echo "model-for: --fallback cannot be combined with --reasoning" >&2; exit 2; }
+  [ "$HARNESS" = "claude-code" ] || { echo "model-for: --fallback is only available for claude-code" >&2; exit 2; }
+  [ "$TIER" = "orchestrator" ] || { echo "model-for: --fallback is only valid for the orchestrator tier" >&2; exit 2; }
+  [ "$FAILURE_CLASS" = "model-unavailable" ] || { echo "model-for: --fallback requires failure class model-unavailable" >&2; exit 2; }
+  [ "$ATTEMPT" = "1" ] || { echo "model-for: fallback retry attempt must be exactly 1" >&2; exit 2; }
+fi
 
 # --reasoning reads `<tier>_reasoning`; the default reads the bare `<tier>` key.
 lookup="$TIER"

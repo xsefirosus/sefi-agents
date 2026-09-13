@@ -2735,14 +2735,66 @@ claude_orchestrator="$(bash "$CORE/scripts/model-for.sh" claude-code orchestrato
 [ "$claude_orchestrator" = "fable" ] \
   && ok "model-for resolves Claude's configured orchestrator" \
   || bad "model-for Claude orchestrator was '$claude_orchestrator', wanted fable"
-claude_fallback="$(bash "$CORE/scripts/model-for.sh" claude-code orchestrator --fallback 2>/dev/null || true)"
+claude_fallback="$(bash "$CORE/scripts/model-for.sh" claude-code orchestrator --fallback --failure-class model-unavailable --attempt 1 2>/dev/null || true)"
 [ "$claude_fallback" = "opus" ] \
-  && ok "model-for --fallback returns only Claude's configured orchestrator fallback" \
+  && ok "model-for returns Claude's fallback only for the first model-unavailable retry" \
   || bad "model-for Claude fallback was '$claude_fallback', wanted opus"
+claude_agent_orchestrator="$(bash "$CORE/scripts/model-for.sh" --agent "$CORE/agents/sefi-agents.md" claude-code 2>/dev/null || true)"
+[ "$claude_agent_orchestrator" = "fable" ] \
+  && ok "model-for resolves the canonical Claude Sefi agent through the orchestrator mapping" \
+  || bad "model-for Claude Sefi agent was '$claude_agent_orchestrator', wanted fable"
+claude_agent_fallback="$(bash "$CORE/scripts/model-for.sh" --agent "$CORE/agents/sefi-agents.md" claude-code --fallback --failure-class model-unavailable --attempt 1 2>/dev/null || true)"
+[ "$claude_agent_fallback" = "opus" ] \
+  && ok "the canonical Claude Sefi agent receives the configured fallback on its first unavailable-model retry" \
+  || bad "model-for Claude Sefi fallback was '$claude_agent_fallback', wanted opus"
+second_retry_out="$(bash "$CORE/scripts/model-for.sh" claude-code orchestrator --fallback --failure-class model-unavailable --attempt 2 2>&1)"
+second_retry_rc=$?
+if [ "$second_retry_rc" -eq 2 ] && printf '%s' "$second_retry_out" | grep -qF 'retry attempt must be exactly 1'; then
+  ok "a second Claude fallback retry is rejected by the retry gate"
+else
+  bad "a second Claude fallback retry did not reach the retry gate (exit $second_retry_rc: $second_retry_out)"
+fi
+other_failure_out="$(bash "$CORE/scripts/model-for.sh" claude-code orchestrator --fallback --failure-class provider-error --attempt 1 2>&1)"
+other_failure_rc=$?
+if [ "$other_failure_rc" -eq 2 ] && printf '%s' "$other_failure_out" | grep -qF 'requires failure class model-unavailable'; then
+  ok "a non-availability Claude failure never selects the fallback"
+else
+  bad "a non-availability Claude failure did not reach the fallback gate (exit $other_failure_rc: $other_failure_out)"
+fi
 claude_effort="$(bash "$CORE/scripts/model-for.sh" claude-code high --reasoning 2>/dev/null || true)"
 [ "$claude_effort" = "high" ] \
   && ok "all Claude dispatch tiers resolve high reasoning through the map" \
   || bad "model-for Claude high reasoning was '$claude_effort', wanted high"
+
+# The fallback Claude installer cannot symlink tier-only canonical agent files: it must
+# materialize the map, including a caller-supplied map, into generated frontmatter.
+CLAUDE_OVERRIDE_TMP="$(mktemp -d)"
+CLAUDE_OVERRIDE_MAP="$CLAUDE_OVERRIDE_TMP/model-map.yml"
+cat > "$CLAUDE_OVERRIDE_MAP" <<'MAP'
+claude-code:
+  orchestrator: custom/fable
+  orchestrator_fallback: custom/opus
+  orchestrator_reasoning: high
+  high: custom/high
+  high_reasoning: high
+  mid: custom/mid
+  mid_reasoning: high
+  low: custom/low
+  low_reasoning: high
+MAP
+CLAUDE_OVERRIDE_HOME="$CLAUDE_OVERRIDE_TMP/home"
+claude_override_rc=0
+HOME="$CLAUDE_OVERRIDE_HOME" bash "$ROOT/install.sh" --target claude --copy --model-map "$CLAUDE_OVERRIDE_MAP" >/dev/null 2>&1 || claude_override_rc=$?
+if [ "$claude_override_rc" -eq 0 ] \
+   && grep -qF 'model: custom/fable' "$CLAUDE_OVERRIDE_HOME/.claude/agents/sefi-agents.md" \
+   && grep -qF 'model: custom/high' "$CLAUDE_OVERRIDE_HOME/.claude/agents/qa-engineer.md" \
+   && grep -qF 'model: custom/mid' "$CLAUDE_OVERRIDE_HOME/.claude/agents/software-engineer.md" \
+   && grep -qF 'model: custom/low' "$CLAUDE_OVERRIDE_HOME/.claude/agents/research-analyst.md"; then
+  ok "install.sh materializes a caller-provided Claude model map into generated agents"
+else
+  bad "install.sh did not materialize the caller-provided Claude model map (exit $claude_override_rc)"
+fi
+rm -rf "$CLAUDE_OVERRIDE_TMP"
 
 # Codex must consume a caller-provided map at the bootstrap seam, not only through the
 # generic resolver. Its fake CLI fixture already proves the profile rewrite path above.
