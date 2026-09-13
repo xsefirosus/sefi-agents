@@ -10,7 +10,7 @@ describes the package layout.
   product-manager, ui-ux-designer, software-engineer, qa-engineer, security-engineer,
   devops-engineer, support-engineer, knowledge-manager, technical-writer,
   solutions-architect. Each carries a `tools`/`disallowedTools` contract, a
-  named model tier, and the anti-hallucination pointer (CI-enforced).
+  harness-neutral model tier, and the anti-hallucination pointer (CI-enforced).
 - `skills/` -- 15 skills: sefi-orchestration (the always-loaded router),
   anti-hallucination (the canonical no-invention rule), memory-protocol,
   loop-engineering, retro-improve, terse-mode, frontend-design, backend-design,
@@ -25,9 +25,13 @@ describes the package layout.
   declaration to `plugin.json`.
 - `config/model-map.yml` -- the ONE place a model identifier is written down. Agents
   declare a harness-neutral `tier:` (high/mid/low); this maps each tier to a concrete model
-  per harness. On Codex, the `sefi-agents` orchestration role is the deliberate Astra
-  override; all other Sefi specialists resolve from their tier. A new model is an edit
-  here, never a pass over 13 agent files.
+  per harness. On mapped harnesses, the `sefi-agents` orchestration role can have a
+  deliberate override; all other Sefi specialists resolve from their tier. A new model is
+  an edit here, never a pass over 13 agent files.
+- `adapters/manifests/` -- the checked contract for each shipped harness: install driver,
+  agent format, permission translation, hooks, delegation, headless capability, model
+  strategy, route evidence, and destination. `install.sh --target` reads these manifests;
+  `--adapter` accepts only a complete local custom manifest.
 - `scripts/` -- `gate.sh`, `compress-output.sh`, `inject-memory.sh`, `budget-check.sh`,
   `gen-router.sh`, `probe-tools.sh`, `check-handoff.sh`, `model-for.sh`,
   `apply-model-map.sh`, `check-route.py`/`check-route.sh` (post-dispatch: assert a Codex
@@ -48,8 +52,8 @@ describes the package layout.
   demand. This is sefi-agents' adaptation of the rules-vs-skills split (rules = what,
   skills = how) -- kept inside one file, not a parallel `rules/` tree, since Claude Code
   plugins cannot ship a top-level `rules/` directory.
-- Tier gating: lighter agents (haiku-tier research-analyst, support-engineer) omit deep
-  methodology sections; heavier agents (sonnet/opus-tier software-engineer, qa-engineer)
+- Tier gating: lighter agents (low-tier research-analyst, support-engineer) omit deep
+  methodology sections; heavier agents (mid/high-tier software-engineer, qa-engineer)
   include full behavioral rules and decision protocols. This keeps lightweight tasks
   token-efficient while ensuring complex decisions carry their full guard rails.
 - Failure-mode justification in rules: when authoring a new principle or agent discipline,

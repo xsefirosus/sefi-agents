@@ -19,13 +19,11 @@
 # EXCEPT `model:`, which is REPLACED via config/model-map.yml, and `tier:`, which is
 # consumed to pick it.
 #
-# Live-observed on a real OpenCode install (2026-07-19): `model: sonnet` (a bare
-# Claude Code tier alias) makes OpenCode's own subagent dispatch fail hard with
-# "Model not found: sonnet/" -- OpenCode does not silently ignore an unresolvable
-# per-agent model override the way Claude Code treats "sonnet" as a native alias;
-# it tries to resolve it as a real provider/model identifier and fails when it
-# can't. Every one of this repo's 13 agents carries a `model:` line, so this broke
-# every subagent dispatch on OpenCode, not just one agent.
+# Live-observed on a real OpenCode install (2026-07-19): a bare, harness-specific
+# provider alias made OpenCode's own subagent dispatch fail hard. OpenCode does not
+# silently ignore an unresolvable per-agent model override; it tries to resolve it as a
+# real provider/model identifier and fails when it cannot. Every one of this repo's
+# 13 agents then fails, not just the first dispatched specialist.
 #
 # v0.2.2 fixed that by DROPPING the field. That stopped the crash, but made every
 # agent inherit one session model -- so the qa-engineer judged the

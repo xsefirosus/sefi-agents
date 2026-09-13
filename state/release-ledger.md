@@ -53,6 +53,13 @@
 | 0.6.3 | git-tag | 0.6.3 | 0.6.3 | match | git rev-parse v0.6.3^{commit} -> 9cb4fc550bf54e0fbc6103e9852d9f6260e33a76; git ls-remote --tags origin refs/tags/v0.6.3* -> 78bc2ab00cdb5f0b647b2e0cd4cfc47a82c84fe0 refs/tags/v0.6.3 and 9cb4fc550bf54e0fbc6103e9852d9f6260e33a76 refs/tags/v0.6.3^{}; origin/main -> 9cb4fc550bf54e0fbc6103e9852d9f6260e33a76 | a local tag that was never pushed to origin | 2026-09-11T12:31:38Z |
 | 0.6.3 | github-release | 0.6.3 | 0.6.3 | match | gh release view v0.6.3 --json tagName,isDraft,url,publishedAt -> tagName=v0.6.3, isDraft=false, publishedAt=2026-09-11T12:31:38Z, url=https://github.com/xsefirosus/sefi-agents/releases/tag/v0.6.3 | a local or pushed tag with no release; a draft release | 2026-09-11T12:31:38Z |
 | 0.6.3 | github-marketplace-index | 0.6.3 | 0.6.3 | match | gh api repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main -> metadata.version 0.6.3, plugins[0].version 0.6.3 | install commands quoted only in a README | 2026-09-11T12:31:38Z |
+| 0.7.0 | plugin.json | 0.7.0 | 0.7.0 | match | plugins/sefi-core/.claude-plugin/plugin.json and plugins/sefi-core/.codex-plugin/plugin.json version keys "0.7.0" | a README count or CHANGELOG heading that happens to agree | 2026-09-13T04:09:24Z |
+| 0.7.0 | marketplace.json | 0.7.0 | 0.7.0 | match | .claude-plugin/marketplace.json metadata.version "0.7.0" | updating one occurrence and assuming the other followed | 2026-09-13T04:09:24Z |
+| 0.7.0 | marketplace.json | 0.7.0 | 0.7.0 | match | .claude-plugin/marketplace.json plugins[0].version "0.7.0" | updating one occurrence and assuming the other followed | 2026-09-13T04:09:24Z |
+| 0.7.0 | changelog | 0.7.0 | 0.7.0 | match | CHANGELOG.md top versioned heading "## [0.7.0] - 2026-09-13" | a changed bullet with no dated heading above it | 2026-09-13T04:09:24Z |
+| 0.7.0 | git-tag | 0.7.0 | unobserved | unobserved | PENDING before publication: v0.7.0 has not been tagged locally or on origin | a local tag that was never pushed to origin | 2026-09-13T04:09:24Z |
+| 0.7.0 | github-release | 0.7.0 | unobserved | unobserved | PENDING before publication: gh release view v0.7.0 has not been checked after publication | a local or pushed tag with no release | 2026-09-13T04:09:24Z |
+| 0.7.0 | github-marketplace-index | 0.7.0 | unobserved | unobserved | PENDING before publication: public main does not yet contain the 0.7.0 marketplace manifest | install commands quoted only in a README | 2026-09-13T04:09:24Z |
 
 ## Notes
 
