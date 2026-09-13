@@ -34,9 +34,9 @@ transformed: OpenCode's `tools` field is a strictly-typed `{name: boolean}` obje
 deprecated in favor of `permission`), so a raw copy of our `tools: Read, Grep, ...`
 string fails schema validation. The script converts each agent's `tools:` /
 `disallowedTools:` pair into the 15-key `permission:` mapping OpenCode expects
-(conversion table lives in the script's comments). `model:` is REPLACED with the
-harness-resolved value via `config/model-map.yml`, not dropped -- see "Model tiers and
-reasoning" below for why dropping it was tried once and reverted. A `mode:` field is
+(conversion table lives in the script's comments). `model:` is resolved through
+`config/model-map.yml`: the shipped `flexible` policy omits the field so OpenCode uses the
+model you selected, while an explicit map writes the chosen provider/model id. A `mode:` field is
 also written: `primary` for `sefi-agents` only, `subagent` for every other
 agent, so OpenCode's own Tab-cycle switcher shows just the one entry point instead of
 all 13 (see "Agent visibility" below). Every other frontmatter field and the entire body
@@ -96,27 +96,12 @@ For an agent that fails to load with `Configuration is invalid`, `opencode debug
 installed copy under `~/.config/opencode/agents/` still has the raw string -- re-run
 `install-opencode.sh --force` to regenerate it.
 
-**`Model not found: sonnet/`** (or `haiku/`, `opus/`) on any subagent dispatch --
-live-observed, not hypothetical: the installed agent still carries a raw `model:` line
-from before this was fixed. Pull the latest sefi-agents and re-run
-`install-opencode.sh --force`; the current script drops `model:` entirely so OpenCode
-falls back to the session model configured in section 1, instead of trying to resolve a
-Claude Code-only alias it does not recognize. This affects every agent, not just the one
-that happened to fail first -- all 13 agents carry a `model:` line. If the orchestrating agent
-silently falls back to a generic, unconstrained dispatch instead of surfacing this error
-to you, treat that as a second problem worth stopping for: it means the task is now
-running with none of the specialized agent's actual guardrails (tool whitelist, output
-contract, gate requirement), not a harmless retry.
-
-**`Model not found: <your-model>/`** (or any dispatch silently failing to resolve its
-model) on an install where `config/model-map.yml`'s `opencode:` block has been edited away
-from the shipped `flexible` default to name a real model -- live-observed 2026-08-07 on a
-prior pinned value: the id was missing OpenCode's required `provider/model-id` prefix, the
-exact same failure class as the `sonnet/` case above, just on a hand-supplied replacement
-value rather than the original Claude Code alias. Fix the value in `model-map.yml` itself
-(add the missing `<provider>/` prefix -- `opencode/` for a Zen model) and re-run
-`install-opencode.sh --force`. This cannot happen on the shipped `flexible` default: it
-writes no `model:` line at all, so there is no id for OpenCode to fail to resolve.
+**`Model not found: <provider/model-id>`** on any subagent dispatch -- the installed
+agent was generated from an explicit map that names a model OpenCode cannot resolve.
+Fix the value in `config/model-map.yml` (the provider prefix is required), then re-run
+`install-opencode.sh --force`. To return to the user-selected session model, restore the
+shipped `flexible` value. A dispatch must surface this failure rather than silently
+degrading to an unconstrained generic agent.
 
 ## Credentials
 
@@ -126,7 +111,7 @@ sefi stores no credentials -- rotate at this harness's own config or your CI sec
 ## Model tiers and reasoning
 
 `install-opencode.sh` resolves each agent's harness-neutral `tier:` through
-`plugins/sefi-core/config/model-map.yml`. As of v0.3.18, the shipped map's `opencode:`
+`plugins/sefi-core/config/model-map.yml`. The shipped map's `opencode:`
 block maps every tier to the sentinel `flexible`, not a concrete model id:
 
 | Tier | Model | reasoningEffort |

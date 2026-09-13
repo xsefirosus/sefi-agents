@@ -27,13 +27,17 @@ available path, then stop and report.
 ## Steps (detect the environment, then branch)
 1. Harness detection: is this Claude Code, Hermes, OpenCode, or Codex?
    - Claude Code: `/plugin marketplace add xsefirosus/sefi-agents` then
-     `/plugin install sefi-core@sefi-agents`.
+     `/plugin install sefi-core@sefi-agents`. The filesystem fallback is
+     `./install.sh --target claude`.
    - Hermes: use `./install.sh --target hermes`; see `adapters/HERMES.md`.
    - OpenCode: use `./install.sh --target opencode`; see `adapters/OPENCODE.md`.
    - Codex: use `./install-codex.sh` (or `./install.sh --target codex`), then start a new
      session and accept Codex's one-time Sefi hook-trust prompt. This is a one-time
      installation action, not a command required for each prompt. See `adapters/CODEX.md`.
      If the required CLI is missing, stop and report.
+   - A private or new harness may use `./install.sh --adapter path/to/adapter.yml` only
+     with a complete local custom manifest. It is not a shipped or verified adapter until
+     its adapter checks are added and pass.
 2. Project state: is this a fresh repo or one with `.worktrees/` already present?
    - Fresh: proceed to `/sefi:init`.
    - Already scaffolded: run `/sefi:init` anyway; it copies only what is missing and reports

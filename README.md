@@ -46,6 +46,11 @@ do not need a `/sefi:*` command for each request. Sefi subagents use the configu
 model policy: Astra for orchestration, Sol for QA/security, Terra for build/planning, and
 Luna for research and writing.
 
+**Other harnesses:** use `bash install.sh --target <claude|opencode|hermes|codex>`. The
+installer reads a verified adapter manifest. A new or private harness can use a complete
+local manifest with `--adapter path/to/adapter.yml`; it is usable locally, not represented
+as a supported harness until its adapter tests are added and pass.
+
 Or hand the setup to any coding agent -- this one detects which tool you're using and
 installs the right way for it, Claude Code or otherwise:
 
@@ -176,21 +181,26 @@ its own memory system on itself, but a fresh install starts empty.
 
 | Tool | How to install | Notes |
 |---|---|---|
-| Claude Code | plugin install (above) | full support |
-| OpenCode | [adapters/OPENCODE.md](adapters/OPENCODE.md) | can run unattended for scheduled jobs; reviewer and builder tiers both resolve to the same model by default, so the review is a second pass, not yet a second opinion; its triage, weekly-retro, and sync CI workflows run on their daily or weekly schedules and also support manual dispatch, with a free default model overridable at dispatch (see "CI loop workflows" in that file) |
-| Hermes Agent | [adapters/HERMES.md](adapters/HERMES.md) | one command; 13 of 15 skills install automatically, 2 need one manual step (see FAQ); same model-tier caveat as OpenCode, and tool restrictions are advisory only -- Hermes doesn't enforce them |
-| Codex | [adapters/CODEX.md](adapters/CODEX.md) | native plugin plus one-time global bootstrap; ordinary prompts route automatically afterward |
+| Claude Code | plugin install (above) or `install.sh --target claude` | verified adapter; orchestration starts with the configured provider model and uses its one-time fallback only when that model is unavailable |
+| OpenCode | [adapters/OPENCODE.md](adapters/OPENCODE.md) | verified adapter; user-selected model by default, with optional tier mappings; scheduled loops can run unattended |
+| Hermes Agent | [adapters/HERMES.md](adapters/HERMES.md) | verified adapter; user-global model selection; tool restrictions remain advisory |
+| Codex | [adapters/CODEX.md](adapters/CODEX.md) | verified native plugin plus one-time global bootstrap; ordinary prompts route automatically afterward |
+
+The common manifest contract is documented in [adapters/ADAPTERS.md](adapters/ADAPTERS.md).
 
 **Local or hosted loops:** Clone this repository for local Sefi use. To run scheduled
 triage, retro, and sync, fork it or push your clone to a GitHub repository you control.
-Those workflows maintain only the repository that contains them.
+Those workflows maintain only the repository that contains them. Forking is the shortest
+path if you want GitHub Actions self-improvement; cloning alone does not enable workflows
+in this upstream repository.
 
-**Choose your provider:** Sefi does not prescribe an LLM provider. The included hosted
-workflows are OpenCode Zen examples. To use them, add `OPENCODE_ZEN_API_KEY`, set GitHub
-Actions workflow permissions to **Read and write**, and enable **Allow GitHub Actions to
-create and approve pull requests**. To use another provider, configure that provider's
-equivalent workflow in your own repository. The workflows create pull requests but never
-merge them.
+**Choose your provider:** Sefi does not prescribe an LLM provider. OpenCode and Hermes
+inherit the model you configure; Claude Code and Codex use their mapped specialist policy.
+The included hosted workflows are OpenCode Zen examples. To use them, add your own
+`OPENCODE_ZEN_API_KEY`, set GitHub Actions workflow permissions to **Read and write**, and
+enable **Allow GitHub Actions to create and approve pull requests**. To use another
+provider, configure that provider's equivalent workflow in your own repository. The
+workflows create pull requests but never merge them.
 
 ## Safety rails (all of them, in one place)
 
@@ -228,15 +238,15 @@ validate-no-personal-paths: OK (no personal paths in shipped files)
 validate-no-orphans: OK (references, templates, agents all wired)
 validate-links: OK (64 files scanned, all repo-path references resolve; bare script names checked)
 validate-script-refs: OK (49 files scanned, every scripts/*.sh reference carries ${CLAUDE_PLUGIN_ROOT}/)
-validate-release-ledger: OK (latest 0.6.3, 6/6 surfaces observed, 0 warning(s))
+validate-release-ledger: OK (latest 0.7.0, release surfaces reconciled)
 validate-routing: OK (routing-table agents exist, fixtures resolve, no duplicate triggers)
-validate-model-map: OK (13 agents, 4 harnesses, 48 scripts parse; 2 warning(s))
+validate-model-map: OK (13 agents, 4 harnesses, 49 scripts parse; 2 warning(s))
 validate-adapters: OK (installers, native Codex package, and adapter doc paths resolve)
 validate-rule-presence: OK (28 sentences across 17 files)
 check-unicode-safety: OK (167 files scanned, ASCII-clean)
 validate-comment-safety: OK (2 file(s) scanned)
 validate-token-budget: OK (all within token budgets; agents total 8320 words)
-test-scripts: OK (241 passed)
+test-scripts: OK (263 passed)
 test-integration: OK (33 passed) -- full loop skeleton executed end to end
 test-opencode-schedule-ownership: PASS (15 passed)
 CI: all validators passed
@@ -306,7 +316,7 @@ nothing broken or unused, and the honesty rule present in every agent and skill.
 
 This repo ships broad automation defaults for Claude Code and OpenCode, with deny patterns
 for force-push, hard resets, branch deletion, `rm -rf`, and credential files. Codex uses
-an on-failure approval policy and workspace-write sandbox instead; it has no per-command
+an on-request approval policy and workspace-write sandbox instead; it has no per-command
 deny list. Hermes reads no equivalent project configuration. Each limitation is stated in
 the relevant adapter or configuration file.
 

@@ -5,6 +5,26 @@ Changelog; this project adheres to Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-13
+
+### Added
+
+- A manifest-driven adapter contract for verified Claude Code, Codex, OpenCode, and Hermes
+  installs. Complete local custom manifests are supported without claiming shipped support.
+
+### Changed
+
+- Agent source files now declare only harness-neutral tiers. Provider-specific model and
+  reasoning choices live in `config/model-map.yml`; OpenCode and Hermes retain a
+  user-selected flexible default.
+- Claude Code uses its configured orchestration model first and permits its configured
+  fallback only once for an explicitly recorded model-unavailable failure. Codex retains
+  its mapped custom-agent policy.
+- Installer validation now rejects incomplete manifests, unsafe destinations, malformed
+  explicit OpenCode maps, and filesystem conflicts before materializing an install.
+- Completed implementation plans and local remote attachments no longer ship with the
+  repository; tracked-path and personal-path validators now protect that boundary.
+
 ## [0.6.3] - 2026-09-11
 
 ### Changed

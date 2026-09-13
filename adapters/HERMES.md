@@ -155,7 +155,7 @@ sefi stores no credentials -- rotate at this harness's own config or your CI sec
 
 Hermes takes its model from the global `provider.model` setting (section 1) and treats
 per-agent `model:` as advisory, so tiers are resolved at DISPATCH time rather than baked
-into a file. As of v0.3.18, `config/model-map.yml`'s `hermes:` block maps every tier to the
+into a file. The shipped `config/model-map.yml` `hermes:` block maps every tier to the
 sentinel `flexible`, not a concrete model id -- Hermes was already the least-hardcoded
 harness (it never wrote a model into an installed file to begin with), so this just stops
 `model-for.sh` from handing back an id that might already be dead by the time it's read:
