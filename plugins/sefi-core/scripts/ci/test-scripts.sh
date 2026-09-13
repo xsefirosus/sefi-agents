@@ -1602,7 +1602,7 @@ if command -v jq >/dev/null 2>&1; then
   JQ_REAL="$(command -v jq)"
   NOJQ_TMP="$(mktemp -d)"
   mkdir -p "$NOJQ_TMP/bin"
-  for c in bash sed grep cp mkdir ln rm mv find cat env git printf mktemp basename dirname cygpath; do
+  for c in bash sed grep awk cp mkdir ln rm mv find cat env git printf mktemp basename dirname cygpath; do
     # Git Bash cannot always create symlinks, so cp is the fallback.
     p="$(command -v "$c" 2>/dev/null)" && { ln -sf "$p" "$NOJQ_TMP/bin/$c" 2>/dev/null || cp "$p" "$NOJQ_TMP/bin/$c"; }
   done
