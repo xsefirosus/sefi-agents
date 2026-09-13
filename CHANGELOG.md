@@ -5,6 +5,13 @@ Changelog; this project adheres to Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-09-13
+
+### Fixed
+
+- GitHub Actions' jq-missing installer fixture now retains the resolver utilities it needs,
+  so the same validation suite passes on Linux and Git Bash.
+
 ## [0.7.0] - 2026-09-13
 
 ### Added
