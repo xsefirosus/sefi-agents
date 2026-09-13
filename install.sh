@@ -197,6 +197,20 @@ link_one() {
   fi
 }
 
+preflight_filesystem_destinations() {
+  # Check every subtree before replacing any. This prevents a late no-force conflict from
+  # leaving an earlier agents/, skills/, or commands/ subtree as a partial installation.
+  local sub target
+  [ "$FORCE" -eq 1 ] && return 0
+  for sub in "$@"; do
+    target="$DEST/$sub"
+    if [ -e "$target" ] || [ -L "$target" ]; then
+      echo "install.sh: refusing to overwrite $target (use --force)" >&2
+      return 1
+    fi
+  done
+}
+
 materialize_mapped_agents() {
   # Canonical agents deliberately carry only a harness-neutral tier. A filesystem adapter
   # that declares model_strategy: mapped must therefore generate real agent files rather
@@ -235,10 +249,14 @@ if [ "$ADAPTER_DRIVER" = "opencode-native" ]; then
   bash "$CORE/scripts/install-opencode.sh" "${opencode_args[@]}" || rc=1
 else
   if [ "$ADAPTER_MODEL_STRATEGY" = "mapped" ]; then
-    materialize_mapped_agents || rc=1
-    subdirs=(skills commands scripts)
+    subdirs=(agents skills commands scripts)
   else
     subdirs=(agents skills commands scripts)
+  fi
+  preflight_filesystem_destinations "${subdirs[@]}" || exit 1
+  if [ "$ADAPTER_MODEL_STRATEGY" = "mapped" ]; then
+    materialize_mapped_agents || exit 1
+    subdirs=(skills commands scripts)
   fi
   for sub in "${subdirs[@]}"; do
     link_one "$sub" || rc=1

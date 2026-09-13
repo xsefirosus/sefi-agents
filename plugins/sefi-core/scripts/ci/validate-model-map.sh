@@ -68,10 +68,13 @@ for h in claude-code codex; do
     errors=$((errors + 1))
   fi
 done
-if ! bash "$MODEL_FOR" claude-code orchestrator --fallback --failure-class model-unavailable --attempt 1 >/dev/null 2>&1; then
+fallback_state="$(mktemp)"
+rm -f "$fallback_state"
+if ! bash "$MODEL_FOR" claude-code orchestrator --fallback --failure-class model-unavailable --attempt 1 --retry-state "$fallback_state" >/dev/null 2>&1; then
   echo "ERROR: claude-code has no orchestrator fallback mapping"
   errors=$((errors + 1))
 fi
+rm -f "$fallback_state"
 
 # Generator/evaluator separation warning, per harness.
 for h in $harnesses; do

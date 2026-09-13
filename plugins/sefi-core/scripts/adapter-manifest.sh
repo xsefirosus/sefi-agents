@@ -3,7 +3,7 @@
 # Source this file; adapter_manifest_load <path> sets ADAPTER_* only after validation.
 
 adapter_manifest_load() {
-  local manifest="$1" line key value required seen_keys=""
+  local manifest="$1" line key value required seen_keys="" relative_destination
   [ -f "$manifest" ] || { echo "adapter-manifest: manifest not found: $manifest" >&2; return 1; }
 
   ADAPTER_SCHEMA=""; ADAPTER_ID=""; ADAPTER_VERIFICATION=""; ADAPTER_SUPPORT=""
@@ -44,6 +44,11 @@ adapter_manifest_load() {
   case "$ADAPTER_VERIFICATION:$ADAPTER_SUPPORT" in verified:shipped|local:custom) : ;; *) echo "adapter-manifest: verification/support must be verified:shipped or local:custom" >&2; return 1 ;; esac
   case "$ADAPTER_INSTALL_METHOD" in filesystem|native) : ;; *) echo "adapter-manifest: invalid install_method '$ADAPTER_INSTALL_METHOD'" >&2; return 1 ;; esac
   case "$ADAPTER_DRIVER" in filesystem|codex-bootstrap|opencode-native) : ;; *) echo "adapter-manifest: invalid driver '$ADAPTER_DRIVER'" >&2; return 1 ;; esac
+  case "$ADAPTER_MODEL_STRATEGY" in mapped|flexible) : ;; *) echo "adapter-manifest: invalid model_strategy '$ADAPTER_MODEL_STRATEGY'" >&2; return 1 ;; esac
   case "$ADAPTER_DESTINATION" in '${HOME}'/*) : ;; *) echo "adapter-manifest: destination must begin with \${HOME}/" >&2; return 1 ;; esac
+  relative_destination="${ADAPTER_DESTINATION#\$\{HOME\}/}"
+  case "$relative_destination" in ''|/*|*'//'*) echo "adapter-manifest: destination must be a relative path below \${HOME}" >&2; return 1 ;; esac
+  case "/$relative_destination/" in *'/./'*|*'/../'*) echo "adapter-manifest: destination may not contain . or .. path components" >&2; return 1 ;; esac
+  case "$relative_destination" in *[!A-Za-z0-9._/-]*) echo "adapter-manifest: destination contains unsupported characters" >&2; return 1 ;; esac
   return 0
 }

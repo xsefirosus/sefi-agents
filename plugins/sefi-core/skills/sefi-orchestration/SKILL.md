@@ -54,7 +54,8 @@ provider identifiers in prompts or this skill. For Claude orchestration, request
 configured high effort through that contract. Start with the configured orchestrator
 mapping. Retry exactly once only when the harness reports the primary model unavailable:
 call `model-for.sh claude-code orchestrator --fallback --failure-class model-unavailable
---attempt 1`. That command rejects a second attempt and every other failure class. Do not
+--attempt 1 --retry-state <absolute-per-dispatch-log-path>`. That command atomically
+consumes the state path, rejecting a second attempt and every other failure class. Do not
 retry or switch models for any other failure, and do not claim a model is account-available
 before the harness runs.
 

@@ -23,6 +23,7 @@ FIELD="model"
 FALLBACK=0
 FAILURE_CLASS=""
 ATTEMPT=""
+RETRY_STATE=""
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -32,6 +33,7 @@ while [ "$#" -gt 0 ]; do
     --fallback) FALLBACK=1; shift ;;
     --failure-class) FAILURE_CLASS="${2:-}"; shift 2 ;;
     --attempt) ATTEMPT="${2:-}"; shift 2 ;;
+    --retry-state) RETRY_STATE="${2:-}"; shift 2 ;;
     -h|--help) sed -n '2,4p' "$0"; exit 0 ;;
     --) shift; break ;;
     -*) echo "model-for: unknown arg $1" >&2; exit 2 ;;
@@ -84,6 +86,15 @@ if [ "$FALLBACK" -eq 1 ]; then
   [ "$TIER" = "orchestrator" ] || { echo "model-for: --fallback is only valid for the orchestrator tier" >&2; exit 2; }
   [ "$FAILURE_CLASS" = "model-unavailable" ] || { echo "model-for: --fallback requires failure class model-unavailable" >&2; exit 2; }
   [ "$ATTEMPT" = "1" ] || { echo "model-for: fallback retry attempt must be exactly 1" >&2; exit 2; }
+  [ -n "$RETRY_STATE" ] || { echo "model-for: --fallback requires an absolute retry state path" >&2; exit 2; }
+  case "$RETRY_STATE" in /*) : ;; *) echo "model-for: retry state path must be absolute" >&2; exit 2 ;; esac
+  # noclobber makes this an atomic one-use capability for a single dispatch. The caller
+  # supplies a fresh absolute path under its ignored per-dispatch log directory; a second
+  # fallback attempt against the same dispatch cannot recreate this file.
+  if ! ( set -C; : > "$RETRY_STATE" ) 2>/dev/null; then
+    echo "model-for: fallback retry state already consumed or cannot be created" >&2
+    exit 2
+  fi
 fi
 
 # --reasoning reads `<tier>_reasoning`; the default reads the bare `<tier>` key.
