@@ -453,9 +453,14 @@ class RouteTests(unittest.TestCase):
         result = self._cap("check-route-stub-nojson.sh")
         self.assertFalse(result.captured)
 
-    def test_absent_default_script_is_not_captured_without_raising(self) -> None:
-        # check-route.sh lives on feat/route-evidence-live, NOT this branch -> fail-closed.
-        result = capture_route("claude-code", "high", None, check_route_cmd=None)
+    def test_absent_resolved_script_is_not_captured_without_raising(self) -> None:
+        # Do not rely on whether this checkout happens to ship the default checker.
+        # The resolver boundary models a minimal install where that script is absent.
+        with mock.patch(
+            "benchmarks.runner.route._resolve_script",
+            return_value=Path("/nonexistent/check-route.sh"),
+        ):
+            result = capture_route("claude-code", "high", None, check_route_cmd=None)
         self.assertFalse(result.captured)
 
     def test_nonexistent_explicit_cmd_is_not_captured(self) -> None:
