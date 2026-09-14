@@ -8,11 +8,10 @@ input to ``integrity.verify`` (step 6): no arm-written value ever reaches scorin
 Resolution order for the script:
   1. the explicit test-only ``check_route_cmd`` argument (a fixture shell script);
   2. else ``<repo-root>/plugins/sefi-core/scripts/check-route.sh``.
-``check-route.sh`` is NOT on this branch (see the plan's "Ordering dependency" risk), so
-the default path is normally ABSENT here -- that resolves to ``captured is False``
-(fail-closed), never an exception. There is deliberately NO env-var override: the
-Phase-3 security review rejected exactly that pattern. Real operators never pass
-``check_route_cmd``.
+When a repository does not ship ``check-route.sh``, the default path is absent and
+resolves to ``captured is False`` (fail-closed), never an exception. There is deliberately
+NO env-var override: the Phase-3 security review rejected exactly that pattern. Real
+operators never pass ``check_route_cmd``.
 
 Invocation: ``check-route.sh <harness> <tier> <session-record-or-thread-id>`` -- the 3rd
 positional is a lowercase-UUID thread id or ``-`` (NOT a file path), so ``None`` is
