@@ -7,7 +7,7 @@
 <a href="https://github.com/xsefirosus/sefi-agents/actions/workflows/ci.yml"><img src="https://github.com/xsefirosus/sefi-agents/actions/workflows/ci.yml/badge.svg" alt="ci"></a>
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="license: MIT"></a>
 <a href="#faq"><img src="https://img.shields.io/badge/runtime%20deps-zero-brightgreen.svg" alt="runtime deps: zero"></a>
-<a href="#works-with-your-harness"><img src="https://img.shields.io/badge/runs%20on-Claude%20Code%20%7C%20Hermes%20%7C%20OpenCode%20%7C%20Codex-555.svg" alt="runs on"></a>
+<a href="#works-with-your-harness"><img src="https://img.shields.io/badge/runs%20on-Claude%20Code%20%7C%20Codex%20%7C%20OpenCode%20%7C%20Hermes-555.svg" alt="runs on"></a>
 </p>
 
 Thirteen AI agents -- a planner, a builder, a reviewer, a security checker, a writer,
@@ -182,9 +182,9 @@ its own memory system on itself, but a fresh install starts empty.
 | Tool | How to install | Notes |
 |---|---|---|
 | Claude Code | plugin install (above) or `install.sh --target claude` | verified adapter; orchestration starts with the configured provider model and uses its one-time fallback only when that model is unavailable |
+| Codex | [adapters/CODEX.md](adapters/CODEX.md) | verified native plugin plus one-time global bootstrap; ordinary prompts route automatically afterward |
 | OpenCode | [adapters/OPENCODE.md](adapters/OPENCODE.md) | verified adapter; user-selected model by default, with optional tier mappings; scheduled loops can run unattended |
 | Hermes Agent | [adapters/HERMES.md](adapters/HERMES.md) | verified adapter; user-global model selection; tool restrictions remain advisory |
-| Codex | [adapters/CODEX.md](adapters/CODEX.md) | verified native plugin plus one-time global bootstrap; ordinary prompts route automatically afterward |
 
 The common manifest contract is documented in [adapters/ADAPTERS.md](adapters/ADAPTERS.md).
 
