@@ -44,15 +44,22 @@ for f in "$DIR"/*.loop.md; do
     score=$((score + 20))
   fi
 
-  # 5. Proof of activity: at least one real state/metrics.md row naming this loop.
-  if [ -f "$METRICS" ] && grep -q "$name" "$METRICS"; then
+  # 5. Proof requires a parsed successful metrics row, not a substring in prose or a
+  # header. Table columns are date, target-path, loop, verdict, retries, note, route.
+  activity=0
+  if [ -f "$METRICS" ] && awk -F'|' -v loop="$name" '
+    function clean(value) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", value); return value }
+    $0 ~ /^\|/ && clean($4) == loop && clean($5) == "PASS" { found=1 }
+    END { exit !found }
+  ' "$METRICS"; then
     score=$((score + 20))
+    activity=1
   fi
 
   if [ "$score" -lt 40 ]; then level="L0 Draft"
   elif [ "$score" -lt 60 ]; then level="L1 Documented"
-  elif [ "$score" -lt 80 ]; then level="L2 Wired"
-  else level="L3 Proven"
+  elif [ "$activity" -eq 1 ]; then level="L3 Proven"
+  else level="L2 Wired"
   fi
 
   echo "$name: $score/100 ($level)"

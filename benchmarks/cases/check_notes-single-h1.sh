@@ -22,5 +22,26 @@ if ! head -n 1 "$target" | grep -qx '# Release notes'; then
   exit 1
 fi
 
+expected=$(mktemp)
+trap 'rm -f "$expected"' EXIT HUP INT TERM
+cat > "$expected" <<'NOTES'
+# Release notes
+
+Short summary of the sandbox fixture for case notes-single-h1.
+
+## Details
+
+Starting (pre-task) state: two level-1 headings. A completed trial leaves exactly one
+H1 and demotes the rest to H2.
+
+## Background
+
+Filler section so the file has real structure.
+NOTES
+if ! cmp -s "$expected" "$target"; then
+  echo "FAIL: notes changed beyond demoting the second H1"
+  exit 1
+fi
+
 echo "PASS: notes-single-h1"
 exit 0

@@ -39,6 +39,60 @@ def _walk_path(names: tuple[str, ...]) -> str | None:
     return None
 
 
+def _is_windows_wsl_relay(candidate: str) -> bool:
+    """True for Windows' bash relay, which is not a POSIX shell executable."""
+    if os.name != "nt":
+        return False
+    normalized = os.path.normcase(os.path.normpath(candidate))
+    system_root = os.path.normcase(os.path.normpath(os.environ.get("SystemRoot", r"C:\\Windows")))
+    return normalized == os.path.join(system_root, "system32", "bash.exe")
+
+
+def _is_usable_shell(candidate: str) -> bool:
+    """Require a shell candidate to execute, not merely exist on PATH."""
+    if not os.path.isfile(candidate) or not os.access(candidate, os.X_OK):
+        return False
+    if _is_windows_wsl_relay(candidate):
+        return False
+    try:
+        proc = subprocess.run(
+            [candidate, "--version"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return proc.returncode == 0
+
+
+def resolve_shell() -> str:
+    """Return a usable POSIX shell without accidentally selecting the WSL relay.
+
+    Git for Windows is commonly installed while only its ``cmd`` directory is on PATH.
+    Check PATH first, then its conventional executable locations.  The System32
+    ``bash.exe`` relay is deliberately excluded because it cannot execute local shell
+    scripts unless WSL is separately configured.
+    """
+    names = ("sh.exe", "sh", "bash.exe", "bash") if os.name == "nt" else ("sh", "bash")
+    for directory in os.environ.get("PATH", os.defpath).split(os.pathsep):
+        if not directory:
+            continue
+        for name in names:
+            candidate = os.path.join(directory, name)
+            if _is_usable_shell(candidate):
+                return candidate
+    if os.name == "nt":
+        roots = (os.environ.get("ProgramW6432"), os.environ.get("ProgramFiles"), r"C:\\Program Files")
+        for root in dict.fromkeys(item for item in roots if item):
+            for relative in (("Git", "bin", "bash.exe"), ("Git", "usr", "bin", "sh.exe")):
+                candidate = os.path.join(root, *relative)
+                if _is_usable_shell(candidate):
+                    return candidate
+    raise RuntimeError("no usable POSIX sh/bash found")
+
+
 def resolve_git() -> str:
     """Absolute path to a real ``git``, found by walking PATH ourselves."""
     names = ("git", "git.exe") if os.name == "nt" else ("git",)

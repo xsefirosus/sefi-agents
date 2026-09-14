@@ -57,7 +57,7 @@ from benchmarks.runner import integrity  # noqa: E402
 from benchmarks.runner.arms import _HARNESSES, _redact_text, run_arm  # noqa: E402
 from benchmarks.runner.record import build_record  # noqa: E402
 from benchmarks.runner.route import capture_route  # noqa: E402
-from benchmarks.runner.sandbox import resolve_git, sandbox  # noqa: E402
+from benchmarks.runner.sandbox import resolve_git, resolve_shell, sandbox  # noqa: E402
 from benchmarks.runner.snapshot import snapshot  # noqa: E402
 
 CASES_JSON = _REPO_ROOT / "benchmarks" / "cases.json"
@@ -135,19 +135,7 @@ def _resolve_sh() -> str:
     WSL relay stub). Mirrors ``route._resolve_bash``. Tries ``sh`` then ``bash`` -- the
     case ``acceptance_check`` strings are ``sh <script> .``.
     """
-    names = (
-        ("sh.exe", "sh", "bash.exe", "bash")
-        if os.name == "nt"
-        else ("sh", "bash")
-    )
-    for directory in os.environ.get("PATH", os.defpath).split(os.pathsep):
-        if not directory:
-            continue
-        for name in names:
-            candidate = os.path.join(directory, name)
-            if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
-                return candidate
-    raise RuntimeError("no sh/bash found on PATH (validated isfile + X_OK walk)")
+    return resolve_shell()
 
 
 def _git_head() -> str:

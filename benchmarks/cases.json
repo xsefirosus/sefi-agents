@@ -4,7 +4,7 @@
   "cases": [
     {
       "case_id": "sh-strict-mode",
-      "case_fingerprint": "e8cdb70fb615c96feccc2128e4e04d405dcf223aa51c0c1bac880f069714a163",
+      "case_fingerprint": "565083f2e80c636677af235a3c992940e0a1416fcf2bb177ccb232a18b23c817",
       "prompt_file": "benchmarks/prompts/sh-strict-mode.md",
       "allowed_paths": ["benchmarks/sandbox/deploy.sh"],
       "immutable_paths": [
@@ -16,7 +16,7 @@
     },
     {
       "case_id": "json-trailing-newline",
-      "case_fingerprint": "81629762a01c8c03ed9f505db57acf41c7e63eb5be69889d1dac1f0ab9a67346",
+      "case_fingerprint": "184f4d5e4bd8a29c7759235fb427a47a90e520d4c6d084b9457814d2a4fc9a05",
       "prompt_file": "benchmarks/prompts/json-trailing-newline.md",
       "allowed_paths": ["benchmarks/sandbox/config.json"],
       "immutable_paths": [
@@ -28,7 +28,7 @@
     },
     {
       "case_id": "notes-single-h1",
-      "case_fingerprint": "3367dd2121bc9aa1b3138be5e759cecfd1b4493d90ef32264489c244005a8e38",
+      "case_fingerprint": "c11dbb18b9fb074be5e4ff6d1a5dede21acbda547d4c789e967f2f2c92ebe7b0",
       "prompt_file": "benchmarks/prompts/notes-single-h1.md",
       "allowed_paths": ["benchmarks/sandbox/NOTES.md"],
       "immutable_paths": [

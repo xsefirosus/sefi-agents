@@ -31,6 +31,12 @@ validate-token-budget.sh
 test-scripts.sh
 test-integration.sh
 test-opencode-schedule-ownership.sh
+test-workflow-safety.sh
+test-ci-coverage.sh
+test-shared-memory-safety.sh
+test-runtime-contracts.sh
+test-benchmark-oracles.sh
+test-release-strict.sh
 "
 
 fail=0
@@ -43,6 +49,28 @@ for v in $validators; do
   fi
   echo
 done
+
+python_bin=""
+for candidate in python3 python; do
+  if command -v "$candidate" >/dev/null 2>&1 \
+    && "$candidate" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)' >/dev/null 2>&1; then
+    python_bin="$candidate"
+    break
+  fi
+done
+if [ -z "$python_bin" ]; then
+  echo "CI: Python 3.11+ is required for benchmark tests" >&2
+  fail=1
+elif ! "$python_bin" -m unittest discover -s benchmarks -p 'test_*.py'; then
+  fail=1
+fi
+
+while IFS= read -r script; do
+  if ! bash -n "$script"; then
+    echo "CI: shell syntax check failed: $script" >&2
+    fail=1
+  fi
+done < <(git ls-files '*.sh')
 
 if [ "$fail" -ne 0 ]; then
   echo "CI: FAILED -- one or more validators reported errors" >&2

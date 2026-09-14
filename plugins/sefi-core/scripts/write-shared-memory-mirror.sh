@@ -38,30 +38,70 @@ sanitize() {
   printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's#^https?://##; s#^git@##; s#[:/]+#-#g; s#\.git$##; s#[^a-z0-9._-]#-#g; s#-+#-#g; s#^-|-$##g'
 }
 
+is_safe_component() {
+  case "$1" in
+    ''|.|..|*/*|*\\*|*[!a-zA-Z0-9._-]*) return 1 ;;
+  esac
+  return 0
+}
+
 remote_url="$(git remote get-url origin 2>/dev/null || printf '')"
 if [ -n "$remote_url" ]; then
+  # HTTPS remotes may contain userinfo (including a persisted access token).  The mirror
+  # path is observable output, so discard everything before the final '@' before slugging.
+  case "$remote_url" in
+    *://*@*) remote_url="${remote_url%%://*}://${remote_url##*@}" ;;
+  esac
   project_slug="$(sanitize "$remote_url")"
 else
   project_slug="$(sanitize "$(pwd)")"
 fi
 [ -n "$project_slug" ] || project_slug="unknown-project"
+is_safe_component "$project_slug" || project_slug="unknown-project"
 
 # harness: written by /sefi:init as the literal fact of which harness ran it. A missing or
 # empty marker falls back rather than erroring -- this step is always best-effort.
 harness="unknown-harness"
 if [ -f .sefi/harness ]; then
-  h="$(head -n1 .sefi/harness | tr -d '[:space:]')"
+  h="$(head -n1 .sefi/harness | tr -d '\r\n')"
   [ -n "$h" ] && harness="$h"
 fi
+is_safe_component "$harness" || {
+  echo "write-shared-memory-mirror: unsafe harness marker" >&2
+  exit 2
+}
 
 stamp="$(date -u +%Y-%m-%d-%H%M 2>/dev/null || printf 'unknown-time')"
 topic_slug="$(sanitize "$TOPIC")"
 [ -n "$topic_slug" ] || topic_slug="untitled"
 
 project_dir="${ROOT%/}/$project_slug"
+umask 077
+[ ! -L "$ROOT" ] || {
+  echo "write-shared-memory-mirror: unsafe mirror root" >&2
+  exit 1
+}
 mkdir -p "$project_dir" 2>/dev/null || { echo "write-shared-memory-mirror: cannot create $project_dir" >&2; exit 1; }
+[ -d "$project_dir" ] && [ ! -L "$project_dir" ] || {
+  echo "write-shared-memory-mirror: unsafe project destination" >&2
+  exit 1
+}
 
-dest="$project_dir/${harness}-${topic_slug}-${stamp}.md"
-cp "$CONTENT_FILE" "$dest" 2>/dev/null || { echo "write-shared-memory-mirror: cannot write $dest" >&2; exit 1; }
+# mktemp creates the file with O_EXCL, so simultaneous same-minute writes never replace
+# each other or follow a preexisting destination symlink.
+dest="$(mktemp "$project_dir/${harness}-${topic_slug}-${stamp}-XXXXXX.md" 2>/dev/null)" || {
+  echo "write-shared-memory-mirror: cannot reserve a unique destination" >&2
+  exit 1
+}
+[ ! -L "$dest" ] || {
+  rm -f -- "$dest"
+  echo "write-shared-memory-mirror: unsafe destination" >&2
+  exit 1
+}
+cat "$CONTENT_FILE" > "$dest" 2>/dev/null || {
+  rm -f -- "$dest"
+  echo "write-shared-memory-mirror: cannot write $dest" >&2
+  exit 1
+}
 
 printf '%s\n' "$dest"

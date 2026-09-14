@@ -33,6 +33,7 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
 LEDGER=""
+STRICT=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -50,7 +51,7 @@ while [ $# -gt 0 ]; do
       ROOT="${1#--root=}"
       [ -n "$ROOT" ] || { echo "ERROR: --root= requires a non-empty directory argument"; echo "validate-release-ledger: 1 error(s)"; exit 1; }
       shift ;;
-    --strict) shift ;;          # accepted for run-all.sh parity; no effect here
+    --strict) STRICT=1; shift ;;
     --*=*)    echo "ERROR: unrecognized joined-form option '${1%%=*}='"; echo "validate-release-ledger: 1 error(s)"; exit 1 ;;
     *)        shift ;;          # ignore unknown bare args rather than fail the suite
   esac
@@ -212,4 +213,8 @@ for s in $CANONICAL_SURFACES; do
 done
 
 echo "validate-release-ledger: OK (latest $latest, ${n_observed:-0}/6 surfaces observed, $warnings warning(s))"
+if [ "$STRICT" -eq 1 ] && [ "$warnings" -ne 0 ]; then
+  echo "validate-release-ledger: strict completion requires all 6 surfaces to be observed" >&2
+  exit 1
+fi
 exit 0

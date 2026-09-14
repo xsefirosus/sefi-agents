@@ -24,36 +24,48 @@ CONFIG="config/budget.yml"
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --spent)   SPENT_ARG="${2:-}"; shift 2 ;;
-    --pending) PENDING_ARG="${2:-0}"; shift 2 ;;
-    --scope)   SCOPE="${2:-daily}"; shift 2 ;;
-    --config)  CONFIG="${2:-}"; shift 2 ;;
+    --spent)
+      [ "$#" -ge 2 ] && [ -n "${2:-}" ] || { echo "budget-check: --spent requires a value" >&2; exit 2; }
+      SPENT_ARG="$2"; shift 2 ;;
+    --pending)
+      [ "$#" -ge 2 ] && [ -n "${2:-}" ] || { echo "budget-check: --pending requires a value" >&2; exit 2; }
+      PENDING_ARG="$2"; shift 2 ;;
+    --scope)
+      [ "$#" -ge 2 ] && [ -n "${2:-}" ] || { echo "budget-check: --scope requires a value" >&2; exit 2; }
+      SCOPE="$2"; shift 2 ;;
+    --config)
+      [ "$#" -ge 2 ] && [ -n "${2:-}" ] || { echo "budget-check: --config requires a path" >&2; exit 2; }
+      CONFIG="$2"; shift 2 ;;
     *) echo "budget-check: unknown arg $1" >&2; exit 2 ;;
   esac
 done
 
-[ -f "$CONFIG" ] || { echo "budget-check: $CONFIG not found" >&2; exit 1; }
+[ -f "$CONFIG" ] || { echo "budget-check: $CONFIG not found" >&2; exit 2; }
 
-get_cap() { sed -n "s/^$1:[[:space:]]*\([0-9][0-9.]*\).*/\1/p" "$CONFIG" | head -1; }
+get_cap() {
+  awk -F: -v key="$1" '
+    $1 == key { count++; value=$2; sub(/[[:space:]]*#.*/, "", value); gsub(/^[[:space:]]+|[[:space:]]+$/, "", value) }
+    END { if (count == 1) print value }
+  ' "$CONFIG"
+}
 
 case "$SCOPE" in
   run)      CAP="$(get_cap per_run_usd_cap)" ;;
   dispatch) CAP="$(get_cap per_dispatch_usd_cap)" ;;
-  daily|*)  CAP="$(get_cap daily_usd_cap)" ;;
+  daily)    CAP="$(get_cap daily_usd_cap)" ;;
+  *) echo "budget-check: unknown scope '$SCOPE' (expected run, daily, or dispatch)" >&2; exit 2 ;;
 esac
-[ -n "${CAP:-}" ] || { echo "budget-check: cap for scope '$SCOPE' missing in $CONFIG" >&2; exit 1; }
 
 is_number() {
   # A bare `awk '{print $1+0}'` coerces "null", "" and "abc" to 0 -- which is precisely how
   # a broken telemetry source turns this gate into a no-op that always passes. Validate
   # before any arithmetic touches the value.
-  case "${1:-}" in
-    ''|.|*[!0-9.]*|*.*.*) return 1 ;;
-    *) return 0 ;;
-  esac
+  [[ "${1:-}" =~ ^[0-9]+([.][0-9]+)?$ ]]
 }
 
 is_number "$PENDING_ARG" || { echo "budget-check: --pending '$PENDING_ARG' is not a number" >&2; exit 2; }
+is_number "$CAP" && awk -v c="$CAP" 'BEGIN { exit !(c + 0 > 0) }' \
+  || { echo "budget-check: cap for scope '$SCOPE' must be one positive unambiguous number in $CONFIG" >&2; exit 2; }
 
 today="$(date +%Y-%m-%d)"
 spent=""

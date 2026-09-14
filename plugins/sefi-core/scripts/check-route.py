@@ -192,6 +192,7 @@ def read_rollout(path, expected_model, expected_effort):
     interpreter's absolute path.
     """
     last_turn = None
+    saw_turn_context = False
     try:
         with path.open(encoding="utf-8") as handle:
             for line in handle:
@@ -200,24 +201,26 @@ def read_rollout(path, expected_model, expected_effort):
                 record = json.loads(line)
                 # Top level ONLY. A nested object carrying type=="turn_context" is a dict
                 # this never descends into -- the decoy the shell version fell for.
-                if (
-                    isinstance(record, dict)
-                    and record.get("type") == "turn_context"
-                    and isinstance(record.get("payload"), dict)
-                ):
+                if isinstance(record, dict) and record.get("type") == "turn_context":
                     # Forked rollout snapshots legitimately carry several turn_context
                     # records; the LAST is the effective route
                     # (inspect-agent-runtime.sh:190-193). A malformed last record fails
                     # noisily below -- it never falls back to an earlier good one.
-                    last_turn = record["payload"]
+                    saw_turn_context = True
+                    last_turn = record.get("payload")
     except (OSError, ValueError, RecursionError, MemoryError):
         return emit(
             "invalid", "rollout-unreadable", expected_model, expected_effort
         )
 
-    if last_turn is None:
+    if not saw_turn_context:
         return emit(
             "invalid", "turn-context-missing", expected_model, expected_effort
+        )
+
+    if not isinstance(last_turn, dict):
+        return emit(
+            "invalid", "turn-context-malformed", expected_model, expected_effort
         )
 
     observed_model = last_turn.get("model")

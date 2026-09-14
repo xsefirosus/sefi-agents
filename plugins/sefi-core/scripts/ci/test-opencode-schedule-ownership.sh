@@ -27,30 +27,25 @@ expect_no_schedule() {
   fi
 }
 
-expect_full_loop() {
+expect_publisher_handoff() {
   local workflow="$1" label="$2"
-  if grep -Fq '      - name: Commit state (never auto-merge' "$workflow" \
-    && grep -Fq 'GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}' "$workflow" \
-    && grep -Fq 'git push -u origin "$BRANCH"' "$workflow" \
-    && grep -Fq 'gh pr create' "$workflow"; then
-    ok "$label OpenCode workflow retains full branch-and-PR behavior"
+  if grep -Fq 'uses: ./.github/actions/publish-state' "$workflow" \
+    && grep -Fq 'GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}' "$workflow"; then
+    ok "$label OpenCode workflow hands state to the validated publisher"
   else
-    bad "$label OpenCode workflow retains full branch-and-PR behavior"
+    bad "$label OpenCode workflow does not hand state to the validated publisher"
   fi
 }
 
-# `inbox/` is optional: a discovery-only loop normally changes only state/. Git exits 128
-# when asked to add a path that does not exist, so every loop must stage state/memory first
-# and include inbox only when it is present.
-expect_safe_state_staging() {
-  local workflow="$1" label="$2"
-  if ! grep -Fq 'git add state/ memory/ inbox/' "$workflow" \
-    && grep -Fq 'git add state/ memory/' "$workflow" \
-    && grep -Fq 'if [ -d inbox ]; then' "$workflow" \
-    && grep -Fq 'git add inbox/' "$workflow"; then
-    ok "$label safely stages the optional inbox directory"
+# `inbox/` is optional. State staging belongs to the publisher action so every workflow
+# gets the same guarded behavior and candidate validation.
+expect_safe_publisher_staging() {
+  local publisher="$ROOT/.github/actions/publish-state/action.yml"
+  if grep -Fq 'git add -A -- state/ memory/ inbox/ 2>/dev/null || true' "$publisher" \
+    && grep -Fq 'find "$root" -mindepth 1 ! -type d ! -type f' "$publisher"; then
+    ok "validated publisher safely stages optional state directories"
   else
-    bad "$label does not safely stage the optional inbox directory"
+    bad "validated publisher does not safely stage optional state directories"
   fi
 }
 
@@ -62,15 +57,10 @@ expect_schedule "$ROOT/.github/workflows/sync-opencode.yml" '0 8 * * 1' 'sync'
 expect_no_schedule "$ROOT/.github/workflows/triage.yml" 'morning-triage'
 expect_no_schedule "$ROOT/.github/workflows/retro.yml" 'weekly-retro'
 expect_no_schedule "$ROOT/.github/workflows/sync.yml" 'sync'
-expect_full_loop "$ROOT/.github/workflows/triage-opencode.yml" 'morning-triage'
-expect_full_loop "$ROOT/.github/workflows/retro-opencode.yml" 'weekly-retro'
-expect_full_loop "$ROOT/.github/workflows/sync-opencode.yml" 'sync'
-expect_safe_state_staging "$ROOT/.github/workflows/triage.yml" 'morning-triage Claude workflow'
-expect_safe_state_staging "$ROOT/.github/workflows/retro.yml" 'weekly-retro Claude workflow'
-expect_safe_state_staging "$ROOT/.github/workflows/sync.yml" 'sync Claude workflow'
-expect_safe_state_staging "$ROOT/.github/workflows/triage-opencode.yml" 'morning-triage OpenCode workflow'
-expect_safe_state_staging "$ROOT/.github/workflows/retro-opencode.yml" 'weekly-retro OpenCode workflow'
-expect_safe_state_staging "$ROOT/.github/workflows/sync-opencode.yml" 'sync OpenCode workflow'
+expect_publisher_handoff "$ROOT/.github/workflows/triage-opencode.yml" 'morning-triage'
+expect_publisher_handoff "$ROOT/.github/workflows/retro-opencode.yml" 'weekly-retro'
+expect_publisher_handoff "$ROOT/.github/workflows/sync-opencode.yml" 'sync'
+expect_safe_publisher_staging
 
 if [ "$fail" -ne 0 ]; then
   echo "opencode-schedule-ownership: FAILED ($fail failed, $pass passed)" >&2

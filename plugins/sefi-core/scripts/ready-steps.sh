@@ -24,10 +24,14 @@ PLAN=""
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --config) CONFIG="${2:-}"; shift 2 ;;
+    --config)
+      [ "$#" -ge 2 ] && [ -n "${2:-}" ] || { echo "ready-steps: --config requires a path" >&2; exit 2; }
+      CONFIG="$2"; shift 2 ;;
     -h|--help) sed -n '2,3p' "$0"; exit 0 ;;
     -*) echo "ready-steps: unknown arg $1" >&2; exit 2 ;;
-    *) PLAN="$1"; shift ;;
+    *)
+      [ -z "$PLAN" ] || { echo "ready-steps: multiple plan files supplied" >&2; exit 2; }
+      PLAN="$1"; shift ;;
   esac
 done
 
@@ -36,7 +40,9 @@ done
 [ -f "$CONFIG" ] || { echo "ready-steps: $CONFIG not found" >&2; exit 2; }
 
 MAXPAR="$(sed -n 's/^max_parallel_worktrees:[[:space:]]*\([0-9][0-9]*\).*/\1/p' "$CONFIG" | head -1)"
-[ -n "${MAXPAR:-}" ] || { echo "ready-steps: max_parallel_worktrees missing in $CONFIG" >&2; exit 2; }
+case "${MAXPAR:-}" in
+  ''|0) echo "ready-steps: max_parallel_worktrees must be a positive integer in $CONFIG" >&2; exit 2 ;;
+esac
 
 # One TSV row per step: num, checked (0/1), deps ("-", "N", or "N,M,..."). A step with no
 # (needs: ...) marker at all, or an empty one, reports MALFORMED in the deps column rather
@@ -68,6 +74,19 @@ while IFS="$(printf '\t')" read -r n c d; do
   nums+=("$n"); checked+=("$c"); deps+=("$d")
 done <<< "$rows"
 
+declare -A step_seen=()
+for n in "${nums[@]}"; do
+  if ! [[ "$n" =~ ^[1-9][0-9]*$ ]]; then
+    echo "ready-steps: malformed -- step id '$n' must be a positive integer" >&2
+    exit 1
+  fi
+  if [ -n "${step_seen[$n]:-}" ]; then
+    echo "ready-steps: malformed -- duplicate step id $n" >&2
+    exit 1
+  fi
+  step_seen[$n]=1
+done
+
 is_known() {
   local target="$1" i
   for i in "${!nums[@]}"; do [ "${nums[$i]}" = "$target" ] && return 0; done
@@ -86,6 +105,24 @@ for i in "${!nums[@]}"; do
     echo "ready-steps: malformed -- step ${nums[$i]} has no (needs: ...) marker" >&2
     exit 1
   fi
+done
+
+for i in "${!nums[@]}"; do
+  d="${deps[$i]}"
+  [ "$d" = "-" ] && continue
+  if ! [[ "$d" =~ ^[1-9][0-9]*(,[1-9][0-9]*)*$ ]]; then
+    echo "ready-steps: malformed -- step ${nums[$i]} has invalid dependency syntax '$d'" >&2
+    exit 1
+  fi
+  declare -A dependency_seen=()
+  IFS=',' read -ra parts <<< "$d"
+  for p in "${parts[@]}"; do
+    if [ -n "${dependency_seen[$p]:-}" ]; then
+      echo "ready-steps: malformed -- step ${nums[$i]} repeats dependency $p" >&2
+      exit 1
+    fi
+    dependency_seen[$p]=1
+  done
 done
 
 for i in "${!nums[@]}"; do

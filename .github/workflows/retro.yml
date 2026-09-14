@@ -10,14 +10,24 @@
 name: sefi-weekly-retro
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      allow_unmeasured_spend:
+        description: "Explicit interactive waiver when local usage telemetry is unavailable"
+        type: boolean
+        default: false
+      estimated_run_usd:
+        description: "Maximum USD expected for this provider run; the preflight blocks runs that cannot fit the cap."
+        type: string
+        default: "0.50"
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
+  issues: read
+  pull-requests: read
 
 concurrency:
-  group: sefi-weekly-retro
+  group: sefi-maintenance
   cancel-in-progress: false
 
 jobs:
@@ -28,6 +38,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0   # Discovery reads state/metrics.md and the retro ledger history
+          persist-credentials: false
 
       - name: Install ripgrep
         run: sudo apt-get update && sudo apt-get install -y ripgrep
@@ -40,6 +51,12 @@ jobs:
 
       - name: Install the headless agent CLI
         run: npm install -g @anthropic-ai/claude-code
+
+      - name: Preflight budget
+        uses: ./.github/actions/preflight-budget
+        with:
+          estimated-run-usd: ${{ inputs.estimated_run_usd || '0.50' }}
+          allow-unmeasured-spend: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unmeasured_spend }}
 
       - name: Run the retro loop
         env:
@@ -60,32 +77,48 @@ jobs:
 
       - name: Enforce budget caps
         if: always()
-        run: bash plugins/sefi-core/scripts/budget-check.sh --scope run --spent 0
-
-      - name: Commit state (never auto-merge, never applies its own edit)
-        # weekly-retro's own Human checkpoint: "New skills require inbox approval; no
-        # skill is created autonomously, and no host-runtime file is edited [without
-        # improvement.enabled: true, which is false here]." Same never-auto-merge rule as
-        # every other loop either way.
-        if: always()
+        env:
+          ALLOW_UNMEASURED_SPEND: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unmeasured_spend }}
         run: |
           set -euo pipefail
-          git config user.name  "sefi-retro[bot]"
-          git config user.email "sefi-retro[bot]@users.noreply.github.com"
-          if git diff --quiet -- state/ memory/ inbox/; then
-            echo "no state changes to commit"
+          bash plugins/sefi-core/scripts/budget-check.sh --scope run || status=$?
+          if [ "${status:-0}" -eq 3 ] && [ "${ALLOW_UNMEASURED_SPEND:-false}" = "true" ]; then
+            echo "budget-check: explicit interactive waiver accepted for this run" >&2
             exit 0
           fi
-          BRANCH="retro/$(date +%Y-%m-%d-%H%M)"
-          git checkout -b "$BRANCH"
-          git add state/ memory/
-          if [ -d inbox ]; then
-            git add inbox/
-          fi
-          git commit -m "chore(retro): weekly-retro cycle $(date +%Y-%m-%d)"
-          git push -u origin "$BRANCH"
-          gh pr create --fill --base main --head "$BRANCH" \
-            --title "retro: weekly-retro cycle $(date +%Y-%m-%d)" \
-            --body "Automated weekly-retro cycle. Proposal (if any) in \`state/retro-$(date +%Y-%m-%d).md\`. Never auto-applied, never auto-merged -- a human reviews and decides."
+          exit "${status:-0}"
+
+      - name: Upload validated state candidate
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: retro-state
+          path: |
+            state/
+            memory/
+            inbox/
+          if-no-files-found: ignore
+
+  publish:
+    needs: retro
+    if: ${{ needs.retro.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: retro-state
+          path: .
+      - uses: ./.github/actions/publish-state
+        with:
+          branch-prefix: retro
+          commit-message: "chore(retro): weekly-retro cycle"
+          title: "retro: weekly-retro cycle"
+          body: "Automated weekly-retro cycle. Never auto-applied or auto-merged."
+          bot-name: sefi-retro[bot]
+          bot-email: sefi-retro[bot]@users.noreply.github.com
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

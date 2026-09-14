@@ -19,5 +19,21 @@ if ! head -n 5 "$target" | grep -qx 'set -euo pipefail'; then
   exit 1
 fi
 
+strict_count=$(grep -c '^set -euo pipefail$' "$target" 2>/dev/null || true)
+if [ "$strict_count" -ne 1 ]; then
+  echo "FAIL: expected exactly one strict-mode line, found $strict_count"
+  exit 1
+fi
+
+here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+baseline="$here/../sandbox/deploy.sh"
+tmp=$(mktemp)
+trap 'rm -f "$tmp"' EXIT HUP INT TERM
+sed '/^set -euo pipefail$/d' "$target" > "$tmp"
+if ! cmp -s "$baseline" "$tmp"; then
+  echo "FAIL: script content changed beyond the strict-mode insertion"
+  exit 1
+fi
+
 echo "PASS: sh-strict-mode"
 exit 0

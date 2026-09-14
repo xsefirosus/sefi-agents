@@ -24,7 +24,7 @@ off.
   mid-loop; `--by-agent` for per-adapter spend). ccusage is never required -- the
   `--spent` fallback keeps the zero-dependency install intact.
 
-## Benchmark runs are out-of-loop and NOT budget-enforced
+## Benchmark runs are out-of-loop and use their own enforced ceiling
 
 The blinded paired A/B benchmark (`plugins/sefi-core/skills/run-sefi-benchmark/SKILL.md`,
 `benchmarks/`) is **not** covered by `budget-check.sh` and is outside every scope it
@@ -33,23 +33,23 @@ run pairs each frozen case against both a full-chain arm and a strong-single-mod
 control, across two harnesses, with repetitions and a blinded judge -- it exceeds the
 interactive per-run cap by design, the same way the predecessor's measured full pilot did.
 
-Be honest about what bounds it and what does not:
+The runner checks this separate cap before it invokes an arm:
 
-- **`benchmark_per_run_usd_cap: 15.00` in `config/budget.yml` is an operator-tracked
-  target, not an enforced cap.** Nothing in the repo blocks a benchmark run that spends
-  more -- there is no code path that reads this key and refuses a run. It exists so the
-  intended ceiling is written down in one place. Rationale for the number: up to ~24
+- **`benchmark_per_run_usd_cap: 15.00` in `config/budget.yml` is enforced by
+  `benchmarks/runner/run.py`.** Missing, invalid, non-positive, or non-finite caps abort
+  before an arm runs. The runner stops before a declared estimate would cross the cap.
+  Rationale for the number: up to ~24
   paired arm-runs (3 cases x 2 arms x 2 harnesses x 2 repetitions) plus one read-only
   judge pass per trial, each arm a full multi-step chain or a high-tier solo, puts a run
   in the single-digit-to-low-double-digit dollar range.
-- **Verified after the fact, from the run's own artifacts.** Each trial records an
+- **Measured spend remains an after-the-fact report.** Each trial records an
   optional `cost_usd`. When every scored trial carries it, `benchmarks/scorecard.py`
   prints `run cost $X.XX vs ceiling $15.00 [config/budget.yml]: WITHIN` (or `OVER`); when
   any scored trial lacks it, `run cost: unknown (cost_usd missing on N scored trial(s))
   -- ceiling $15.00 [config/budget.yml] not checkable`. (Same strings in
   `docs/METRICS-PROVENANCE.md`, `plugins/sefi-core/skills/run-sefi-benchmark/SKILL.md`,
-  and `benchmarks/README.md`.) The operator compares that line to the 15.00 target once
-  the run completes. There is no automated block, only this post-hoc check.
+  and `benchmarks/README.md`.) The operator compares that line to the 15.00 cap once
+  the run completes.
 - **Explicit per-invocation authorization** is the real gate. The operator approves the
   specific trial matrix and its token/time spend before any model call; a dry-run plan
   (zero model calls) is produced first. `loops/*.loop.md` must never invoke the benchmark

@@ -16,16 +16,25 @@ on:
         description: "Discovery only -- report findings, open no PR"
         type: boolean
         default: true
+      allow_unmeasured_spend:
+        description: "Explicit interactive waiver when local usage telemetry is unavailable"
+        type: boolean
+        default: false
+      estimated_run_usd:
+        description: "Maximum USD expected for this provider run; the preflight blocks runs that cannot fit the cap."
+        type: string
+        default: "0.50"
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
+  issues: read
+  pull-requests: read
 
 concurrency:
   # A loop that claims work in state/ must not race itself. The claim protocol (v0.2.1)
   # commits before opening a worktree and uses push rejection as the arbiter, but not
   # starting a second run at all is cheaper than resolving the race.
-  group: sefi-morning-triage
+  group: sefi-maintenance
   cancel-in-progress: false
 
 jobs:
@@ -36,6 +45,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0   # the Discovery move reads commits since the last run
+          persist-credentials: false
 
       - name: Install ripgrep
         run: sudo apt-get update && sudo apt-get install -y ripgrep
@@ -51,6 +61,12 @@ jobs:
 
       - name: Install the headless agent CLI
         run: npm install -g @anthropic-ai/claude-code
+
+      - name: Preflight budget
+        uses: ./.github/actions/preflight-budget
+        with:
+          estimated-run-usd: ${{ inputs.estimated_run_usd || '0.50' }}
+          allow-unmeasured-spend: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unmeasured_spend }}
 
       - name: Run the triage loop
         env:
@@ -75,36 +91,53 @@ jobs:
           } | claude --print --dangerously-skip-permissions --add-dir "$PWD"
 
       - name: Enforce budget caps
-        # --spent is a real claim, and budget-check.sh fails closed (exit 3) rather than
-        # passing a check it never performed. ccusage is not installed on this runner, and
-        # the Claude CLI reports no token usage, so there is no ledger to read here: this
-        # asserts the run's spend is unmeasured-but-declared rather than pretending it was
-        # measured. Install ccusage on the runner to make this a real reading.
         if: always()
-        run: bash plugins/sefi-core/scripts/budget-check.sh --scope run --spent 0
-
-      - name: Commit state (never auto-merge)
-        # Loops open PRs and stop; a human merges. skills/sefi-orchestration/references/
-        # human-checkpoint.md is unconditional, and nothing here may weaken it.
-        if: always()
+        env:
+          ALLOW_UNMEASURED_SPEND: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unmeasured_spend }}
         run: |
           set -euo pipefail
-          git config user.name  "sefi-triage[bot]"
-          git config user.email "sefi-triage[bot]@users.noreply.github.com"
-          if git diff --quiet -- state/ memory/ inbox/; then
-            echo "no state changes to commit"
+          bash plugins/sefi-core/scripts/budget-check.sh --scope run || status=$?
+          if [ "${status:-0}" -eq 3 ] && [ "${ALLOW_UNMEASURED_SPEND:-false}" = "true" ]; then
+            echo "budget-check: explicit interactive waiver accepted for this run" >&2
             exit 0
           fi
-          BRANCH="triage/$(date +%Y-%m-%d-%H%M)"
-          git checkout -b "$BRANCH"
-          git add state/ memory/
-          if [ -d inbox ]; then
-            git add inbox/
-          fi
-          git commit -m "chore(triage): morning-triage cycle $(date +%Y-%m-%d)"
-          git push -u origin "$BRANCH"
-          gh pr create --fill --base main --head "$BRANCH" \
-            --title "triage: morning-triage cycle $(date +%Y-%m-%d)" \
-            --body "Automated morning-triage cycle. Findings in \`state/triage.md\`. Never auto-merged -- a human reviews and merges."
+          exit "${status:-0}"
+
+      - name: Upload validated state candidate
+        if: ${{ success() && inputs.dry_run != true }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: triage-state
+          path: |
+            state/
+            memory/
+            inbox/
+          if-no-files-found: ignore
+
+  publish:
+    needs: triage
+    if: ${{ needs.triage.result == 'success' && inputs.dry_run != true }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download validated state candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: triage-state
+          path: .
+      - uses: ./.github/actions/publish-state
+        with:
+          branch-prefix: triage
+          commit-message: "chore(triage): morning-triage cycle"
+          title: "triage: morning-triage cycle"
+          body: "Automated morning-triage cycle. Findings are in state/triage.md. A human reviews and merges the pull request."
+          bot-name: "sefi-triage[bot]"
+          bot-email: "sefi-triage[bot]@users.noreply.github.com"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
