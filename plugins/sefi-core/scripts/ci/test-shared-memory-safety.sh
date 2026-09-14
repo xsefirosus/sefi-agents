@@ -67,6 +67,9 @@ credential_dest="$(cd "$WORKSPACE" && "${clean_env[@]}" bash "$WRITE" 'credentia
 case "$credential_dest" in
   *ghp*|*EXAMPLESECRET*) echo 'credential-bearing remote leaked into mirror path' >&2; exit 1 ;;
 esac
+# The remote above changes the sanitized project slug. Keep the active destination so the
+# symlink regression below replaces the directory the writer will actually use.
+project_dir="$(dirname "$credential_dest")"
 
 printf '../../escaped\n' > "$WORKSPACE/.sefi/harness"
 if cd "$WORKSPACE" && "${clean_env[@]}" bash "$WRITE" 'topic' note.md >/dev/null 2>&1; then
@@ -92,8 +95,7 @@ if [ -L "$linked_home/sefi-memory" ]; then
     exit 1
   }
 
-  project_dir="$(dirname "$dest1")"
-  rm -f -- "$dest1" "$dest2"
+  rm -f -- "$credential_dest"
   rmdir "$project_dir"
   ln -s "$outside" "$project_dir"
   if cd "$WORKSPACE" && "${clean_env[@]}" bash "$WRITE" 'topic' note.md >/dev/null 2>&1; then
