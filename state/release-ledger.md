@@ -81,6 +81,9 @@
 | 0.7.2 | git-tag | 0.7.2 | unobserved | unobserved | PENDING before publication: v0.7.2 has not been tagged locally or on origin | a local tag that was never pushed to origin | 2026-09-13T20:04:28Z |
 | 0.7.2 | github-release | 0.7.2 | unobserved | unobserved | PENDING before publication: gh release view v0.7.2 returned release not found | a local or pushed tag with no release | 2026-09-13T20:04:28Z |
 | 0.7.2 | github-marketplace-index | 0.7.2 | unobserved | unobserved | PENDING before publication: public main does not yet contain the 0.7.2 marketplace manifest | install commands quoted only in a README | 2026-09-13T20:04:28Z |
+| 0.7.2 | git-tag | 0.7.2 | 0.7.2 | match | git rev-parse v0.7.2^{commit} -> 954c88260765f263922613909ca585bb42bb9954; git ls-remote --tags origin refs/tags/v0.7.2 -> 21620b5a71de387b6482b5383fc8685d3b43720a refs/tags/v0.7.2 and 954c88260765f263922613909ca585bb42bb9954 refs/tags/v0.7.2^{} | a local tag that was never pushed to origin | 2026-09-14T02:11:27Z |
+| 0.7.2 | github-release | 0.7.2 | 0.7.2 | match | gh release view v0.7.2 --json tagName,isDraft,url,publishedAt,name -> tagName=v0.7.2, name=v0.7.2, isDraft=false, publishedAt=2026-09-14T02:11:15Z, url=https://github.com/xsefirosus/sefi-agents/releases/tag/v0.7.2 | a local or pushed tag with no release; a draft release | 2026-09-14T02:11:27Z |
+| 0.7.2 | github-marketplace-index | 0.7.2 | 0.7.2 | match | gh api repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main (Accept: raw) -> metadata.version 0.7.2, plugins[0].version 0.7.2 | install commands quoted only in a README | 2026-09-14T02:11:27Z |
 
 ## Notes
 
