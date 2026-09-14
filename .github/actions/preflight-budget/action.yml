@@ -1,0 +1,22 @@
+name: Enforce preflight budget
+description: Block a provider invocation when current spend plus the declared run estimate cannot be verified within its cap.
+inputs:
+  estimated-run-usd:
+    required: true
+  allow-unmeasured-spend:
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        ESTIMATED_RUN_USD: ${{ inputs.estimated-run-usd }}
+        ALLOW_UNMEASURED_SPEND: ${{ inputs.allow-unmeasured-spend }}
+      run: |
+        set -euo pipefail
+        bash plugins/sefi-core/scripts/budget-check.sh --scope run --pending "$ESTIMATED_RUN_USD" || status=$?
+        if [ "${status:-0}" -eq 3 ] && [ "${ALLOW_UNMEASURED_SPEND:-false}" = "true" ]; then
+          echo "budget-check: explicit interactive waiver accepted before provider invocation" >&2
+          exit 0
+        fi
+        exit "${status:-0}"

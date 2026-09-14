@@ -24,8 +24,29 @@ if [ -n "$last_byte" ]; then
   exit 1
 fi
 
-if ! grep -Eq '^  +"' "$target"; then
-  echo "FAIL: no 2-space-indented line found (not pretty-printed)"
+if ! grep -Eq '^  "' "$target"; then
+  echo "FAIL: no 2-space-indented key line found (not pretty-printed)"
+  exit 1
+fi
+
+expected=$(mktemp)
+trap 'rm -f "$expected"' EXIT HUP INT TERM
+cat > "$expected" <<'JSON'
+{
+  "name": "sample",
+  "version": "1.0.0",
+  "features": {
+    "a": true,
+    "b": false
+  },
+  "tags": [
+    "x",
+    "y"
+  ]
+}
+JSON
+if ! cmp -s "$expected" "$target"; then
+  echo "FAIL: JSON content or canonical 2-space formatting changed"
   exit 1
 fi
 

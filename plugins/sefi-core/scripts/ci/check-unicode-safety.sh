@@ -9,7 +9,9 @@ ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
 cd "$ROOT"
 
 targets() {
-  for d in .agents .claude-plugin plugins adapters; do [ -d "$d" ] && find "$d" -type f; done
+  for d in .agents .claude-plugin plugins adapters; do
+    [ -d "$d" ] && find "$d" -type f ! -path '*/__pycache__/*' ! -name '*.pyc'
+  done
   for f in docs/LOOPS.md docs/ANTIPATTERNS.md docs/CHECKLIST.md docs/BUDGET.md docs/OPTIONAL-TOOLS.md \
            README.md Install.md CHANGELOG.md LICENSE install.sh install-codex.sh; do
     [ -f "$f" ] && echo "$f"

@@ -202,6 +202,13 @@ enable **Allow GitHub Actions to create and approve pull requests**. To use anot
 provider, configure that provider's equivalent workflow in your own repository. The
 workflows create pull requests but never merge them.
 
+Hosted maintenance workflows run the model job with read-only repository permissions and
+without checkout credentials. A separate publisher job receives the validated state as an
+artifact, checks it, and opens the pull request with write permission. The publisher rejects
+symlinks, other non-regular entries, and common credential-shaped content in state, memory,
+and inbox files. See [.github/actions/preflight-budget/action.yml](.github/actions/preflight-budget/action.yml)
+and [.github/actions/publish-state/action.yml](.github/actions/publish-state/action.yml).
+
 ## Safety rails (all of them, in one place)
 
 - The agent that writes code never approves its own work -- a separate reviewer checks
@@ -214,8 +221,9 @@ workflows create pull requests but never merge them.
 - One version number, reconciled across all six places it gets published -- with an
   append-only evidence ledger (`state/release-ledger.md`) -- before anything is called
   released.
-- Spending limits: per task, per day, and overall. If spending can't be measured, the
-  system stops and says so instead of assuming it's fine.
+- Spending limits: per task, per day, and overall. Hosted workflows check the declared
+  maximum run estimate before calling a provider. If spending can't be measured, scheduled
+  runs stop and manual runs need an explicit interactive waiver.
 - Anything the system isn't sure about goes to a review folder (`inbox/`) for you to
   decide.
 - Nothing merges or deploys by itself. Every automated job stops at a pull request and
@@ -238,7 +246,7 @@ validate-no-personal-paths: OK (no personal paths in shipped files)
 validate-no-orphans: OK (references, templates, agents all wired)
 validate-links: OK (64 files scanned, all repo-path references resolve; bare script names checked)
 validate-script-refs: OK (49 files scanned, every scripts/*.sh reference carries ${CLAUDE_PLUGIN_ROOT}/)
-validate-release-ledger: OK (latest 0.7.1, 6/6 surfaces observed, 0 warnings)
+validate-release-ledger: OK (latest 0.7.2, 6/6 surfaces observed, 0 warnings)
 validate-routing: OK (routing-table agents exist, fixtures resolve, no duplicate triggers)
 validate-model-map: OK (13 agents, 4 harnesses, 49 scripts parse; 2 warning(s))
 validate-adapters: OK (installers, native Codex package, and adapter doc paths resolve)
@@ -254,6 +262,9 @@ CI: all validators passed
 
 - The last three result lines matter most: they prove the scripts, full loop skeleton,
   and scheduled-workflow ownership checks pass.
+- The same command also runs workflow-safety, shared-memory, runtime-contract, benchmark-
+  oracle, release-strictness, and CI-coverage regressions, then checks every tracked shell
+  script with `bash -n` and runs the benchmark unit tests.
 - This proves the machinery works, not that the AI always makes good calls -- every
   agent's part in that test is scripted, not judged.
 - Every agent and skill has a length limit, and going over it fails the build. Exact

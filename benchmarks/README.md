@@ -178,18 +178,12 @@ result with
 non-scored**. Real positive route capture requires `feat/route-evidence-live` merged (or
 this branch rebased onto it) first.
 
-### CI wiring -- settled
+### CI wiring
 
-No Python invocation is added to `plugins/sefi-core/scripts/ci/run-all.sh`; it stays
-Python-free, matching the stance that `scorecard.py` is never wired into `run-all.sh`, a
-CI job, or a loop. `gate.sh` already auto-collects `benchmarks/test_*.py` via its
-`find ... -name 'test_*.py'` branch (with `--ignore=.git --ignore=.worktrees`), so
-`benchmarks/test_runner.py` runs under the gate with **no `gate.sh` change**. Confirmed
-on this branch: `pytest -q --collect-only --ignore=.git --ignore=.worktrees` collects
-`benchmarks/test_runner.py` (65 tests, e.g.
-`benchmarks/test_runner.py::EndToEndTests::test_green_run_scores_two_trials`), and
-`bash plugins/sefi-core/scripts/gate.sh` prints `gate: PASSED (2 checks)` with
-`ok: pytest`.
+`plugins/sefi-core/scripts/ci/run-all.sh` runs the offline benchmark unit tests and shell
+syntax checks. It never invokes `benchmarks/runner/run.py` for a real benchmark, makes no
+model call, and performs no network request. The generic `gate.sh` also discovers
+`benchmarks/test_*.py` when the active project exposes a Python test command.
 
 ### Why the earlier shell-based approach was withdrawn
 
@@ -332,9 +326,9 @@ when any scored trial lacks it, `run cost: unknown (cost_usd missing on N scored
 trial(s)) -- ceiling $15.00 [config/budget.yml] not checkable`; and if
 `benchmark_per_run_usd_cap` is present but non-finite / non-positive / unparseable,
 `run cost: ceiling unreadable [...] -- not checkable` (never a `WITHIN` verdict). The
-ceiling is read from `benchmark_per_run_usd_cap` in `config/budget.yml` (falling back to
-a hardcoded 15.00 only when the key is absent). Nothing BLOCKS an over-ceiling run
-(`docs/BUDGET.md`); this line is the after-the-fact check.
+ceiling is read from `benchmark_per_run_usd_cap` in `config/budget.yml`. The runner
+requires a valid positive ceiling before real work and stops before a declared estimate
+would cross it; the scorecard remains an after-the-fact report of measured cost.
 
 Non-finite numbers (`NaN`, `Infinity`, `-Infinity`) are rejected at parse time -- the
 scorer exits 2 with a one-line `ERROR:` rather than scoring them. Every
@@ -423,9 +417,8 @@ scorecard keeps them in distinct rows everywhere.
 
 Minimal deterministic scorer. **Python 3 standard library only** (developed and verified
 on Python 3.11.15). It makes no model call, no dispatch, no network request, and writes
-nothing. It must never be added to `plugins/sefi-core/scripts/ci/run-all.sh`, a CI job, a
-loop, or a dispatched-agent path -- same stance astral-orchestrator takes on `tiktoken` /
-`uv`.
+nothing. CI runs its offline unit tests, never a real benchmark run. It is not invoked by a
+loop or dispatched-agent path.
 
 Run it from the repository root:
 

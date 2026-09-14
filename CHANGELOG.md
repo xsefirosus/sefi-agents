@@ -5,6 +5,32 @@ Changelog; this project adheres to Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-09-14
+
+### Added
+
+- Offline regression checks for workflow permissions, budget preflight, shared-memory
+  writes, runtime contracts, benchmark oracles, release strictness, and CI coverage.
+- A shared budget-preflight action and a validated publisher action for maintenance
+  workflow artifacts.
+
+### Changed
+
+- Maintenance workflows now run model jobs with read-only permissions, remove checkout
+  credentials, serialize shared maintenance work, and publish changes through a separate
+  pull-request job.
+- Budget checks now fail closed when spend cannot be measured and accept a declared pending
+  estimate before a provider call.
+- Benchmark snapshots and acceptance oracles now reject unsafe files and content changes;
+  shared-memory mirrors use per-user paths and collision-safe writes.
+
+### Fixed
+
+- Runtime path checks now reject Windows traversal components and citations outside the
+  repository or core files.
+- Release completion can now require all release surfaces to be observed with strict ledger
+  validation.
+
 ## [0.7.1] - 2026-09-13
 
 ### Fixed

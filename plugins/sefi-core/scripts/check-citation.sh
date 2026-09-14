@@ -37,19 +37,33 @@ errors=0
 checked=0
 
 resolve() {
-  # resolve <path> -- echo the first existing candidate, or nothing.
-  local p="$1"
-  [ -f "$p" ] && { printf '%s' "$p"; return 0; }
-  [ -f "$ROOT/$p" ] && { printf '%s' "$ROOT/$p"; return 0; }
-  [ -f "$CORE/$p" ] && { printf '%s' "$CORE/$p"; return 0; }
+  # resolve <path> -- return a regular, non-symlinked repository file only.  Citations
+  # are evidence about this checkout; accepting an arbitrary host path would both follow
+  # attacker-controlled links and let a verdict read outside the reviewed project.
+  local p="$1" candidate parent real
+  for candidate in "$p" "$ROOT/$p" "$CORE/$p"; do
+    [ -f "$candidate" ] && [ ! -L "$candidate" ] || continue
+    parent="$(cd -P "$(dirname "$candidate")" 2>/dev/null && pwd)" || continue
+    real="$parent/$(basename "$candidate")"
+    case "$real" in
+      "$ROOT"/*|"$CORE"/*) printf '%s' "$real"; return 0 ;;
+    esac
+  done
   return 1
 }
 
-while IFS= read -r tok; do
-  [ -z "$tok" ] && continue
+declare -A seen=()
+while IFS= read -r line; do
+  # Verdicts conventionally say "verified against <path>:<line>". Keeping the portion
+  # after that phrase preserves valid paths containing spaces; a bare citation line is
+  # accepted for pipes and contributor tooling.
+  tok="${line#* against }"
+  [[ "$tok" =~ :[0-9]+(-[0-9]+)?$ ]] || continue
+  [ -n "${seen[$tok]:-}" ] && continue
+  seen[$tok]=1
   checked=$((checked + 1))
-  path="${tok%%:*}"
-  rest="${tok#*:}"
+  rest="${tok##*:}"
+  path="${tok%:*}"
   case "$rest" in
     *-*) start="${rest%%-*}"; end="${rest##*-}" ;;
     *)   start="$rest"; end="$rest" ;;
@@ -61,12 +75,14 @@ while IFS= read -r tok; do
     continue
   }
 
-  total="$(wc -l < "$resolved")"
-  if [ "$end" -gt "$total" ] 2>/dev/null; then
+  # awk counts a non-empty final line even when the file lacks a terminal newline.
+  total="$(awk 'END { print NR }' "$resolved")"
+  if ! [[ "$start" =~ ^[1-9][0-9]*$ && "$end" =~ ^[1-9][0-9]*$ ]] \
+     || [ "$start" -gt "$end" ] || [ "$end" -gt "$total" ]; then
     echo "check-citation: cited '$tok' -- $path has only $total line(s)"
     errors=$((errors + 1))
   fi
-done < <(printf '%s\n' "$TXT" | grep -ohE '[A-Za-z0-9_./-]+\.[A-Za-z0-9]+:[0-9]+(-[0-9]+)?' | sort -u)
+done <<< "$TXT"
 
 if [ "$errors" -ne 0 ]; then
   echo "check-citation: $errors impossible citation(s) -- file missing or line(s) out of range"

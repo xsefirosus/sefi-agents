@@ -43,6 +43,8 @@ import subprocess
 from pathlib import Path
 from typing import NamedTuple
 
+from benchmarks.runner.sandbox import resolve_shell
+
 # check-route.sh is a subprocess that resolves its own Python interpreter; give it room
 # but never let a hung shim hang a benchmark run.
 _TIMEOUT_S = 60
@@ -89,15 +91,10 @@ def _resolve_bash() -> str | None:
     A bare ``bash`` on Windows is resolved by CreateProcess (System32 first -> WSL relay
     stub). Mirrors ``check-route.py`` ``resolve_bash`` -- and, as there, NO env override.
     """
-    names = ("bash.exe", "bash") if os.name == "nt" else ("bash",)
-    for directory in os.environ.get("PATH", os.defpath).split(os.pathsep):
-        if not directory:
-            continue
-        for name in names:
-            candidate = os.path.join(directory, name)
-            if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
-                return candidate
-    return None
+    try:
+        return resolve_shell()
+    except RuntimeError:
+        return None
 
 
 def _parse_line(stdout: str) -> dict | None:

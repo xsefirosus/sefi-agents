@@ -23,17 +23,33 @@ def snapshot(repo_path: str | os.PathLike[str]) -> dict[str, str]:
     operating systems and across independent walks of the same tree.
     """
     root = Path(repo_path)
+    if root.is_symlink() or not root.is_dir():
+        raise ValueError(f"snapshot root must be a real directory: {root}")
+
+    def walk_error(error: OSError) -> None:
+        raise OSError(f"cannot read snapshot tree {root}: {error}") from error
+
     manifest: dict[str, str] = {}
-    for dirpath, dirnames, filenames in os.walk(root):
-        # Prune ``.git`` at any depth; also keep the walk order deterministic.
-        if ".git" in dirnames:
+    for dirpath, dirnames, filenames in os.walk(root, onerror=walk_error):
+        current = Path(dirpath)
+        # Repository metadata belongs to the root checkout only.  A nested .git is
+        # ordinary benchmark input and must be captured like every other fixture.
+        if current == root and ".git" in dirnames:
             dirnames.remove(".git")
+        for name in dirnames:
+            if (current / name).is_symlink():
+                raise ValueError(f"snapshot rejects symlinked directory: {current / name}")
         dirnames.sort()
         for name in sorted(filenames):
-            path = Path(dirpath) / name
+            path = current / name
+            if path.is_symlink() or not path.is_file():
+                raise ValueError(f"snapshot rejects non-regular file: {path}")
             rel = path.relative_to(root).as_posix()
             with open(path, "rb") as handle:
-                manifest[rel] = hashlib.sha256(handle.read()).hexdigest()
+                digest = hashlib.sha256()
+                while chunk := handle.read(1024 * 1024):
+                    digest.update(chunk)
+                manifest[rel] = digest.hexdigest()
     return dict(sorted(manifest.items()))
 
 

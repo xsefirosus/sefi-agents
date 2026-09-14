@@ -38,7 +38,7 @@ from benchmarks.runner.arms import ArmResult, run_arm  # noqa: E402
 from benchmarks.runner.integrity import verify  # noqa: E402
 from benchmarks.runner.record import build_record  # noqa: E402
 from benchmarks.runner.route import RouteResult, capture_route  # noqa: E402
-from benchmarks.runner.sandbox import resolve_git, resolve_python, sandbox  # noqa: E402
+from benchmarks.runner.sandbox import resolve_git, resolve_python, resolve_shell, sandbox  # noqa: E402
 from benchmarks.runner.snapshot import diff, snapshot  # noqa: E402
 
 SCORECARD = REPO_ROOT / "benchmarks" / "scorecard.py"
@@ -75,7 +75,10 @@ def _resolve_tool(names: tuple[str, ...]) -> str | None:
     return None
 
 
-BASH = _resolve_tool(("bash.exe", "bash"))
+try:
+    BASH = resolve_shell()
+except RuntimeError:
+    BASH = None
 
 
 class _PinnedTempdirMixin:
@@ -223,6 +226,30 @@ class SnapshotTests(unittest.TestCase):
             manifest = snapshot(root)
         self.assertEqual(sorted(manifest), ["keep.txt", "pkg/mod.py"])
         self.assertNotIn(".git/HEAD", manifest)
+
+    def test_keeps_nested_git_directory_in_the_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._build_tree(root)
+            nested = root / "fixtures" / ".git"
+            nested.mkdir(parents=True)
+            (nested / "HEAD").write_text("nested\n", encoding="ascii")
+            manifest = snapshot(root)
+        self.assertIn("fixtures/.git/HEAD", manifest)
+
+    def test_rejects_file_symlinks_instead_of_hashing_their_targets(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._build_tree(root)
+            target = root / "outside.txt"
+            target.write_text("outside\n", encoding="ascii")
+            link = root / "linked.txt"
+            try:
+                os.symlink(target, link)
+            except (OSError, NotImplementedError):
+                self.skipTest("symlink creation not permitted on this host")
+            with self.assertRaises(ValueError):
+                snapshot(root)
 
     def test_diff_reports_mutation_and_addition_outside_allowlist(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

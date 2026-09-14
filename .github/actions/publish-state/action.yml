@@ -1,0 +1,52 @@
+name: Publish validated state
+description: Create a review-only branch and pull request from a validated state artifact.
+inputs:
+  branch-prefix:
+    required: true
+  commit-message:
+    required: true
+  title:
+    required: true
+  body:
+    required: true
+  bot-name:
+    required: true
+  bot-email:
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        BRANCH_PREFIX: ${{ inputs.branch-prefix }}
+        COMMIT_MESSAGE: ${{ inputs.commit-message }}
+        PR_TITLE: ${{ inputs.title }}
+        PR_BODY: ${{ inputs.body }}
+        BOT_NAME: ${{ inputs.bot-name }}
+        BOT_EMAIL: ${{ inputs.bot-email }}
+      run: |
+        set -euo pipefail
+        for root in state memory inbox; do
+          [ -e "$root" ] || continue
+          if find "$root" -mindepth 1 ! -type d ! -type f -print -quit | grep -q .; then
+            echo "refusing state candidate containing a non-regular entry" >&2
+            exit 1
+          fi
+          if grep -RIlE --include='*.md' --include='*.json' --include='*.txt' \
+            '(<private>|<secret>|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----)' "$root" | grep -q .; then
+            echo "refusing state candidate containing credential-shaped content" >&2
+            exit 1
+          fi
+        done
+        git config user.name "$BOT_NAME"
+        git config user.email "$BOT_EMAIL"
+        git add -A -- state/ memory/ inbox/ 2>/dev/null || true
+        if git diff --cached --quiet; then
+          echo "no state changes to commit"
+          exit 0
+        fi
+        branch="$BRANCH_PREFIX/$(date -u +%Y-%m-%d-%H%M)"
+        git checkout -b "$branch"
+        git commit -m "$COMMIT_MESSAGE"
+        git push -u origin "$branch"
+        gh pr create --fill --base main --head "$branch" --title "$PR_TITLE" --body "$PR_BODY"

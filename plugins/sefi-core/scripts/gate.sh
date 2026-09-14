@@ -12,6 +12,15 @@
 # is not enforcing.
 set -euo pipefail
 
+STRICT=0
+case "${1:-}" in
+  '') : ;;
+  --strict) STRICT=1; shift ;;
+  -h|--help) echo "usage: gate.sh [--strict]"; exit 0 ;;
+  *) echo "gate: unknown argument $1" >&2; exit 2 ;;
+esac
+[ "$#" -eq 0 ] || { echo "gate: unexpected argument $1" >&2; exit 2; }
+
 HERE="$(cd "$(dirname "$0")" && pwd)"
 COMPRESS="$HERE/compress-output.sh"
 
@@ -87,11 +96,17 @@ has_script() {
 if [ -f package.json ]; then
   # Respect the project's actual package manager; a bare `npm` in a pnpm/yarn/bun repo
   # either fails on a missing lockfile or silently resolves a different dependency tree.
-  PM=""
-  if   [ -f pnpm-lock.yaml ]   && command -v pnpm >/dev/null 2>&1; then PM="pnpm"
-  elif [ -f yarn.lock ]        && command -v yarn >/dev/null 2>&1; then PM="yarn"
-  elif [ -f bun.lockb ]        && command -v bun  >/dev/null 2>&1; then PM="bun"
-  elif command -v npm >/dev/null 2>&1; then PM="npm"
+  PM=""; WANTED_PM=""
+  if [ -f pnpm-lock.yaml ]; then WANTED_PM="pnpm"
+  elif [ -f yarn.lock ]; then WANTED_PM="yarn"
+  elif [ -f bun.lockb ]; then WANTED_PM="bun"
+  else WANTED_PM="npm"
+  fi
+  if command -v "$WANTED_PM" >/dev/null 2>&1; then
+    PM="$WANTED_PM"
+  elif [ "$STRICT" -eq 1 ]; then
+    echo "gate: strict verification unavailable: $WANTED_PM is required by this project" >&2
+    ran=$((ran + 1)); overall=1
   fi
   if [ -n "$PM" ]; then
     has_script lint      && run      "$PM-lint"      "$PM" run -s lint
@@ -167,6 +182,10 @@ if [ "$ran" -eq 0 ] && [ -f Makefile ] && command -v make >/dev/null 2>&1; then
 fi
 
 if [ "$ran" -eq 0 ]; then
+  if [ "$STRICT" -eq 1 ]; then
+    echo "gate: STRICT UNVERIFIED -- no verification command ran" >&2
+    exit 1
+  fi
   echo "gate: no known toolchain detected; nothing to run (pass)" >&2
   exit 0
 fi
