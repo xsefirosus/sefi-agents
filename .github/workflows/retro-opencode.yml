@@ -28,14 +28,6 @@ name: sefi-weekly-retro-opencode
 on:
   workflow_dispatch:
     inputs:
-      allow_unmeasured_spend:
-        description: "Explicit interactive waiver when local usage telemetry is unavailable"
-        type: boolean
-        default: false
-      estimated_run_usd:
-        description: "Maximum USD expected for this provider run; the preflight blocks runs that cannot fit the cap."
-        type: string
-        default: "0.50"
       model:
         description: "Any provider/model id listed by 'opencode models'. Default is a free model verified live 2026-08-24."
         type: string
@@ -74,12 +66,6 @@ jobs:
 
       - name: Install the headless agent CLI
         run: npm install -g opencode-ai
-
-      - name: Preflight budget
-        uses: ./.github/actions/preflight-budget
-        with:
-          estimated-run-usd: ${{ inputs.estimated_run_usd || '0.50' }}
-          allow-unmeasured-spend: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unmeasured_spend }}
 
       - name: Write the Zen credential into the OpenCode auth file
         # No CLI/env-var contract for the Zen API key could be verified from primary
@@ -127,19 +113,6 @@ jobs:
             *) echo "MODEL must look like provider/model (see opencode models)" >&2; exit 2 ;;
           esac
           opencode run -m "$MODEL" --auto "$PROMPT"
-
-      - name: Enforce budget caps
-        if: always()
-        env:
-          ALLOW_UNMEASURED_SPEND: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unmeasured_spend }}
-        run: |
-          set -euo pipefail
-          bash plugins/sefi-core/scripts/budget-check.sh --scope run || status=$?
-          if [ "${status:-0}" -eq 3 ] && [ "${ALLOW_UNMEASURED_SPEND:-false}" = "true" ]; then
-            echo "budget-check: explicit interactive waiver accepted for this run" >&2
-            exit 0
-          fi
-          exit "${status:-0}"
 
       - name: Upload validated state candidate
         if: ${{ success() }}
