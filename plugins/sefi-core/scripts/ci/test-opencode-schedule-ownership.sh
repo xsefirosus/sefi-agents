@@ -62,6 +62,20 @@ expect_publisher_handoff "$ROOT/.github/workflows/retro-opencode.yml" 'weekly-re
 expect_publisher_handoff "$ROOT/.github/workflows/sync-opencode.yml" 'sync'
 expect_safe_publisher_staging
 
+for workflow in \
+  "$ROOT/.github/workflows/triage-opencode.yml" \
+  "$ROOT/.github/workflows/retro-opencode.yml" \
+  "$ROOT/.github/workflows/sync-opencode.yml"; do
+  name="$(basename "$workflow")"
+  if grep -Fqx '        default: opencode/muse-spark-1.3-contributor-free' "$workflow" \
+    && grep -Fq 'MODEL="${MODEL:-opencode/muse-spark-1.3-contributor-free}"' "$workflow" \
+    && ! grep -Fq 'muse-spark-1.2-contributor-free' "$workflow"; then
+    ok "$name uses Muse Spark 1.3 Contributor Free by default and fallback"
+  else
+    bad "$name must use Muse Spark 1.3 Contributor Free by default and fallback"
+  fi
+done
+
 if [ "$fail" -ne 0 ]; then
   echo "opencode-schedule-ownership: FAILED ($fail failed, $pass passed)" >&2
   exit 1

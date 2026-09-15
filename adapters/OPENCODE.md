@@ -168,9 +168,10 @@ Monday at 07:00 UTC through `retro-opencode.yml`; and sync runs Monday at 08:00 
 remain manual-only, so each loop has one scheduled provider. Each workflow's concurrency
 group prevents overlapping runs of that loop.
 
-They default to `opencode/muse-spark-1.2-contributor-free` (live-verified on Zen,
-2026-08-24) -- a CI-only exception to `config/model-map.yml`'s shipped `flexible`
-default above: a headless run has no human present to pick a model interactively. Each
+They default to `opencode/muse-spark-1.3-contributor-free` (listed as free in the
+OpenCode Zen documentation on 2026-09-15). This is a CI-only exception to
+`config/model-map.yml`'s shipped `flexible` default: a headless run has no human present
+to pick a model interactively. Each
 workflow also accepts a `model` string input at dispatch time: any provider/model id
 that `opencode models` lists, validated as a non-empty provider/model value before use.
 There is no auto-selection fallback on purpose -- Zen's live catalog mixes in TTS,
