@@ -203,11 +203,13 @@ provider, configure that provider's equivalent workflow in your own repository. 
 workflows create pull requests but never merge them.
 
 Hosted maintenance workflows run the model job with read-only repository permissions and
-without checkout credentials. A separate publisher job receives the validated state as an
-artifact, checks it, and opens the pull request with write permission. The publisher rejects
-symlinks, other non-regular entries, and common credential-shaped content in state, memory,
-and inbox files. See [.github/actions/preflight-budget/action.yml](.github/actions/preflight-budget/action.yml)
-and [.github/actions/publish-state/action.yml](.github/actions/publish-state/action.yml).
+without checkout credentials. The scheduled OpenCode Zen workflows use the verified free
+model and do not require spend telemetry. Optional workflows that use an Anthropic API key
+keep the [preflight budget check](.github/actions/preflight-budget/action.yml). A separate
+publisher job receives validated state as an artifact, checks it, and opens the pull request
+with write permission. The publisher rejects symlinks, other non-regular entries, and common
+credential-shaped content in state, memory, and inbox files. See
+[.github/actions/publish-state/action.yml](.github/actions/publish-state/action.yml).
 
 ## Safety rails (all of them, in one place)
 

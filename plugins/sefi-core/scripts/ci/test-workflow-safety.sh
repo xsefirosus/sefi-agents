@@ -12,6 +12,16 @@ workflows=(
   "$ROOT/.github/workflows/sync.yml"
   "$ROOT/.github/workflows/sync-opencode.yml"
 )
+paid_workflows=(
+  "$ROOT/.github/workflows/triage.yml"
+  "$ROOT/.github/workflows/retro.yml"
+  "$ROOT/.github/workflows/sync.yml"
+)
+free_workflows=(
+  "$ROOT/.github/workflows/triage-opencode.yml"
+  "$ROOT/.github/workflows/retro-opencode.yml"
+  "$ROOT/.github/workflows/sync-opencode.yml"
+)
 
 fail=0
 for workflow in "${workflows[@]}"; do
@@ -20,18 +30,29 @@ for workflow in "${workflows[@]}"; do
   grep -Fq 'persist-credentials: false' "$workflow" || { echo "FAIL: $name must remove checkout credentials before model execution" >&2; fail=1; }
   grep -Fq 'permissions:' "$workflow" && grep -Fq '    contents: write' "$workflow" || { echo "FAIL: $name must grant write permission only to its publisher job" >&2; fail=1; }
   grep -Fqx '  group: sefi-maintenance' "$workflow" || { echo "FAIL: $name must share the maintenance concurrency group" >&2; fail=1; }
-  grep -Fq 'name: Preflight budget' "$workflow" || { echo "FAIL: $name must check budget before invoking a provider" >&2; fail=1; }
-  grep -Fq 'uses: ./.github/actions/preflight-budget' "$workflow" || { echo "FAIL: $name must use the shared preflight budget gate" >&2; fail=1; }
-  grep -Fq 'estimated-run-usd: ${{ inputs.estimated_run_usd || '"'"'0.50'"'"' }}' "$workflow" || { echo "FAIL: $name must pass its declared maximum run estimate to preflight" >&2; fail=1; }
-  preflight_line="$(grep -n 'name: Preflight budget' "$workflow" | head -n 1 | cut -d: -f1)"
-  provider_line="$(grep -n 'name: Run the ' "$workflow" | head -n 1 | cut -d: -f1)"
-  [ -n "$preflight_line" ] && [ -n "$provider_line" ] && [ "$preflight_line" -lt "$provider_line" ] || { echo "FAIL: $name must run its preflight gate before the provider" >&2; fail=1; }
   if grep -Fq 'budget-check.sh --scope run --spent 0' "$workflow"; then
     echo "FAIL: $name must not certify an unmeasured run as zero spend" >&2
     fail=1
   fi
   if grep -Fq 'git push -u origin "$BRANCH"' "$workflow" && ! grep -Fq 'if: ${{ success()' "$workflow"; then
     echo "FAIL: $name may publish after a failed run" >&2
+    fail=1
+  fi
+done
+
+for workflow in "${paid_workflows[@]}"; do
+  name="$(basename "$workflow")"
+  grep -Fq 'uses: ./.github/actions/preflight-budget' "$workflow" || { echo "FAIL: $name must use the shared preflight budget gate" >&2; fail=1; }
+  grep -Fq 'estimated-run-usd: ${{ inputs.estimated_run_usd || '"'"'0.50'"'"' }}' "$workflow" || { echo "FAIL: $name must pass its declared maximum run estimate to preflight" >&2; fail=1; }
+  preflight_line="$(grep -n 'name: Preflight budget' "$workflow" | head -n 1 | cut -d: -f1)"
+  provider_line="$(grep -n 'name: Run the ' "$workflow" | head -n 1 | cut -d: -f1)"
+  [ -n "$preflight_line" ] && [ -n "$provider_line" ] && [ "$preflight_line" -lt "$provider_line" ] || { echo "FAIL: $name must run its preflight gate before the provider" >&2; fail=1; }
+done
+
+for workflow in "${free_workflows[@]}"; do
+  name="$(basename "$workflow")"
+  if grep -Fq 'uses: ./.github/actions/preflight-budget' "$workflow" || grep -Fq 'budget-check.sh --scope run' "$workflow"; then
+    echo "FAIL: $name must not require spend telemetry for its free OpenCode Zen model" >&2
     fail=1
   fi
 done
