@@ -31,7 +31,9 @@ paid model calls, vector databases, browser renderers, and new runtime dependenc
 
 This release removes repository-root runtime `memory/` paths from rewritten public Git
 history while retaining the packaged memory templates. The rewrite cannot remove files from
-independent forks, existing clones, caches, or downloaded archives.
+independent forks, existing clones, caches, downloaded archives, or GitHub-managed refs for
+merged and closed pull requests. GitHub does not permit branch or tag force-pushes to rewrite
+those read-only pull-request refs.
 
 Read [Memory Journalist](MEMORY-JOURNALIST.md), [Privacy](PRIVACY.md), and
 [the migration guide](MIGRATION-v0.8.0.md) for operational details.

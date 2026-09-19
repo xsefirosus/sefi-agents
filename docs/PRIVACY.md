@@ -45,3 +45,6 @@ v0.8.0 removes old runtime `memory/` paths from the repository's rewritten publi
 history. A history rewrite cannot erase copies in independent forks, existing clones, Git
 caches, search indexes, release archives, or files people already downloaded. Remove any
 sensitive material from those copies through the service or owner that controls them.
+GitHub can also retain read-only refs for merged or closed pull requests. Branch and tag
+force-pushes cannot rewrite those server-managed refs; treat them as a separate GitHub
+retention boundary.

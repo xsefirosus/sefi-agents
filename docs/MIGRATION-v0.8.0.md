@@ -37,6 +37,10 @@ The v0.8.0 release also rewrites public Git refs to remove the repository-root r
 downloaded archives. Fresh clones receive the cleaned history; existing clones should
 follow their Git host's guidance for a rewritten branch or reclone.
 
+GitHub may retain read-only refs for merged or closed pull requests. Branch and tag
+force-pushes cannot rewrite those server-managed refs, so they remain a separate retention
+boundary.
+
 ## New research commands
 
 Use the Codebase Cartographer for evidence-backed repository maps:
