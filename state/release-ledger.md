@@ -91,6 +91,9 @@
 | 0.8.0 | git-tag | 0.8.0 | unobserved | unobserved | git tag -l v0.8.0 and git ls-remote --tags origin refs/tags/v0.8.0 -> no output before publication | a local tag that was never pushed to origin | 2026-09-19T10:32:31Z |
 | 0.8.0 | github-release | 0.8.0 | unobserved | unobserved | gh release view v0.8.0 -> release not found before publication | a local or pushed tag with no release | 2026-09-19T10:32:31Z |
 | 0.8.0 | github-marketplace-index | 0.8.0 | unobserved | unobserved | gh api repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main remains at 0.7.2 before publication; record it as unobserved until the public 0.8.0 value exists | install commands quoted only in a README | 2026-09-19T10:32:31Z |
+| 0.8.0 | git-tag | 0.8.0 | 0.8.0 | match | git ls-remote --tags origin refs/tags/v0.8.0 -> 9c7f29aaae6a5022423b5d2ae6ee560844f550ad refs/tags/v0.8.0 and 953752ffb91d8b6d81e72fd2d535e576ebb9f630 refs/tags/v0.8.0^{} | a local tag that was never pushed to origin | 2026-09-19T15:45:32Z |
+| 0.8.0 | github-release | 0.8.0 | 0.8.0 | match | gh release view v0.8.0 --json tagName,isDraft,url,publishedAt,name,targetCommitish -> tagName=v0.8.0, name=v0.8.0, targetCommitish=main, isDraft=false, publishedAt=2026-09-19T15:45:04Z, url=https://github.com/xsefirosus/sefi-agents/releases/tag/v0.8.0 | a local or pushed tag with no release; a draft release | 2026-09-19T15:45:32Z |
+| 0.8.0 | github-marketplace-index | 0.8.0 | 0.8.0 | match | gh api repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main -> metadata.version 0.8.0, plugins[0].version 0.8.0 | install commands quoted only in a README | 2026-09-19T15:45:32Z |
 
 ## Notes
 
