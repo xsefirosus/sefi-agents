@@ -1,0 +1,44 @@
+# agent-capabilities-v08 required source rules
+# Format: repo-relative path:::literal source text
+plugins/sefi-core/agents/memory-journalist.md:::name: memory-journalist
+plugins/sefi-core/agents/memory-journalist.md:::You are the Memory Journalist.
+plugins/sefi-core/agents/memory-journalist.md:::remove an existing `knowledge-manager.md` profile only when that file
+plugins/sefi-core/agents/memory-journalist.md:::preserve the legacy file as
+plugins/sefi-core/agents/research-codebase-cartographer.md:::You are the Codebase Cartographer.
+plugins/sefi-core/agents/research-codebase-cartographer.md:::MAP -> TRACE -> IMPACT -> DELTA -> VISUALIZE
+plugins/sefi-core/agents/research-codebase-cartographer.md:::git rev-parse HEAD
+plugins/sefi-core/agents/research-codebase-cartographer.md:::sorted rg --files inventory
+plugins/sefi-core/agents/research-codebase-cartographer.md:::inclusive line range,
+plugins/sefi-core/agents/research-codebase-cartographer.md:::SHA-256 file hash
+plugins/sefi-core/agents/research-codebase-cartographer.md:::confidence: high|medium|low
+plugins/sefi-core/agents/research-codebase-cartographer.md:::`contains`, `imports`, `calls`, `reads`, `writes`,
+plugins/sefi-core/agents/research-codebase-cartographer.md:::state/codebase-map-<slug>.md and state/codebase-map-<slug>.json
+plugins/sefi-core/agents/research-codebase-cartographer.md:::at least four
+plugins/sefi-core/agents/research-adoption-scout.md:::Codebase Cartographer -> Adoption Scout ->
+plugins/sefi-core/agents/research-adoption-scout.md:::Inventory every non-`.git` file
+plugins/sefi-core/agents/research-adoption-scout.md:::entry points, execution and failure paths, tests, CI, releases, licenses, and
+plugins/sefi-core/agents/research-adoption-scout.md:::state/adoption-<date>-<slug>.md
+plugins/sefi-core/agents/research-adoption-scout.md:::Adopt, Defer, or Reject
+plugins/sefi-core/agents/research-adoption-scout.md:::never edit the target, any plan, copied
+plugins/sefi-core/agents/ui-ux-designer.md:::Produce three isolated variants.
+plugins/sefi-core/agents/ui-ux-designer.md:::keyboard picker
+plugins/sefi-core/agents/ui-ux-designer.md:::Motion plan:
+plugins/sefi-core/agents/ui-ux-designer.md:::Motion audit:
+plugins/sefi-core/agents/ui-ux-designer.md:::Review:
+plugins/sefi-core/agents/ui-ux-designer.md:::env(safe-area-inset-*)
+plugins/sefi-core/agents/ui-ux-designer.md:::direct manipulation
+plugins/sefi-core/agents/ui-ux-designer.md:::at most one dependency-aware library
+plugins/sefi-core/agents/ui-ux-designer.md:::Approval: required
+plugins/sefi-core/skills/frontend-design/SKILL.md:::## Workflow (five verbs)
+plugins/sefi-core/skills/frontend-design/SKILL.md:::PROTOTYPE creates three isolated variants
+plugins/sefi-core/skills/frontend-design/SKILL.md:::Motion plan, Motion audit, and Review fields.
+plugins/sefi-core/skills/frontend-design/SKILL.md:::env(safe-area-inset-*)
+plugins/sefi-core/skills/frontend-design/SKILL.md:::Approval: required
+plugins/sefi-core/skills/sefi-orchestration/references/routing-table.md:::explicit "map codebase"
+plugins/sefi-core/skills/sefi-orchestration/references/routing-table.md:::research-codebase-cartographer
+plugins/sefi-core/skills/sefi-orchestration/references/routing-table.md:::explicit "evaluate adoption"
+plugins/sefi-core/skills/sefi-orchestration/references/routing-table.md:::research-adoption-scout
+plugins/sefi-core/skills/sefi-orchestration/references/routing-table.md:::memory-journalist
+plugins/sefi-core/skills/sefi-orchestration/references/close-out.md:::Memory Journalist
+plugins/sefi-core/skills/sefi-orchestration/references/roster.md:::research-codebase-cartographer.md
+plugins/sefi-core/skills/sefi-orchestration/references/roster.md:::research-adoption-scout.md

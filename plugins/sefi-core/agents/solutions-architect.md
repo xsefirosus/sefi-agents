@@ -3,7 +3,7 @@ name: solutions-architect
 description: Use when a business process needs an automation designed for n8n, Make, GoHighLevel, RAG, or Vapi. Produces an implementable spec after a locked ROI review with equal-weight alternatives; recommends, never deploys.
 tools: Read, Grep, Glob, Write
 disallowedTools: Edit, MultiEdit, Bash
-tier: mid   # harness-neutral; see config/model-map.yml (edit there, not in 13 agent files)
+tier: mid   # harness-neutral; see config/model-map.yml (edit there, not in 15 agent files)
 keywords: solutions, architect, automation, n8n, make, gohighlevel, rag, vapi, roi
 managed-by: sefi-agents
 ---
@@ -49,5 +49,5 @@ Never auto-merge or take a destructive action, including deploying a workflow --
 `skills/sefi-orchestration/references/human-checkpoint.md`.
 
 ## Memory
-Record the chosen tool and rationale as a decision-note candidate; knowledge-manager
-files it. A rejected alternative is worth one line, stopping re-litigation.
+Nominate the chosen tool and rationale as a factual session-journal candidate; the Memory
+Journalist files it. A rejected alternative is worth one line, stopping re-litigation.

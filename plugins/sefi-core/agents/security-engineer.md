@@ -3,7 +3,7 @@ name: security-engineer
 description: Use when a diff, dependency change, or config touching a trust boundary needs a security review before a PR. Runs the security-review gate against the diff and returns findings with severity, never a rubber stamp.
 tools: Read, Grep, Glob, Bash
 disallowedTools: Write, Edit, MultiEdit
-tier: high   # harness-neutral; see config/model-map.yml (edit there, not in 13 agent files)
+tier: high   # harness-neutral; see config/model-map.yml (edit there, not in 15 agent files)
 keywords: security, review, secrets, injection, dependencies, trust-boundary, authz
 managed-by: sefi-agents
 ---
@@ -53,5 +53,5 @@ it as unreviewable -- never assume it is safe.
 Never auto-merge or act destructively -- see `skills/sefi-orchestration/references/human-checkpoint.md` for why.
 
 ## Memory
-A recurring vulnerable pattern (same finding twice) is a decision note candidate for the
-knowledge-manager, so the software-engineer's next slice starts warned.
+A recurring vulnerable pattern (same finding twice) is a factual nomination for the Memory
+Journalist, so the software-engineer's next slice starts warned.

@@ -98,6 +98,79 @@ fi
 
 mkdir -p "$DEST"
 
+PACKAGE_MANIFEST="$CORE/scripts/package-manifest.sh"
+LEGACY_KNOWLEDGE_MANAGER="$DEST/agents/knowledge-manager.md"
+LEGACY_KNOWLEDGE_MANAGER_BACKUP=""
+
+is_sefi_managed_file() {
+  # is_sefi_managed_file <path> -- a legacy profile is Sefi-owned only when its source
+  # file says so. A same-named user profile must survive a forced package refresh.
+  [ -f "$1" ] && grep -q '^[[:space:]]*managed-by:[[:space:]]*sefi-agents[[:space:]]*$' "$1"
+}
+
+prepare_legacy_knowledge_manager() {
+  # v0.8 no longer ships knowledge-manager.md. Before a forced directory replacement,
+  # remove the old profile only when it declares Sefi ownership; temporarily move a
+  # user-owned same-named file so the replacement cannot erase it.
+  [ -e "$LEGACY_KNOWLEDGE_MANAGER" ] || [ -L "$LEGACY_KNOWLEDGE_MANAGER" ] || return 0
+  if is_sefi_managed_file "$LEGACY_KNOWLEDGE_MANAGER"; then
+    if [ ! -f "$CORE/agents/knowledge-manager.md" ]; then
+      rm -f -- "$LEGACY_KNOWLEDGE_MANAGER"
+      echo "install.sh: removed managed legacy knowledge-manager profile"
+    fi
+    return 0
+  fi
+
+  LEGACY_KNOWLEDGE_MANAGER_BACKUP="$(mktemp "$DEST/.sefi-legacy-knowledge-manager.XXXXXX")"
+  rm -f -- "$LEGACY_KNOWLEDGE_MANAGER_BACKUP"
+  mv -- "$LEGACY_KNOWLEDGE_MANAGER" "$LEGACY_KNOWLEDGE_MANAGER_BACKUP"
+  echo "install.sh: preserving user-owned legacy knowledge-manager profile"
+}
+
+restore_legacy_knowledge_manager() {
+  [ -n "$LEGACY_KNOWLEDGE_MANAGER_BACKUP" ] || return 0
+  [ -e "$LEGACY_KNOWLEDGE_MANAGER_BACKUP" ] || return 0
+  mkdir -p "$(dirname "$LEGACY_KNOWLEDGE_MANAGER")"
+  if [ -e "$LEGACY_KNOWLEDGE_MANAGER" ] || [ -L "$LEGACY_KNOWLEDGE_MANAGER" ]; then
+    echo "install.sh: preserved user-owned legacy knowledge-manager at $LEGACY_KNOWLEDGE_MANAGER_BACKUP; destination remained occupied" >&2
+    return 0
+  fi
+  mv -- "$LEGACY_KNOWLEDGE_MANAGER_BACKUP" "$LEGACY_KNOWLEDGE_MANAGER"
+}
+
+finish_legacy_knowledge_manager() {
+  local status="$?"
+  restore_legacy_knowledge_manager
+  exit "$status"
+}
+trap finish_legacy_knowledge_manager EXIT
+
+write_package_manifest() {
+  # write_package_manifest <source-dir> <destination-dir>. Only a copied directory gets
+  # a manifest; a symlink would write into the source checkout, and transformed agents do
+  # not have byte-identical canonical sources. Preserve an unrelated manifest file.
+  local source_dir="$1" destination_dir="$2" manifest="$2/.sefi-agents-manifest.json"
+  [ -f "$PACKAGE_MANIFEST" ] || {
+    echo "install.sh: package manifest helper missing; copied $destination_dir has no manifest" >&2
+    return 0
+  }
+  if [ -e "$manifest" ] && ! grep -q '"format"[[:space:]]*:[[:space:]]*"sefi-package-manifest/v1"' "$manifest" 2>/dev/null; then
+    echo "install.sh: preserving existing user-owned package manifest at $manifest" >&2
+    return 0
+  fi
+  bash "$PACKAGE_MANIFEST" create --root "$DEST" --source "$source_dir" --destination "$destination_dir"
+  echo "install.sh: wrote package manifest at $manifest"
+}
+
+print_onboarding() {
+  cat <<'EOF'
+sefi-agents: installation succeeded.
+sefi-agents: run /sefi:init once from each project root before the first routed request.
+sefi-agents: auto-init is unsafe because installation is user-wide and cannot safely choose or modify a project.
+sefi-agents: cross-project memory is optional, local/private, and off by default; /sefi:init asks interactively and keeps it off when unattended.
+EOF
+}
+
 wire_claude_settings() {
   # wire_claude_settings -- two merges into $DEST/settings.json: (1) hooks/hooks.json's own
   # "hooks" key, and (2) an "env" key setting CLAUDE_PLUGIN_ROOT to the resolved $DEST.
@@ -254,6 +327,7 @@ else
     subdirs=(agents skills commands scripts)
   fi
   preflight_filesystem_destinations "${subdirs[@]}" || exit 1
+  prepare_legacy_knowledge_manager
   if [ "$ADAPTER_MODEL_STRATEGY" = "mapped" ]; then
     materialize_mapped_agents || exit 1
     subdirs=(skills commands scripts)
@@ -290,4 +364,11 @@ if [ "$rc" -ne 0 ]; then
   echo "install.sh: completed with errors (see above)" >&2
   exit 1
 fi
+if [ "$MODE" = "copy" ]; then
+  # Agent frontmatter is generated and prose files have their plugin-root placeholders
+  # resolved after copy, so their canonical bytes cannot be checked against the package
+  # source. scripts/ is a byte-for-byte copied subtree and can carry a useful manifest.
+  write_package_manifest "$CORE/scripts" "$DEST/scripts"
+fi
 echo "install.sh: done. Target=$TARGET dest=$DEST mode=$MODE"
+print_onboarding

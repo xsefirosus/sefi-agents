@@ -7,12 +7,13 @@ managed-by: sefi-agents
 # Frontend Design -- anti-slop craft
 
 Craft skill backing the ui-ux-designer and the software-engineer above the API seam.
-The goal is UI that looks decided, not generated. Deep material lives in four
+The goal is UI that looks decided, not generated. Deep material lives in five
 references, read on demand: references/direction-lanes.md (the named direction
 catalog), references/anti-slop-checklist.md (the tells, in two tiers),
 references/industry-patterns.md (domain heuristics, illustrative only), and
 references/design-system-map.md (brief signal to an official design-system package,
-or an honest native-CSS approach when no package fits).
+or an honest native-CSS approach when no package fits), and
+references/prototype-protocol.md (isolated variants, review fields, and workbench rules).
 
 User instructions always override this skill.
 All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never
@@ -55,19 +56,31 @@ guess (this includes design tokens -- never cite a token that is not in the spec
     heuristics per domain (illustrative, not authoritative research); a brief that
     breaks convention should do so knowingly. During BUILD Pass 1's token-system
     planning, also check references/design-system-map.md for whether the brief
-    signals an existing ecosystem with an official package, or an aesthetic with no
-    official package -- never hand-recreate a system's CSS when its official package
-    is the honest answer.
+   signals an existing ecosystem with an official package, or an aesthetic with no
+   official package -- never hand-recreate a system's CSS when its official package
+   is the honest answer.
+11. Motion review: every spec contains Motion plan, Motion audit, and Review fields.
+    A motion plan names trigger, purpose, duration, easing, interrupt behavior, and
+    reduced-motion fallback; its audit verifies transform/opacity-only animation and
+    focus safety before a reviewer marks it pass or reject.
+12. Mobile interaction: account for env(safe-area-inset-*) and 44px touch targets.
+    A direct-manipulation gesture needs visible pointer feedback, cancellation, and an
+    equivalent keyboard operation; no task may require hover.
+13. Dependency discipline: inspect the target manifest before recommending at most one
+    library. Record installed version or UNKNOWN, fit, maintenance/bundle concern, native
+    alternative, and Approval: required. A recommendation never authorizes installation.
 
-## Workflow (four verbs)
+## Workflow (five verbs)
 BUILD runs two passes: Pass 1 plans a token system (4-6 named colors, 2+ typefaces, a
 layout concept, one signature element) with an ASCII wireframe; Pass 2 critiques that
 plan against the brief, then specs the full system to state/design-<slug>.md. AUDIT
 reads a built UI against its governing spec and reports numbered findings. REDESIGN is
 BUILD with copy, information architecture, and brand marks preserved. STUDY extracts a
-reference's DNA (macrostructure, type pairing, color roles) without pixel-cloning. The
-full per-verb protocol lives in the ui-ux-designer agent; this skill is the craft it
-applies.
+reference's DNA (macrostructure, type pairing, color roles) without pixel-cloning.
+PROTOTYPE creates three isolated variants, then an accessible keyboard picker selects
+one before the Product Manager plans it. The optional local workbench is a disposable
+comparison artifact, never target application code. The full per-verb protocol lives in
+the ui-ux-designer agent; this skill is the craft it applies.
 
 Design stamp: the build places one comment near the stylesheet root naming the chosen
 direction and the governing spec path, e.g. `/* direction: restrained -- spec:

@@ -33,10 +33,16 @@ chmod +x "$BIN/uname" "$BIN/systemd-detect-virt" "$BIN/date"
 clean_env=(env -u CI -u GITHUB_ACTIONS -u CODESPACES -u IS_SANDBOX \
   PATH="$BIN:$PATH" HOME="$HOME_ROOT")
 
+if cd "$WORKSPACE" && "${clean_env[@]}" bash "$RESOLVE" >/dev/null 2>&1; then
+  echo 'mirror unexpectedly resolves without an explicit opt-in' >&2
+  exit 1
+fi
+mkdir "$WORKSPACE/config"
+printf 'memory:\n  cross_project_enabled: true\n' > "$WORKSPACE/config/sefi.config.yml"
 resolved="$(cd "$WORKSPACE" && "${clean_env[@]}" bash "$RESOLVE")"
 expected_root="$(cd "$HOME_ROOT" && pwd -P)/sefi-memory"
 [ "$resolved" = "$expected_root" ] || {
-  echo "expected per-user mirror root $expected_root, got $resolved" >&2
+  echo "expected opted-in per-user mirror root $expected_root, got $resolved" >&2
   exit 1
 }
 if cd "$WORKSPACE" && env -u GITHUB_ACTIONS -u CODESPACES -u IS_SANDBOX \
@@ -44,13 +50,16 @@ if cd "$WORKSPACE" && env -u GITHUB_ACTIONS -u CODESPACES -u IS_SANDBOX \
   echo 'CI environment unexpectedly resolved a mirror root' >&2
   exit 1
 fi
-mkdir "$WORKSPACE/config"
 printf 'memory:\n  cross_project_enabled: false\n' > "$WORKSPACE/config/sefi.config.yml"
 if cd "$WORKSPACE" && "${clean_env[@]}" bash "$RESOLVE" >/dev/null 2>&1; then
   echo 'disabled mirror unexpectedly resolved a path' >&2
   exit 1
 fi
 rm -rf "$WORKSPACE/config"
+
+# Later writer checks are deliberately an opted-in local-machine case.
+mkdir "$WORKSPACE/config"
+printf 'memory:\n  cross_project_enabled: true\n' > "$WORKSPACE/config/sefi.config.yml"
 
 printf 'safe note\n' > "$WORKSPACE/note.md"
 printf 'known-harness\n' > "$WORKSPACE/.sefi/harness"

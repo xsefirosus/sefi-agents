@@ -12,6 +12,10 @@ docs/master-prompt-v4-provenance.md
 # never a vault note or a state ledger entry.
 .sefi/
 
+# Runtime memory belongs to each user's local project. The package ships only the
+# scaffolding under plugins/sefi-core/templates/memory/.
+/memory/
+
 # Benchmark run artifacts (benchmarks/README.md: blinded paired A/B harness). Raw trial
 # output, worktrees, and judge transcripts -- machine-local evidence with a leak boundary,
 # never committed. The design, cases, fixtures, and scorer under benchmarks/ ARE tracked;

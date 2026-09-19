@@ -1,8 +1,9 @@
 This file is for coding agents. If you are a human, use the README Quick Start instead.
 
 ## Goal
-Get sefi-agents installed and `/sefi:init` run in the user's project via the least-risky
-available path, then stop and report.
+Get sefi-agents installed via the least-risky available path, then clearly tell the user to
+run `/sefi:init` once from the project root and stop. Do not initialize automatically:
+installation is user-wide and the installer cannot safely choose the active project.
 
 ## Operating Rules
 - Be idempotent: a second run changes nothing already in place.
@@ -19,8 +20,8 @@ available path, then stop and report.
 ## Success Criteria (know this before you start)
 - [ ] The sefi-core plugin is installed, or the fallback installer has completed.
 - [ ] On Codex, `$CODEX_HOME/AGENTS.md` contains the managed Sefi bootstrap block.
-- [ ] `/sefi:init` has been run, so `memory/`, `state/`, `inbox/`, `loops/`, and `config/`
-      exist in the project.
+- [ ] The user has been told that `/sefi:init` must be run once from the intended project
+      root to create private local memory, state, inbox, loops, and config files.
 - [ ] `.worktrees/` is git-ignored and `.worktrees/logs/` exists.
 - [ ] Nothing existing was overwritten.
 
@@ -38,10 +39,11 @@ available path, then stop and report.
    - A private or new harness may use `./install.sh --adapter path/to/adapter.yml` only
      with a complete local custom manifest. It is not a shipped or verified adapter until
      its adapter checks are added and pass.
-2. Project state: is this a fresh repo or one with `.worktrees/` already present?
-   - Fresh: proceed to `/sefi:init`.
-   - Already scaffolded: run `/sefi:init` anyway; it copies only what is missing and reports
-     skips.
+2. Installation completion: state that installation succeeded, then give the exact next
+   command: `/sefi:init` from the intended project root. Explain that it asks whether to
+   enable optional cross-project memory, which remains local, private, and off by default.
+   Do not run the command automatically unless the user explicitly asks you to initialize
+   that project.
 3. Memory state: does `memory/index.md` already exist?
    - Yes: leave it; do not regenerate the router unless asked.
    - No: `/sefi:init` creates it from the template.
@@ -51,15 +53,14 @@ available path, then stop and report.
    privileged install.
 
 ## Verification
-- Confirm `memory/index.md`, `state/metrics.md`, `config/budget.yml`, and the two
-  `loops/*.loop.md` exist.
+- Confirm the user received the exact project-root `/sefi:init` instruction.
 - On Codex, confirm the managed Sefi block is present once in `$CODEX_HOME/AGENTS.md`.
 - Confirm `git check-ignore -q .worktrees` succeeds.
 - Confirm no pre-existing file was modified (only new files were added).
 
 ## Final Response Format (exactly 5 lines)
 1. Setup path taken: <plugin | install.sh fallback>
-2. Level reached: <installed+init done | installed only | blocked>
+2. Level reached: <installed -- init required | blocked>
 3. Files created or detected: <short list>
 4. Remaining user action: <none | the one thing the user must do>
 5. Exact next command: <e.g. /sefi:triage>

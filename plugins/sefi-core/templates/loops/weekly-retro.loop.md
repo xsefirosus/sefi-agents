@@ -9,7 +9,7 @@ requires-tools: git, rg
 cloud: cron `0 7 * * 1` (Mondays) via `.github/workflows/retro.yml`   |   local: weekly interval invoking the headless agent
 
 ## Discovery
-skill: retro-improve (discovery move)   inputs read: qa-engineer REJECTs, gate failures, and knowledge-manager `## Possible contradiction` flags from `state/`, plus `state/metrics.md` (worst success rate first). Also consult `docs/METRICS-PROVENANCE.md`: if accumulated metrics now satisfy a promotion condition, propose that doc update too (subject to the same effectiveness gate).
+skill: retro-improve (discovery move)   inputs read: qa-engineer REJECTs, gate failures, and Memory Journalist `## Possible contradiction` flags from `state/`, plus `state/metrics.md` (worst success rate first). Also consult `docs/METRICS-PROVENANCE.md`: if accumulated metrics now satisfy a promotion condition, propose that doc update too (subject to the same effectiveness gate).
 
 ## Handoff
 one worktree per improvement target: branch `retro/<slug>` under `.worktrees/`   max parallel: 1 (self-improvement is single-writer). Each dispatched task names its absolute worktree output path. Before opening it, grep other `state/*.md` for a matching `acting_on`; skip and log if already claimed.
@@ -23,7 +23,7 @@ state file: `state/retro-<date>.md` (committed; carries the 6-field resume block
 metrics: read `state/metrics.md` as the scorecard; append the retro outcome row with its `route` column set to `n/a` (a retro performs no dispatch, so `${CLAUDE_PLUGIN_ROOT}/scripts/check-route.sh` is not run for this row)
 ledger: read `state/retro-ledger.md` before selecting a target (churn guard, rejection memory, evidence debt), and append one row per decision at edit time, carrying the commit SHA that makes the edit revertible
 outputs: applied skill edits if `improvement.enabled: true`, else a proposal in `state/retro-<date>.md`; new skills go to `inbox/`
-close_out: dispatch the knowledge-manager to file this cycle's durable observations to `memory/daily/` (privacy-filtered, tier: trace), or log SKIP with a reason -- never neither. Rule: `skills/sefi-orchestration/references/close-out.md`
+close_out: dispatch the Memory Journalist to consolidate this session's substantial, privacy-filtered observations into one session note, or log SKIP with a reason -- never neither. Rule: `skills/sefi-orchestration/references/close-out.md`
 
 ## Budget (from config/budget.yml)
 per-run cap: $0.50   daily cap: $2.00   max retries: 2

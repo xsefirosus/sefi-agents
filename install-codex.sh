@@ -14,6 +14,15 @@ CORE="$SCRIPT_DIR/plugins/sefi-core"
 MODEL_FOR="$CORE/scripts/model-for.sh"
 MODEL_MAP=""
 
+print_onboarding() {
+  cat <<'EOF'
+sefi-agents: installation succeeded.
+sefi-agents: run /sefi:init once from each project root before the first routed request.
+sefi-agents: auto-init is unsafe because installation is user-wide and cannot safely choose or modify a project.
+sefi-agents: cross-project memory is optional, local/private, and off by default; /sefi:init asks interactively and keeps it off when unattended.
+EOF
+}
+
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --model-map) MODEL_MAP="${2:-}"; shift 2 ;;
@@ -167,3 +176,4 @@ done
 echo "install-codex.sh: installed $PLUGIN and updated $AGENTS_FILE"
 echo "install-codex.sh: applied the approved Sefi specialist model policy in $CODEX_AGENTS_DIR"
 echo "install-codex.sh: start a new Codex session and accept its one-time Sefi hook trust prompt when shown."
+print_onboarding

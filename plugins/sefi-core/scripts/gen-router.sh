@@ -31,26 +31,11 @@ extract_fm() {
 }
 
 list_notes() {
-  # Durability order, NOT byte order: decisions -> entities -> projects -> other -> daily
-  # LAST. inject-memory.sh injects only the first ~16 router lines (head -n 40, then a
-  # char cap), so whatever sorts last is what gets truncated. A plain LC_ALL=C sort put
-  # daily/ first, which meant that past ~16 notes the injected router was 100% trace notes
-  # and decisions/ never appeared at all (2026-07-16 audit, gap 5.1). Truncation must drop
-  # trace, never decisions. Within each group, LC_ALL=C sort keeps output deterministic.
-  local d
-  for d in decisions entities projects; do
-    if [ -d "$VAULT/$d" ]; then
-      find "$VAULT/$d" -name '*.md' 2>/dev/null | LC_ALL=C sort
-    fi
-  done
-  # Any note outside the four known folders (vault root or a custom subfolder).
-  find "$VAULT" -name '*.md' ! -name 'index.md' 2>/dev/null \
-    | grep -v -E "^$VAULT/(decisions|entities|projects|daily)/" \
-    | LC_ALL=C sort || true
-  if [ -d "$VAULT/daily" ]; then
-    find "$VAULT/daily" -name '*.md' 2>/dev/null | LC_ALL=C sort
-  fi
-  return 0
+  # Session notes are the only authoritative runtime corpus. Newest-first keeps the
+  # injected router useful when its configured character cap truncates the list.
+  [ -d "$VAULT/sessions" ] || return 0
+  find "$VAULT/sessions" -type f -name '*.md' ! -type l -print 2>/dev/null \
+    | LC_ALL=C sort -r
 }
 
 build() {

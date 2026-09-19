@@ -1,116 +1,89 @@
 ---
 name: memory-protocol
-description: Use when reading from or writing to the memory vault, distilling notes, or maintaining the router. The Obsidian-style vault contract covering note frontmatter schemas, the router-based read ladder, the privacy-filtered append-only write path, and tier and scope promotion rules.
+description: Use when nominating, closing, recovering, searching, or indexing Sefi's local-first Memory Journalist notes.
 managed-by: sefi-agents
 ---
 
-# Memory Protocol
+# Memory protocol
 
-The Obsidian-style vault is human-readable knowledge (`memory/`); machine bookkeeping is
-`state/`. Never mix them. Obsidian recognizes only three built-in properties (`tags`,
-`aliases`, `cssclasses`); every other key below is custom-but-queryable.
+Runtime memory is private to the current project. It lives under `memory/`, is ignored by
+Git, and is never packaged. Markdown notes are the source of truth; router files, indexes,
+and caches are disposable and must be rebuilt from Markdown. Do not put runtime notes in a
+public repository, an issue, a release, or a prompt.
 
-User instructions always override this skill.
-All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never guess.
+User instructions always override this skill. All factual output follows the
+anti-hallucination skill: cite or mark UNKNOWN, never guess.
 
-## Note frontmatter
+## When to use it
 
-Decisions (`memory/decisions/<slug>.md`):
-```yaml
----
-tags: [decision, <project-slug>]
-aliases: ["<short name>"]
-status: proposed | accepted | superseded
-superseded-by: ""          # path if superseded; append-only correction, never delete/rewrite the old note
-supersedes: ""             # path this note supersedes (on the new note)
-decided: YYYY-MM-DD        # Obsidian has NO built-in created/modified frontmatter -- use custom keys
-updated: YYYY-MM-DD
-tier: trace | policy | fact       # confidence/recurrence axis
-scope: session | project | user   # who/how-long axis (session=daily/expiring, project=vault-local, user=durable operator facts)
-keywords: comma, separated, terms
-related: "[[other-note]]"         # QUOTED -- [[ is YAML-special; unquoted is invalid YAML
-handoff-to: ""                    # agent slug if this write is also a handoff
-managed-by: sefi-agents
----
+Use the protocol only for substantial work: an implemented result, a decision, a material
+constraint, a failure that needs follow-up, or a correction. Skip greetings, casual chats,
+status checks, simple factual answers, raw transcripts, hidden reasoning, commands,
+command output, full diffs, and secret values.
+
+## Session journal
+
+The Memory Journalist is the sole `memory/` writer. Other agents nominate factual content
+under `.sefi/journal/<session-id>/`; the journal uses per-session locks, monotonic cursors,
+temporary files, flushes, and atomic renames.
+
+One substantial work session creates one note when closed. Separate sessions create
+separate notes. An unavailable harness session identity falls back to a generated UUID and
+UTC start time in ignored `.sefi/current-session`. `/sefi:close-session` is idempotent.
+At the next session start, unfinished buffers are recovered before new work begins.
+
+Use the managed helper from the project root:
+
+```text
+${CLAUDE_PLUGIN_ROOT}/scripts/memory-journal.sh nominate --kind substantive ...
+${CLAUDE_PLUGIN_ROOT}/scripts/memory-journal.sh close
 ```
 
-Daily (`memory/daily/YYYY-MM-DD.md`), lighter:
-```yaml
----
-tags: [daily]
-date: YYYY-MM-DD
-tier: trace
-scope: session
-topic: <topic-slug>        # enables the Bases groupBy promotion view
-managed-by: sefi-agents
----
+The final path is:
+
+```text
+memory/sessions/YYYY/MM/YYYY-MM-DD-HHmm-two-or-three-word-title.md
 ```
 
-Use a `> [!warning] Superseded` callout on superseded decisions, and `%%...%%` comments
-for machine-only markers (invisible in reading view, greppable by the knowledge-manager).
+The title uses two or three factual lower-case kebab-case words. Required frontmatter is
+`title`, `created-at`, `project`, `session-id`, `status`, `keywords`,
+`related-projects`, `related-notes`, and `managed-by: sefi-agents`. Status is
+`completed`, `partial`, or `blocked`.
 
-## READ (router-based, never bulk-load)
-1. Frontmatter-only scan first: `rg` the leading frontmatter across `memory/**`.
-2. Open `memory/index.md`.
-3. Follow at most 2 wikilinks. The budget counts `[[wikilinks]]` (in-vault) only;
-   external references stay `[text](url)` Markdown links and never count against it.
-4. Cross-project (explicit-relevance only, never a scan): only when the current request
-   names or clearly implies another project by name may you resolve that project's slug
-   (same derivation as WRITE step 4) under `resolve-shared-memory-path.sh`'s path and open
-   the one matching note. No background or session-start scan of that shared folder's other
-   project subfolders, ever, and never as a fallback when the local vault simply lacks an
-   answer -- this holds to rule 1's "never bulk-load," extended across projects instead of
-   within one. The same 2-link budget from step 3 applies once inside the other project's
-   note.
+Every note has these sections, in order: Context Summary, Result, Useful Information, Why
+This Happened, Files Modified, Benefits, Tradeoffs and Limits, and Follow-up. When a fact
+does not exist, write `None` or `Not applicable`.
 
-Use `rg` for anything else. Never open a file > 100 KB without a stated need.
+## Privacy filter
 
-## WRITE (privacy-filtered, append-only)
-The vault's only producer is the knowledge-manager, dispatched at close_out
-(`skills/sefi-orchestration/references/close-out.md`). No hook writes here: persisting
-session content requires step 1's privacy filter to run, and a deterministic hook cannot
-judge which bytes are a credential. Every other agent nominates candidates only.
-1. Run the privacy filter first: strip secrets, API keys, and `<private>...</private>`
-   blocks before anything is persisted. Watch specifically for provider-key prefixes
-   (e.g. `sk-`, `ghp_`/`ghu_`, `xoxb-`/`xapp-`, `AKIA...`), `-----BEGIN...PRIVATE KEY-----`
-   blocks, and generic `password=`/`secret=`/`token=` assignments -- name-only, never the
-   value, same as any other credential this skill already treats as unsafe to persist.
-2. Append a structured entry to the daily note: `## HH:MM -- <topic>`, 3 lines max, plus
-   `[[links]]`. Default `tier: trace` / `scope: session`.
-3. Decisions get the schema above. When a write is also a handoff, set `handoff-to:`.
-4. Cross-project mirror (additive, best-effort, never a replacement for step 2): write the
-   *same already-filtered* step-2 entry to a temp file and call
-   `${CLAUDE_PLUGIN_ROOT}/scripts/write-shared-memory-mirror.sh <topic> <temp-file>`. That
-   script is the deterministic half -- it resolves the shared path (skipping silently on any
-   detected ephemeral/cloud environment or `memory.cross_project_enabled: false`), derives
-   the project slug from the git remote, reads `.sefi/harness` (falling back to
-   `unknown-harness`), and writes the mirror file. Never a second privacy pass on different
-   content -- the filter in step 1 already ran once. Any nonzero exit (mirror disabled,
-   environment not confirmed local, permission denied, a sandbox that blocks writes outside
-   the project directory) is logged in one line and otherwise ignored; step 2 already ran
-   and is never blocked by it.
+Filter each nomination before buffering and before finalization. Strip credential-bearing
+URLs, key or token assignments, known key shapes, `<private>...</private>` blocks, shell and
+PowerShell prompt lines, and diff blocks. If uncertain whether a detail is private, omit
+it and state the consequence generically. Do not log what was removed.
 
-## ROUTER
-`memory/index.md` carries a generated block between `<!-- GENERATED:router -->` and
-`<!-- /GENERATED:router -->`, produced by `${CLAUDE_PLUGIN_ROOT}/scripts/gen-router.sh` from each note's
-`keywords` / `related` / `description`. Never hand-edit inside the markers.
+## Local search and index
 
-## PROMOTION (the knowledge-manager's job)
-- Promotion is a write: re-run the WRITE privacy filter (step 1 above) on the content
-  being copied or rewritten forward, even if the note being promoted was hand-edited by a
-  human and never passed through an agent's filtered write -- the filter is scoped to
-  what gets persisted, not to who authored the original text.
-- `tier: trace` -> `policy` when an observation recurs across >=2 sessions; -> `fact` when
-  cross-task validated.
-- `scope: session` -> `project` / `user` when a daily fact proves durable.
-- Split a topic into its own folder plus router entry when ANY holds: >=3 durable notes; a
-  note > 800 lines with separable subtopics; or multiple agents repeatedly need one slice.
-- Optional `memory/promotion-candidates.base` (Obsidian Bases: `filters:
-  file.inFolder("memory/daily")`, `groupBy: topic`, `Unique` summary) gives a one-glance
-  topic-to-count table, additive to ripgrep, not a replacement.
+`/sefi:memory-search <query>` searches local Markdown notes. Search ranking is exact title
+and keyword matches, then project and related-note matches, then note-body matches, with
+the newest note as the final tie-breaker. `/sefi:memory-index rebuild` reconstructs the
+complete disposable index from Markdown without modifying notes; `status` reports whether
+source hashes and cursors are fresh.
 
-## ESCAPE HATCH
-To point at a heavier backend later (vector store, code graph), see
-`docs/OPTIONAL-TOOLS.md`. The markdown vault stays the default.
+## Optional cross-project memory
 
-Self-test: every vault write ran the privacy filter and appended (never overwrote).
+Cross-project memory is disabled by default. `/sefi:init` explains the option and asks
+only in an interactive project initialization; unattended initialization keeps it off.
+`/sefi:cross-memory enable|disable|status` changes the local project setting.
+
+When explicitly enabled, a filtered note may be mirrored under
+`~/sefi-memory/<project-slug>/`. Use a credential-free Git owner/repository slug, or a
+sanitized local-path fallback. Never mirror or search across projects from CI, containers,
+cloud hosts, unknown machines, unsafe paths, symlinks, credential-bearing remotes, or an
+unnamed-project request. Read another project only when the user names it or the current
+task clearly connects to recorded project metadata; no ambient bulk scans.
+
+## Failure behavior
+
+Retain the source buffer until the final note and memory router are durable. If either
+write fails, report the failure without private content and recover the buffer at the next
+session start. Do not manually edit generated router or index data.

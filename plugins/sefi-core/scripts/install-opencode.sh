@@ -119,6 +119,56 @@ fi
 
 mkdir -p "$DEST"
 
+PACKAGE_MANIFEST="$HERE/package-manifest.sh"
+LEGACY_KNOWLEDGE_MANAGER="$DEST/agents/knowledge-manager.md"
+PRESERVE_USER_KNOWLEDGE_MANAGER=0
+
+is_sefi_managed_file() {
+  # A same-named legacy profile is removable only when its own source declares Sefi
+  # ownership. This never treats a user's file as installer-managed.
+  [ -f "$1" ] && grep -q '^[[:space:]]*managed-by:[[:space:]]*sefi-agents[[:space:]]*$' "$1"
+}
+
+prepare_legacy_knowledge_manager() {
+  [ -e "$LEGACY_KNOWLEDGE_MANAGER" ] || [ -L "$LEGACY_KNOWLEDGE_MANAGER" ] || return 0
+  if is_sefi_managed_file "$LEGACY_KNOWLEDGE_MANAGER"; then
+    if [ ! -f "$AGENTS_SRC/knowledge-manager.md" ]; then
+      rm -f -- "$LEGACY_KNOWLEDGE_MANAGER"
+      echo "install-opencode.sh: removed managed legacy knowledge-manager profile" >&2
+    fi
+    return 0
+  fi
+  PRESERVE_USER_KNOWLEDGE_MANAGER=1
+  echo "install-opencode.sh: preserving user-owned legacy knowledge-manager profile" >&2
+}
+
+write_scripts_manifest() {
+  # scripts/ is copied byte-for-byte. Agents are transformed and prose has its plugin-root
+  # placeholder resolved, so only this subtree has a stable source digest to check.
+  local manifest="$DEST/scripts/.sefi-agents-manifest.json"
+  [ -f "$PACKAGE_MANIFEST" ] || {
+    echo "install-opencode.sh: package manifest helper missing; copied scripts have no manifest" >&2
+    return 0
+  }
+  if [ -e "$manifest" ] && ! grep -q '"format"[[:space:]]*:[[:space:]]*"sefi-package-manifest/v1"' "$manifest" 2>/dev/null; then
+    echo "install-opencode.sh: preserving existing user-owned package manifest at $manifest" >&2
+    return 0
+  fi
+  bash "$PACKAGE_MANIFEST" create --root "$DEST" --source "$SCRIPTS_SRC" --destination "$DEST/scripts"
+  echo "install-opencode.sh: wrote package manifest at $manifest" >&2
+}
+
+print_onboarding() {
+  cat <<'EOF'
+sefi-agents: installation succeeded.
+sefi-agents: run /sefi:init once from each project root before the first routed request.
+sefi-agents: auto-init is unsafe because installation is user-wide and cannot safely choose or modify a project.
+sefi-agents: cross-project memory is optional, local/private, and off by default; /sefi:init asks interactively and keeps it off when unattended.
+EOF
+}
+
+prepare_legacy_knowledge_manager
+
 # Refuse a no-force install before writing anything. Checking every target up front
 # avoids a partial install when only some agent, skill, or command names conflict.
 conflicts=0
@@ -335,6 +385,10 @@ for src in "$AGENTS_SRC"/*.md; do
   [ -f "$src" ] || continue
   base="$(basename "$src")"
   dst="$DEST/agents/$base"
+  if [ "$base" = "knowledge-manager.md" ] && [ "$PRESERVE_USER_KNOWLEDGE_MANAGER" -eq 1 ]; then
+    echo "install-opencode.sh: skipped user-owned legacy knowledge-manager profile" >&2
+    continue
+  fi
   if ! check_target "$dst"; then continue; fi
   transform_agent "$src" "$dst"
   # OpenCode has no plugin loader to substitute ${CLAUDE_PLUGIN_ROOT} at runtime the way
@@ -375,4 +429,6 @@ copy_dir "$SCRIPTS_SRC" "$DEST/scripts" "script"
 # commands (scripts/ itself never contains the placeholder -- it is what it resolves to).
 find "$DEST/skills" "$DEST/commands" -type f -name '*.md' -exec sed -i "s#\${CLAUDE_PLUGIN_ROOT}#$DEST#g" {} \;
 
+write_scripts_manifest
 echo "install-opencode.sh: $agent_count agents transformed; dest=$DEST" >&2
+print_onboarding

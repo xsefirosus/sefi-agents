@@ -25,6 +25,15 @@ SKILLS="sefi-orchestration anti-hallucination memory-protocol loop-engineering r
 # Known scanner false positives; see comment above.
 FORCE_SKILLS="sefi-orchestration security-review"
 
+print_onboarding() {
+  cat <<'EOF'
+sefi-agents: installation succeeded.
+sefi-agents: run /sefi:init once from each project root before the first routed request.
+sefi-agents: auto-init is unsafe because installation is user-wide and cannot safely choose or modify a project.
+sefi-agents: cross-project memory is optional, local/private, and off by default; /sefi:init asks interactively and keeps it off when unattended.
+EOF
+}
+
 command -v hermes >/dev/null 2>&1 || {
   echo "install-hermes.sh: hermes CLI not found on PATH" >&2
   exit 1
@@ -126,3 +135,4 @@ if [ -n "$missing" ]; then
   exit 1
 fi
 echo "install-hermes.sh: all $ok of 14 skills installed (verified via 'hermes skills list')." >&2
+print_onboarding

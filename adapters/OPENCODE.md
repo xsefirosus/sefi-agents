@@ -39,8 +39,13 @@ string fails schema validation. The script converts each agent's `tools:` /
 model you selected, while an explicit map writes the chosen provider/model id. A `mode:` field is
 also written: `primary` for `sefi-agents` only, `subagent` for every other
 agent, so OpenCode's own Tab-cycle switcher shows just the one entry point instead of
-all 13 (see "Agent visibility" below). Every other frontmatter field and the entire body
+all 15 (see "Agent visibility" below). Every other frontmatter field and the entire body
 is preserved byte-for-byte.
+
+Installation is user-wide. Run `/sefi:init` once from each project root before its first
+routed request; the installer cannot safely auto-initialize an arbitrary repository. Init
+leaves the optional local/private cross-project memory mirror off unless an interactive user
+explicitly enables it.
 
 ## 3. Headless (CI loops)
 
@@ -58,15 +63,20 @@ the memory injection here, wire `scripts/inject-memory.sh` to `session.created` 
 Skipping it costs an optimization, not correctness -- the memory-protocol READ ladder still
 retrieves vault content on demand.
 
+`session.created` is a session-start event, not a first-routed-request event. It may carry
+ordinary session-start context, but it cannot implement a one-time route reminder without
+inventing unsupported hook state. The successful install message supplies the documented
+reminder to run `/sefi:init` before the first routed request.
+
 When you wire `session.created`, also have it print a one-line reminder: before ending,
-if this session found something worth remembering, dispatch `knowledge-manager` (the
+if this session found something worth remembering, route a factual nomination to `memory-journalist` (the
 `close_out` behavior, `skills/sefi-orchestration/references/close-out.md`) rather than
 letting the session end without saving anything. Matches the same line Claude Code's
 `inject-orchestrator-role.sh` injects at session start.
 
-The cross-project memory mirror (`memory-protocol/SKILL.md` WRITE step 4) needs none of
-this wiring -- `resolve-shared-memory-path.sh` and `write-shared-memory-mirror.sh` are
-plain bash the knowledge-manager runs directly at close_out, so they work identically here.
+The optional cross-project memory mirror needs none of this wiring --
+`memory-cross-memory.sh` is plain bash the Memory Journalist runs directly at close_out,
+so it works identically here.
 One real caveat, not OpenCode-specific: a sandbox that disallows writes outside the project
 directory makes the mirror fail closed by design, same as a detected ephemeral environment
 -- the project-local vault write is never affected either way.

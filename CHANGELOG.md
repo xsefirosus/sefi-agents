@@ -5,6 +5,32 @@ Changelog; this project adheres to Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-09-19
+
+### Added
+
+- Memory Journalist: private local session notes, explicit close and recovery commands,
+  disposable local indexes, and optional disabled-by-default cross-project memory.
+- Codebase Cartographer and Adoption Scout for evidence-backed local maps and external
+  repository research.
+- Atomic task receipts, continuation limits, installed-package manifests, and offline
+  behavior fixtures.
+- UI prototype, motion, mobile, and local visual-workbench guidance.
+
+### Changed
+
+- All supported installers now direct the user to run `/sefi:init` from each project root
+  and explain the optional local cross-project setting.
+- The Knowledge Manager role is now Memory Journalist. Managed legacy agent files migrate
+  safely while user-owned files remain untouched.
+- Repository-root runtime memory is ignored and excluded from packages. Packaged templates
+  remain available for project initialization.
+
+### Fixed
+
+- Local journal writes recover safely after an interrupted session and repeated close
+  requests do not create duplicate notes.
+
 ## [0.7.2] - 2026-09-14
 
 ### Added

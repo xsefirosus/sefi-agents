@@ -10,7 +10,8 @@
 # What this DOES prove: the seams hold. A plan the product-manager's format produces passes
 # the plan gate; a handoff built from that plan passes the handoff gate; the worktree it
 # names can actually be created; gate.sh runs inside it; a verdict lands in metrics.md at a
-# path retro-improve can key on; close_out's daily note reaches the router and comes back
+# path retro-improve can key on; close_out's structured session note reaches the router and
+# comes back
 # out of the SessionStart injection; the retro ledger row references a real commit.
 #
 # What this does NOT prove: that an LLM makes good decisions at any of those seams. Every
@@ -49,7 +50,7 @@ git add -A && git commit -q -m "initial commit"
 
 echo
 echo "=== stage 1: /sefi:init scaffold (commands/init.md copy list) ==="
-mkdir -p memory/daily memory/decisions memory/projects memory/entities state inbox loops config
+mkdir -p memory/sessions state inbox loops config
 cp "$CORE/templates/memory/index.md"              memory/index.md
 cp "$CORE/templates/memory/promotion-candidates.base" memory/promotion-candidates.base
 cp "$CORE/templates/state/metrics.md"             state/metrics.md
@@ -220,27 +221,24 @@ else
 fi
 
 echo
-echo "=== stage 10: close_out -- the vault finally gets a producer ==="
-# The knowledge-manager is dispatched to file the cycle's durable observations. Before
-# close-out.md existed nothing ever wrote here, so the weekly distill was a permanent no-op.
+echo "=== stage 10: close_out -- one structured session note ==="
 TODAY="$(date +%Y-%m-%d)"
-cat > "memory/daily/$TODAY.md" <<NOTE
----
-tags: [daily]
-date: $TODAY
-tier: trace
-scope: session
-topic: version-flag
-keywords: cli, versioning
-managed-by: sefi-agents
----
-
-## 09:00 -- --version flag added to demo
-Read the version from package.json at runtime rather than hardcoding it.
-Rejected a build-time constant: it drifts from package.json on every release.
+cat > "$WS/session-facts.md" <<'NOTE'
+Implemented the demo version flag from package metadata.
+The runtime read avoids a hardcoded version drifting at release time.
 NOTE
-[ -s "memory/daily/$TODAY.md" ] && ok "close_out filed a daily note through the vault's write path" \
-  || bad "close_out produced no note"
+if bash "$CORE/scripts/memory-journal.sh" nominate --session integration-session \
+  --kind substantive --title 'Version Flag Update' --status completed \
+  --keywords 'cli, versioning' --related-projects '' --related-notes '' \
+  --file "$WS/session-facts.md" \
+  && bash "$CORE/scripts/memory-journal.sh" close --session integration-session; then
+  SESSION_NOTE="$(find memory/sessions -type f -name '*.md' -print -quit)"
+  [ -s "$SESSION_NOTE" ] && ok "close_out filed one structured session note through the journal" \
+    || bad "close_out produced no session note"
+else
+  bad "Memory Journalist rejected a valid substantial session"
+  SESSION_NOTE=''
+fi
 
 # Privacy filter is the reason this is an agent dispatch and not a hook -- assert nothing
 # credential-shaped reached the vault.
@@ -250,7 +248,7 @@ else
   ok "no credential-shaped content in the vault (privacy filter clean)"
 fi
 
-# The cross-project mirror (memory-protocol WRITE step 4) was shipped with unit coverage
+# The cross-project mirror is shipped with unit coverage
 # in test-scripts.sh but never exercised inside a full cycle -- exactly the "written, not
 # wired" gap qa-engineer.md item 3 exists to catch. A real container (this test's own host)
 # is ephemeral, so the non-ephemeral branch is only reachable by stubbing
@@ -263,25 +261,28 @@ printf '#!/bin/sh\necho none\n' > "$MIRROR_STUB/systemd-detect-virt"
 chmod +x "$MIRROR_STUB/systemd-detect-virt"
 MIRROR_HOME="$WS/mirror-home"
 mkdir -p "$MIRROR_HOME"
+bash "$CORE/scripts/memory-cross-memory.sh" enable >/dev/null 2>&1 || true
 mirror_dest="$(env -u CI -u GITHUB_ACTIONS -u CODESPACES -u IS_SANDBOX \
   PATH="$MIRROR_STUB:$PATH" HOME="$MIRROR_HOME" \
-  bash "$CORE/scripts/write-shared-memory-mirror.sh" "version-flag" "memory/daily/$TODAY.md" 2>/dev/null)"
+  bash "$CORE/scripts/memory-cross-memory.sh" mirror "$SESSION_NOTE" 2>/dev/null)"
 if [ -n "$mirror_dest" ] && [ -f "$mirror_dest" ]; then
   ok "cross-project mirror wrote a real file: $mirror_dest"
 else
   bad "cross-project mirror produced no file on a confirmed non-ephemeral environment"
 fi
-if [ -f "$mirror_dest" ] && diff -q "$mirror_dest" "memory/daily/$TODAY.md" >/dev/null 2>&1; then
-  ok "mirrored content matches the same privacy-filtered daily note byte for byte"
+if [ -f "$mirror_dest" ] \
+  && grep -q 'Implemented the demo version flag' "$mirror_dest" \
+  && ! grep -Eq '(sk-|ghp_|xoxb-|AKIA|BEGIN [A-Z ]*PRIVATE KEY|password=|secret=|token=)' "$mirror_dest"; then
+  ok "mirrored content retains the filtered session fact without private material"
 else
-  bad "mirrored content diverged from the daily note it was supposed to copy"
+  bad "mirrored content is missing the filtered session fact or contains private material"
 fi
 rm -rf "$MIRROR_STUB"
 
 echo
 echo "=== stage 11: router regen, and the note survives into the next session ==="
 bash "$CORE/scripts/gen-router.sh" >/dev/null 2>&1
-if grep -q "daily/$TODAY" memory/index.md; then
+if [ -n "$SESSION_NOTE" ] && grep -q 'version-flag-update' memory/index.md; then
   ok "gen-router.sh picked the new note up into the GENERATED:router block"
 else
   bad "the note never reached the router -- the next session would not see it"
@@ -294,7 +295,7 @@ fi
 
 inj="$(bash "$CORE/scripts/inject-memory.sh" 2>/dev/null)"
 case "$inj" in
-  *"daily/$TODAY"*) ok "SessionStart injection carries the note -- the full memory round trip closes" ;;
+  *"sessions/"*) ok "SessionStart injection carries the note -- the full memory round trip closes" ;;
   *) bad "injection did not include the note: $inj" ;;
 esac
 case "$inj" in
@@ -351,16 +352,12 @@ esac
 
 echo
 echo "=== stage 15: scale -- a mature vault must not blow the injection budget ==="
-# gen-router.sh orders notes by durability so truncation drops trace notes before decisions.
-# That ordering only matters at scale, and scale had never been exercised.
+# gen-router.sh orders the authoritative session corpus newest first. Scale must still
+# preserve the injection cap and the most recent session note.
+mkdir -p memory/sessions/2026/01
 i=0
 while [ "$i" -lt 120 ]; do
-  printf -- '---\ntags: [daily]\ntier: trace\nkeywords: noise%s\n---\n' "$i" > "memory/daily/2026-01-$(printf '%02d' $((i % 28 + 1)))-n$i.md"
-  i=$((i + 1))
-done
-i=0
-while [ "$i" -lt 15 ]; do
-  printf -- '---\ntags: [decision]\ntier: fact\nkeywords: durable%s\n---\n' "$i" > "memory/decisions/d$i.md"
+  printf -- '---\nkeywords: noise%s\n---\n' "$i" > "memory/sessions/2026/01/2026-01-$(printf '%02d' $((i % 28 + 1)))-$(printf '%04d' "$i")-scale-note.md"
   i=$((i + 1))
 done
 bash "$CORE/scripts/gen-router.sh" >/dev/null 2>&1
@@ -370,17 +367,17 @@ cap="${cap:-1500}"
 big="$(bash "$CORE/scripts/inject-memory.sh" 2>/dev/null)"
 n="$(printf '%s' "$big" | wc -c | tr -d ' ')"
 if [ "$n" -le $((cap + 1)) ]; then
-  ok "135-note vault still injects within the $cap-char cap ($n bytes)"
+  ok "session-note vault still injects within the $cap-char cap ($n bytes)"
 else
   bad "injection blew the cap at scale ($n bytes for a cap of $cap)"
 fi
 
-# The durability ordering has to actually pay off: truncation must drop trace, not decisions.
-d_count="$(printf '%s' "$big" | grep -c 'decisions/' || true)"
-if [ "$d_count" -ge 1 ]; then
-  ok "decisions survive truncation at scale ($d_count in the injected window)"
+# The freshness ordering has to pay off: the latest session remains in the injected window.
+latest_count="$(printf '%s' "$big" | grep -c '2026-01-28-0111-scale-note' || true)"
+if [ "$latest_count" -ge 1 ]; then
+  ok "the newest session survives truncation at scale"
 else
-  bad "every decision was truncated away -- the injected window is 100% trace notes"
+  bad "the newest session was truncated away from the injected router"
 fi
 
 echo
@@ -398,7 +395,11 @@ if OPENCODE_HOME="$OC" bash "$CORE/scripts/install-opencode.sh" >/dev/null 2>&1;
   # A hardcoded agent count here would drift the moment the roster grows again -- the
   # same class of bug this asserts against, just in the test's own prose. Count what was
   # actually converted instead.
-  [ "$oc_bad" -eq 0 ] && ok "all $oc_n OpenCode agents carry permission, no model: (shipped map is flexible), no leaked tier"     || bad "an OpenCode agent is malformed after conversion"
+  if [ "$oc_bad" -eq 0 ]; then
+    ok "all $oc_n OpenCode agents carry permission, no model (shipped map is flexible), no leaked tier"
+  else
+    bad "an OpenCode agent is malformed after conversion"
+  fi
 else
   bad "install-opencode.sh failed"
 fi

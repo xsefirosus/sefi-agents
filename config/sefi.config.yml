@@ -9,10 +9,9 @@ memory:
   vault_dir: memory
   inject_char_cap: 1500
   prune_trace_after_days: 30
-  cross_project_enabled: true          # lets a user opt out entirely; does NOT force the
-                                        # mirror on -- resolve-shared-memory-path.sh still
-                                        # fails closed on any detected ephemeral/cloud
-                                        # environment regardless of this flag
+  cross_project_enabled: false         # off until this project's owner explicitly enables
+                                        # a local, private mirror; resolution still fails
+                                        # closed in ephemeral or cloud environments
   cross_project_folder_name: sefi-memory   # per-OS-user shared folder name, under
                                             # whichever drive resolve-shared-memory-path.sh
                                             # selects

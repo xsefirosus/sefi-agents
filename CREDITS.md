@@ -50,6 +50,28 @@ The projects below were reviewed as research inputs.
 - [mem0](https://github.com/mem0ai/mem0)
 - [obsidian-skills](https://github.com/kepano/obsidian-skills)
 
+### v0.8.0 research inputs
+
+The following repositories were reviewed file by file at the named commits. They informed
+independently written behavior contracts only; Sefi does not copy their source, prompts,
+schemas, assets, or tool definitions.
+
+- [emilkowalski/skills](https://github.com/emilkowalski/skills) at
+  `85e8e2363b713506e1d5b6e07a0eb2da66be1bc3` (MIT).
+- [MengTo/threeui](https://github.com/MengTo/threeui) at
+  `68802d5428071ada5c20db8094b1649e6bb770ed` (MIT).
+- [tt-a1i/archify](https://github.com/tt-a1i/archify) at
+  `72c750bb070d95171dbb2244e5b62b1b7da69c12` (MIT).
+- [trailhq/Graft](https://github.com/trailhq/Graft) at
+  `8c05769618d413041ea2c8891f82d566f0461b3c` (MIT).
+- [x1xhlol/system-prompts-and-models-of-ai-tools](https://github.com/x1xhlol/system-prompts-and-models-of-ai-tools)
+  at `1e4203a7d88873c1b37ab2d1c07074fea498c274` (GPL-3.0; behavior research only,
+  with no prompt or schema text copied).
+- [zhayujie/CowAgent](https://github.com/zhayujie/CowAgent) at
+  `8f1b19f1e72db0b46772f78f9c760b04b1836428` (MIT terms).
+- [HKUDS/nanobot](https://github.com/HKUDS/nanobot) at
+  `a3686d5eba9ec12a7c505788cfb905282769a5dd` (MIT).
+
 ### Token discipline
 
 - [ponytail](https://github.com/DietrichGebert/ponytail)

@@ -228,7 +228,7 @@ echo "=== state/ and memory/ personal-path scan; tracked Markdown only ==="
 
 # Active state and memory notes ship in the repository too. A path in either must be
 # caught even though these directories are not plugin or adapter source trees.
-for note_path in state/leak.md memory/daily/leak.md; do
+for note_path in state/leak.md memory/sessions/2026/01/leak.md; do
   NPS="$(mktemp -d)"
   mkdir -p "$NPS/plugins/sefi-core/scripts/ci" "$(dirname "$NPS/$note_path")"
   cp "$VNP" "$NPS/plugins/sefi-core/scripts/ci/validate-no-personal-paths.sh"
@@ -299,30 +299,27 @@ expect_code 3 "the wrapped command's exit code survives compression" \
 rm -rf "$CW"
 
 echo
-echo "=== gen-router.sh (audit gap 5.1: trace notes evicting decisions) ==="
+echo "=== gen-router.sh (Memory Journalist session ordering) ==="
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
-mkdir -p "$TMP/memory/daily" "$TMP/memory/decisions"
+mkdir -p "$TMP/memory/sessions/2026/01"
 printf -- '---\ntags: [index]\nmanaged-by: sefi-agents\n---\n# Memory Vault -- Router\n<!-- GENERATED:router -->\n<!-- /GENERATED:router -->\n' > "$TMP/memory/index.md"
-printf -- '---\ntags: [daily]\nkeywords: alpha\n---\n' > "$TMP/memory/daily/2026-01-01.md"
-printf -- '---\ntags: [decision]\nkeywords: zulu\n---\n' > "$TMP/memory/decisions/some-choice.md"
+printf -- '---\nkeywords: alpha\n---\n' > "$TMP/memory/sessions/2026/01/2026-01-01-0100-old-session.md"
+printf -- '---\nkeywords: zulu\n---\n' > "$TMP/memory/sessions/2026/01/2026-01-02-0100-new-session.md"
 
 ( cd "$TMP" && bash "$CORE/scripts/gen-router.sh" ) >/dev/null 2>&1
 
-dec_line="$(grep -n 'decisions/some-choice' "$TMP/memory/index.md" | head -1 | cut -d: -f1)"
-day_line="$(grep -n 'daily/2026-01-01' "$TMP/memory/index.md" | head -1 | cut -d: -f1)"
-# Alphabetically "daily" sorts before "decisions", so a plain sort puts the trace note
-# first and the injection's ~16-line window drops decisions entirely. Durability order
-# must win over byte order.
-if [ -n "$dec_line" ] && [ -n "$day_line" ] && [ "$dec_line" -lt "$day_line" ]; then
-  ok "decisions/ precedes daily/ in the generated router"
+new_line="$(grep -n '2026-01-02-0100-new-session' "$TMP/memory/index.md" | head -1 | cut -d: -f1)"
+old_line="$(grep -n '2026-01-01-0100-old-session' "$TMP/memory/index.md" | head -1 | cut -d: -f1)"
+if [ -n "$new_line" ] && [ -n "$old_line" ] && [ "$new_line" -lt "$old_line" ]; then
+  ok "newer session notes precede older session notes in the generated router"
 else
-  bad "decisions/ must precede daily/ (decisions at line ${dec_line:-none}, daily at line ${day_line:-none})"
+  bad "newer session notes must precede older notes (new=$new_line old=$old_line)"
 fi
 
 # The pre-existing drift check must not regress: a new note makes the router stale.
-printf -- '---\ntags: [daily]\nkeywords: beta\n---\n' > "$TMP/memory/daily/2026-01-02.md"
+printf -- '---\nkeywords: beta\n---\n' > "$TMP/memory/sessions/2026/01/2026-01-03-0100-later-session.md"
 expect_code 1 "--check flags drift after a new note is added" \
   bash -c "cd '$TMP' && bash '$CORE/scripts/gen-router.sh' --check"
 
@@ -330,17 +327,16 @@ echo
 echo "=== inject-memory.sh (2026-08-11 audit: half the injection window spent on boilerplate) ==="
 
 IW="$(mktemp -d)"
-mkdir -p "$IW/memory/decisions" "$IW/memory/daily"
+mkdir -p "$IW/memory/sessions/2026/01"
 cp "$CORE/templates/memory/index.md" "$IW/memory/index.md"
-printf -- '---\ntags: [decision]\nkeywords: auth\ndescription: use PKCE\n---\n' > "$IW/memory/decisions/auth.md"
-printf -- '---\ntags: [daily]\nkeywords: note1\n---\n' > "$IW/memory/daily/2026-01-01.md"
+printf -- '---\nkeywords: auth\n---\n' > "$IW/memory/sessions/2026/01/2026-01-01-0100-auth-flow.md"
 ( cd "$IW" && bash "$CORE/scripts/gen-router.sh" ) >/dev/null 2>&1
 
 inj="$( cd "$IW" && bash "$CORE/scripts/inject-memory.sh" 2>/dev/null )"
 
 # The router lines are the only part carrying signal; they must be present.
 case "$inj" in
-  *"decisions/auth"*) ok "the generated router block is injected" ;;
+  *"sessions/2026/01/2026-01-01-0100-auth-flow"*) ok "the generated router block is injected" ;;
   *) bad "router lines missing from the injection: $inj" ;;
 esac
 
@@ -368,21 +364,21 @@ rm -rf "$IE"
 # A hand-written index.md with no markers must still inject something rather than nothing.
 IH="$(mktemp -d)"
 mkdir -p "$IH/memory"
-printf '# my own router\n- see [[decisions/thing]]\n' > "$IH/memory/index.md"
+printf '# my own router\n- see [[sessions/thing]]\n' > "$IH/memory/index.md"
 inj_hand="$( cd "$IH" && bash "$CORE/scripts/inject-memory.sh" 2>/dev/null )"
 case "$inj_hand" in
-  *"decisions/thing"*) ok "a marker-less hand-written index still falls back to the head window" ;;
+  *"sessions/thing"*) ok "a marker-less hand-written index still falls back to the head window" ;;
   *) bad "marker-less fallback produced: $inj_hand" ;;
 esac
 rm -rf "$IH"
 
 # The hard char cap still binds.
 IC="$(mktemp -d)"
-mkdir -p "$IC/memory/decisions" "$IC/config"
+mkdir -p "$IC/memory/sessions/2026/01" "$IC/config"
 cp "$CORE/templates/memory/index.md" "$IC/memory/index.md"
 printf 'memory:\n  inject_char_cap: 120\n' > "$IC/config/sefi.config.yml"
 i=0; while [ "$i" -lt 40 ]; do
-  printf -- '---\ntags: [decision]\nkeywords: k%s\n---\n' "$i" > "$IC/memory/decisions/d$i.md"; i=$((i + 1))
+  printf -- '---\nkeywords: k%s\n---\n' "$i" > "$IC/memory/sessions/2026/01/2026-01-01-01$(printf '%02d' "$i")-cap-test.md"; i=$((i + 1))
 done
 ( cd "$IC" && bash "$CORE/scripts/gen-router.sh" ) >/dev/null 2>&1
 n_chars="$( cd "$IC" && bash "$CORE/scripts/inject-memory.sh" 2>/dev/null | wc -c | tr -d ' ')"
@@ -792,22 +788,17 @@ expect_code 1 "a reply carrying 3+ correlated plan headings is still rejected as
 rm -rf "$RTMP"
 
 echo
-echo "=== memory producer (2026-08-11 audit: the vault had a consumer and no producer) ==="
+echo "=== Memory Journalist session producer ==="
 
-# knowledge-manager.md read memory/daily/*.md as "the raw material" and distilled it weekly;
-# every other agent filed observations as "a candidate for the knowledge-manager"; and NO
-# agent, hook or command ever wrote a daily note. /sefi:init created memory/daily/ and it
-# stayed empty forever, so the weekly distill was a permanent no-op and SessionStart had
-# nothing to inject. These assert the producer exists and stays wired.
-if grep -rlq 'memory/daily' "$CORE/agents"; then
-  producer="$(grep -rl 'memory/daily' "$CORE/agents" | head -1)"
-  if grep -qiE 'author|append|write' "$producer"; then
-    ok "an agent authors daily notes ($(basename "$producer"))"
-  else
-    bad "$(basename "$producer") names memory/daily but never writes to it"
-  fi
+# One substantial work session must be closed by the managed journal, not inferred from a
+# transcript or a daily-note convention. The focused v0.8 fixture covers atomic behavior;
+# this compatibility check keeps the role, command, and session path wired together.
+if [ -f "$CORE/agents/memory-journalist.md" ] \
+  && grep -q 'memory/sessions/YYYY/MM' "$CORE/agents/memory-journalist.md" \
+  && grep -q 'memory-journal.sh close' "$CORE/commands/close-session.md"; then
+  ok "Memory Journalist owns a closeable structured session note"
 else
-  bad "no agent references memory/daily -- the vault has no producer"
+  bad "Memory Journalist session producer is not fully wired"
 fi
 
 # close_out was declared in every loop spec and defined nowhere; goal_intake had a
@@ -821,7 +812,7 @@ fi
 # Every loop must actually invoke the producer, not merely list the signal in its header.
 for lf in "$CORE"/templates/loops/*.loop.md; do
   [ -e "$lf" ] || continue
-  if grep -q 'close_out: dispatch the knowledge-manager' "$lf"; then
+  if grep -q 'close_out: dispatch the Memory Journalist' "$lf"; then
     ok "$(basename "$lf") invokes the close_out dispatch"
   else
     bad "$(basename "$lf") declares close_out but never dispatches it"
@@ -965,14 +956,14 @@ else
 fi
 
 # Live-observed (2026-08-18): with no mode: field OpenCode defaults every agent to
-# mode: all, putting all 13 specialists in the same Tab-cycle switcher as
+# mode: all, putting all 15 specialists in the same Tab-cycle switcher as
 # engineering-manager -- the exact direct-invocation path that caused the
 # prompt-engineer scope-creep bug. Exactly one agent may be mode: primary.
 primary_n="$(grep -l '^mode: primary$' "$TMP_OC"/agents/*.md 2>/dev/null | wc -l | tr -d ' ')"
 primary_file="$(grep -l '^mode: primary$' "$TMP_OC"/agents/*.md 2>/dev/null | xargs -n1 basename)"
 subagent_n="$(grep -l '^mode: subagent$' "$TMP_OC"/agents/*.md 2>/dev/null | wc -l | tr -d ' ')"
-if [ "$primary_n" = "1" ] && [ "$primary_file" = "sefi-agents.md" ] && [ "$subagent_n" = "12" ]; then
-  ok "exactly engineering-manager is mode: primary; the other 12 are mode: subagent"
+if [ "$primary_n" = "1" ] && [ "$primary_file" = "sefi-agents.md" ] && [ "$subagent_n" = "14" ]; then
+  ok "exactly sefi-agents is mode: primary; the other 14 are mode: subagent"
 else
   bad "mode: split is wrong (primary_n=$primary_n primary_file='$primary_file' subagent_n=$subagent_n)"
 fi
@@ -981,7 +972,7 @@ fi
 # write state-file content despite disallowedTools: Write, Edit, MultiEdit -- OpenCode's
 # flat bash: allow has the identical gap. An agent that fully disallows all three now gets a
 # pattern-map deny list instead; an agent with real Write access (software-engineer,
-# knowledge-manager -- only MultiEdit denied) must NOT be narrowed by this.
+# memory-journalist -- only MultiEdit denied) must NOT be narrowed by this.
 if grep -q '^  bash:$' "$TMP_OC/agents/sefi-agents.md" 2>/dev/null \
    && grep -qF '"sed -i*": deny' "$TMP_OC/agents/sefi-agents.md" 2>/dev/null \
    && grep -qF '"*": allow' "$TMP_OC/agents/sefi-agents.md" 2>/dev/null; then
@@ -994,10 +985,10 @@ if grep -q '^  bash: allow$' "$TMP_OC/agents/software-engineer.md" 2>/dev/null; 
 else
   bad "software-engineer's OpenCode bash: was unexpectedly narrowed despite real Write access"
 fi
-if grep -q '^  bash: allow$' "$TMP_OC/agents/knowledge-manager.md" 2>/dev/null; then
-  ok "knowledge-manager's OpenCode bash: stays a flat allow (only MultiEdit denied, not Write)"
+if grep -q '^  bash: allow$' "$TMP_OC/agents/memory-journalist.md" 2>/dev/null; then
+  ok "memory-journalist's OpenCode bash: stays a flat allow (only MultiEdit denied, not Write)"
 else
-  bad "knowledge-manager's OpenCode bash: was unexpectedly narrowed (only MultiEdit is denied, not Write)"
+  bad "memory-journalist's OpenCode bash: was unexpectedly narrowed (only MultiEdit is denied, not Write)"
 fi
 
 rm -rf "$TMP_OC"
@@ -1102,8 +1093,8 @@ expect_bw 0 "sefi-agents: an ordinary grep is allowed" \
   sefi-agents "grep -rn TODO plugins/"
 expect_bw 0 "software-engineer: sed -i is allowed (real Write access -- not this hook's concern)" \
   software-engineer "sed -i s/a/b/ src/foo.py"
-expect_bw 0 "knowledge-manager: sed -i is allowed (only MultiEdit denied, not Write)" \
-  knowledge-manager "sed -i s/a/b/ memory/foo.md"
+expect_bw 0 "memory-journalist: sed -i is allowed (only MultiEdit denied, not Write)" \
+  memory-journalist "sed -i s/a/b/ memory/foo.md"
 
 got=0
 printf '{"tool_input":{"command":"sed -i s/a/b/ state/foo.md"}}' | bash "$CBW" >/dev/null 2>&1 || got=$?
@@ -1286,7 +1277,7 @@ cp "$TABLE" "$TABLE_BAK"
 # resolves TABLE relative to its own script location, not a passable argument, so proving
 # it catches a routing regression means mutating the real file and restoring it -- the same
 # discipline as scan-placeholders.sh's re-break/restore test above.
-sed -i 's/| "plan X" \/ goal to spec | product-manager |/| "plan X" \/ goal to spec | knowledge-manager |/' "$TABLE"
+sed -i 's/| "plan X" \/ goal to spec | product-manager |/| "plan X" \/ goal to spec | memory-journalist |/' "$TABLE"
 broken_rc=0
 bash "$VR" >/dev/null 2>&1 || broken_rc=$?
 cp "$TABLE_BAK" "$TABLE"
@@ -1441,7 +1432,7 @@ CODEX_HOME_TMP="$CODEX_TMP/home"
 mkdir -p "$CODEX_HOME_TMP"
 printf '# Keep this user instruction.\n' > "$CODEX_HOME_TMP/AGENTS.md"
 mkdir -p "$CODEX_HOME_TMP/agents"
-for codex_agent in devops-engineer knowledge-manager product-manager prompt-engineer qa-engineer research-analyst security-engineer sefi-agents software-engineer solutions-architect support-engineer technical-writer ui-ux-designer; do
+for codex_agent in devops-engineer memory-journalist product-manager prompt-engineer qa-engineer research-adoption-scout research-analyst research-codebase-cartographer security-engineer sefi-agents software-engineer solutions-architect support-engineer technical-writer ui-ux-designer; do
   cat > "$CODEX_HOME_TMP/agents/$codex_agent.toml" <<EOF
 name = "$codex_agent"
 description = "Sefi fixture $codex_agent"

@@ -1,87 +1,58 @@
-# close_out -- the canonical behavior
+# close_out -- the canonical session-journal behavior
 
-`close_out` is one of the five agentic-signals every loop spec declares. Until now it was
-the only one declared everywhere and defined nowhere (`goal_intake` has
-`goal-intake.md` alongside this file; this is the equivalent). An undefined signal is a label,
-not a gate.
-
-close_out is also where the memory vault gets its raw material. Before this file existed
-the vault had a consumer with no producer: `knowledge-manager.md` reads
-`memory/daily/*.md` as "the raw material" and distills it weekly, every other agent files
-observations as "a decision note candidate for the knowledge-manager", and **nothing
-wrote a daily note**. `/sefi:init` created `memory/daily/` and it stayed empty, so the
-weekly distill was a permanent no-op and the SessionStart injection had nothing to inject.
+`close_out` is one of the five agentic signals every loop declares. It closes a
+substantial work session with either one privacy-filtered Memory Journalist note or an
+explicit SKIP. It is not a transcript recorder.
 
 ## When it fires
-At the end of a loop cycle, after the Persistence move and before the loop reschedules.
-Also at the end of a distinct chunk of interactive work, when the session produced
-something a later session would need to know.
 
-Not per turn, and not per tool call. close_out fires once per cycle.
+Run close_out after persistence and before a loop reschedules, or when a distinct
+interactive work session is finished. `/sefi:close-session` is the explicit close action.
+The next session start also recovers an unfinished buffer.
 
-## What it does
-The orchestrator (or the loop) dispatches the **knowledge-manager** -- never another agent,
-never a hook -- to file the cycle's durable observations. The single-writer invariant is
-unchanged: every other agent still only nominates candidates, and the knowledge-manager
-still owns every byte written under `memory/`.
-
-A hook cannot do this job. Persisting session content requires the memory-protocol privacy
-filter to run first, and a deterministic shell hook cannot judge which bytes are a
-credential, a client name, or a `<private>` block. That judgment is why the producer is an
-agent dispatch rather than a `Stop` hook.
+All substantial work in one session is grouped into one note. Separate work sessions
+produce separate notes. Do not run it for greetings, casual chats, status checks, or
+simple factual replies.
 
 ## What counts as durable
-File it when it would change how a later session acts:
-- a decision and the alternative that was rejected, with the reason
-- a constraint discovered the hard way (an API's real rate limit, a build step that must
-  run first, a test that is flaky for a known reason)
-- a correction to something previously believed true here
-- a recurring symptom seen for the second time (recurrence is the promotion signal)
-- a route `mismatch` this cycle: on Codex,
-  `${CLAUDE_PLUGIN_ROOT}/scripts/check-route.sh` reads the session rollout and returns
-  `mismatch` when the dispatch ran a different model/effort than the tier map asked for
-  (or `invalid` when the rollout is off-schema). When that happens the cycle stops, parks
-  the item in `inbox/`, and the observed-vs-expected route is filed as a constraint. The
-  same STOP-and-file rule is forward-looking for claude-code / opencode / hermes, whose
-  rows stay `unavailable` / `not-applicable` until their adapter docs document a readable
-  route. A routine `match` / `unavailable` / `not-applicable` result is not filed; nor is a
-single `skipped` (the shim found no `python3` / `python` 3.11+ interpreter, so the check
-did not run -- it is recorded in `metrics.md` but is not a finding and never STOPs the
-cycle). But N consecutive `skipped` route rows (use >= 3) IS an inbox item: on that host
-the route assertion is effectively OFF (no Python 3.11+), so a real `mismatch` would be
-invisible -- file it so the host gets an interpreter.
 
-Do NOT file: what was done step by step, anything reconstructable from the diff or from
-`state/`, restatements of the plan, or tool output. That is what `state/` and
-`.worktrees/logs/` are for, and mixing machine bookkeeping into the vault is what
-memory-protocol forbids.
+Nominate a factual observation only when it would help a later session act correctly:
+
+- a result, decision, constraint, failed approach, or unresolved blocker
+- a material file change and the reason it matters
+- a correction to a previously recorded fact
+- an observed route mismatch or repeated validation failure that requires follow-up
+
+Do not nominate raw conversations, hidden reasoning, secret values, command output,
+command dumps, full diffs, or task receipts. Use `state/` for review artifacts and
+`.sefi/runs/` for content-free task receipts.
 
 ## How it writes
-Through the existing memory-protocol WRITE path, unchanged:
-1. Privacy filter first -- strip secrets, keys, and `<private>` blocks before anything is
-   persisted.
-2. Append to today's `memory/daily/YYYY-MM-DD.md` as `## HH:MM -- <topic>`, 3 lines max,
-   plus `[[links]]`. Default `tier: trace`, `scope: session`.
-3. Regenerate the router (`${CLAUDE_PLUGIN_ROOT}/scripts/gen-router.sh`) so the next session's injection sees it.
-4. Optional cross-project mirror: memory-protocol WRITE step 4. Best-effort and silent-skip
-   on any ephemeral/cloud environment or an opted-out config -- never a second producer,
-   never a required step. See `memory-protocol/SKILL.md` for the full mechanism.
 
-close_out produces `tier: trace` daily notes and nothing else. It never writes to
-`decisions/` directly and never promotes a tier. Promotion stays the knowledge-manager's
-weekly recurrence-based job, so the ladder (trace -> policy -> fact) still earns each rung
-from evidence rather than from one confident session.
+The orchestrator dispatches the **Memory Journalist**. Other agents only submit factual
+nominations. The Memory Journalist is the sole writer for `memory/`.
+
+1. Privacy-filter each nomination before it enters `.sefi/journal/<session-id>/`.
+2. Use a per-session lock, monotonic cursor, temporary file, flush, and atomic rename.
+3. At close, build exactly one note at
+   `memory/sessions/YYYY/MM/YYYY-MM-DD-HHmm-two-or-three-word-title.md`.
+4. Include the fixed v0.8 frontmatter and sections. Missing facts read `None` or
+   `Not applicable`.
+5. Regenerate the memory router after the note is durable. Retain the buffer until both
+   writes succeed. Repeated close calls must be idempotent.
+6. Mirror a filtered copy only when cross-project memory is explicitly enabled on a
+   positively identified persistent local machine. Skip CI, containers, cloud, and
+   unknown environments.
 
 ## When nothing is durable
-Log SKIP with a reason and write no note. An empty daily note is worse than none: it costs
-a router line, an injection slice, and a distill pass, and it asserts that the cycle
-produced something when it did not. SKIP is a conclusion, the same way it is in
-retro-improve.
+
+Record `SKIP` with a reason and write no note. An empty note creates misleading retrieval
+evidence.
 
 ## Failure is not silent
-If the dispatch fails or the vault is unwritable, say so in the cycle's output and park the
-observation in `inbox/`. A close_out that quietly wrote nothing is indistinguishable from a
-cycle with nothing to say -- which is exactly the failure this file exists to end.
 
-Self-test: the cycle either appended a privacy-filtered daily note through the
-knowledge-manager, or logged SKIP with a reason. Never neither.
+If a buffer or final note cannot be written, report the error and retain the buffer for
+recovery at the next session start. Never silently discard a factual nomination.
+
+Self-test: a session produces one privacy-filtered note, a recoverable buffer after a
+failure, or SKIP with a reason. Never neither.

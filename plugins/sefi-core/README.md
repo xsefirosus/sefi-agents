@@ -1,15 +1,15 @@
 # sefi-core
 
 The core plugin of sefi-agents: a loop-engineered, software-company-shaped agent team
-with file-based persistent memory, hard token budgets, and CI-enforced anti-hallucination
+with local-first session memory, hard token budgets, and CI-enforced anti-hallucination
 discipline. See the repository root `README.md` for install and the tour; this file
 describes the package layout.
 
 ## What ships here
-- `agents/` -- 13 agents: engineering-manager, prompt-engineer, research-analyst,
-  product-manager, ui-ux-designer, software-engineer, qa-engineer, security-engineer,
-  devops-engineer, support-engineer, knowledge-manager, technical-writer,
-  solutions-architect. Each carries a `tools`/`disallowedTools` contract, a
+- `agents/` -- 15 agents: sefi-agents, prompt-engineer, research-analyst,
+  research-codebase-cartographer, research-adoption-scout, product-manager,
+  ui-ux-designer, software-engineer, qa-engineer, security-engineer, devops-engineer,
+  support-engineer, memory-journalist, technical-writer, solutions-architect. Each carries a `tools`/`disallowedTools` contract, a
   harness-neutral model tier, and the anti-hallucination pointer (CI-enforced).
 - `skills/` -- 15 skills: sefi-orchestration (the always-loaded router),
   anti-hallucination (the canonical no-invention rule), memory-protocol,
@@ -17,9 +17,9 @@ describes the package layout.
   security-review, technical-writing, n8n-workflow-design, premortem, focus,
   release-tracking, run-sefi-benchmark. Deep material lives in each skill's `references/`,
   read on demand.
-- `commands/` -- `/sefi:init`, `/sefi:triage`, `/sefi:retro`, `/sefi:status`,
-  `/sefi:loop-new`, `/sefi:route` (deterministic sefi-orchestration load, for when the
-  auto-trigger doesn't fire).
+- `commands/` -- `/sefi:init`, `/sefi:close-session`, `/sefi:cross-memory`,
+  `/sefi:memory-search`, `/sefi:memory-index`, `/sefi:map-codebase`, `/sefi:scout`,
+  `/sefi:triage`, `/sefi:retro`, `/sefi:status`, `/sefi:loop-new`, and `/sefi:route`.
 - `hooks/hooks.json` -- a SessionStart hook that injects the memory router. Codex discovers
   it from the native plugin package and asks the user to trust it once; do NOT add a hook
   declaration to `plugin.json`.
@@ -27,7 +27,7 @@ describes the package layout.
   declare a harness-neutral `tier:` (high/mid/low); this maps each tier to a concrete model
   per harness. On mapped harnesses, the `sefi-agents` orchestration role can have a
   deliberate override; all other Sefi specialists resolve from their tier. A new model is
-  an edit here, never a pass over 13 agent files.
+  an edit here, never a pass over 15 agent files.
 - `adapters/manifests/` -- the checked contract for each shipped harness: install driver,
   agent format, permission translation, hooks, delegation, headless capability, model
   strategy, route evidence, and destination. `install.sh --target` reads these manifests;
@@ -38,8 +38,9 @@ describes the package layout.
   run's observed model/effort matches the tier it requested), plus the `ci/` validation
   suite (`run-all.sh` is the entry point, and `validate-rule-presence.sh` asserts every
   required rule is physically present in each agent and skill, not merely claimed).
-- `templates/` -- copied into the user's project by `/sefi:init`: the memory vault, state
-  ledger, inbox, two loop specs, config, and a GitHub Actions workflow. The plugin never
+- `templates/` -- copied into the user's project by `/sefi:init`: the local Memory
+  Journalist router and session folder, state ledger, inbox, loop specs, config, and a
+  GitHub Actions workflow. The plugin never
   owns project state; the project does.
 
 ## Design rules
@@ -60,7 +61,7 @@ describes the package layout.
   include a one-sentence link to the observed LLM failure it prevents (e.g., "This rule
   prevents unchecked assumptions" or "This gate prevents incomplete verification"). The
   "why" helps future maintainers understand scope and supports rule evolution.
-- Single writer per artifact set; memory maintenance is append-only.
+- Single writer per artifact set; Memory Journalist session notes are private and local.
 - Loops open PRs, never merge; the canonical rule is
   `skills/sefi-orchestration/references/human-checkpoint.md`.
 - Zero runtime dependencies: markdown plus POSIX shell (git / rg / coreutils).

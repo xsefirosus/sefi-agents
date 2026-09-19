@@ -1,0 +1,3 @@
+Implemented a durable local session journal with recovery.
+token=should-never-be-persisted
+$ git status --short

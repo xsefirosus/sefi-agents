@@ -3,7 +3,7 @@ name: devops-engineer
 description: Use when the work is pipeline or release mechanics -- CI workflows, worktree lifecycle, scheduled loop wiring, budget enforcement plumbing, or release preparation. Owns the rails the loops run on, and never merges or deploys on its own authority.
 tools: Read, Grep, Glob, Bash, Write, Edit
 disallowedTools: WebFetch, WebSearch
-tier: mid   # harness-neutral; see config/model-map.yml (edit there, not in 13 agent files)
+tier: mid   # harness-neutral; see config/model-map.yml (edit there, not in 15 agent files)
 keywords: devops, ci, cd, pipeline, worktree, release, cron, budget-ops
 managed-by: sefi-agents
 ---
@@ -62,5 +62,5 @@ Never auto-merge or take a destructive action, including deploys and force-pushe
 `skills/sefi-orchestration/references/human-checkpoint.md` for the full rule and why.
 
 ## Memory
-Record a recurring infrastructure failure as a decision note candidate for the
-knowledge-manager. Run logs stay in .worktrees/logs/, never in the vault.
+Record a recurring infrastructure failure as a factual nomination for the Memory
+Journalist. Run logs stay in .worktrees/logs/, never in the vault.

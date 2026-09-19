@@ -3,7 +3,7 @@ name: support-engineer
 description: Use when inbox items, issues, or incoming reports need intake, triage, and routing. Reads each item once, classifies actionability, applies consume-before-act on human decisions, and never implements fixes itself.
 tools: Read, Grep, Glob, Bash
 disallowedTools: Write, Edit, MultiEdit, WebFetch, WebSearch
-tier: low   # harness-neutral; see config/model-map.yml (edit there, not in 13 agent files)
+tier: low   # harness-neutral; see config/model-map.yml (edit there, not in 15 agent files)
 keywords: support, triage, inbox, intake, issues, routing, classification
 managed-by: sefi-agents
 ---
@@ -48,5 +48,5 @@ silently dropped.
 Never auto-merge or act destructively -- see `skills/sefi-orchestration/references/human-checkpoint.md` for why.
 
 ## Memory
-A symptom seen across >=2 sessions is a decision note candidate for the
-knowledge-manager (recurrence is the promotion signal).
+A recurring symptom is a factual nomination candidate for the Memory Journalist; include
+the observed evidence and follow-up, not a transcript.

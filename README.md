@@ -10,7 +10,7 @@
 <a href="#works-with-your-harness"><img src="https://img.shields.io/badge/runs%20on-Claude%20Code%20%7C%20Codex%20%7C%20OpenCode%20%7C%20Hermes-555.svg" alt="runs on"></a>
 </p>
 
-Thirteen AI agents -- a planner, a builder, a reviewer, a security checker, a writer,
+Fifteen AI agents -- a planner, a builder, a reviewer, a security checker, a writer,
 and more -- that work as a team: plan, build, check, and remember, with spending limits
 and a human approving every merge.
 
@@ -58,7 +58,7 @@ installs the right way for it, Claude Code or otherwise:
 > https://raw.githubusercontent.com/xsefirosus/sefi-agents/main/Install.md
 
 **Contents:** [Why this exists](#why-this-exists) -- [How it compares](#how-it-compares) --
-[The team](#the-team-13-agents) -- [The skills](#the-skills-15) --
+[The team](#the-team-15-agents) -- [The skills](#the-skills-15) --
 [How a request gets done](#how-a-request-actually-gets-done) --
 [Memory](#memory-that-survives-the-session) -- [Where it runs](#works-with-your-harness) --
 [Safety rules](#safety-rails-all-of-them-in-one-place) -- [Proof](#proof) -- [FAQ](#faq) --
@@ -98,9 +98,9 @@ history in [CHANGELOG.md](CHANGELOG.md):
 (Usage is measured in "tokens" -- small chunks of text AI providers use to price and
 limit how much a task can do.)
 
-## The team (13 agents)
+## The team (15 agents)
 
-Thirteen AI agents, each with one job and a written contract for what it may touch, run,
+Fifteen AI agents, each with one job and a written contract for what it may touch, run,
 and change -- grouped by how strong a model each one gets:
 
 **Reviewers (strongest model):** `qa-engineer` approves or rejects finished work with
@@ -114,8 +114,12 @@ piece at a time, in its own workspace -- `ui-ux-designer` handles interface work
 (n8n, Make, GoHighLevel).
 
 **Support crew (cheapest model):** `research-analyst` gathers context -- `support-engineer`
-sorts incoming issues -- `knowledge-manager` tends the memory, never deletes -- `technical-writer`
+sorts incoming issues -- `memory-journalist` writes private session notes -- `technical-writer`
 writes docs, claims double-checked -- `prompt-engineer` clarifies a raw request first.
+
+**Repository research:** `codebase-cartographer` maps local code with source evidence --
+`adoption-scout` reviews external repositories before the Product Manager considers a plan
+addition.
 
 ## The skills (15)
 
@@ -164,18 +168,25 @@ how things went and writes bounded improvement proposals:
 
 ## Memory that survives the session
 
-Plain markdown notes in your project's own `memory/` folder, git-committed by default --
-readable, searchable, and visible in your pull requests. No database, no external
-service. A new session loads a short index automatically (capped at 1,500 characters);
-only the knowledge-manager writes, at the end of a work cycle, after stripping anything
-that looks like a password or secret.
+Memory Journalist writes plain Markdown under a project's local `memory/` folder. Runtime
+memory is ignored by Git and is never published. It creates one privacy-filtered note only
+for substantive work completed in a session; greetings, short chats, simple answers, and
+status checks produce no note. Run `/sefi:close-session` to write a note explicitly, and
+the next session recovers any unfinished local journal safely.
 
-Related projects can now see each other's notes, without merging them: on a real local
-machine (never on a cloud/CI session), each project's saved notes are additionally
-mirrored to one shared, per-user folder outside any repo, kept separate by project. A
-session only opens another project's notes when you explicitly reference that project --
-never a background scan -- so nothing gets pulled in you didn't ask for. This project uses
-its own memory system on itself, but a fresh install starts empty.
+Each note has a factual two-or-three-word title, a timestamp, result, useful information,
+why it happened, changed files, benefits, tradeoffs, and follow-up. The lightweight search
+index is disposable: `/sefi:memory-index rebuild` recreates it from the Markdown notes.
+
+Cross-project memory is optional, local, and disabled by default. `/sefi:init` explains it
+from the project root. When you explicitly enable it on a confirmed persistent local
+machine, filtered notes mirror under your own `~/sefi-memory/` folder. Search another
+project only by naming it with `/sefi:memory-search`; Sefi never performs a background
+cross-project scan, and it always skips CI, containers, cloud sessions, and unknown hosts.
+
+Read [Memory Journalist](docs/MEMORY-JOURNALIST.md) for the note format and commands,
+[Privacy](docs/PRIVACY.md) for the local data boundary, and the
+[v0.8.0 migration guide](docs/MIGRATION-v0.8.0.md) when upgrading.
 
 ## Works with your harness
 
@@ -238,32 +249,37 @@ request (badge above), and you can run them yourself, in one command:
 
 ```
 $ bash plugins/sefi-core/scripts/ci/run-all.sh
-validate-agents: OK (13 agent files validated)
-validate-skills: OK (15 SKILL.md validated)
-validate-doc-counts: OK (agents=13 skills=15 commands=6 loops=3, all prose matches disk)
-validate-loops: OK (3 loop spec(s) validated, plus 3 in this project's loops/)
+validate-agents: OK
+validate-skills: OK
+validate-doc-counts: OK
+validate-loops: OK
 validate-budget: OK (all caps present and bounded)
-validate-config-wired: OK (16 config keys, all wired)
+validate-config-wired: OK
 validate-no-personal-paths: OK (no personal paths in shipped files)
 validate-no-orphans: OK (references, templates, agents all wired)
-validate-links: OK (64 files scanned, all repo-path references resolve; bare script names checked)
-validate-script-refs: OK (49 files scanned, every scripts/*.sh reference carries ${CLAUDE_PLUGIN_ROOT}/)
-validate-release-ledger: OK (latest 0.7.2, 6/6 surfaces observed, 0 warnings)
+validate-links: OK
+validate-script-refs: OK
+validate-release-ledger: OK
 validate-routing: OK (routing-table agents exist, fixtures resolve, no duplicate triggers)
-validate-model-map: OK (13 agents, 4 harnesses, 49 scripts parse; 2 warning(s))
+validate-model-map: OK
 validate-adapters: OK (installers, native Codex package, and adapter doc paths resolve)
-validate-rule-presence: OK (28 sentences across 17 files)
-check-unicode-safety: OK (167 files scanned, ASCII-clean)
-validate-comment-safety: OK (2 file(s) scanned)
-validate-token-budget: OK (all within token budgets; agents total 8320 words)
-test-scripts: OK (259 passed on GitHub Actions; 263 on the verified Git Bash run; optional-tool cases vary by host)
-test-integration: OK (33 passed) -- full loop skeleton executed end to end
-test-opencode-schedule-ownership: PASS (15 passed)
+validate-rule-presence: OK
+check-unicode-safety: OK
+validate-comment-safety: OK
+validate-token-budget: OK
+test-scripts: OK
+test-integration: OK
+test-opencode-schedule-ownership: PASS
+test-memory-journalist: OK
+test-onboarding-v08: PASS
+test-agent-capabilities-v08: OK
+test-v08-durability: OK
+test-v08-conformance: OK
 CI: all validators passed
 ```
 
-- The last three result lines matter most: they prove the scripts, full loop skeleton,
-  and scheduled-workflow ownership checks pass.
+- The final result lines cover the scripts, full loop skeleton, installation contract, and
+  local-first session-journal behavior.
 - The same command also runs workflow-safety, shared-memory, runtime-contract, benchmark-
   oracle, release-strictness, and CI-coverage regressions, then checks every tracked shell
   script with `bash -n` and runs the benchmark unit tests.

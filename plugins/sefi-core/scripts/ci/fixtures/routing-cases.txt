@@ -1,4 +1,4 @@
-research|research-analyst
+research X|research-analyst
 plan X|product-manager
 implement slice|software-engineer
 post-build|qa-engineer

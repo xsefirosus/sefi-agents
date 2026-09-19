@@ -24,14 +24,17 @@ All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, n
 | security-engineer | security gate on diffs at trust boundaries | high |
 | devops-engineer | CI/CD, worktrees, scheduling, budget plumbing | mid |
 | support-engineer | inbox/issue intake, triage, consume-before-act | low |
-| knowledge-manager | vault distill / promote / router / contradiction | low |
+| memory-journalist | substantial-session journal / local search / recovery | low |
+| research-codebase-cartographer | explicit codebase map / trace / impact | low |
+| research-adoption-scout | explicit adoption evaluation after a map | low |
 | technical-writer | user-facing docs, changelogs, guides | low |
 | solutions-architect | n8n / Make / GHL / RAG / Vapi specs | mid |
 | prompt-engineer | Stage 0 -- restate a raw human message before routing | low |
 
 Read `references/roster.md` for each agent's skills, gates, and cost tier; do not inline
-it here. At 13 files the roster sits past the ~10-12 flat-folder boundary: it stays flat
-for now, and the NEXT addition introduces a file-name prefix and domain subfolders.
+it here. At 15 files the roster stays flat; the research specialists carry a research-
+filename prefix. A broad source-file reorganization is a separate migration, never an
+incidental addition.
 
 ## Dispatch (one dispatcher, table-driven)
 Stage 0: an interactive human message passes through `prompt-engineer` first -- it
@@ -97,6 +100,19 @@ so a dump never reaches the repo; treat it as local diagnostic output that may c
 whatever the model echoed. Free models routinely prefix structured output
 with chat ("Here's the summary: ...").
 
+## Durable task state
+
+After a dispatch, write a content-free atomic receipt under `.sefi/runs/<session-id>/`
+with `${CLAUDE_PLUGIN_ROOT}/scripts/record-run-receipt.sh`. Record task ID, agent, tier,
+input and output paths plus hashes, lifecycle state, timestamps, route result, failure
+class, and retry count. Do not store a prompt, reply content, secret, or diff in a receipt.
+
+Create a continuation record only for an explicit active goal or unfinished plan step.
+Stop continuation on completion, cancellation, user steering, repeated failure, budget
+limit, or an approval boundary. Installed copied packages may use
+`${CLAUDE_PLUGIN_ROOT}/scripts/package-manifest.sh` to detect source-file drift while
+preserving user-owned files.
+
 ## Discipline
 - Output-contract enforcement: discard excess beyond a subagent's contract; a dispatched
   agent's returned digest stays within `per_agent_return_tokens` (config/budget.yml).
@@ -117,8 +133,8 @@ with chat ("Here's the summary: ...").
 - `references/goal-intake.md` -- the canonical goal_intake behavior.
 - `references/scope-boundary.md` -- produce your own deliverable, never another agent's;
   gated on the dispatched path by `${CLAUDE_PLUGIN_ROOT}/scripts/check-reply.sh`.
-- `references/close-out.md` -- the canonical close_out behavior, and the vault's only
-  producer: the knowledge-manager dispatch that files a cycle's durable observations.
+- `references/close-out.md` -- the canonical close_out behavior and Memory Journalist
+  session-journal producer.
 - `references/refusal-gate.md` -- the canonical refusal_gate behavior.
 - `references/verification.md` -- the canonical verification behavior.
 - `references/loop-discipline.md` -- the canonical loop_discipline behavior.

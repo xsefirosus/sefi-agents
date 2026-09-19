@@ -26,7 +26,7 @@ cfg_get() {
 
 # Honors memory.cross_project_enabled (opt out entirely) and
 # memory.cross_project_folder_name (the shared folder's name) from sefi.config.yml.
-ENABLED="$(cfg_get cross_project_enabled true)"
+ENABLED="$(cfg_get cross_project_enabled false)"
 [ "$ENABLED" = "true" ] || exit 1
 
 FOLDER_NAME="$(cfg_get cross_project_folder_name sefi-memory)"

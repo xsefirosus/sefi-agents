@@ -84,6 +84,13 @@
 | 0.7.2 | git-tag | 0.7.2 | 0.7.2 | match | git rev-parse v0.7.2^{commit} -> 954c88260765f263922613909ca585bb42bb9954; git ls-remote --tags origin refs/tags/v0.7.2 -> 21620b5a71de387b6482b5383fc8685d3b43720a refs/tags/v0.7.2 and 954c88260765f263922613909ca585bb42bb9954 refs/tags/v0.7.2^{} | a local tag that was never pushed to origin | 2026-09-14T02:11:27Z |
 | 0.7.2 | github-release | 0.7.2 | 0.7.2 | match | gh release view v0.7.2 --json tagName,isDraft,url,publishedAt,name -> tagName=v0.7.2, name=v0.7.2, isDraft=false, publishedAt=2026-09-14T02:11:15Z, url=https://github.com/xsefirosus/sefi-agents/releases/tag/v0.7.2 | a local or pushed tag with no release; a draft release | 2026-09-14T02:11:27Z |
 | 0.7.2 | github-marketplace-index | 0.7.2 | 0.7.2 | match | gh api repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main (Accept: raw) -> metadata.version 0.7.2, plugins[0].version 0.7.2 | install commands quoted only in a README | 2026-09-14T02:11:27Z |
+| 0.8.0 | plugin.json | 0.8.0 | 0.8.0 | match | plugins/sefi-core/.claude-plugin/plugin.json version key -> 0.8.0; plugins/sefi-core/.codex-plugin/plugin.json version key -> 0.8.0 | a README count or CHANGELOG heading that happens to agree | 2026-09-19T10:32:31Z |
+| 0.8.0 | marketplace.json | 0.8.0 | 0.8.0 | match | .claude-plugin/marketplace.json metadata.version -> 0.8.0 | updating one occurrence and assuming the other followed | 2026-09-19T10:32:31Z |
+| 0.8.0 | marketplace.json | 0.8.0 | 0.8.0 | match | .claude-plugin/marketplace.json plugins[0].version -> 0.8.0 | updating one occurrence and assuming the other followed | 2026-09-19T10:32:31Z |
+| 0.8.0 | changelog | 0.8.0 | 0.8.0 | match | CHANGELOG.md first versioned heading -> ## [0.8.0] - 2026-09-19 | a Fixed or Changed bullet without a dated heading above it | 2026-09-19T10:32:31Z |
+| 0.8.0 | git-tag | 0.8.0 | unobserved | unobserved | git tag -l v0.8.0 and git ls-remote --tags origin refs/tags/v0.8.0 -> no output before publication | a local tag that was never pushed to origin | 2026-09-19T10:32:31Z |
+| 0.8.0 | github-release | 0.8.0 | unobserved | unobserved | gh release view v0.8.0 -> release not found before publication | a local or pushed tag with no release | 2026-09-19T10:32:31Z |
+| 0.8.0 | github-marketplace-index | 0.8.0 | unobserved | unobserved | gh api repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main remains at 0.7.2 before publication; record it as unobserved until the public 0.8.0 value exists | install commands quoted only in a README | 2026-09-19T10:32:31Z |
 
 ## Notes
 

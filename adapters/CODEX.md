@@ -25,9 +25,14 @@ every project loads `sefi-core:sefi-orchestration` before work begins. You do no
 `/sefi:*` command for each prompt. The routing skill still uses its documented trivial-task
 exception, so a short question does not mechanically spawn specialists.
 
-The installed package contains all 13 agents, 15 skills, hooks, commands, and templates.
+The installed package contains all 15 agents, 15 skills, hooks, commands, and templates.
 Re-run `bash install-codex.sh` after an update; it refreshes the marketplace and replaces
 only its own marked instruction block and Sefi's own custom-agent model fields.
+
+The bootstrap is user-wide. From each repository you later use, run `/sefi:init` once from
+that repository's root before its first routed request. It cannot be done automatically at
+install time because the bootstrap cannot safely choose or modify a project. Init leaves
+cross-project memory off unless an interactive user enables the local/private mirror.
 
 ## 2. Subagents (multi_agent)
 
@@ -57,9 +62,13 @@ writes a trust hash and never uses Codex's hook-trust bypass. If you decline the
 the global `AGENTS.md` routing instruction still works; only the SessionStart memory/role
 injection is unavailable until you accept trust in a later new session.
 
+Codex's documented hook here is SessionStart. It has no documented first-routed-request
+event, so this adapter does not pretend to install a one-time route reminder. The successful
+install message is the reminder to initialize each project before its first routed request.
+
 The cross-project memory mirror (`memory-protocol/SKILL.md` WRITE step 4) needs none of
 the hook wiring above -- `resolve-shared-memory-path.sh` and `write-shared-memory-mirror.sh`
-are plain bash the knowledge-manager runs directly at close_out, so they work identically
+are plain bash the Memory Journalist runs directly at close_out, so they work identically
 on Codex with no per-harness code. `/sefi:init`'s harness marker (`.sefi/harness`) is
 written by whichever agent runs `/sefi:init`, so Codex writes `codex` there itself, the same
 way Claude Code writes `claude` -- no install-time step or Codex-specific gap. One real
@@ -107,7 +116,7 @@ The bootstrap configures these exact custom-agent overrides, all at high reasoni
 | orchestration | `gpt-6-astra` | `high` | sefi-agents / engineering-manager |
 | high | `gpt-5.6-sol` | `high` | qa-engineer, security-engineer |
 | mid | `gpt-5.6-terra` | `high` | software-engineer, product-manager, ui-ux-designer, devops-engineer, solutions-architect |
-| low | `gpt-5.6-luna` | `high` | prompt-engineer, research-analyst, support-engineer, knowledge-manager, technical-writer |
+| low | `gpt-5.6-luna` | `high` | prompt-engineer, research-analyst, codebase-cartographer, adoption-scout, support-engineer, memory-journalist, technical-writer |
 
 The plugin does not change the model of the top-level conversation you start. It assigns
 the selected model only when Codex dispatches one of these Sefi custom agents.

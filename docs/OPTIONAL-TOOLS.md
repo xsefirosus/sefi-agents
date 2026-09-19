@@ -7,6 +7,16 @@ pointed-at, so the zero-runtime-dependency install stays intact. Each entry ends
 ## Code-structure connectors (one-command, opt-in)
 These index *code structure* -- orthogonal to the memory vault, so there is no double-write.
 
+### Archify and Graft
+
+The Codebase Cartographer works with local Git and `rg` by default. Archify can render a
+bounded evidence-backed architecture diagram, and Graft can provide a richer local code
+graph when either is already installed. Both are optional: Sefi records source hashes,
+freshness, and a rendering receipt, then falls back to validated Mermaid or plain Markdown.
+Neither tool is installed, required, or allowed to weaken the local-first privacy boundary.
+- Consider either only if: a requested map has enough relationships that a bounded visual is
+  easier to review than text.
+
 ### codegraph
 A local typed code-graph over `node:sqlite` (a Node built-in), 9 npm deps, no native
 compile, no API keys, self-managing daemon (`CODEGRAPH_NO_DAEMON=1` to disable). Hermes is a

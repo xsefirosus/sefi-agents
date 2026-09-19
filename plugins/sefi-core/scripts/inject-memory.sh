@@ -36,8 +36,8 @@ END="<!-- /GENERATED:router -->"
 # is static boilerplate the model gains nothing from re-reading every session. The previous
 # `head -n 40` spent roughly half its window on it (the block starts at line 21 of the
 # shipped template) and truncated the routing lines that carry the only actual signal.
-# gen-router.sh already orders notes so that truncation drops trace notes before decisions;
-# that ordering only pays off once the window is spent on router lines in the first place.
+# gen-router.sh orders the authoritative session notes newest-first; that ordering only
+# pays off once the window is spent on router lines in the first place.
 body=""
 if grep -qF "$BEGIN" "$INDEX" && grep -qF "$END" "$INDEX"; then
   body="$(awk -v b="$BEGIN" -v e="$END" '

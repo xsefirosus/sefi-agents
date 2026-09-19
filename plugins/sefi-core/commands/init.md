@@ -1,75 +1,46 @@
 ---
-description: Scaffold the current project with the sefi-agents memory vault, state ledger, inbox, loops, and config (skips existing files).
+description: Initialize Sefi in the current project root with private local memory, state, loops, and configuration.
 ---
 
 # /sefi:init
 
-Scaffold this project so loops have somewhere to write. Copy templates from the plugin into
-the project root, never overwriting existing files, and report what was skipped.
+Run this once from the project root you intend to work in. Installation is user-wide, so
+an installer cannot safely choose a repository or modify it automatically.
 
-## Steps
-1. Confirm you are at the intended project root, not inside the plugin cache.
-2. Copy these template files into the project, creating parent directories, and SKIPPING
-   any that already exist (report each skip):
-   - `templates/memory/index.md` -> `memory/index.md`
-   - `templates/memory/promotion-candidates.base` -> `memory/promotion-candidates.base`
-   - `templates/memory/daily/` -> `memory/daily/`
-   - `templates/memory/projects/` -> `memory/projects/`
-   - `templates/memory/decisions/` -> `memory/decisions/`
-   - `templates/memory/entities/` -> `memory/entities/`
-   - `templates/state/metrics.md` -> `state/metrics.md`
-   - `templates/state/retro-ledger.md` -> `state/retro-ledger.md`
-   - `templates/state/` (placeholder) -> `state/`
-   - `templates/inbox/` -> `inbox/`
-   - `templates/loops/morning-triage.loop.md` -> `loops/morning-triage.loop.md`
-   - `templates/loops/weekly-retro.loop.md` -> `loops/weekly-retro.loop.md`
-   - `templates/loops/sync.loop.md` -> `loops/sync.loop.md`
-   - `templates/config/sefi.config.yml` -> `config/sefi.config.yml`
-   - `templates/config/budget.yml` -> `config/budget.yml`
-3. Copy `templates/workflows/triage.yml` -> `.github/workflows/triage.yml` ONLY if the user
-   confirms (it schedules a cloud job).
-4. Copy `templates/hooks/pre-push` -> `.git/hooks/pre-push` and `chmod +x` it. Local-only
-   (git never tracks `.git/hooks/`), so re-run this step after every fresh clone. Refuses
-   a direct push to `main`/`master` -- the first deterministic backstop for
-   human-checkpoint.md's never-auto-merge rule, which had none. State its real limit when
-   reporting this step: a Bash-capable agent can still bypass it (`--no-verify`, or
-   editing the file); the actual fix is a branch protection rule on the remote, which this
-   cannot configure.
-5. Worktree check-ignore gate: run `git check-ignore -q .worktrees`. If `.worktrees/` is not
-   ignored, append it to `.gitignore` and commit before any loop creates a worktree. Create
-   `.worktrees/logs/`.
-6. `.gitignore` policy: `state/` and `inbox/` are committed by default; append them to
-   `.gitignore` only if the user asks. `.worktrees/logs/` and `.sefi/` (step 7) are always
-   ignored -- append `.sefi/` to `.gitignore` if it is not already covered.
-7. Harness marker: write one line naming the harness you are running as right now (e.g.
-   `claude`, `opencode`, `hermes`, `codex`) to `.sefi/harness` in the project root, creating
-   the directory if needed. You already know this fact with certainty -- you are that
-   harness's own agent executing this command -- so state it directly; never infer it from
-   an environment variable or shell out to detect it. This is a machine-local install fact,
-   not a vault note, which is why it lives outside `memory/` and `state/` and is always
-   gitignored (step 6): `resolve-shared-memory-path.sh`'s caller reads it to name the
-   cross-project memory mirror's files, falling back to `unknown-harness` if this step was
-   ever skipped rather than failing.
-8. Shared-install check: ask whether this install serves more than one project. `managed-by:
-   sefi-agents` files (agents, skills) are installed once per user, not per project, so a
-   retro loop in this project edits files every other project also loads. If the answer is
-   yes -- or if this run is non-interactive and cannot ask -- set `improvement.enabled:
-   false` in the copied `config/sefi.config.yml` and tell the user why: the retro loop still
-   runs and still writes its proposed diff to `state/retro-<date>.md`, but a human applies it,
-   so one project cannot silently rewrite another's agents. Leave `true` only when the user
-   confirms this install serves this project alone.
-9. Print next steps: open `memory/` in Obsidian; review `config/budget.yml`; try
-   `/sefi:triage`.
+Copy packaged templates without overwriting an existing file, and report every skipped
+file:
 
-## Guardrails
-Never overwrite an existing file. Never open secret-bearing files. This command is
-idempotent: a second run copies only what is missing.
-`memory.vault_dir` in `config/sefi.config.yml` must stay the default relative `memory` path
-scoped to this project. If a user asks to point it at an absolute or shared path (e.g. to
-reuse one vault across multiple client repos), warn explicitly that this merges the two
-projects' notes -- contradictions, promotions, and router links will cross-contaminate --
-and require an explicit confirmation before proceeding.
-`improvement.enabled` defaults to `true` in the template, which auto-applies retro edits to
-the shared, user-global `managed-by: sefi-agents` files. That is safe only for a
-single-project install. When in doubt, prefer `false`: it costs nothing but a human clicking
-apply, and it is the only setting under which a shared install cannot cross-contaminate.
+- `templates/memory/index.md` to `memory/index.md`
+- `templates/memory/sessions/` to `memory/sessions/`
+- `templates/memory/promotion-candidates.base` to `memory/promotion-candidates.base`
+- `templates/state/metrics.md` to `state/metrics.md`
+- `templates/state/retro-ledger.md` to `state/retro-ledger.md`
+- `templates/inbox/` to `inbox/`
+- `templates/loops/morning-triage.loop.md` to `loops/morning-triage.loop.md`
+- `templates/loops/sync.loop.md` to `loops/sync.loop.md`
+- `templates/loops/weekly-retro.loop.md` to `loops/weekly-retro.loop.md`
+- `templates/config/budget.yml` to `config/budget.yml`
+- `templates/config/sefi.config.yml` to `config/sefi.config.yml`
+
+Create `.sefi/` and `.worktrees/logs/` locally. Add `memory/`, `.sefi/`, and
+`.worktrees/logs/` to `.gitignore` only when absent. Runtime memory is private, local,
+and never committed. The packaged `plugins/sefi-core/templates/memory/` source remains
+part of the plugin.
+
+If interactive, explain that cross-project memory is optional, local to the current OS
+user, and off by default. Ask whether to enable it. Set
+`memory.cross_project_enabled: true` only after an explicit yes. In a non-interactive
+initialization must keep `cross_project_enabled: false`. Preserve an existing config and
+report its value rather than changing it.
+
+Optionally copy `templates/workflows/triage.yml` only after the user confirms because it
+creates a cloud job. Copy `templates/hooks/pre-push` only when it does not replace an
+existing hook. A hook is not a security boundary and can be bypassed; remote branch
+protection is separate.
+
+Finish by confirming that initialization succeeded for this project root, then point the
+user to `/sefi:close-session`, `/sefi:memory-search <query>`, and
+`/sefi:memory-index rebuild`.
+
+Never auto-initialize during a user-wide install, overwrite a user file, read a
+secret-bearing file, or make cross-project memory ambient. This command is idempotent.

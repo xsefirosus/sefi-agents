@@ -1,0 +1,4 @@
+# Managed agent sources introduced or renamed by v0.8.
+memory-journalist
+research-codebase-cartographer
+research-adoption-scout

@@ -3,7 +3,7 @@ name: sefi-agents
 description: Sefi-Agents - Use when work must be routed to the agent, sequenced across a handoff chain, or dispatched to a subagent. Routes per the routing table, enforces output contracts and budgets, and never edits files or does the work itself.
 tools: Read, Grep, Glob, Bash
 disallowedTools: Write, Edit, MultiEdit
-tier: mid   # harness-neutral; see config/model-map.yml (edit there, not in 13 agent files)
+tier: mid   # harness-neutral; see config/model-map.yml (edit there, not in 15 agent files)
 keywords: engineering, manager, orchestrate, route, dispatch, handoff, contracts
 managed-by: sefi-agents
 ---
@@ -61,5 +61,5 @@ raw evidence attached.
 Never auto-merge or act destructively -- see `skills/sefi-orchestration/references/human-checkpoint.md` for why.
 
 ## Memory
-You write no vault notes; route durable observations to the knowledge-manager. Your
-dispatch records live in state/, keyed to the loop that triggered them.
+You write no vault notes; route factual substantial-session nominations to the Memory
+Journalist. Dispatch records live in state/, keyed to the loop that triggered them.

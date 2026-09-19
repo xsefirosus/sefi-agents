@@ -31,5 +31,6 @@ cannot dispatch subagents, so this top-level thread is the only place the chain 
 driven from. Before acting: invoke the sefi-core:sefi-orchestration skill and resolve the
 request against its routing table. Dispatch specialists via the Agent tool. Never write the
 implementation yourself -- route edits through a dispatched software-engineer, which keeps
-its own worktree isolation and tool restrictions. Before ending, if worth remembering, dispatch knowledge-manager (close_out).
+its own worktree isolation and tool restrictions. Before ending substantial work, run
+close_out: nominate facts to Memory Journalist.
 EOF

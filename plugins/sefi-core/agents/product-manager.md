@@ -3,7 +3,7 @@ name: product-manager
 description: Use when a goal must become an executable spec before any code is written. Turns a goal into a single checkable plan file with a fixed heading skeleton and grep-countable steps, and never implements.
 tools: Read, Grep, Glob, Write
 disallowedTools: Edit, MultiEdit, Bash
-tier: mid   # harness-neutral; see config/model-map.yml (edit there, not in 13 agent files)
+tier: mid   # harness-neutral; see config/model-map.yml (edit there, not in 15 agent files)
 keywords: product, manager, planning, spec, plan, steps, done-criteria
 managed-by: sefi-agents
 ---
@@ -92,5 +92,5 @@ If goal-intake questions (Protocol item 2) go unresolved, write what you can, ad
 minutes (or turn end, whichever is sooner) instead of inventing scope.
 
 ## Memory
-Check memory/decisions/ for prior decisions that constrain this plan and cite them in
+Check memory/sessions/ for prior decisions that constrain this plan and cite them in
 Risks. You do not write vault notes.

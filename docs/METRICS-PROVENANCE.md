@@ -24,7 +24,7 @@ repo's own anti-hallucination convention.
 | The SessionStart injection spent roughly half its 1500-char budget on static preamble (the router block starts at line 21 of the shipped index template) | First-party | `README.md`, `CHANGELOG.md` [0.2.3] | N/A -- already first-party, proven by an executed test asserting the preamble is absent and router lines present |
 | The five-move loop gate was satisfiable by prose (`grep -q Discovery` matched the word anywhere) | First-party | `README.md`, `CHANGELOG.md` [0.2.3] | N/A -- already first-party, proven by an executed test scoring a prose-only spec at 40/100 |
 | The README claimed a tool probe that existed nowhere in the repo | First-party | `README.md`, `CHANGELOG.md` [0.2.3] | N/A -- already first-party; the mechanism now ships and the claim was rewritten to match it |
-| The memory vault had a consumer and no producer -- `memory/daily/` was read weekly and written by nothing | First-party | `README.md`, `CHANGELOG.md` [0.2.3] | N/A -- already first-party, proven by an executed test asserting an agent authors daily notes and each loop dispatches close_out |
+| The memory vault had a consumer and no producer -- session knowledge was never durably closed | First-party | `README.md`, `CHANGELOG.md` [0.2.3] | N/A -- replaced by a local session-journal test asserting one privacy-filtered note per substantial session and an explicit close path |
 
 The first three rows above are this ledger's first first-party rows, and arrived by a
 different path than the "Standing check" below: a direct audit found and fixed them

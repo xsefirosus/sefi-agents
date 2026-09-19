@@ -5,7 +5,7 @@ description: Run the retro-improve self-improvement pass once, honoring sefi.con
 # /sefi:retro
 
 Run the retro-improve skill once. Read `state/metrics.md` (worst success rate first),
-qa-engineer REJECTs, gate failures, and knowledge-manager `## Possible contradiction`
+qa-engineer REJECTs, gate failures, and Memory Journalist `## Possible contradiction`
 flags. Honor
 `sefi.config.yml`: if `improvement.enabled` is false, write the proposed diff to
 `state/retro-<date>.md` and stop. Obey every retro-improve HARD GUARD: managed-by files

@@ -40,9 +40,14 @@ injection ships only through the Claude Code plugin path, so on Hermes you must 
 memory-protocol READ ladder (frontmatter scan -> index -> at most 2 notes) is what actually
 retrieves vault content; the injection is an optimization on top of it.
 
+Hermes has no confirmed hook event for a first routed request, so this adapter installs no
+one-time route reminder. The successful installer message tells users to run `/sefi:init`
+from each project root before that request. Init keeps the optional local/private
+cross-project memory mirror off unless an interactive user enables it.
+
 The cross-project memory mirror (`memory-protocol/SKILL.md` WRITE step 4) needs none of
 the hook wiring above -- `resolve-shared-memory-path.sh` and `write-shared-memory-mirror.sh`
-are plain bash the knowledge-manager runs directly at close_out, so they work identically
+are plain bash the Memory Journalist runs directly at close_out, so they work identically
 on Hermes with no per-harness code. `.sefi/harness` is written by `/sefi:init` as the
 literal harness name at scaffold time, same as on every harness. One real caveat, not
 Hermes-specific: a sandbox that disallows writes outside the project directory makes the

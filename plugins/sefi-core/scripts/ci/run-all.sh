@@ -35,6 +35,11 @@ test-workflow-safety.sh
 test-ci-coverage.sh
 test-shared-memory-safety.sh
 test-runtime-contracts.sh
+test-v08-durability.sh
+test-v08-conformance.sh
+test-memory-journalist.sh
+test-onboarding-v08.sh
+test-agent-capabilities-v08.sh
 test-benchmark-oracles.sh
 test-release-strict.sh
 "
