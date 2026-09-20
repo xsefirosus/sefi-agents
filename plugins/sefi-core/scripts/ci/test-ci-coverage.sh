@@ -31,3 +31,10 @@ for v08_test in test-memory-journalist.sh test-onboarding-v08.sh test-agent-capa
     exit 1
   }
 done
+
+for v09_test in test-design-council.sh test-design-council-routing.sh test-v09-documentation.sh; do
+  grep -Fq "$v09_test" "$RUN_ALL" || {
+    echo "FAIL: run-all.sh must execute $v09_test" >&2
+    exit 1
+  }
+done

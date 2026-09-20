@@ -6,16 +6,17 @@ discipline. See the repository root `README.md` for install and the tour; this f
 describes the package layout.
 
 ## What ships here
-- `agents/` -- 15 agents: sefi-agents, prompt-engineer, research-analyst,
+- `agents/` -- 16 agents: sefi-agents, prompt-engineer, research-analyst,
   research-codebase-cartographer, research-adoption-scout, product-manager,
-  ui-ux-designer, software-engineer, qa-engineer, security-engineer, devops-engineer,
+  ui-ux-designer, motion-designer, software-engineer, qa-engineer, security-engineer, devops-engineer,
   support-engineer, memory-journalist, technical-writer, solutions-architect. Each carries a `tools`/`disallowedTools` contract, a
   harness-neutral model tier, and the anti-hallucination pointer (CI-enforced).
-- `skills/` -- 15 skills: sefi-orchestration (the always-loaded router),
+- `skills/` -- 19 skills: sefi-orchestration (the always-loaded router),
   anti-hallucination (the canonical no-invention rule), memory-protocol,
   loop-engineering, retro-improve, terse-mode, frontend-design, backend-design,
   security-review, technical-writing, n8n-workflow-design, premortem, focus,
-  release-tracking, run-sefi-benchmark. Deep material lives in each skill's `references/`,
+  release-tracking, run-sefi-benchmark, motion-design, swiftui-design,
+  expo-native-design, and design-style-profiles. Deep material lives in each skill's `references/`,
   read on demand.
 - `commands/` -- `/sefi:init`, `/sefi:close-session`, `/sefi:cross-memory`,
   `/sefi:memory-search`, `/sefi:memory-index`, `/sefi:map-codebase`, `/sefi:scout`,
@@ -27,7 +28,7 @@ describes the package layout.
   declare a harness-neutral `tier:` (high/mid/low); this maps each tier to a concrete model
   per harness. On mapped harnesses, the `sefi-agents` orchestration role can have a
   deliberate override; all other Sefi specialists resolve from their tier. A new model is
-  an edit here, never a pass over 15 agent files.
+  an edit here, never a pass over 16 agent files.
 - `adapters/manifests/` -- the checked contract for each shipped harness: install driver,
   agent format, permission translation, hooks, delegation, headless capability, model
   strategy, route evidence, and destination. `install.sh --target` reads these manifests;

@@ -10,7 +10,7 @@
 <a href="#works-with-your-harness"><img src="https://img.shields.io/badge/runs%20on-Claude%20Code%20%7C%20Codex%20%7C%20OpenCode%20%7C%20Hermes-555.svg" alt="runs on"></a>
 </p>
 
-Fifteen AI agents -- a planner, a builder, a reviewer, a security checker, a writer,
+16 AI agents -- a planner, a builder, a reviewer, a security checker, a writer,
 and more -- that work as a team: plan, build, check, and remember, with spending limits
 and a human approving every merge.
 
@@ -58,7 +58,7 @@ installs the right way for it, Claude Code or otherwise:
 > https://raw.githubusercontent.com/xsefirosus/sefi-agents/main/Install.md
 
 **Contents:** [Why this exists](#why-this-exists) -- [How it compares](#how-it-compares) --
-[The team](#the-team-15-agents) -- [The skills](#the-skills-15) --
+[The team](#the-team-16-agents) -- [The skills](#the-skills-19) --
 [How a request gets done](#how-a-request-actually-gets-done) --
 [Memory](#memory-that-survives-the-session) -- [Where it runs](#works-with-your-harness) --
 [Safety rules](#safety-rails-all-of-them-in-one-place) -- [Proof](#proof) -- [FAQ](#faq) --
@@ -98,9 +98,9 @@ history in [CHANGELOG.md](CHANGELOG.md):
 (Usage is measured in "tokens" -- small chunks of text AI providers use to price and
 limit how much a task can do.)
 
-## The team (15 agents)
+## The team (16 agents)
 
-Fifteen AI agents, each with one job and a written contract for what it may touch, run,
+16 AI agents, each with one job and a written contract for what it may touch, run,
 and change -- grouped by how strong a model each one gets:
 
 **Reviewers (strongest model):** `qa-engineer` approves or rejects finished work with
@@ -110,6 +110,8 @@ input.
 **Builders (mid-strength model):** `sefi-agents` routes work and never codes --
 `product-manager` turns a goal into a checkable plan -- `software-engineer` builds one
 piece at a time, in its own workspace -- `ui-ux-designer` handles interface work --
+`motion-designer` plans and audits nontrivial interaction motion without changing visual
+direction --
 `devops-engineer` runs CI/CD and scheduling -- `solutions-architect` designs automations
 (n8n, Make, GoHighLevel).
 
@@ -121,7 +123,7 @@ writes docs, claims double-checked -- `prompt-engineer` clarifies a raw request 
 `adoption-scout` reviews external repositories before the Product Manager considers a plan
 addition.
 
-## The skills (15)
+## The skills (19)
 
 Playbooks an agent loads only when the task needs it, not another agent -- most load
 automatically, a few you call by name, and a named skill can never chain another one, so
@@ -133,6 +135,10 @@ it can't silently escalate on its own:
 **Building & reviewing:** `frontend-design`, `backend-design`, `security-review` --
 interface, API, and security best practices.
 
+**Design Council:** `motion-design`, `swiftui-design`, `expo-native-design`, and
+`design-style-profiles` -- motion planning, platform-specific UI guidance, and controlled
+style tuning. SwiftUI and Expo guidance load only for their platform.
+
 **Memory & process:** `memory-protocol`, `loop-engineering`, `retro-improve` -- how
 memory is read and written, the five-step loop pattern, and small self-improvements.
 
@@ -141,6 +147,15 @@ memory is read and written, the five-step loop pattern, and small self-improveme
 (reconciles one version across six publish surfaces before calling anything released),
 `run-sefi-benchmark` (blinded paired A/B benchmark of the chain versus one strong model,
 invoked by name).
+
+## Design Council
+
+UI/UX Designer owns a product's visual direction. Motion Designer owns only nontrivial
+temporal behavior. Design tasks record Product Context, a chosen direction and style
+profile, responsive and resilient-content behavior, accessibility, performance limits,
+and evidence. Multi-page products can keep shared rules in a master design system with
+minimal page overrides. Read [Design Council](docs/DESIGN-COUNCIL.md) before using the
+motion, platform, prototype, visual-study, or optional-library workflows.
 
 ## How a request actually gets done
 
@@ -186,7 +201,7 @@ cross-project scan, and it always skips CI, containers, cloud sessions, and unkn
 
 Read [Memory Journalist](docs/MEMORY-JOURNALIST.md) for the note format and commands,
 [Privacy](docs/PRIVACY.md) for the local data boundary, and the
-[v0.8.0 migration guide](docs/MIGRATION-v0.8.0.md) when upgrading.
+[v0.9.0 migration guide](docs/MIGRATION-v0.9.0.md) when upgrading.
 
 ## Works with your harness
 

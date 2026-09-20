@@ -956,14 +956,16 @@ else
 fi
 
 # Live-observed (2026-08-18): with no mode: field OpenCode defaults every agent to
-# mode: all, putting all 15 specialists in the same Tab-cycle switcher as
+# mode: all, putting every specialist in the same Tab-cycle switcher as
 # engineering-manager -- the exact direct-invocation path that caused the
 # prompt-engineer scope-creep bug. Exactly one agent may be mode: primary.
 primary_n="$(grep -l '^mode: primary$' "$TMP_OC"/agents/*.md 2>/dev/null | wc -l | tr -d ' ')"
 primary_file="$(grep -l '^mode: primary$' "$TMP_OC"/agents/*.md 2>/dev/null | xargs -n1 basename)"
 subagent_n="$(grep -l '^mode: subagent$' "$TMP_OC"/agents/*.md 2>/dev/null | wc -l | tr -d ' ')"
-if [ "$primary_n" = "1" ] && [ "$primary_file" = "sefi-agents.md" ] && [ "$subagent_n" = "14" ]; then
-  ok "exactly sefi-agents is mode: primary; the other 14 are mode: subagent"
+agent_n="$(find "$AG" -maxdepth 1 -name '*.md' | wc -l | tr -d ' ')"
+expected_subagent_n=$((agent_n - 1))
+if [ "$primary_n" = "1" ] && [ "$primary_file" = "sefi-agents.md" ] && [ "$subagent_n" = "$expected_subagent_n" ]; then
+  ok "exactly sefi-agents is mode: primary; the other $expected_subagent_n are mode: subagent"
 else
   bad "mode: split is wrong (primary_n=$primary_n primary_file='$primary_file' subagent_n=$subagent_n)"
 fi
@@ -1432,7 +1434,12 @@ CODEX_HOME_TMP="$CODEX_TMP/home"
 mkdir -p "$CODEX_HOME_TMP"
 printf '# Keep this user instruction.\n' > "$CODEX_HOME_TMP/AGENTS.md"
 mkdir -p "$CODEX_HOME_TMP/agents"
-for codex_agent in devops-engineer memory-journalist product-manager prompt-engineer qa-engineer research-adoption-scout research-analyst research-codebase-cartographer security-engineer sefi-agents software-engineer solutions-architect support-engineer technical-writer ui-ux-designer; do
+for source_agent in "$CORE"/agents/*.md; do
+  codex_agent="$(sed -n 's/^name:[[:space:]]*\([a-z0-9-]*\).*/\1/p' "$source_agent" | head -1)"
+  if [ -z "$codex_agent" ]; then
+    bad "Codex fixture could not read an agent name from $source_agent"
+    continue
+  fi
   cat > "$CODEX_HOME_TMP/agents/$codex_agent.toml" <<EOF
 name = "$codex_agent"
 description = "Sefi fixture $codex_agent"

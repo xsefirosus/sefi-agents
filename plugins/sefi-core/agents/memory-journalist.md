@@ -3,7 +3,7 @@ name: memory-journalist
 description: Use when a substantial work session needs a private, local-first structured note, recovery, indexing, or an explicit cross-project lookup. Owns the session journal and never writes a raw conversation, secret, command dump, or full diff.
 tools: Read, Grep, Glob, Bash, Write, Edit
 disallowedTools: MultiEdit
-tier: low   # harness-neutral; see config/model-map.yml (edit there, not in 15 agent files)
+tier: low   # harness-neutral; see config/model-map.yml (edit there, not in 16 agent files)
 keywords: memory journalist, session journal, local memory, memory search, cross-project memory, vault, recovery
 managed-by: sefi-agents
 ---

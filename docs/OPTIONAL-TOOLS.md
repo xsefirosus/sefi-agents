@@ -4,6 +4,26 @@ External tiers a user MAY add. None is vendored into the plugin; each is shelled
 pointed-at, so the zero-runtime-dependency install stays intact. Each entry ends with a
 "consider it only if" line.
 
+## Design libraries
+
+### ThreeUI and React Bits
+
+These are design-task recommendations, never Sefi dependencies. UI/UX Designer first
+inspects the target manifest and may recommend at most one external library for a task.
+ThreeUI can fit a web project with a central 3D or shader-led experience when performance
+and accessibility costs are justified. React Bits can fit a React project when a named
+text, background, or interaction effect fits the selected direction and a small native
+implementation is not more appropriate.
+
+Record the package and version or `UNKNOWN`, capability, fit, bundle cost, accessibility
+and reduced-motion behavior, license status, native alternative, and `Approval: required`.
+Do not install a package or copy ThreeUI or React Bits source, assets, shaders, fonts,
+examples, or components into Sefi. React Bits is credited under MIT with Commons Clause;
+review that license before a project adopts it.
+
+- Consider either only if: the target project and selected direction justify its cost and
+  the user approves a concrete recommendation.
+
 ## Code-structure connectors (one-command, opt-in)
 These index *code structure* -- orthogonal to the memory vault, so there is no double-write.
 

@@ -4,12 +4,13 @@ Use only for an explicit PROTOTYPE request. A prototype is a decision artifact; 
 not authorize application code, a dependency, or a new product direction.
 
 ## Variants and picker
-Create exactly three isolated variants. Each variant names one direction, audience
-rationale, token sketch, signature element, mobile behavior, and motion hypothesis.
-Do not blend the variants before review. The picker visibly labels Variant 1, Variant 2,
-and Variant 3; Tab reaches each choice, Arrow keys move the active choice, Enter selects,
-and Escape exits without changing selection. The active choice has a visible focus state,
-and reduced motion preserves the choice without animation.
+Create exactly three isolated variants. Each records Direction, Product-context fit, Token
+sketch, Controls demonstrated, Interaction behavior, Mobile behavior, Motion hypothesis,
+Performance limit, Accessibility risks, Library requirement, and Review evidence. Do not
+blend the variants before review. The picker visibly labels Variant 1, Variant 2, and
+Variant 3; it shows one variant at a time; Tab reaches each choice, Arrow keys move the
+active choice, Enter selects, and Escape exits without changing selection. The active
+choice has a visible focus state, and reduced motion preserves the choice without animation.
 
 ## Review fields
 The resulting state/design-prototype-<slug>.md contains:
@@ -19,6 +20,8 @@ The resulting state/design-prototype-<slug>.md contains:
   focus effect, and pass/reject.
 - Review -- audience, direction, reviewer, date, selected variant or PENDING, mobile and
   a11y checks, library approval, and open questions.
+- The selected variant becomes the design input for planning. The two rejected variants
+  retain short rejection reasons and do not leak into the selected system.
 
 ## Mobile and library rule
 Cover 320 / 768 / 1024 / 1440 breakpoints, env(safe-area-inset-*), 44px touch targets,

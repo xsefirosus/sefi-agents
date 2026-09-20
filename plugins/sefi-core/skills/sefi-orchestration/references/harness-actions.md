@@ -22,7 +22,7 @@ Platform constraint (Claude Code, live-verified 2026-08-20): a dispatched subage
 listed in `tools` -- so it cannot itself dispatch. The `engineering-manager` role therefore
 belongs to the top-level session, not a dispatched subagent, on this harness. OpenCode's
 counterpart already covers this: `install-opencode.sh` writes `mode: primary` for
-`engineering-manager` and `mode: subagent` for the other 14 (`adapters/OPENCODE.md`), so
+`sefi-agents` and `mode: subagent` for the other 15 (`adapters/OPENCODE.md`), so
 OpenCode's EM keeps real top-level authority. Hermes and Codex: UNKNOWN -- not yet confirmed
 against `adapters/HERMES.md` / `adapters/CODEX.md`, per this file's own rule above.
 

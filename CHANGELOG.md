@@ -3,6 +3,21 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.9.0] - 2026-09-20
+
+### Added
+
+- Unified Design Council: Motion Designer; `motion-design`, `swiftui-design`,
+  `expo-native-design`, and `design-style-profiles`; conditional platform loading; and
+  direction-first ownership with UI/UX Designer as the visual-direction owner.
+- Structured task design receipts, shared master and page design-system records, and
+  nontrivial motion records.
+- Resilient-content guidance and review fixtures for reflow, long content, zoom, focus,
+  interrupted interaction, safe areas, Dynamic Type, and reduced motion.
+- Extended three-variant prototype evidence, bounded read-only public URL studies, and
+  approval-gated ThreeUI or React Bits recommendations.
+- v0.9.0 migration guide, release notes, provenance entries, and documentation checks.
+
 ## [Unreleased]
 
 ## [0.8.0] - 2026-09-19

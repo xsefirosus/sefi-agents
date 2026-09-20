@@ -16,6 +16,14 @@ tells need an actual read of the design.
 - Motion with no prefers-reduced-motion fallback.
 - Focus outline removed globally with nothing replacing it.
 - Animation of properties other than transform and opacity.
+- `transition: all`.
+- Placeholder-only form labels.
+- `100vh` without a safer viewport strategy.
+- Motion without reduced-motion handling.
+
+A documented suppression is permitted only through a nearby
+`sefi-design-ignore: <reason>` marker. The marker records why a detector is inapplicable;
+it never waives accessibility, semantic, or reduced-motion requirements.
 
 The accessibility items in this tier (contrast, touch targets, focus) are automatic
 REJECTs, not style notes.
@@ -57,6 +65,10 @@ REJECTs, not style notes.
 - Hover effects on non-interactive elements.
 - Color as the only carrier of meaning (red/green status with no label or shape) --
   an accessibility REJECT, not a style note.
+- Chips, tags, and badges that trap long content rather than wrapping or offering an
+  accessible `+n` disclosure; truncation without an accessible full-value path.
+- Rapid interaction whose canceled motion leaves stale visible content, focus, or semantic
+  state.
 
 ## The counter-move
 Name the direction, derive a type scale and spacing scale from it, define color roles

@@ -25,7 +25,7 @@ every project loads `sefi-core:sefi-orchestration` before work begins. You do no
 `/sefi:*` command for each prompt. The routing skill still uses its documented trivial-task
 exception, so a short question does not mechanically spawn specialists.
 
-The installed package contains all 15 agents, 15 skills, hooks, commands, and templates.
+The installed package contains all 16 agents, 19 skills, hooks, commands, and templates.
 Re-run `bash install-codex.sh` after an update; it refreshes the marketplace and replaces
 only its own marked instruction block and Sefi's own custom-agent model fields.
 
