@@ -7,13 +7,15 @@ managed-by: sefi-agents
 # Frontend Design -- anti-slop craft
 
 Craft skill backing the ui-ux-designer and the software-engineer above the API seam.
-The goal is UI that looks decided, not generated. Deep material lives in five
+The goal is UI that looks decided, not generated. Deep material lives in seven
 references, read on demand: references/direction-lanes.md (the named direction
 catalog), references/anti-slop-checklist.md (the tells, in two tiers),
 references/industry-patterns.md (domain heuristics, illustrative only), and
 references/design-system-map.md (brief signal to an official design-system package,
 or an honest native-CSS approach when no package fits), and
-references/prototype-protocol.md (isolated variants, review fields, and workbench rules).
+references/prototype-protocol.md (isolated variants, review fields, and workbench rules),
+references/design-record.md (structured task records and master/page inheritance), and
+references/resilient-content.md (content and interaction safeguards).
 
 User instructions always override this skill.
 All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, never
@@ -69,6 +71,17 @@ guess (this includes design tokens -- never cite a token that is not in the spec
 13. Dependency discipline: inspect the target manifest before recommending at most one
     library. Record installed version or UNKNOWN, fit, maintenance/bundle concern, native
     alternative, and Approval: required. A recommendation never authorizes installation.
+14. Structured evidence: BUILD, REDESIGN, and PROTOTYPE records use
+    references/design-record.md. Separate observed facts, design decisions,
+    recommendations, and unknown information; create a master system only for meaningful
+    reuse, and never weaken its accessibility or resilient-content safeguards per page.
+15. Resilient content: apply references/resilient-content.md. Designs must withstand long
+    text, URLs, identifiers, filenames, untranslated strings, zoom, text scaling, spacing
+    overrides, wrapping chips, truncation disclosure, and interrupted interaction.
+16. Conditional guidance: load swiftui-design only for SwiftUI/native Apple work and
+    expo-native-design only for Expo/React Native work. A normal web task loads neither.
+    Hand nontrivial motion to Motion Designer after direction is selected; motion cannot
+    alter direction.
 
 ## Workflow (five verbs)
 BUILD runs two passes: Pass 1 plans a token system (4-6 named colors, 2+ typefaces, a

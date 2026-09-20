@@ -19,6 +19,7 @@ All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, n
 | research-analyst | gather web/repo/doc context as a digest | low |
 | product-manager | turn a goal into a checkable plan file | mid |
 | ui-ux-designer | build, audit, redesign, or study a UI, direction-first | mid |
+| motion-designer | plan, reduce, diagnose, or audit nontrivial motion | mid |
 | software-engineer | build one full-stack plan slice in a worktree | mid |
 | qa-engineer | adversarial PASS/REJECT against evidence | high |
 | security-engineer | security gate on diffs at trust boundaries | high |
@@ -32,7 +33,7 @@ All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, n
 | prompt-engineer | Stage 0 -- restate a raw human message before routing | low |
 
 Read `references/roster.md` for each agent's skills, gates, and cost tier; do not inline
-it here. At 15 files the roster stays flat; the research specialists carry a research-
+it here. At 16 files the roster stays flat; the research specialists carry a research-
 filename prefix. A broad source-file reorganization is a separate migration, never an
 incidental addition.
 
@@ -48,6 +49,13 @@ routing key highest-to-lowest: per-message override -> per-project config -> glo
 default -> hardcoded fallback. Agent identity travels as a field; a new trigger or loop is
 one appended row, not new branching. A non-interactive or scheduled trigger sets
 `skip_clarification` / `non_interactive`.
+
+## Design Council sequence
+For a design/UI/UX request, the sequence is UI/UX Designer -> conditional platform and
+style skills -> Motion Designer when motion is nontrivial -> Product Manager -> Software
+Engineer -> UI/UX and Motion audits -> QA Engineer. The UI/UX Designer owns the visual
+direction and first applies the conditional skills. Platform skills and Motion Designer
+refine their assigned scope; none may replace the UI/UX Designer's selected direction.
 
 ## Model dispatch
 

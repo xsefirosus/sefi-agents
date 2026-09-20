@@ -40,6 +40,9 @@ test-v08-conformance.sh
 test-memory-journalist.sh
 test-onboarding-v08.sh
 test-agent-capabilities-v08.sh
+test-design-council.sh
+test-design-council-routing.sh
+test-v09-documentation.sh
 test-benchmark-oracles.sh
 test-release-strict.sh
 "

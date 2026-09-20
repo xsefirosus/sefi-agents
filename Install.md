@@ -5,6 +5,15 @@ Get sefi-agents installed via the least-risky available path, then clearly tell 
 run `/sefi:init` once from the project root and stop. Do not initialize automatically:
 installation is user-wide and the installer cannot safely choose the active project.
 
+## v0.9.0 design guidance
+
+The installed v0.9.0 package includes the Design Council. SwiftUI and Expo guidance loads
+only for those platforms. Motion Designer is used for nontrivial motion. ThreeUI and React
+Bits remain recommendation-only: no installer step adds either library, and a
+recommendation records `Approval: required` before installation can be considered. See
+`docs/DESIGN-COUNCIL.md` after installation for the design record and visual-study
+boundaries.
+
 ## Operating Rules
 - Be idempotent: a second run changes nothing already in place.
 - Never overwrite an existing config or memory file.

@@ -13,6 +13,7 @@ agent file under `agents/`. Every agent additionally follows the anti-hallucinat
 | `research-adoption-scout.md` | low | anti-hallucination | Cartographer -> Scout -> Product Manager; source/license/provenance decision only | cheap |
 | `product-manager.md` | mid | loop-engineering, premortem (optional) | fixed heading skeleton; grep-countable steps | mid |
 | `ui-ux-designer.md` | mid | frontend-design | five verbs including three-variant PROTOTYPE; direction-first; never pixel-clones | mid |
+| `motion-designer.md` | mid | motion-design | nontrivial motion only; preserves UI/UX direction and product content | mid |
 | `software-engineer.md` | mid | loop-engineering, backend-design, frontend-design | gate.sh before done; minimization ladder; vertical slices | mid |
 | `qa-engineer.md` | high | anti-hallucination (bar-comparison) | adversarial; executes to verify | high |
 | `security-engineer.md` | high | security-review | trust-boundary gate; read-only findings | high |
@@ -23,7 +24,7 @@ agent file under `agents/`. Every agent additionally follows the anti-hallucinat
 | `solutions-architect.md` | mid | n8n-workflow-design, premortem (optional) | locked ROI review; recommends only | mid |
 
 ## Growth
-At 15 agents, this roster stays flat. The two scoped research roles use a research-
+At 16 agents, this roster stays flat. The two scoped research roles use a research-
 filename prefix, while a broad rename or domain-subfolder migration remains a separate
 change. Keep this table the one source of truth the router reads; a new agent is one
 appended row plus its file. The retro loop confirms an improvement target is reachable by

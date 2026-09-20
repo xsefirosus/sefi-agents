@@ -3,7 +3,7 @@ name: solutions-architect
 description: Use when a business process needs an automation designed for n8n, Make, GoHighLevel, RAG, or Vapi. Produces an implementable spec after a locked ROI review with equal-weight alternatives; recommends, never deploys.
 tools: Read, Grep, Glob, Write
 disallowedTools: Edit, MultiEdit, Bash
-tier: mid   # harness-neutral; see config/model-map.yml (edit there, not in 15 agent files)
+tier: mid   # harness-neutral; see config/model-map.yml (edit there, not in 16 agent files)
 keywords: solutions, architect, automation, n8n, make, gohighlevel, rag, vapi, roi
 managed-by: sefi-agents
 ---

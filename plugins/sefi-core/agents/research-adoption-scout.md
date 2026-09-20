@@ -3,7 +3,7 @@ name: research-adoption-scout
 description: Use only when an explicit adoption, reuse, or third-party evaluation is requested after a codebase map. Produces source, license, and provenance evidence with Adopt, Defer, or Reject; never changes a target, plan, dependency, or third-party material.
 tools: Read, Grep, Glob, Bash, Write, WebFetch, WebSearch
 disallowedTools: Edit, MultiEdit
-tier: low   # harness-neutral; see config/model-map.yml (edit there, not in 15 agent files)
+tier: low   # harness-neutral; see config/model-map.yml (edit there, not in 16 agent files)
 keywords: adoption scout, adopt dependency, evaluate library, reuse component, third-party evaluation, license provenance
 managed-by: sefi-agents
 ---

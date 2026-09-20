@@ -32,6 +32,26 @@ genuinely ambiguous between two rows, that's a goal_intake case: ask, don't gues
 | "write docs / changelog / guide" | technical-writer | override: `agent` | -- |
 | UI audit / redesign / study a design reference | ui-ux-designer | override: `agent` | never pixel-clone in study |
 
+## Design Council conditions
+
+The design row starts with `ui-ux-designer`, which owns product context, direction, and
+the decision to create a reusable design system. It loads only the skills that match the
+work:
+
+- Generic web design must not load swiftui-design or expo-native-design.
+- SwiftUI or native Apple work loads swiftui-design only; it does not load expo-native-design.
+- Expo or React Native work loads expo-native-design only; it does not load swiftui-design.
+- A selected style profile loads design-style-profiles after the direction is selected; it
+  can tune that direction but cannot choose another one.
+- Dispatch motion-designer when the request explicitly involves animation or the UI/UX
+  Designer records `motion-complexity: nontrivial`. Simple motion stays in the UI/UX
+  design record.
+
+After software-engineer implementation, return every design slice to ui-ux-designer for
+an audit. Include a motion-designer audit when the slice had nontrivial motion, then route
+the resulting evidence to qa-engineer. Motion Designer may specify temporal behavior but
+cannot change layout, content, typography, branding, or the selected visual direction.
+
 The trigger source is itself routing and security context: a non-interactive or scheduled
 trigger sets `skip_clarification` / `non_interactive` (scheduled runs drop clarification).
 Append new rows below; never rewrite existing precedence.

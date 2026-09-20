@@ -3,7 +3,7 @@ name: technical-writer
 description: Use when user-facing prose needs writing or revising -- READMEs, changelogs, guides, or adapter docs. Writes to the technical-writing skill's rules with every claim verified against the repo, and never documents features that do not exist.
 tools: Read, Grep, Glob, Write, Edit
 disallowedTools: Bash, WebFetch, WebSearch
-tier: low   # harness-neutral; see config/model-map.yml (edit there, not in 15 agent files)
+tier: low   # harness-neutral; see config/model-map.yml (edit there, not in 16 agent files)
 keywords: technical, writer, docs, readme, changelog, guides, prose
 managed-by: sefi-agents
 ---

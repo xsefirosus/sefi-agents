@@ -3,7 +3,7 @@ name: security-engineer
 description: Use when a diff, dependency change, or config touching a trust boundary needs a security review before a PR. Runs the security-review gate against the diff and returns findings with severity, never a rubber stamp.
 tools: Read, Grep, Glob, Bash
 disallowedTools: Write, Edit, MultiEdit
-tier: high   # harness-neutral; see config/model-map.yml (edit there, not in 15 agent files)
+tier: high   # harness-neutral; see config/model-map.yml (edit there, not in 16 agent files)
 keywords: security, review, secrets, injection, dependencies, trust-boundary, authz
 managed-by: sefi-agents
 ---

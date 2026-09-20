@@ -14,8 +14,9 @@ license and terms.
   tracking and Codex route-checking approach (MIT).
 - [i-have-adhd](https://github.com/ayghri/i-have-adhd) - the config-gated Focus skill
   (MIT; condensed and reworded).
-- [taste-skill](https://github.com/Leonxlnx/taste-skill) - the Design System Map
-  reference (MIT; condensed to this repository's format).
+- [Taste Skill](https://github.com/Leonxlnx/taste-skill) at
+  `e79ca9ec7e071eb3a3b623c4fb752e853fc3ed58` - direction and design-system mapping
+  research (MIT; independently rewritten for this repository).
 - [hermes-agent-self-evolution](https://github.com/NousResearch/hermes-agent-self-evolution)
   - the bounded self-improvement safety direction used by `retro-improve`.
 
@@ -50,16 +51,35 @@ The projects below were reviewed as research inputs.
 - [mem0](https://github.com/mem0ai/mem0)
 - [obsidian-skills](https://github.com/kepano/obsidian-skills)
 
+### v0.9.0 design research inputs
+
+The following repositories were reviewed as source inputs at the named revisions. They
+informed independently written behavior contracts only; Sefi does not vendor their prompts, datasets, components, or assets.
+
+- [Emil Kowalski Skills](https://github.com/emilkowalski/skills) at
+  `85e8e2363b713506e1d5b6e07a0eb2da66be1bc3` - interaction and motion review behavior
+  (MIT).
+- [ThreeUI](https://github.com/MengTo/threeui) at
+  `68802d5428071ada5c20db8094b1649e6bb770ed` - criteria for optional 3D or shader-led
+  recommendations (MIT).
+- [Impeccable](https://github.com/pbakaus/impeccable) at
+  `f2c7051853848826aac2f4646581d62a732155ad` - independently written visual-study and
+  interface-quality review boundaries (Apache-2.0).
+- [Hallmark](https://github.com/Nutlope/hallmark) at
+  `13ac0ec7e148655948100b6396439e481361d690` - independently written direction-first
+  interface review behavior (MIT).
+- [React Bits](https://github.com/DavidHDev/react-bits) at
+  `23b6d2c0ab10b949c7891b3e76b2f801dff186a3` - criteria for optional React effect
+  recommendations (MIT with Commons Clause).
+- [UI UX Pro Max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) at
+  `de5f12b400775997d213524ef02a7c7d2746806f` - independently written domain-guidance
+  scope and provenance constraints (MIT).
+
 ### v0.8.0 research inputs
 
-The following repositories were reviewed file by file at the named commits. They informed
-independently written behavior contracts only; Sefi does not copy their source, prompts,
-schemas, assets, or tool definitions.
+The following repositories were reviewed as source inputs at the named revisions for the
+Memory Journalist, Cartographer, and Adoption Scout contracts.
 
-- [emilkowalski/skills](https://github.com/emilkowalski/skills) at
-  `85e8e2363b713506e1d5b6e07a0eb2da66be1bc3` (MIT).
-- [MengTo/threeui](https://github.com/MengTo/threeui) at
-  `68802d5428071ada5c20db8094b1649e6bb770ed` (MIT).
 - [tt-a1i/archify](https://github.com/tt-a1i/archify) at
   `72c750bb070d95171dbb2244e5b62b1b7da69c12` (MIT).
 - [trailhq/Graft](https://github.com/trailhq/Graft) at

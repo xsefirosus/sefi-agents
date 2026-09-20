@@ -1,25 +1,66 @@
-# Industry Patterns -- conventional starting heuristics
+# Industry Patterns
 
-Conventional starting heuristics, not verified market research -- confirm against the
-actual brief; a brief that wants to break convention should do so knowingly, not by
-accident. Each entry names what a domain conventionally avoids, why, and which
-direction lanes (direction-lanes.md) tend to fit.
+These are intentionally small, illustrative starting heuristics rather than verified
+market research. Confirm against the actual brief. Each entry names its Evidence type,
+Confidence, and Review date so guidance does not become assumed fact.
 
-- Finance / banking: avoid high-saturation neon and bounce or elastic easing; trust
-  reads through restraint and legible data density. Lanes that tend to fit:
-  restrained, structured/data-dense.
-- Healthcare / medical: avoid alarmist reds outside true alerts and dense walls of
-  jargon; calm and legibility lower stakes-anxiety. Lanes: restrained, organic/soft.
-- Legal / professional services: avoid playful type and trend-chasing effects;
-  authority reads through typographic discipline. Lanes: editorial, luxury/quiet.
-- Developer tools / infra: avoid marketing gloss over data and hidden state; density
-  and precision are the aesthetic. Lanes: technical/mono, structured/data-dense.
-- Consumer / social: avoid enterprise-gray sameness; personality earns attention, but
-  one deliberate accent beats confetti. Lanes: playful, organic/soft.
-- E-commerce: avoid decoration that competes with product imagery; the product is the
-  hero and the chrome recedes. Lanes: restrained; luxury/quiet for premium catalogs.
-- Education: avoid infantilizing adult learners and cluttered dashboards; clear
-  progression and readable long-form matter. Lanes: editorial, restrained.
-- Government / civic: avoid dark patterns, decorative motion, and low-contrast
-  minimalism; plain language and maximum accessibility are the brief. Lanes:
-  restrained, structured/data-dense.
+## Finance / banking
+- Product type: account, payment, investing, or reporting service.
+- Common user priorities: clarity, auditability, error prevention, and trust.
+- Conventional layout tendencies: restrained summaries with legible transaction detail.
+- Trust and accessibility concerns: clear status labels, predictable confirmation, contrast,
+  and no color-only gain/loss meaning.
+- Useful starting direction: restrained or structured/data-dense.
+- Patterns to avoid: high-saturation neon, bounce/elastic easing, and obscured fees.
+- Evidence type: illustrative heuristic. Confidence: low. Review date: 2026-09-20.
+
+## Healthcare / medical
+- Product type: patient, clinical, scheduling, or care-information surface.
+- Common user priorities: legibility, calm, safety, and understandable next steps.
+- Conventional layout tendencies: clear task grouping and readable content widths.
+- Trust and accessibility concerns: plain language, alert distinction, large targets, and
+  robust text scaling.
+- Useful starting direction: restrained or organic/soft.
+- Patterns to avoid: alarmist red outside alerts and dense jargon walls.
+- Evidence type: illustrative heuristic. Confidence: low. Review date: 2026-09-20.
+
+## Legal / professional services
+- Product type: case, matter, document, or advisory service.
+- Common user priorities: authority, traceability, and long-form readability.
+- Conventional layout tendencies: typographic hierarchy, documents, and measured density.
+- Trust and accessibility concerns: citations, disclosure clarity, keyboard document access.
+- Useful starting direction: editorial or luxury/quiet.
+- Patterns to avoid: playful type and trend-led effects.
+- Evidence type: illustrative heuristic. Confidence: low. Review date: 2026-09-20.
+
+## Developer tools / infrastructure
+- Product type: operational console, workflow, analytics, or API tool.
+- Common user priorities: precision, scan speed, visible system state, and safe recovery.
+- Conventional layout tendencies: tables, logs, clear controls, and data-forward grouping.
+- Trust and accessibility concerns: semantic status labels, keyboard efficiency, and no
+  color-only failures.
+- Useful starting direction: technical/mono or structured/data-dense.
+- Patterns to avoid: marketing gloss over data and hidden state.
+- Evidence type: illustrative heuristic. Confidence: low. Review date: 2026-09-20.
+
+## Consumer / social and commerce
+- Product type: discovery, communication, membership, catalog, or checkout surface.
+- Common user priorities: recognition, speed, product clarity, and inclusive interaction.
+- Conventional layout tendencies: strong primary task and product/content-led composition.
+- Trust and accessibility concerns: clear price/state information, touch access, and
+  non-manipulative consent or checkout behavior.
+- Useful starting direction: playful or organic/soft for social; restrained or luxury/quiet
+  for commerce.
+- Patterns to avoid: enterprise-grey sameness, visual confetti, or decoration competing with
+  product content.
+- Evidence type: illustrative heuristic. Confidence: low. Review date: 2026-09-20.
+
+## Education and civic services
+- Product type: learning, progression, application, account, or public-information surface.
+- Common user priorities: comprehension, progressive disclosure, accessibility, and trust.
+- Conventional layout tendencies: readable long-form content and clear task progress.
+- Trust and accessibility concerns: plain language, maximum keyboard/screen-reader support,
+  and no dark patterns.
+- Useful starting direction: editorial or restrained; structured/data-dense for civic tasks.
+- Patterns to avoid: infantilizing adults, decorative motion, low contrast, and clutter.
+- Evidence type: illustrative heuristic. Confidence: low. Review date: 2026-09-20.

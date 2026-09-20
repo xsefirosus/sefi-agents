@@ -39,7 +39,7 @@ string fails schema validation. The script converts each agent's `tools:` /
 model you selected, while an explicit map writes the chosen provider/model id. A `mode:` field is
 also written: `primary` for `sefi-agents` only, `subagent` for every other
 agent, so OpenCode's own Tab-cycle switcher shows just the one entry point instead of
-all 15 (see "Agent visibility" below). Every other frontmatter field and the entire body
+all 16 (see "Agent visibility" below). Every other frontmatter field and the entire body
 is preserved byte-for-byte.
 
 Installation is user-wide. Run `/sefi:init` once from each project root before its first
@@ -213,7 +213,7 @@ switcher (`primary`), is reachable only via `@ mention` or an `sefi-agents`
 dispatch (`subagent`), or both (`all` -- OpenCode's own default when `mode:` is unset).
 
 Live-observed (2026-08-18): with no `mode:` written, every converted agent defaulted to
-`all`, so all 14 -- every specialist alongside `sefi-agents` -- sat in the same
+`all`, so all 15 -- every specialist alongside `sefi-agents` -- sit in the same
 switcher as OpenCode's native `build`/`plan` agents. Nothing distinguished the one entry
 point from the ones it dispatches, and a direct switch to a specialist skips every gate
 that only runs on the dispatched path (`check-reply.sh`, `check-handoff.sh`,
@@ -221,7 +221,7 @@ that only runs on the dispatched path (`check-reply.sh`, `check-handoff.sh`,
 scope-creep bug that motivated `scope-boundary.md`.
 
 `install-opencode.sh` now writes `mode: primary` for `sefi-agents` and
-`mode: subagent` for the other 12, so the switcher shows one entry point and the
+`mode: subagent` for the other 15, so the switcher shows one entry point and the
 specialists remain dispatchable exactly as before. This is enforcement, not a suggestion
-on top of the existing "always go through the EM" convention -- the other 12 are
+on top of the existing "always go through the EM" convention -- the other 15 are
 structurally absent from the switcher, not just discouraged.
