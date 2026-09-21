@@ -110,6 +110,9 @@
 | 0.9.1 | git-tag | 0.9.1 | unobserved | unobserved | PENDING before publication: no local or remote v0.9.1 tag was created by this implementation work | a local tag that was never pushed to origin | 2026-09-21T00:00:00Z |
 | 0.9.1 | github-release | 0.9.1 | unobserved | unobserved | PENDING before publication: no GitHub v0.9.1 release was created by this implementation work | a local or pushed tag with no release | 2026-09-21T00:00:00Z |
 | 0.9.1 | github-marketplace-index | 0.9.1 | unobserved | unobserved | PENDING before publication: public marketplace state was not changed by this implementation work | install commands quoted only in a README | 2026-09-21T00:00:00Z |
+| 0.9.1 | git-tag | 0.9.1 | 0.9.1 | match | git tag --points-at HEAD -> v0.9.1; git ls-remote --tags origin refs/tags/v0.9.1* -> c46f0937e9027e56339a5dcf7b94eea7cebee3e2 refs/tags/v0.9.1 and 07f13a44d9e4acd41a983477e919e262afa47a30 refs/tags/v0.9.1^{} | a local tag that was never pushed to origin | 2026-09-21T09:26:51Z |
+| 0.9.1 | github-release | 0.9.1 | 0.9.1 | match | gh release view v0.9.1 -> tagName v0.9.1, name Sefi-Agents v0.9.1, targetCommitish main, isDraft false, isPrerelease false, url https://github.com/xsefirosus/sefi-agents/releases/tag/v0.9.1 | a local or pushed tag with no published release | 2026-09-21T09:26:51Z |
+| 0.9.1 | github-marketplace-index | 0.9.1 | 0.9.1 | match | gh api repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json (Accept raw) -> metadata.version 0.9.1 and plugins[0].version 0.9.1 | install commands quoted only in a README | 2026-09-21T09:26:51Z |
 
 ## Notes
 
