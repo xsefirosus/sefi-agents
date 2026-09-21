@@ -35,6 +35,12 @@ Claude Code and Codex hook is session start, and OpenCode's documented event is
 Those events may provide session-start context, but must not be described as a one-time
 first-routed-request callback.
 
+Every shipped harness receives the same canonical Cartographer and Technical Writer bodies.
+`/sefi:map-codebase` uses local Git and `rg` evidence by default; optional Graft or CodeGraph
+enrichment is named-only and never installed or configured by Sefi. Substantial current-state
+documentation uses local Claim sidecars and existing task receipts. These features add no
+provider call, hosted service, or adapter-specific dependency.
+
 Copied fallback installs write a package manifest only for their byte-for-byte `scripts/`
 subtree. Check it with the installed `package-manifest.sh` using the install destination as
 both `--root` and the parent of `--destination`. Generated agents and prose whose plugin-root

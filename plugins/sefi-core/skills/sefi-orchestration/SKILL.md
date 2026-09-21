@@ -57,6 +57,12 @@ Engineer -> UI/UX and Motion audits -> QA Engineer. The UI/UX Designer owns the 
 direction and first applies the conditional skills. Platform skills and Motion Designer
 refine their assigned scope; none may replace the UI/UX Designer's selected direction.
 
+## Documentation sequence
+For a small documentation edit, route Technical Writer -> QA Engineer. For substantial
+current-state or multi-page documentation, route Codebase Cartographer CONTEXT -> Technical
+Writer -> QA Engineer. Cartographer supplies bounded validated evidence; Technical Writer
+owns the prose and Claim reconciliation; QA verifies source evidence and Claim records.
+
 ## Model dispatch
 
 Resolve the orchestrator and every role tier through
@@ -146,6 +152,8 @@ preserving user-owned files.
 - `references/refusal-gate.md` -- the canonical refusal_gate behavior.
 - `references/verification.md` -- the canonical verification behavior.
 - `references/loop-discipline.md` -- the canonical loop_discipline behavior.
+- `references/cartographer-v091.md` -- conditional v0.9.1 code-map evidence, freshness,
+  context-packet, privacy, connector, and viewer contract.
 - `docs/BUDGET.md` -- the token-discipline stack, biggest lever first; terse-mode (output
   compression) is last and smallest on purpose -- check the bigger levers before reaching
   for it.

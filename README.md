@@ -59,6 +59,7 @@ installs the right way for it, Claude Code or otherwise:
 
 **Contents:** [Why this exists](#why-this-exists) -- [How it compares](#how-it-compares) --
 [The team](#the-team-16-agents) -- [The skills](#the-skills-19) --
+[The commands](#the-commands-12) --
 [How a request gets done](#how-a-request-actually-gets-done) --
 [Memory](#memory-that-survives-the-session) -- [Where it runs](#works-with-your-harness) --
 [Safety rules](#safety-rails-all-of-them-in-one-place) -- [Proof](#proof) -- [FAQ](#faq) --
@@ -148,6 +149,21 @@ memory is read and written, the five-step loop pattern, and small self-improveme
 `run-sefi-benchmark` (blinded paired A/B benchmark of the chain versus one strong model,
 invoked by name).
 
+## The commands (12)
+
+**Project setup and memory:** `/sefi:init` -- `/sefi:close-session` --
+`/sefi:cross-memory` -- `/sefi:memory-search` -- `/sefi:memory-index`.
+
+**Repository work:** `/sefi:map-codebase` -- `/sefi:scout` -- `/sefi:triage` --
+`/sefi:route`.
+
+**Process:** `/sefi:retro` -- `/sefi:status` -- `/sefi:loop-new`.
+
+The mapping command supports MAP, TRACE, IMPACT, DELTA, VISUALIZE, and CONTEXT. It creates
+evidence-backed local maps and bounded handoff packets; it never changes the mapped source.
+Read [Repository Intelligence](docs/REPOSITORY-INTELLIGENCE.md) for freshness, privacy,
+optional connector, and documentation-grounding rules.
+
 ## Design Council
 
 UI/UX Designer owns a product's visual direction. Motion Designer owns only nontrivial
@@ -156,6 +172,20 @@ profile, responsive and resilient-content behavior, accessibility, performance l
 and evidence. Multi-page products can keep shared rules in a master design system with
 minimal page overrides. Read [Design Council](docs/DESIGN-COUNCIL.md) before using the
 motion, platform, prototype, visual-study, or optional-library workflows.
+
+## Repository Intelligence
+
+Codebase Cartographer records a validated map with file hashes, worktree identity, baseline
+relationship, freshness, and explicit uncertainty. It refreshes safely when code changes,
+preserves a prior trustworthy map if symbols disappear without an explanation, and can
+create bounded offline context packets or a local viewer. Git and `rg` remain the baseline.
+Graft and CodeGraph are optional, named-only local enrichment tools.
+
+Technical Writer records material current-state documentation Claims beside the document
+when it substantially revises a guide. Each Claim points to current source evidence. A
+preflight identifies stale or missing evidence before prose changes; the writer must
+confirm, update, retract, or replace each affected Claim. These records are local project
+state, not a hosted wiki or a background service.
 
 ## How a request actually gets done
 
@@ -201,7 +231,7 @@ cross-project scan, and it always skips CI, containers, cloud sessions, and unkn
 
 Read [Memory Journalist](docs/MEMORY-JOURNALIST.md) for the note format and commands,
 [Privacy](docs/PRIVACY.md) for the local data boundary, and the
-[v0.9.0 migration guide](docs/MIGRATION-v0.9.0.md) when upgrading.
+[v0.9.1 migration guide](docs/MIGRATION-v0.9.1.md) when upgrading.
 
 ## Works with your harness
 

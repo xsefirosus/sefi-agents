@@ -38,15 +38,17 @@ Neither tool is installed, required, or allowed to weaken the local-first privac
   easier to review than text.
 
 ### codegraph
-A local typed code-graph over `node:sqlite` (a Node built-in), 9 npm deps, no native
-compile, no API keys, self-managing daemon (`CODEGRAPH_NO_DAEMON=1` to disable). Hermes is a
-first-class installer target. One command:
-```sh
-codegraph install && codegraph init
-```
-Report its defensible metric: ~58% fewer tool calls, with file reads dropping to roughly
-zero across repo sizes; treat any token-percentage as noisy and scale-dependent.
-- Consider it only if: your loops spend most of their tool calls navigating a large codebase.
+CodeGraph is an optional local Rust-backed code index with a SQLite store and optional daemon
+behavior. Its upstream installation model, parsers, telemetry controls, MCP support, and UI
+server are not part of Sefi. Cartographer uses it only when a user explicitly names it for a
+targeted trace, impact, delta, context packet, or dynamic-boundary investigation. It checks
+that the command responds and that its index belongs to the current worktree, records its
+version and provenance, and falls back to Git and `rg` if either check fails. Sefi never
+installs or initializes CodeGraph, starts its daemon, changes telemetry, or contacts the
+network. Any upstream benchmark number is source-reported and revision-specific, not a Sefi
+performance claim.
+- Consider it only if: it is already installed locally and a named mapping question needs
+  supported symbol enrichment beyond Git and `rg`.
 
 ### graphify
 A pure code-graph skill (markdown + CLI, no daemon or DB by default; optional MCP behind a

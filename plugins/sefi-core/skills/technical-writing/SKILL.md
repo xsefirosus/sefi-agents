@@ -45,3 +45,7 @@ guessed.
 
 Self-test: every command in the doc was executed (or its file opened) during writing, and
 every number names its source.
+
+For substantial current-state documentation, load
+`references/documentation-grounding.md` before editing and
+`references/documentation-finalization.md` before declaring completion.

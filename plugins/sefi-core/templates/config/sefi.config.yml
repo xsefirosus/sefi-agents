@@ -10,6 +10,9 @@ memory:
   cross_project_folder_name: sefi-memory   # per-OS-user shared folder name, under
                                             # whichever drive resolve-shared-memory-path.sh
                                             # selects
+cartographer:
+  context_packet_budget: 24000
+  max_context_packets: 8
 terse_mode:
   enabled: true        # on by user preference; costs ~1-1.5k tokens/turn to load, nets
                        # negative on short replies -- see skills/terse-mode/SKILL.md

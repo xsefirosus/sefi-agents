@@ -33,6 +33,25 @@ check "$ROOT/README.md" "SKILL.md" "$skills_n" '[0-9]+ SKILL\.md'
 check "$ROOT/README.md" "loop spec" "$loops_n" '[0-9]+ loop spec'
 check "$CORE/README.md" "agents" "$agents_n" '\b[0-9]+ agents\b'
 check "$CORE/README.md" "skills" "$skills_n" '\b[0-9]+ skills\b'
+
+check_commands_section() {
+  local file="$1" section count command
+  section="$(awk '/^## The commands \(/ { inside=1; next } inside && /^## / { exit } inside { print }' "$file")"
+  count="$(grep -oE 'The commands \([0-9]+\)' "$file" | grep -oE '[0-9]+' | head -1)"
+  if [ "$count" != "$commands_n" ]; then
+    echo "ERROR: ${file#"$ROOT"/} - command heading claims ${count:-none}, disk has $commands_n"
+    errors=$((errors + 1))
+  fi
+  for command in /sefi:init /sefi:close-session /sefi:cross-memory /sefi:memory-search /sefi:memory-index /sefi:map-codebase /sefi:scout /sefi:triage /sefi:retro /sefi:status /sefi:loop-new /sefi:route; do
+    if [ "$(printf '%s\n' "$section" | grep -Foc -- "$command" || true)" -ne 1 ]; then
+      echo "ERROR: ${file#"$ROOT"/} - commands section must list $command exactly once"
+      errors=$((errors + 1))
+    fi
+  done
+}
+
+check_commands_section "$ROOT/README.md"
+check_commands_section "$CORE/README.md"
 # adapters/*.md total-roster prose: the class of drift a fresh audit found live
 # (2026-08-16) in CODEX.md and OPENCODE.md after a roster change -- neither
 # validate-links.sh nor validate-adapters.sh checks a bare number, only paths, so it was

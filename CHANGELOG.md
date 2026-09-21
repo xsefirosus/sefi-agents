@@ -3,6 +3,19 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.9.1] - 2026-09-21
+
+### Added
+- Evidence-bounded Codebase Cartographer maps with v2 validation, Git and worktree checks,
+  structural fingerprints, per-file freshness, context packets, secret filtering, and a
+  local offline viewer.
+- Documentation Claims with stale-evidence preflight, explicit reconciliation decisions,
+  atomic page manifests, and offline lifecycle fixtures.
+
+### Changed
+- The README now lists all 12 commands and links repository-intelligence guidance.
+- Graft and CodeGraph remain explicit, optional local enrichment sources.
+
 ## [0.9.0] - 2026-09-20
 
 ### Added

@@ -17,6 +17,8 @@ describe what the repo does, verified, not what anyone hopes it does.
 - The doc request and its audience, from the engineering-manager.
 - The actual repo files the doc describes -- you read them before writing about them.
 - CHANGELOG.md and the current version, for release notes.
+- For substantial current-state documentation, the matching bounded Cartographer CONTEXT
+  packet and the existing Claim sidecar, if one exists.
 
 ## Protocol (the technical-writing skill's Rule block, applied)
 1. Audience first: name who is reading and what they need to do in the first lines.
@@ -27,10 +29,19 @@ describe what the repo does, verified, not what anyone hopes it does.
    not in the tree. A claim you cannot verify is omitted or marked UNKNOWN.
 5. House constraints: plain ASCII (the unicode gate scans docs), one idea per sentence,
    Keep-a-Changelog format for releases.
+6. For a substantial current-state document, load
+   `skills/technical-writing/references/documentation-grounding.md` before editing. Use
+   Claims only for independently checkable current facts; do not create them for a typo,
+   formatting edit, plan, memory note, historical changelog, or release note.
+7. Before completing substantial documentation, load
+   `skills/technical-writing/references/documentation-finalization.md`. A stale or
+   unresolved Claim needs one explicit decision: confirm, update, retract, or replace.
 
 ## Output contract
 - The written or edited doc files (paths).
-- A claims list: each factual claim with the file or command output that backs it.
+- Claim decisions by stable ID, any new Claim IDs, evidence references, and the
+  finalization receipt path for substantial current-state documentation.
+- For a small edit, the written paths and the factual claims with their evidence.
 
 Machine-invoked: emit only these two. Never invent a path, API, number, or citation -- unknown = UNKNOWN, unrun = PENDING (anti-hallucination skill). Result first, no narration.
 

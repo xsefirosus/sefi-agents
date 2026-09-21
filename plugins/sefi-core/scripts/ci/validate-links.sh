@@ -32,11 +32,15 @@ resolves() {
   # referencing file's own directory (that is how sefi-orchestration/SKILL.md names its
   # own references).
   local ref="$1" src="$2" dir candidate
+  RESOLVED=""
   # Anchors name locations inside the same tracked document, not a separate file.
   ref="${ref%%#*}"
   dir="$(dirname "$src")"
   for candidate in "$ref" "$CORE/$ref" "$dir/$ref"; do
-    [ -e "$candidate" ] && git ls-files --error-unmatch -- "$candidate" >/dev/null 2>&1 && return 0
+    if [ -e "$candidate" ] && git ls-files --error-unmatch -- "$candidate" >/dev/null 2>&1; then
+      RESOLVED="$candidate"
+      return 0
+    fi
   done
   return 1
 }
@@ -57,6 +61,30 @@ while IFS= read -r f; do
   done < <(sed 's#https\?://[^ )"]*##g' "$f" \
     | grep -ohE '(docs|skills|scripts|references|templates|agents|commands|plugins|hooks)/[A-Za-z0-9._/-]+\.(md|sh|yml|yaml|json|base|png)' \
     | sort -u)
+done < <(git ls-files -- "$CORE/skills" "$CORE/agents" "$CORE/commands" docs README.md Install.md | grep -E '\.md$')
+
+# A tracked target existing is only half a Markdown link: a drifted heading anchor still
+# drops a reader at the top of the page. Keep this deliberately ASCII and dependency-free,
+# matching the repository's plain-ASCII documentation rule.
+anchor_slug() {
+  printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9[:space:]-]//g; s/[[:space:]]+/-/g; s/-+/-/g; s/^-|-$//g'
+}
+
+while IFS= read -r f; do
+  [ -f "$f" ] || continue
+  while IFS= read -r reference; do
+    [ -z "$reference" ] && continue
+    target="${reference%%#*}"
+    anchor="${reference#*#}"
+    is_skippable "$target" && continue
+    if ! resolves "$target" "$f"; then
+      continue
+    fi
+    if ! grep -E '^#{1,6}[[:space:]]+' "$RESOLVED" | sed -E 's/^#{1,6}[[:space:]]+//' | while IFS= read -r heading; do anchor_slug "$heading"; done | grep -qxF "$anchor"; then
+      echo "ERROR: $f - anchor '#$anchor' does not exist in $target"
+      errors=$((errors + 1))
+    fi
+  done < <(grep -ohE '\]\((docs|plugins|skills|agents|commands)/[A-Za-z0-9._/-]+\.md#[A-Za-z0-9_-]+\)' "$f" 2>/dev/null | sed -E 's/^\]\(//; s/\)$//' | sort -u)
 done < <(git ls-files -- "$CORE/skills" "$CORE/agents" "$CORE/commands" docs README.md Install.md | grep -E '\.md$')
 
 # Bare filenames in prose -- `probe-tools.sh`, not `scripts/probe-tools.sh`. The path regex

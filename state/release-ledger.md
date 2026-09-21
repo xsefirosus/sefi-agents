@@ -103,6 +103,13 @@
 | 0.9.0 | git-tag | 0.9.0 | 0.9.0 | match | git ls-remote --tags origin refs/tags/v0.9.0 -> e7f75b7c1127f5a134dc3d9f7d5ac89f87321bbc refs/tags/v0.9.0 | a local tag that was never pushed to origin | 2026-09-20T11:55:43Z |
 | 0.9.0 | github-release | 0.9.0 | 0.9.0 | match | gh release view v0.9.0 -> tagName v0.9.0, isDraft false, url https://github.com/xsefirosus/sefi-agents/releases/tag/v0.9.0 | a local or pushed tag with no published release | 2026-09-20T11:55:43Z |
 | 0.9.0 | github-marketplace-index | 0.9.0 | 0.9.0 | match | gh api repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json -> metadata.version 0.9.0, plugins[0].version 0.9.0 | install commands quoted only in a README | 2026-09-20T11:55:43Z |
+| 0.9.1 | plugin.json | 0.9.1 | 0.9.1 | match | plugins/sefi-core/.claude-plugin/plugin.json and plugins/sefi-core/.codex-plugin/plugin.json version keys -> 0.9.1 | a README count or CHANGELOG heading that happens to agree | 2026-09-21T00:00:00Z |
+| 0.9.1 | marketplace.json | 0.9.1 | 0.9.1 | match | .claude-plugin/marketplace.json metadata.version -> 0.9.1 | updating one occurrence and assuming the other followed | 2026-09-21T00:00:00Z |
+| 0.9.1 | marketplace.json | 0.9.1 | 0.9.1 | match | .claude-plugin/marketplace.json plugins[0].version -> 0.9.1 | updating one occurrence and assuming the other followed | 2026-09-21T00:00:00Z |
+| 0.9.1 | changelog | 0.9.1 | 0.9.1 | match | CHANGELOG.md first versioned heading -> ## [0.9.1] - 2026-09-21 | a Changed or Added bullet without a dated heading above it | 2026-09-21T00:00:00Z |
+| 0.9.1 | git-tag | 0.9.1 | unobserved | unobserved | PENDING before publication: no local or remote v0.9.1 tag was created by this implementation work | a local tag that was never pushed to origin | 2026-09-21T00:00:00Z |
+| 0.9.1 | github-release | 0.9.1 | unobserved | unobserved | PENDING before publication: no GitHub v0.9.1 release was created by this implementation work | a local or pushed tag with no release | 2026-09-21T00:00:00Z |
+| 0.9.1 | github-marketplace-index | 0.9.1 | unobserved | unobserved | PENDING before publication: public marketplace state was not changed by this implementation work | install commands quoted only in a README | 2026-09-21T00:00:00Z |
 
 ## Notes
 

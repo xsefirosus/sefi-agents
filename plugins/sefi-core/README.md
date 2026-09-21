@@ -21,6 +21,10 @@ describes the package layout.
 - `commands/` -- `/sefi:init`, `/sefi:close-session`, `/sefi:cross-memory`,
   `/sefi:memory-search`, `/sefi:memory-index`, `/sefi:map-codebase`, `/sefi:scout`,
   `/sefi:triage`, `/sefi:retro`, `/sefi:status`, `/sefi:loop-new`, and `/sefi:route`.
+- `scripts/cartographer-runtime.py` -- local map validation, incremental metadata,
+  context packets, and offline viewer generation. `scripts/docs-grounding.py` validates
+  documentation Claims, performs stale-evidence preflight, and atomically finalizes a
+  document manifest. Both use the Python standard library and make no network call.
 - `hooks/hooks.json` -- a SessionStart hook that injects the memory router. Codex discovers
   it from the native plugin package and asks the user to trust it once; do NOT add a hook
   declaration to `plugin.json`.
@@ -43,6 +47,13 @@ describes the package layout.
   Journalist router and session folder, state ledger, inbox, loop specs, config, and a
   GitHub Actions workflow. The plugin never
   owns project state; the project does.
+
+## The commands (12)
+
+`/sefi:init` -- `/sefi:close-session` -- `/sefi:cross-memory` --
+`/sefi:memory-search` -- `/sefi:memory-index` -- `/sefi:map-codebase` --
+`/sefi:scout` -- `/sefi:triage` -- `/sefi:retro` -- `/sefi:status` --
+`/sefi:loop-new` -- `/sefi:route`.
 
 ## Design rules
 - Generator/evaluator separation: the writer never grades its own work; the qa-engineer

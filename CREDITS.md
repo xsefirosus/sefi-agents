@@ -45,9 +45,17 @@ The projects below were reviewed as research inputs.
 - [MemOS](https://github.com/MemTensor/MemOS)
 - [agentmemory](https://github.com/rohitg00/agentmemory)
 - [codebase-memory-mcp](https://github.com/DeusData/codebase-memory-mcp)
-- [codegraph](https://github.com/colbymchenry/codegraph)
+- [CodeGraph](https://github.com/colbymchenry/codegraph) at
+  `ba3c21e50d9129d2f5f3843ec3728868ae6d47a1` - v0.9.1 research into per-file freshness,
+  unresolved-reference recovery, dynamic boundaries, worktree checks, and relationship
+  provenance (MIT; independently rewritten).
 - [cognee](https://github.com/topoteretes/cognee)
-- [graphify](https://github.com/Graphify-Labs/graphify)
+- [Graphify](https://github.com/Graphify-Labs/graphify) at
+  `20a20d30d8e7eef77675651f0199d87f913bd3e7` - v0.9.1 research into graph evidence and
+  offline visual exploration (Apache-2.0; independently rewritten).
+- [Repomix](https://github.com/yamadashy/repomix) at
+  `9f01703a750ec5bfb808a00a93ac2e81ed67df6e` - v0.9.1 research into bounded,
+  reproducible repository context packets (MIT; independently rewritten).
 - [mem0](https://github.com/mem0ai/mem0)
 - [obsidian-skills](https://github.com/kepano/obsidian-skills)
 
@@ -75,15 +83,24 @@ informed independently written behavior contracts only; Sefi does not vendor the
   `de5f12b400775997d213524ef02a7c7d2746806f` - independently written domain-guidance
   scope and provenance constraints (MIT).
 
-### v0.8.0 research inputs
+### v0.8.0 and v0.9.1 repository-intelligence research inputs
 
 The following repositories were reviewed as source inputs at the named revisions for the
 Memory Journalist, Cartographer, and Adoption Scout contracts.
 
 - [tt-a1i/archify](https://github.com/tt-a1i/archify) at
-  `72c750bb070d95171dbb2244e5b62b1b7da69c12` (MIT).
+  `72c750bb070d95171dbb2244e5b62b1b7da69c12` - map validation, diagnostics, and offline
+  visual delivery research (MIT; independently rewritten).
 - [trailhq/Graft](https://github.com/trailhq/Graft) at
-  `8c05769618d413041ea2c8891f82d566f0461b3c` (MIT).
+  `8c05769618d413041ea2c8891f82d566f0461b3c` - incremental local graph freshness and
+  bounded retrieval research (MIT; independently rewritten).
+- [Understand Anything](https://github.com/Egonex-AI/Understand-Anything) at
+  `6df3065f1d8ddc2ce3615314d1d493f36d6b1c80` - independently written repository-map and
+  evidence-review behavior research (MIT).
+- [OpenWiki](https://github.com/langchain-ai/openwiki) at
+  `715109a8ab1cda6d47680fcc8170e203c751bf61` - independently written versioned
+  documentation Claims, staleness preflight, sparse reconciliation, resumable page work,
+  page manifests, deterministic finalization, and evolution-fixture research (MIT).
 - [x1xhlol/system-prompts-and-models-of-ai-tools](https://github.com/x1xhlol/system-prompts-and-models-of-ai-tools)
   at `1e4203a7d88873c1b37ab2d1c07074fea498c274` (GPL-3.0; behavior research only,
   with no prompt or schema text copied).
@@ -106,3 +123,6 @@ Memory Journalist, Cartographer, and Adoption Scout contracts.
 If a source is missing or a credit needs correction, please open an issue with the source
 URL and the relevant Sefi file or feature. We will correct the record without claiming
 credit that cannot be verified.
+
+Sefi does not vendor third-party code, prompts, schemas, parsers, binaries, databases,
+agents, dashboards, visualizers, generated wikis, or assets from these sources.

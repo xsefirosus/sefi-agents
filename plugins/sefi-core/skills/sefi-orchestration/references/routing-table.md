@@ -29,7 +29,7 @@ genuinely ambiguous between two rows, that's a goal_intake case: ask, don't gues
 | diff touches a trust boundary | security-engineer | -- | blocks PR on Critical |
 | pipeline / release / worktree ops | devops-engineer | -- | -- |
 | inbox item / issue intake | support-engineer | -- | consume-before-act |
-| "write docs / changelog / guide" | technical-writer | override: `agent` | -- |
+| "write docs / changelog / guide" | technical-writer | override: `agent` | small edit: Writer -> QA; substantial current-state or multi-page work: Cartographer CONTEXT -> Writer -> QA |
 | UI audit / redesign / study a design reference | ui-ux-designer | override: `agent` | never pixel-clone in study |
 
 ## Design Council conditions

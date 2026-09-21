@@ -39,6 +39,19 @@ Use these commands from a project root:
 The Markdown notes are the source of truth. The index is a disposable local cache. You can
 delete the index and recreate it without changing the notes.
 
+## Repository intelligence artifacts
+
+Codebase maps, context packets, candidate diagnostics, local viewers, documentation Claims,
+and documentation manifests are created only inside the project when their matching work is
+requested. The map and Claim records use repository-relative evidence and never publish an
+absolute local path. Caches, packets, snapshots, and candidate files under `.sefi/` are
+disposable local derivatives.
+
+Sefi scans generated repository-intelligence artifacts for credential-shaped values before
+writing them and fails closed when it cannot safely remove a finding. This reduces accidental
+exposure but does not guarantee detection of every secret format. Do not put credentials in
+source excerpts, documentation Claims, or user-managed project state.
+
 ## Public history
 
 v0.8.0 removes old runtime `memory/` paths from the repository's rewritten public Git

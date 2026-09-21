@@ -32,7 +32,7 @@ for v08_test in test-memory-journalist.sh test-onboarding-v08.sh test-agent-capa
   }
 done
 
-for v09_test in test-design-council.sh test-design-council-routing.sh test-v09-documentation.sh; do
+for v09_test in test-design-council.sh test-design-council-routing.sh test-v09-documentation.sh test-cartographer-v091.sh test-cartographer-runtime-v091.sh test-documentation-grounding-v091.sh; do
   grep -Fq "$v09_test" "$RUN_ALL" || {
     echo "FAIL: run-all.sh must execute $v09_test" >&2
     exit 1

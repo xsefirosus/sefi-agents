@@ -43,6 +43,9 @@ test-agent-capabilities-v08.sh
 test-design-council.sh
 test-design-council-routing.sh
 test-v09-documentation.sh
+test-cartographer-v091.sh
+test-cartographer-runtime-v091.sh
+test-documentation-grounding-v091.sh
 test-benchmark-oracles.sh
 test-release-strict.sh
 "
