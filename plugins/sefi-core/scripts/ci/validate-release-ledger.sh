@@ -66,16 +66,48 @@ if [ ! -f "$LEDGER" ]; then
   exit 1
 fi
 
-# --- parse the table: one TSV line per data row (version, surface, expected, observed,
-#     status), header and separator rows dropped, cells trimmed. ---
+# --- parse the table: one TSV line per data row (version, surface, expected,
+#     observed, status, normalized-version, normalized-observed), header and
+#     separator rows dropped, cells trimmed. ---
 rows="$(awk -F'|' '
+  # norm(v): the bare X.Y.Z only when the whole cell is an exact (optionally
+  # v-prefixed) semver. Anchored end-to-end on purpose: a prefix match would let
+  # 0.5.2.1 / 0.6.0-rc1 / 1.2.3.4 yield a truncated version that then silently
+  # fails the $6==L / $6==G equality checks and drops the row out of every
+  # hard-fail and the N/6 count. An exact-only match makes such a cell trip the
+  # unparseable-version hard-fail instead of escaping.
+  # Each numeric component is (0|[1-9][0-9]*): semver forbids leading zeros, so
+  # 00.5.2 / 01.0.0 / 0.05.2 / 1.2.03 fail to parse here and trip the same
+  # unparseable-version hard-fail rather than normalizing into a phantom second
+  # version group.
+  # Spelled without ERE alternation (split + substr checks) for maximal awk
+  # portability. Runs ONCE inside this single parse pass (fields $6/$7), so the
+  # hot loops below do zero per-row forks: under Git Bash on Windows each forked
+  # grep/sed/head pipeline costs ~0.1s, and ~460 of them (one per row, per
+  # version group) pushed --strict past a 25s timeout (exit 124).
+  # Failure sentinel is "-": the downstream `read` loops split on IFS tabs, and
+  # `read` silently collapses an EMPTY middle field into its neighbours (a row
+  # whose normalization failed would shift $7 into $6 and escape every check).
+  # "-" can never collide with a real normalized version (digits and dots only),
+  # so every field stays non-empty and positional.
+  function norm(v,   w, n, p) {
+    w = v; sub(/^v/, "", w)
+    if (w !~ /^[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$/) return "-"
+    n = split(w, p, "[.]")
+    if (n != 3) return "-"
+    if ((p[1] != "0" && substr(p[1], 1, 1) == "0") || \
+        (p[2] != "0" && substr(p[2], 1, 1) == "0") || \
+        (p[3] != "0" && substr(p[3], 1, 1) == "0")) return "-"
+    return w
+  }
   /^[[:space:]]*\|/ {
     for (i = 1; i <= NF; i++) { gsub(/^[[:space:]]+/, "", $i); gsub(/[[:space:]]+$/, "", $i) }
     if ($2 == "" || $2 == "version") next          # blank cell or header row
     # GFM separator row ONLY when EVERY non-empty cell is dashes/colons (:--- / :--: / ---:
     # alignment markers). A real data row whose version cell ALONE happens to be :-: / --: /
-    # :-- is NOT a separator -- it must reach norm_semver and trip the unparseable-version
-    # hard-fail, not vanish before hard-fail 1, hard-fail 2, and the N/6 count.
+    # :-- is NOT a separator -- it must reach the exact-semver normalization and
+    # trip the unparseable-version hard-fail, not vanish before hard-fail 1,
+    # hard-fail 2, and the N/6 count.
     sep = 1; nonempty = 0
     for (i = 1; i <= NF; i++) {
       if ($i == "") continue
@@ -83,7 +115,7 @@ rows="$(awk -F'|' '
       if ($i !~ /^:?-+:?$/) { sep = 0; break }
     }
     if (sep && nonempty) next
-    print $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6
+    print $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6 "\t" norm($2) "\t" norm($5)
   }
 ' "$LEDGER")"
 
@@ -93,21 +125,12 @@ if [ -z "$rows" ]; then
   exit 1
 fi
 
-# Return the bare X.Y.Z only when the whole cell is an exact (optionally v-prefixed)
-# semver. Anchored end-to-end on purpose: a prefix match would let 0.5.2.1 / 0.6.0-rc1 /
-# 1.2.3.4 yield a truncated version that then silently fails the v==L / v==G equality
-# checks and drops the row out of every hard-fail and the N/6 count. An exact-only match
-# makes such a cell trip the F5 non-empty guard below instead of escaping.
-# Each numeric component is (0|[1-9][0-9]*): semver forbids leading zeros, so 00.5.2 /
-# 01.0.0 / 0.05.2 / 1.2.03 fail to parse here and trip the same unparseable-version
-# hard-fail rather than normalizing into a phantom second version group.
-norm_semver() { printf '%s\n' "$1" | grep -oE '^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$' | sed -E 's/^v//' | head -1; }
-
 errors=0
 err() { echo "ERROR: $1"; errors=$((errors + 1)); }
 
-# --- structural checks on every row ---
-while IFS="$(printf '\t')" read -r version surface expected observed status; do
+# --- structural checks on every row ($6/$7 carry the parse-time normalization,
+#     so this loop forks nothing per row) ---
+while IFS="$(printf '\t')" read -r version surface expected observed status nver nobs; do
   [ -z "$version" ] && continue
   case " $CANONICAL_SURFACES " in
     *" $surface "*) : ;;
@@ -115,7 +138,8 @@ while IFS="$(printf '\t')" read -r version surface expected observed status; do
   esac
   # a non-empty version cell that does not yield a semver silently exempts the row from
   # latest/latest_rows -- hard-fail it, symmetric with the surface/status checks above.
-  if [ -z "$(norm_semver "$version")" ]; then
+  # ("-" is the parse-time normalization-failure sentinel; see norm().)
+  if [ "$nver" = "-" ]; then
     err "unparseable version cell '$version' (surface $surface) -- not a semantic version"
   fi
   case "$status" in
@@ -126,28 +150,26 @@ done <<EOF
 $rows
 EOF
 
-# --- latest version = highest semver in the version column ---
-latest="$(printf '%s\n' "$rows" | awk -F'\t' 'NF { print $1 }' | while IFS= read -r v; do norm_semver "$v"; done | sort -V | tail -1)"
+# --- latest version = highest normalized semver in the version column ---
+latest="$(printf '%s\n' "$rows" | awk -F'\t' '$6 != "-" { print $6 }' | sort -V | tail -1)"
 if [ -z "$latest" ]; then
   echo "ERROR: no semantic version found in the ledger's version column"
   echo "validate-release-ledger: 1 error(s)"
   exit 1
 fi
 
-latest_rows="$(printf '%s\n' "$rows" | awk -F'\t' -v L="$latest" '{ v=$1; sub(/^v/,"",v); if (v==L) print }')"
+latest_rows="$(printf '%s\n' "$rows" | awk -F'\t' -v L="$latest" '$6 == L')"
 
 # --- hard-fail 1: within ANY single version group across the whole ledger, two
 #     non-`unobserved` observed surfaces must not contradict. Plan step 8 scopes this
 #     "for the same version claim" -- per version group, not latest-only, because an
 #     append-only ledger accumulates historical version groups. The WARN clause below
 #     stays latest-only, exactly as the plan specifies. ---
-all_groups="$(printf '%s\n' "$rows" | awk -F'\t' 'NF { v=$1; sub(/^v/,"",v); print v }' \
-  | while IFS= read -r v; do norm_semver "$v"; done | sort -uV | sed '/^$/d')"
+all_groups="$(printf '%s\n' "$rows" | awk -F'\t' '$6 != "-" { print $6 }' | sort -uV)"
 for grp in $all_groups; do
   grp_observed="$(printf '%s\n' "$rows" | awk -F'\t' -v G="$grp" '
-    { v=$1; sub(/^v/,"",v); st=$5; ob=$4 }
-    v==G && (st=="match" || st=="lag" || st=="mismatch") { print ob }
-  ' | while IFS= read -r o; do norm_semver "$o"; done | sort -u | sed '/^$/d')"
+    $6 == G && ($5 == "match" || $5 == "lag" || $5 == "mismatch") && $7 != "-" { print $7 }
+  ' | sort -u)"
   g_distinct="$(printf '%s\n' "$grp_observed" | sed '/^$/d' | wc -l | tr -d ' ')"
   if [ "${g_distinct:-0}" -gt 1 ]; then
     err "surfaces disagree on the version claim $grp: observed $(printf '%s' "$grp_observed" | paste -sd',' -)"
@@ -175,11 +197,12 @@ if [ -f "$MP" ]; then
   fi
 fi
 
-while IFS="$(printf '\t')" read -r version surface expected observed status; do
+while IFS="$(printf '\t')" read -r version surface expected observed status nver nobs; do
   [ -z "$version" ] && continue
   [ "$status" = "unobserved" ] && continue
-  ov="$(norm_semver "$observed")"
+  ov="$nobs"
   [ -z "$ov" ] && continue
+  [ "$ov" = "-" ] && continue
   case "$surface" in
     plugin.json)
       [ -n "$disk_plugin" ] && [ "$ov" != "$disk_plugin" ] \

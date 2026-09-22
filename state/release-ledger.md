@@ -113,6 +113,9 @@
 | 0.9.1 | git-tag | 0.9.1 | 0.9.1 | match | git tag --points-at HEAD -> v0.9.1; git ls-remote --tags origin refs/tags/v0.9.1* -> c46f0937e9027e56339a5dcf7b94eea7cebee3e2 refs/tags/v0.9.1 and 07f13a44d9e4acd41a983477e919e262afa47a30 refs/tags/v0.9.1^{} | a local tag that was never pushed to origin | 2026-09-21T09:26:51Z |
 | 0.9.1 | github-release | 0.9.1 | 0.9.1 | match | gh release view v0.9.1 -> tagName v0.9.1, name Sefi-Agents v0.9.1, targetCommitish main, isDraft false, isPrerelease false, url https://github.com/xsefirosus/sefi-agents/releases/tag/v0.9.1 | a local or pushed tag with no published release | 2026-09-21T09:26:51Z |
 | 0.9.1 | github-marketplace-index | 0.9.1 | 0.9.1 | match | gh api repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json (Accept raw) -> metadata.version 0.9.1 and plugins[0].version 0.9.1 | install commands quoted only in a README | 2026-09-21T09:26:51Z |
+| 0.9.1 | git-tag | 0.9.1 | 0.9.1 | match | git rev-parse v0.9.1^{commit} -> ef649dea93631d2ac441ee2fef1865551db369fe (= HEAD); git ls-remote --tags origin refs/tags/v0.9.1* -> c2ccdc8c4fca59b60b4e8964cbf1d28eb8a0d825 refs/tags/v0.9.1 and ef649dea93631d2ac441ee2fef1865551db369fe refs/tags/v0.9.1^{} | a local tag that was never pushed to origin | 2026-09-22T14:31:07Z |
+| 0.9.1 | github-release | 0.9.1 | 0.9.1 | match | gh release view v0.9.1 --json tagName,name,targetCommitish,isDraft,isPrerelease,publishedAt,url -> tagName=v0.9.1, name=Sefi-Agents v0.9.1, targetCommitish=ef649dea93631d2ac441ee2fef1865551db369fe, isDraft=false, isPrerelease=false, publishedAt=2026-09-21T09:24:26Z, url=https://github.com/xsefirosus/sefi-agents/releases/tag/v0.9.1 | a local or pushed tag with no published release | 2026-09-22T14:31:07Z |
+| 0.9.1 | github-marketplace-index | 0.9.1 | 0.9.1 | match | gh api repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main (Accept: raw) -> metadata.version 0.9.1, plugins[0].version 0.9.1 | install commands quoted only in a README | 2026-09-22T14:31:07Z |
 
 ## Notes
 
@@ -177,3 +180,15 @@
   append here too. All six 0.6.0 surfaces are now observed.
   `validate-release-ledger.sh` exits 0 with
   `OK (latest 0.6.0, 6/6 surfaces observed, 0 warning(s))`.
+- 2026-09-22: 0.9.1 tag retarget reconciled (append-only; the three 2026-09-21T09:26:51Z
+  rows above are left byte-for-byte intact as the pre-retarget record and are
+  superseded, not edited, by the observed appends below them). `v0.9.1` was retagged
+  onto the release-evidence commit: local `git rev-parse v0.9.1^{commit}` and HEAD both
+  resolve to `ef649de`, and `origin`'s peeled `refs/tags/v0.9.1^{}` resolves there too.
+  The GitHub release is published against that commit (`targetCommitish`
+  `ef649dea93631d2ac441ee2fef1865551db369fe`, isDraft=false), and the public
+  marketplace index at ref `main` reads 0.9.1 in both version occurrences -- so
+  `git-tag`, `github-release`, and `github-marketplace-index` each get a `match`
+  append here. All six 0.9.1 surfaces are observed.
+  `validate-release-ledger.sh` exits 0 with
+  `OK (latest 0.9.1, 6/6 surfaces observed, 0 warning(s))`.
