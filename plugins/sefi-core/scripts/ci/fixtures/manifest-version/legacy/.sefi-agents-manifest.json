@@ -1,0 +1,8 @@
+{
+  "format": "sefi-package-manifest/v1",
+  "generated_at": "2026-01-01T00:00:00Z",
+  "managed_files": {
+    "file.txt": "a43fbc2abfcc0a15b653fe05d876185e171d035a625ca864215c51c4a9972212"
+  },
+  "source_name": "src"
+}

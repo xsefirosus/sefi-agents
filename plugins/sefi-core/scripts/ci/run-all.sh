@@ -35,6 +35,7 @@ test-workflow-safety.sh
 test-ci-coverage.sh
 test-shared-memory-safety.sh
 test-runtime-contracts.sh
+test-manifest-version.sh
 test-v08-durability.sh
 test-v08-conformance.sh
 test-memory-journalist.sh

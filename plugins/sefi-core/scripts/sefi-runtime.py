@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 import re
+import subprocess
 import sys
 import tempfile
 from datetime import UTC, datetime
@@ -18,6 +19,7 @@ LIFECYCLE = {"queued", "running", "completed", "failed", "cancelled", "needs-att
 FAILURES = {"routing", "model", "tool", "validation", "permission", "timeout", "internal", "none"}
 TIERS = {"low", "mid", "high"}
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+UNKNOWN = "UNKNOWN"
 
 
 def die(message: str) -> None:
@@ -155,6 +157,42 @@ def source_files(source: Path) -> dict[str, str]:
     return records
 
 
+def run_git(arguments: list[str], workdir: Path) -> str | None:
+    try:
+        completed = subprocess.run(
+            ["git", "-C", str(workdir), *arguments],
+            capture_output=True,
+            check=False,
+            text=True,
+            timeout=15,
+        )
+    except (OSError, ValueError, subprocess.TimeoutExpired):
+        return None
+    if completed.returncode != 0:
+        return None
+    return completed.stdout.strip()
+
+
+def describe_source(source: Path) -> tuple[str, str]:
+    """Derive (source_version, source_commit) for a source tree.
+
+    Version identity rule: the version is the source commit's git tag via
+    `git describe --tags --exact-match`, never a guessed release number.
+    (--tags because a plain describe only matches annotated tags; a
+    lightweight tag on the source commit is still its version.) An untagged
+    source records `unreleased-plus-<commit>`. Outside a git checkout both
+    values are UNKNOWN.
+    """
+    directory = source.resolve()
+    commit = run_git(["rev-parse", "HEAD"], directory)
+    if not commit:
+        return (UNKNOWN, UNKNOWN)
+    tag = run_git(["describe", "--tags", "--exact-match", commit], directory)
+    if tag:
+        return (tag, commit)
+    return (f"unreleased-plus-{commit}", commit)
+
+
 def manifest_create(args: argparse.Namespace) -> None:
     root = root_path(args.root)
     source = Path(args.source).resolve()
@@ -165,16 +203,92 @@ def manifest_create(args: argparse.Namespace) -> None:
     missing = [name for name in files if not (destination / name).is_file()]
     if missing:
         die(f"destination is missing managed file: {missing[0]}")
+    version, commit = describe_source(source)
     payload = {
         "format": "sefi-package-manifest/v1",
         "generated_at": now(),
         "managed_files": files,
+        "source_commit": commit,
         "source_name": source.name,
+        "source_version": version,
     }
     atomic_json(destination / ".sefi-agents-manifest.json", payload)
     # Reject a caller that points the manifest outside its requested root only after the
     # destination is verified; a package may legitimately live elsewhere during install.
     _ = root
+
+
+def read_manifest(destination: Path) -> dict[str, Any]:
+    # The check operation below keeps its own inline copy of this validation on
+    # purpose: check must stay byte-identical in behavior for CI, so the diff
+    # operation loads through this separate reader instead of sharing one.
+    manifest_path = destination / ".sefi-agents-manifest.json"
+    if not manifest_path.is_file() or manifest_path.is_symlink():
+        die("package manifest is missing")
+    try:
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        die(f"package manifest is invalid JSON: {error.msg}")
+    if payload.get("format") != "sefi-package-manifest/v1" or not isinstance(payload.get("managed_files"), dict):
+        die("package manifest has an invalid format")
+    return payload
+
+
+def manifest_diff(args: argparse.Namespace) -> None:
+    # Three-way verdict comparing an installed manifest against a repo source
+    # tree. Exit 0 (current): installed hashes and version match the source.
+    # Exit 2 (stale): the source moved on; the message names the new version
+    # and commit. Exit 1 (drift): installed files were user-modified; the
+    # message names them. Errors (missing/invalid manifest) print
+    # `sefi-runtime: ...` to stderr with no verdict line, so consumers must
+    # parse the `package-manifest-diff:` stdout line, never the exit code alone.
+    root = root_path(args.root)
+    source = Path(args.source).resolve()
+    destination = Path(args.destination).resolve()
+    if not source.is_dir() or not destination.is_dir():
+        die("source and destination must be directories")
+    payload = read_manifest(destination)
+    managed = payload["managed_files"]
+    for relative in managed:
+        candidate = (destination / relative).resolve()
+        try:
+            candidate.relative_to(destination)
+        except ValueError:
+            die("package manifest contains an unsafe path")
+    installed_version = payload.get("source_version", UNKNOWN)
+    if not isinstance(installed_version, str) or not installed_version:
+        installed_version = UNKNOWN
+    installed_commit = payload.get("source_commit", UNKNOWN)
+    if not isinstance(installed_commit, str) or not installed_commit:
+        installed_commit = UNKNOWN
+    drift = sorted(
+        relative
+        for relative, wanted in managed.items()
+        if sha256((destination / relative).resolve()) != wanted
+    )
+    if drift:
+        print("package-manifest-diff: drift in installed files: " + ", ".join(drift))
+        raise SystemExit(1)
+    version, commit = describe_source(source)
+    if managed == source_files(source) and installed_version == version and installed_commit == commit:
+        print(f"package-manifest-diff: current (version {version} commit {commit})")
+        return
+    print(
+        "package-manifest-diff: stale "
+        f"(installed version {installed_version} commit {installed_commit}; "
+        f"source version {version} commit {commit})"
+    )
+    raise SystemExit(2)
+    _ = root
+
+
+def manifest_dispatch(args: argparse.Namespace) -> None:
+    if args.operation == "create":
+        manifest_create(args)
+    elif args.operation == "diff":
+        manifest_diff(args)
+    else:
+        manifest_check(args)
 
 
 def manifest_check(args: argparse.Namespace) -> None:
@@ -232,19 +346,19 @@ def parser() -> argparse.ArgumentParser:
     cont.set_defaults(handler=continuation)
 
     manifest = subs.add_parser("manifest")
-    manifest.add_argument("operation", choices=("create", "check"))
+    manifest.add_argument("operation", choices=("create", "check", "diff"))
     manifest.add_argument("--root", required=True)
     manifest.add_argument("--source")
     manifest.add_argument("--destination", required=True)
-    manifest.set_defaults(handler=lambda args: manifest_create(args) if args.operation == "create" else manifest_check(args))
+    manifest.set_defaults(handler=manifest_dispatch)
     return command
 
 
 def main() -> int:
     try:
         args = parser().parse_args()
-        if args.command == "manifest" and args.operation == "create" and not args.source:
-            die("manifest create requires --source")
+        if args.command == "manifest" and args.operation in ("create", "diff") and not args.source:
+            die(f"manifest {args.operation} requires --source")
         args.handler(args)
         return 0
     except ValueError as error:

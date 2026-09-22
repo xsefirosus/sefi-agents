@@ -57,16 +57,18 @@
 # than inventing a workaround: engineering-manager gets `mode: primary` (the one entry
 # point), every other agent gets `mode: subagent` (dispatchable, invisible to Tab-cycle).
 #
-# Usage: bash plugins/sefi-core/scripts/install-opencode.sh [--force] [--model-map <path>]
+# Usage: bash plugins/sefi-core/scripts/install-opencode.sh [--force] [--model-map <path>] [--auto-update]
 set -euo pipefail
 
 FORCE=0
+AUTO_UPDATE=0
 MODEL_MAP=""
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --force) FORCE=1; shift ;;
+    --auto-update) AUTO_UPDATE=1; shift ;;
     --model-map) MODEL_MAP="${2:-}"; shift 2 ;;
-    -h|--help) echo "usage: $0 [--force] [--model-map <path>]"; exit 0 ;;
+    -h|--help) echo "usage: $0 [--force] [--model-map <path>] [--auto-update]"; exit 0 ;;
     *) echo "install-opencode.sh: unknown arg $1" >&2; exit 2 ;;
   esac
 done
@@ -168,6 +170,48 @@ EOF
 }
 
 prepare_legacy_knowledge_manager
+
+run_auto_update_gate() {
+  # --auto-update: diff the installed scripts/ manifest against this checkout
+  # before writing anything. current exits 0 doing nothing; stale forces the
+  # normal install below (the diff just proved scripts/ holds no user edits,
+  # so overwriting that subtree is safe); drift without an explicit --force
+  # stops with an error and asks, never silently overwriting user edits.
+  # sefi: ceiling -- version tracking covers the scripts/ subtree only. A
+  # stale update overwrites agents/skills/commands exactly like --force would;
+  # those subtrees have no hash baseline to diff against.
+  [ "$AUTO_UPDATE" -eq 1 ] || return 0
+  local manifest="$DEST/scripts/.sefi-agents-manifest.json"
+  if [ ! -f "$manifest" ]; then
+    echo "install-opencode.sh: --auto-update found no installed manifest; performing a fresh install" >&2
+    return 0
+  fi
+  local verdict="" rc=0
+  verdict="$(bash "$PACKAGE_MANIFEST" diff --root "$DEST" --source "$SCRIPTS_SRC" --destination "$DEST/scripts" 2>&1)" || rc=$?
+  case "$verdict" in
+    *"package-manifest-diff: current"*)
+      echo "install-opencode.sh: --auto-update installed scripts are current; nothing to do" >&2
+      exit 0
+      ;;
+    *"package-manifest-diff: stale"*)
+      echo "install-opencode.sh: --auto-update $verdict; updating" >&2
+      FORCE=1
+      ;;
+    *"package-manifest-diff: drift"*)
+      if [ "$FORCE" -eq 1 ]; then
+        echo "install-opencode.sh: --auto-update $verdict but --force was passed; overwriting" >&2
+      else
+        echo "install-opencode.sh: --auto-update $verdict; refusing to overwrite user edits (re-run with --force to overwrite, or reconcile by hand)" >&2
+        exit 1
+      fi
+      ;;
+    *)
+      echo "install-opencode.sh: --auto-update could not determine installed state (exit $rc): $verdict" >&2
+      exit 1
+      ;;
+  esac
+}
+run_auto_update_gate
 
 # Refuse a no-force install before writing anything. Checking every target up front
 # avoids a partial install when only some agent, skill, or command names conflict.

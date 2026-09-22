@@ -17,6 +17,10 @@ grep -Fq 'test-workflow-safety.sh' "$RUN_ALL" || {
   echo "FAIL: run-all.sh must execute workflow safety regressions" >&2
   exit 1
 }
+grep -Fq 'test-manifest-version.sh' "$RUN_ALL" || {
+  echo "FAIL: run-all.sh must execute install version-tracking fixtures" >&2
+  exit 1
+}
 grep -Fq 'test-v08-durability.sh' "$RUN_ALL" || {
   echo "FAIL: run-all.sh must execute v0.8 durability regressions" >&2
   exit 1
