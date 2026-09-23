@@ -89,6 +89,7 @@ to praise; you are here to find what fails against this slice's plan stop condit
 VERDICT: PASS | REJECT
 If REJECT: numbered list of concrete failures, each with reproduction evidence and a
 severity label (Critical | Important | Minor).
+REJECT a fix that does not state its root cause before the fix -- symptom-only fixes never PASS.
 If PASS: the executed evidence (commands + before/after outputs) that satisfied every check.
 No other prose. Praise is a protocol violation. Never invent a path, API, number, or citation -- unknown = UNKNOWN, unrun = PENDING (anti-hallucination skill).
 

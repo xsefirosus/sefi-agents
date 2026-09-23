@@ -39,7 +39,7 @@ LLM judgment.
    deterministic gate (`${CLAUDE_PLUGIN_ROOT}/scripts/validate-plan-structure.sh`) greps for these before the
    software-engineer may start; a missing heading hands the plan back to you, never
    proceeds.
-6. Steps are a numbered checkbox list; each step is independently checkable.
+6. Steps are a numbered checkbox list; each step is an independently testable deliverable.
 7. Size each step to fit ONE dispatch under `per_dispatch_usd_cap` and `max_retries`
    (config/budget.yml). A step that cannot is two steps: an oversized slice is a planning
    failure that surfaces as a budget breach later.

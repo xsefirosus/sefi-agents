@@ -8,3 +8,4 @@ Run `${CLAUDE_PLUGIN_ROOT}/scripts/memory-search.sh <query> [--project <slug>]` 
 project root. Without `--project`, search only this project's local Markdown notes. A
 cross-project lookup requires both a named project and an enabled local cross-project
 setting. Never perform an ambient scan.
+Count first (count or files_with_matches) before reading full files; open full notes only for hits that matter.
