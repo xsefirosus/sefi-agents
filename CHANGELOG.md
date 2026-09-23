@@ -3,6 +3,27 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.9.2] - 2026-09-23
+
+### Added
+- Install version-tracking: the package manifest records `source_version` and
+  `source_commit` for the installed tree. The version is the source commit's git
+  tag (exact match), `unreleased-plus-<commit>` for an untagged source, and
+  `UNKNOWN` outside a git checkout. Manifests written before these fields
+  existed read back as `UNKNOWN`.
+- A manifest diff with three verdicts: `current` (installed hashes and version
+  match the source), `stale` (the source moved on; the message names the new
+  version and commit), and `drift` (installed files were user-modified; the
+  message names them). The existing manifest check behavior is unchanged.
+- `--auto-update` on both the OpenCode and Hermes installers. It diffs the
+  installed copy against the checkout before writing anything: `current` exits
+  0 doing nothing, `stale` performs the normal install, and `drift` stops with
+  an error instead of silently overwriting user edits (OpenCode also accepts an
+  explicit `--force` to overwrite; Hermes asks for a by-hand reconciliation
+  followed by a reinstall without the flag). Version tracking covers the
+  OpenCode `scripts/` subtree manifest and the Hermes installed-skills version
+  record; other subtrees have no hash baseline to diff against.
+
 ## [0.9.1] - 2026-09-21
 
 ### Added

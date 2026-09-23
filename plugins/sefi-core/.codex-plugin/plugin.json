@@ -1,6 +1,6 @@
 {
   "name": "sefi-core",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "Loop-engineered multi-agent team with local-first session memory and hard token budgets.",
   "author": {
     "name": "John Earl F. Alquiza",

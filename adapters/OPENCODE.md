@@ -42,6 +42,28 @@ agent, so OpenCode's own Tab-cycle switcher shows just the one entry point inste
 all 16 (see "Agent visibility" below). Every other frontmatter field and the entire body
 is preserved byte-for-byte.
 
+### Updating an existing install (`--auto-update`)
+
+Every install writes a `sefi-package-manifest/v1` record beside the installed
+`scripts/` copy: per-file hashes plus the `source_version` and `source_commit`
+the copy came from. Re-running with `--auto-update` diffs that record against
+the current checkout before writing anything:
+
+- `current` -- installed hashes and version match the source. Exits 0, changes
+  nothing.
+- `stale` -- the source moved on (the message names the new version and
+  commit). Runs the normal install below.
+- `drift` -- installed files were modified by hand (the message names them).
+  Stops with an error rather than overwriting; re-run with `--force` as well to
+  overwrite deliberately, or reconcile by hand.
+
+With no installed manifest on disk, `--auto-update` performs a fresh install.
+Ceiling, stated plainly: version tracking covers the `scripts/` subtree only --
+scripts are copied byte-for-byte, so only that subtree has a stable source
+digest to check. Agents are transformed and prose has its plugin-root
+placeholder resolved, so a `stale` update overwrites agents, skills, and
+commands exactly like `--force` would, with no hash baseline to diff against.
+
 Installation is user-wide. Run `/sefi:init` once from each project root before its first
 routed request; the installer cannot safely auto-initialize an arbitrary repository. Init
 leaves the optional local/private cross-project memory mirror off unless an interactive user

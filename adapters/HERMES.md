@@ -116,6 +116,28 @@ Agents are NOT installed this way -- Hermes has no discrete "install agent" conc
 The roster maps to Hermes subagent delegation via `delegate_task(...)` (see row 3 of
 section 7 above).
 
+### Updating an existing install (`--auto-update`)
+
+Every install records the laid-down source version (`source_version` and
+`source_commit`, derived from this checkout's git tag and commit) beside the
+installed skills. Re-running with `--auto-update` compares the installed skills
+against the current checkout before installing anything:
+
+- No differences -- all 19 skills are current. Refreshes only the version
+  record and exits 0, changing nothing.
+- Differences with an older recorded version (`stale`) -- falls through to the
+  normal install below.
+- Differences whose recorded version matches this checkout -- those are
+  user-modified skills (`drift`). Stops with an error naming them rather than
+  overwriting; reconcile by hand, then run without `--auto-update` to
+  reinstall.
+- Differences with no recorded version at all are unclassifiable as an update
+  versus user edits, so the script stops with an error rather than guessing;
+  same remedy: reconcile by hand, then reinstall without the flag.
+
+Deriving the source version needs Python 3.11+; without it `--auto-update`
+refuses to guess instead of proceeding on an unknown version.
+
 ### If sefi-orchestration / security-review still show as missing
 
 `--force` does not guarantee a pass -- the scanner's verdict is not fully deterministic

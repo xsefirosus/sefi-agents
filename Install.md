@@ -17,6 +17,20 @@ boundaries.
 Codebase maps and substantial current-state documentation use local evidence records;
 optional Graft and CodeGraph enrichment remains named-only and is never installed for you.
 
+## v0.9.2 install version-tracking
+
+The installed v0.9.2 package records where it came from. The OpenCode installer
+writes a `sefi-package-manifest/v1` record (per-file hashes plus `source_version`
+and `source_commit`) beside the installed `scripts/` copy; the Hermes installer
+records the laid-down source version alongside the installed skills. Both
+installers accept `--auto-update`: re-running with that flag diffs the installed
+copy against the checkout first -- `current` exits 0 doing nothing, `stale` runs
+the normal install, and `drift` (user-modified installed files) stops with an
+error instead of overwriting. Pass `--force` as well on OpenCode to overwrite
+drifted files deliberately; on Hermes, reconcile drifted skills by hand and
+reinstall without the flag. See `adapters/OPENCODE.md` and `adapters/HERMES.md`
+for each installer's exact verdicts and limits.
+
 ## Operating Rules
 - Be idempotent: a second run changes nothing already in place.
 - Never overwrite an existing config or memory file.

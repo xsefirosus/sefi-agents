@@ -116,6 +116,13 @@
 | 0.9.1 | git-tag | 0.9.1 | 0.9.1 | match | git rev-parse v0.9.1^{commit} -> ef649dea93631d2ac441ee2fef1865551db369fe (= HEAD); git ls-remote --tags origin refs/tags/v0.9.1* -> c2ccdc8c4fca59b60b4e8964cbf1d28eb8a0d825 refs/tags/v0.9.1 and ef649dea93631d2ac441ee2fef1865551db369fe refs/tags/v0.9.1^{} | a local tag that was never pushed to origin | 2026-09-22T14:31:07Z |
 | 0.9.1 | github-release | 0.9.1 | 0.9.1 | match | gh release view v0.9.1 --json tagName,name,targetCommitish,isDraft,isPrerelease,publishedAt,url -> tagName=v0.9.1, name=Sefi-Agents v0.9.1, targetCommitish=ef649dea93631d2ac441ee2fef1865551db369fe, isDraft=false, isPrerelease=false, publishedAt=2026-09-21T09:24:26Z, url=https://github.com/xsefirosus/sefi-agents/releases/tag/v0.9.1 | a local or pushed tag with no published release | 2026-09-22T14:31:07Z |
 | 0.9.1 | github-marketplace-index | 0.9.1 | 0.9.1 | match | gh api repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main (Accept: raw) -> metadata.version 0.9.1, plugins[0].version 0.9.1 | install commands quoted only in a README | 2026-09-22T14:31:07Z |
+| 0.9.2 | plugin.json | 0.9.2 | 0.9.2 | match | plugins/sefi-core/.claude-plugin/plugin.json and plugins/sefi-core/.codex-plugin/plugin.json version keys -> 0.9.2 | a README count or CHANGELOG heading that happens to agree | 2026-09-23T00:00:00Z |
+| 0.9.2 | marketplace.json | 0.9.2 | 0.9.2 | match | .claude-plugin/marketplace.json metadata.version -> 0.9.2 | updating one occurrence and assuming the other followed | 2026-09-23T00:00:00Z |
+| 0.9.2 | marketplace.json | 0.9.2 | 0.9.2 | match | .claude-plugin/marketplace.json plugins[0].version -> 0.9.2 | updating one occurrence and assuming the other followed | 2026-09-23T00:00:00Z |
+| 0.9.2 | changelog | 0.9.2 | 0.9.2 | match | CHANGELOG.md first versioned heading -> ## [0.9.2] - 2026-09-23 | a Changed or Added bullet without a dated heading above it | 2026-09-23T00:00:00Z |
+| 0.9.2 | git-tag | 0.9.2 | unobserved | unobserved | PENDING before publication: no local or remote v0.9.2 tag was created by this implementation work | a local tag that was never pushed to origin | 2026-09-23T00:00:00Z |
+| 0.9.2 | github-release | 0.9.2 | unobserved | unobserved | PENDING before publication: no GitHub v0.9.2 release was created by this implementation work | a local or pushed tag with no release | 2026-09-23T00:00:00Z |
+| 0.9.2 | github-marketplace-index | 0.9.2 | unobserved | unobserved | PENDING before publication: public marketplace state was not changed by this implementation work | install commands quoted only in a README | 2026-09-23T00:00:00Z |
 
 ## Notes
 

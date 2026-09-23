@@ -358,7 +358,7 @@ That rule is enforced automatically across every agent and skill.
 **Why didn't every skill install automatically on Hermes?** Hermes scans skills for
 risky-looking content, and two of ours get flagged by mistake -- they *describe* risky
 patterns in order to guard against them, and the scanner can't yet tell the difference.
-The other 13 skills install fine; the installer prints the two-step manual fix for the
+The other 17 skills install fine; the installer prints the two-step manual fix for the
 rest. See [adapters/HERMES.md](adapters/HERMES.md) section 8.
 
 **Do I need a Sefi slash command for every Codex prompt?** No. Run `install-codex.sh` once,
