@@ -93,6 +93,8 @@ it mid-cycle (`state/triage.md`, 2026-07-16).
   Order: merge -> `cd` main root -> `git worktree remove` -> `git worktree prune` -> delete
   branch. Cleanup runs only on merge-and-delete or discard.
 
+When a loop ran more than one slice, run one whole-branch review after all per-slice QA passes and before merge, checking cross-slice interactions and overlapping files.
+
 ## Worktree status and sweep
 Track each open worktree in `state/worktrees.md`, a plain markdown table:
 `| path | branch | pattern | status | created |`, status one of

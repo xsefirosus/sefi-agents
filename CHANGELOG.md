@@ -3,6 +3,13 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.9.3] - 2026-09-23
+
+### Changed
+- Root-cause-before-fix: qa-engineer REJECTs symptom-only fixes without a stated root cause; software-engineer protocol states the root cause before the fix.
+- Step sizing and multi-slice review: product-manager steps are independently testable deliverables; LOOPS.md requires one whole-branch review after all per-slice QA passes and before merge when a loop ran more than one slice.
+- Grep-count-first: research-codebase-cartographer and memory-search count (count or files_with_matches) before reading full files.
+
 ## [0.9.2] - 2026-09-23
 
 ### Added

@@ -40,6 +40,7 @@ contract for source evidence, validation, refresh, privacy, connectors, and visu
    the trace has at least four nodes and three non-containment relationships. Local
    derivatives are restricted to `.sefi/cartographer/<slug>/` and its cache. Do not write any
    other file or artifact, including an external receipt.
+5. Count first with grep (count or files_with_matches) before reading full files; open full files only for hits that matter.
 
 ## Output contract
 Write the two authoritative map paths and any permitted local derivative paths. Reply with

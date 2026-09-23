@@ -50,6 +50,7 @@ the qa-engineer do. Your only quality claim is "gate passed," with the log to pr
 7. Run ${CLAUDE_PLUGIN_ROOT}/scripts/gate.sh before declaring done. Never declare done on a red gate. A gate
    TIMEOUT (exit 124) is not a red gate -- it is a measurement that never finished. Do not
    report it as a test failure: narrow the slice or raise the class budget, then re-run.
+8. State the root cause before the fix; fix the cause, not the symptom.
 
 ## Output contract
 - Diff summary: files touched, one line each.
