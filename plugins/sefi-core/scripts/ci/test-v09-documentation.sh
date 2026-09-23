@@ -33,11 +33,11 @@ for file in docs/DESIGN-COUNCIL.md docs/MIGRATION-v0.9.0.md docs/RELEASE-v0.9.0.
 done
 
 for manifest in plugins/sefi-core/.claude-plugin/plugin.json plugins/sefi-core/.codex-plugin/plugin.json; do
-  require_text "$manifest" '"version": "0.9.2"'
+  require_text "$manifest" '"version": "0.9.3"'
 done
-require_text .claude-plugin/marketplace.json '"version": "0.9.2"'
-if [ "$(grep -Foc '"version": "0.9.2"' .claude-plugin/marketplace.json || true)" -ne 2 ]; then
-  echo "FAIL: marketplace must carry v0.9.2 twice" >&2
+require_text .claude-plugin/marketplace.json '"version": "0.9.3"'
+if [ "$(grep -Foc '"version": "0.9.3"' .claude-plugin/marketplace.json || true)" -ne 2 ]; then
+  echo "FAIL: marketplace must carry v0.9.3 twice" >&2
   fail=1
 fi
 
