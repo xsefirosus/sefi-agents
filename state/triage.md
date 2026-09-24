@@ -1,6 +1,31 @@
 # Triage -- morning-triage loop state
 
-Cycle date: 2026-09-11. Discovery only (DRY RUN -- no PR, no worktree).
+Cycle date: 2026-09-16. Discovery only (no PR for code fix, no worktree -- no kept finding required one; state PR per Persistence outputs).
+
+## Findings
+
+| item | class | evidence | routed-to | urgency |
+|---|---|---|---|---|
+| Scheduled-loop preflight-budget failures (4x: triage `34958500254` 2026-09-15, triage `34836162412` 2026-09-14, sync `34857933270`, retro `34850602966`) | resolved | All 4 failed in `./.github/actions/preflight-budget`: `budget-check.sh --scope run` exit 3 `CANNOT MEASURE -- no usable spend source`; fixed at HEAD by `1f30ad3` which removes preflight-budget + enforce-budget steps from `triage-opencode.yml`, `sync-opencode.yml`, `retro-opencode.yml` (free-tier OpenCode runs carry no measurable spend); `ci` green at HEAD (see below); validation pending next scheduled run (`35084538794` in progress at cycle time) | — | — |
+| `ci` push failures on intermediate commits (3x 2026-09-14: `34800576675` fba5b90, `34798650795` 74e730d, `34798338531` 954c882) | resolved | Green since `34800689319` (c858801) through HEAD: `ci` success `34970333905` on `d3d230d` and `34969881219` on `1f30ad3`; failures were pre-merge states, not HEAD | — | — |
+| ci workflow (validate suite) at HEAD | noise -- healthy | `gh run list --workflow ci`: 2/2 success at HEAD (`34970333905`, `34969881219`); local `probe-tools.sh --loop loops/morning-triage.loop.md:4` exit 0, all 3 tools usable | — | — |
+| Open PRs #11 (triage 2026-09-12) + #12 (triage 2026-09-13) | report -- human-checkpoint backlog | `gh pr list --state open` -> #11 `triage/2026-09-12-0943`, #12 `triage/2026-09-13-1045`; prior automated cycles' state PRs awaiting human merge; never auto-merged per `plugins/sefi-core/skills/sefi-orchestration/references/human-checkpoint.md:7-11` | — | — |
+| Open issues in last 24h | noise -- none | `gh issue list --state open --json` -> `[]` (issues API hits are the 2 PRs above); no actionable issue opened since 2026-09-15T10:22Z | — | — |
+| Commits since last run (2026-09-11 -> HEAD d3d230d, 30 commits) | noise -- reviewed | `git log --since="2026-09-11" --oneline \| wc -l` = 30; includes releases 0.7.0 (`b469541`), 0.7.1 (`fbf65ff`), 0.7.2 (`954c882`+`74e730d`), adapter manifest hardening (`dc2a3c2`, `e27884b`, `8ea66cf`), budget-telemetry skip (`1f30ad3`), model pin `d3d230d`; `ci` green throughout merged states; no regression | — | — |
+| Prior-cycle items (2026-09-11: Red CI, Bash-write gate, python3 stub, gh gap, per-agent cap, install.sh placeholder, transient ci, inbox/ staging) | resolved -- still green | HEAD `d3d230d` builds on `3b6e5a8` hardening; `check-state-sync.sh` OK morning-triage <-> state/triage.md; no recurrence observed | — | — |
+
+## Resolved since previous cycle (2026-09-11)
+- Scheduled-loop `preflight-budget` exit-3 block (2026-09-14/15, 4 runs) fixed at HEAD `1f30ad3` (budget telemetry removed from free OpenCode workflows); awaiting next scheduled-run validation
+- Intermediate `ci` push failures (fba5b90/74e730d/954c882) superseded -- `ci` green at HEAD
+- Prior 8 resolved items remain green; no recurrence
+
+## Resume and Execution Handoff
+1. loop file: loops/morning-triage.loop.md
+2. last completed phase: Discovery + Persistence (Handoff: zero kept findings -> zero `triage/<slug>` worktrees; Verification: no generator/evaluator dispatch -- nothing to verify)
+3. gate/qa-engineer status: PASS with no dispatch (evidence: `probe-tools.sh --loop` exit 0 git/gh/rg live; `gh run list` ci 2/2 success at HEAD; `check-state-sync.sh` OK morning-triage; `git worktree list` shows only `main`, `.worktrees/` absent; `state/metrics.md` untouched -- no qa-engineer verdict this cycle so no row appended, route `n/a`)
+4. supporting context: HEAD d3d230d `ci: use Muse Spark 1.3 Contributor Free`; fix commit 1f30ad3 (budget skip); scheduled failures 34958500254/34836162412/34857933270/34850602966 (exit 3 CANNOT MEASURE); open PRs #11/#12 (human backlog); 30 commits reviewed; prior state cycle 2026-09-11
+5. next step for a fresh agent: none on findings (all resolved/noise/backlog); human checkpoint owns PRs #11/#12 + this cycle's state PR -- confirm / change / exit
+6. acting_on: none (zero worktrees opened; `rg -n acting_on state/*.md` shows only standing `none` claims)
 
 ## Findings
 
