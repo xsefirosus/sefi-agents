@@ -39,7 +39,7 @@ string fails schema validation. The script converts each agent's `tools:` /
 model you selected, while an explicit map writes the chosen provider/model id. A `mode:` field is
 also written: `primary` for `sefi-agents` only, `subagent` for every other
 agent, so OpenCode's own Tab-cycle switcher shows just the one entry point instead of
-all 16 (see "Agent visibility" below). Every other frontmatter field and the entire body
+all 17 (see "Agent visibility" below). Every other frontmatter field and the entire body
 is preserved byte-for-byte.
 
 ### Updating an existing install (`--auto-update`)

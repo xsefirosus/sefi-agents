@@ -25,6 +25,7 @@ validate-routing.sh
 validate-model-map.sh
 validate-adapters.sh
 validate-rule-presence.sh
+validate-audit-report.sh
 check-unicode-safety.sh
 validate-comment-safety.sh
 validate-token-budget.sh

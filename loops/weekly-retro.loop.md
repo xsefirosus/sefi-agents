@@ -9,7 +9,7 @@ requires-tools: git, rg
 cloud: cron `0 7 * * 1` (Mondays) via `.github/workflows/retro-opencode.yml`   |   local: weekly interval invoking the headless agent
 
 ## Discovery
-skill: retro-improve (discovery move)   inputs read: qa-engineer REJECTs, gate failures, and Memory Journalist `## Possible contradiction` flags from `state/`, plus `state/metrics.md` (worst success rate first). Also consult `docs/METRICS-PROVENANCE.md`: if accumulated metrics now satisfy a promotion condition, propose that doc update too (subject to the same effectiveness gate).
+skill: retro-improve (discovery move)   inputs read: qa-engineer REJECTs, gate failures, and Memory Journalist `## Possible contradiction` flags from `state/`, plus `state/metrics.md` (worst success rate first). Also consult `docs/METRICS-PROVENANCE.md`: if accumulated metrics now satisfy a promotion condition, propose that doc update too (subject to the same effectiveness gate). Never scan `audits/` on a schedule -- on-demand `/sefi:audit` is the deliberate alternative, never a scheduled input.
 
 ## Handoff
 one worktree per improvement target: branch `retro/<slug>` under `.worktrees/`   max parallel: 1 (self-improvement is single-writer). Each dispatched task names its absolute worktree output path. Before opening it, grep other `state/*.md` for a matching `acting_on`; skip and log if already claimed.

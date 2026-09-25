@@ -6,10 +6,10 @@ discipline. See the repository root `README.md` for install and the tour; this f
 describes the package layout.
 
 ## What ships here
-- `agents/` -- 16 agents: sefi-agents, prompt-engineer, research-analyst,
+- `agents/` -- 17 agents: sefi-agents, prompt-engineer, research-analyst,
   research-codebase-cartographer, research-adoption-scout, product-manager,
   ui-ux-designer, motion-designer, software-engineer, qa-engineer, security-engineer, devops-engineer,
-  support-engineer, memory-journalist, technical-writer, solutions-architect. Each carries a `tools`/`disallowedTools` contract, a
+  support-engineer, memory-journalist, technical-writer, solutions-architect, systems-auditor. Each carries a `tools`/`disallowedTools` contract, a
   harness-neutral model tier, and the anti-hallucination pointer (CI-enforced).
 - `skills/` -- 19 skills: sefi-orchestration (the always-loaded router),
   anti-hallucination (the canonical no-invention rule), memory-protocol,
@@ -32,7 +32,7 @@ describes the package layout.
   declare a harness-neutral `tier:` (high/mid/low); this maps each tier to a concrete model
   per harness. On mapped harnesses, the `sefi-agents` orchestration role can have a
   deliberate override; all other Sefi specialists resolve from their tier. A new model is
-  an edit here, never a pass over 16 agent files.
+  an edit here, never a pass over 17 agent files.
 - `adapters/manifests/` -- the checked contract for each shipped harness: install driver,
   agent format, permission translation, hooks, delegation, headless capability, model
   strategy, route evidence, and destination. `install.sh --target` reads these manifests;
@@ -48,12 +48,12 @@ describes the package layout.
   GitHub Actions workflow. The plugin never
   owns project state; the project does.
 
-## The commands (12)
+## The commands (13)
 
 `/sefi:init` -- `/sefi:close-session` -- `/sefi:cross-memory` --
 `/sefi:memory-search` -- `/sefi:memory-index` -- `/sefi:map-codebase` --
 `/sefi:scout` -- `/sefi:triage` -- `/sefi:retro` -- `/sefi:status` --
-`/sefi:loop-new` -- `/sefi:route`.
+`/sefi:loop-new` -- `/sefi:route` -- `/sefi:audit`.
 
 ## Design rules
 - Generator/evaluator separation: the writer never grades its own work; the qa-engineer

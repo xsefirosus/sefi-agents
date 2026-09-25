@@ -10,7 +10,7 @@
 <a href="#works-with-your-harness"><img src="https://img.shields.io/badge/runs%20on-Claude%20Code%20%7C%20Codex%20%7C%20OpenCode%20%7C%20Hermes-555.svg" alt="runs on"></a>
 </p>
 
-16 AI agents -- a planner, a builder, a reviewer, a security checker, a writer,
+17 AI agents -- a planner, a builder, a reviewer, a security checker, a writer,
 and more -- that work as a team: plan, build, check, and remember, with spending limits
 and a human approving every merge.
 
@@ -99,9 +99,9 @@ history in [CHANGELOG.md](CHANGELOG.md):
 (Usage is measured in "tokens" -- small chunks of text AI providers use to price and
 limit how much a task can do.)
 
-## The team (16 agents)
+## The team (17 agents)
 
-16 AI agents, each with one job and a written contract for what it may touch, run,
+17 AI agents, each with one job and a written contract for what it may touch, run,
 and change -- grouped by how strong a model each one gets:
 
 **Reviewers (strongest model):** `qa-engineer` approves or rejects finished work with
@@ -114,7 +114,8 @@ piece at a time, in its own workspace -- `ui-ux-designer` handles interface work
 `motion-designer` plans and audits nontrivial interaction motion without changing visual
 direction --
 `devops-engineer` runs CI/CD and scheduling -- `solutions-architect` designs automations
-(n8n, Make, GoHighLevel).
+(n8n, Make, GoHighLevel) -- `systems-auditor` reviews department outputs against their
+gates and never builds.
 
 **Support crew (cheapest model):** `research-analyst` gathers context -- `support-engineer`
 sorts incoming issues -- `memory-journalist` writes private session notes -- `technical-writer`
@@ -149,7 +150,7 @@ memory is read and written, the five-step loop pattern, and small self-improveme
 `run-sefi-benchmark` (blinded paired A/B benchmark of the chain versus one strong model,
 invoked by name).
 
-## The commands (12)
+## The commands (13)
 
 **Project setup and memory:** `/sefi:init` -- `/sefi:close-session` --
 `/sefi:cross-memory` -- `/sefi:memory-search` -- `/sefi:memory-index`.
@@ -157,7 +158,7 @@ invoked by name).
 **Repository work:** `/sefi:map-codebase` -- `/sefi:scout` -- `/sefi:triage` --
 `/sefi:route`.
 
-**Process:** `/sefi:retro` -- `/sefi:status` -- `/sefi:loop-new`.
+**Process:** `/sefi:retro` -- `/sefi:status` -- `/sefi:loop-new` -- `/sefi:audit`.
 
 The mapping command supports MAP, TRACE, IMPACT, DELTA, VISUALIZE, and CONTEXT. It creates
 evidence-backed local maps and bounded handoff packets; it never changes the mapped source.

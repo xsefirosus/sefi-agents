@@ -16,16 +16,17 @@ file:
 - `templates/state/metrics.md` to `state/metrics.md`
 - `templates/state/retro-ledger.md` to `state/retro-ledger.md`
 - `templates/inbox/` to `inbox/`
+- `templates/audits/` to `audits/`
 - `templates/loops/morning-triage.loop.md` to `loops/morning-triage.loop.md`
 - `templates/loops/sync.loop.md` to `loops/sync.loop.md`
 - `templates/loops/weekly-retro.loop.md` to `loops/weekly-retro.loop.md`
 - `templates/config/budget.yml` to `config/budget.yml`
 - `templates/config/sefi.config.yml` to `config/sefi.config.yml`
 
-Create `.sefi/` and `.worktrees/logs/` locally. Add `memory/`, `.sefi/`, and
-`.worktrees/logs/` to `.gitignore` only when absent. Runtime memory is private, local,
-and never committed. The packaged `plugins/sefi-core/templates/memory/` source remains
-part of the plugin.
+Create `.sefi/` and `.worktrees/logs/` locally. Add `memory/`, `audits/`, `.sefi/`, and
+`.worktrees/logs/` to `.gitignore` only when absent. Runtime memory and audit reports
+are private, local, and never committed. The packaged `plugins/sefi-core/templates/memory/`
+and `templates/audits/` sources remain part of the plugin.
 
 If interactive, explain that cross-project memory is optional, local to the current OS
 user, and off by default. Ask whether to enable it. Set

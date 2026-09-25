@@ -3,7 +3,7 @@ name: product-manager
 description: Use when a goal must become an executable spec before any code is written. Turns a goal into a single checkable plan file with a fixed heading skeleton and grep-countable steps, and never implements.
 tools: Read, Grep, Glob, Write
 disallowedTools: Edit, MultiEdit, Bash
-tier: mid   # harness-neutral; see config/model-map.yml (edit there, not in 16 agent files)
+tier: mid   # harness-neutral; see config/model-map.yml (edit there, not in 17 agent files)
 keywords: product, manager, planning, spec, plan, steps, done-criteria
 managed-by: sefi-agents
 ---

@@ -111,6 +111,22 @@ fi
 bash "$INDEX" rebuild >/dev/null
 bash "$INDEX" status >/dev/null
 
+# Ignored-local audit reports are in local search and index scope, never the
+# cross-project mirror: a local query ranks them, a rebuild hashes them.
+mkdir -p audits
+printf -- '---\ntitle: audit\n---\n# audit\n\ndurable audit finding\n' > audits/audit-report-complete-2026-09-25-1200-session-001.md
+bash "$SEARCH" 'durable' | grep -q 'audits/audit-report-complete-2026-09-25-1200-session-001.md' || {
+  echo 'local audit report was not searchable' >&2; exit 1;
+}
+bash "$INDEX" rebuild >/dev/null
+bash "$INDEX" status >/dev/null
+grep -q 'audits/audit-report-complete-2026-09-25-1200-session-001.md' .sefi/memory-index/manifest.json || {
+  echo 'local audit report was not indexed' >&2; exit 1;
+}
+rm -rf audits .sefi/memory-index
+bash "$INDEX" rebuild >/dev/null
+bash "$INDEX" status >/dev/null
+
 # Cross-memory remains local and disabled until an explicit enable. A named-project
 # query is still refused while disabled, preventing an unnamed or ambient scan.
 if bash "$SEARCH" 'durable' --project 'journal-project' >/dev/null 2>&1; then

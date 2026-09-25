@@ -41,7 +41,7 @@ if [ "$(grep -Foc '"version": "0.9.3"' .claude-plugin/marketplace.json || true)"
   fail=1
 fi
 
-require_text README.md '16 AI agents'
+require_text README.md '17 AI agents'
 require_text README.md 'The skills (19)'
 require_text README.md 'Design Council'
 require_text README.md 'Motion Designer'

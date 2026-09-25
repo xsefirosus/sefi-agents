@@ -25,7 +25,7 @@ every project loads `sefi-core:sefi-orchestration` before work begins. You do no
 `/sefi:*` command for each prompt. The routing skill still uses its documented trivial-task
 exception, so a short question does not mechanically spawn specialists.
 
-The installed package contains all 16 agents, 19 skills, hooks, commands, and templates.
+The installed package contains all 17 agents, 19 skills, hooks, commands, and templates.
 Re-run `bash install-codex.sh` after an update; it refreshes the marketplace and replaces
 only its own marked instruction block and Sefi's own custom-agent model fields.
 
@@ -115,7 +115,7 @@ The bootstrap configures these exact custom-agent overrides, all at high reasoni
 |---|---|---|---|
 | orchestration | `gpt-6-astra` | `high` | sefi-agents / engineering-manager |
 | high | `gpt-5.6-sol` | `high` | qa-engineer, security-engineer |
-| mid | `gpt-5.6-terra` | `high` | software-engineer, product-manager, ui-ux-designer, devops-engineer, solutions-architect |
+| mid | `gpt-5.6-terra` | `high` | software-engineer, product-manager, ui-ux-designer, devops-engineer, solutions-architect, systems-auditor |
 | low | `gpt-5.6-luna` | `high` | prompt-engineer, research-analyst, codebase-cartographer, adoption-scout, support-engineer, memory-journalist, technical-writer |
 
 The plugin does not change the model of the top-level conversation you start. It assigns

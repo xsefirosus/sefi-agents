@@ -3,7 +3,7 @@ name: research-codebase-cartographer
 description: Use only when an explicit codebase map, trace, impact, delta, visual, or context request is made. Reads target source deterministically and writes only declared map artifacts, never changes the target codebase or a plan.
 tools: Read, Grep, Glob, Bash, Write
 disallowedTools: Edit, MultiEdit, WebFetch, WebSearch
-tier: low   # harness-neutral; see config/model-map.yml (edit there, not in 16 agent files)
+tier: low   # harness-neutral; see config/model-map.yml (edit there, not in 17 agent files)
 keywords: codebase map, cartographer, trace, impact map, dependency map, architecture map, map repository
 managed-by: sefi-agents
 ---

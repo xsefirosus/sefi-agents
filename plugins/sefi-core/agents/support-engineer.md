@@ -3,7 +3,7 @@ name: support-engineer
 description: Use when inbox items, issues, or incoming reports need intake, triage, and routing. Reads each item once, classifies actionability, applies consume-before-act on human decisions, and never implements fixes itself.
 tools: Read, Grep, Glob, Bash
 disallowedTools: Write, Edit, MultiEdit, WebFetch, WebSearch
-tier: low   # harness-neutral; see config/model-map.yml (edit there, not in 16 agent files)
+tier: low   # harness-neutral; see config/model-map.yml (edit there, not in 17 agent files)
 keywords: support, triage, inbox, intake, issues, routing, classification
 managed-by: sefi-agents
 ---

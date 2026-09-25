@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# memory-search.sh -- rank local session notes; cross-project reads require a named opt-in.
+# memory-search.sh -- rank local session notes and ignored-local audit reports;
+# cross-project reads require a named opt-in. Audit reports never enter the
+# cross-project mirror, so the audits/ tree is searched only for local queries.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -83,6 +85,7 @@ else
   case "$vault" in ''|/*|*\\*|*..*|*//* ) echo 'memory-search: unsafe memory.vault_dir' >&2; exit 1 ;; esac
   [ ! -L "$vault" ] || { echo 'memory-search: vault cannot be a symlink' >&2; exit 1; }
   search_tree "$vault/sessions" "$vault/sessions/" > "$results"
+  search_tree "audits" "audits/" >> "$results"
 fi
 
 sort -t '|' -k1,1nr -k2,2r -k3,3 "$results" | cut -d '|' -f3-

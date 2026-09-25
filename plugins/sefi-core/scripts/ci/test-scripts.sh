@@ -1882,6 +1882,74 @@ fi
 rm -rf "$RP_OC"
 
 echo
+echo "=== validate-audit-report.sh (audit report skeleton, severity, and scope gate) ==="
+
+VAR="$CORE/scripts/ci/validate-audit-report.sh"
+VAF="$(mktemp -d)"
+mkdir -p "$VAF/audits" "$VAF/other"
+cat > "$VAF/audits/audit-report-build-2026-09-25-1200-s1.md" <<'EOF'
+# Audit report (build)
+## Summary
+One Major finding, rest clean.
+## Scope
+build
+## Method
+Read the slice end to end, then checked the seam.
+## Findings
+- **Major**: the handler writes before the contract is fixed.
+## Fixes
+Fix the contract first, then the handler.
+## Improvements
+Reuse the shared helper instead of a second copy.
+## Nice-to-haves
+Tidy the comment wording.
+## Follow-up
+Re-run the gate after the fix lands.
+EOF
+
+# The pass fixture: inside audits/, every skeleton heading, a body severity
+# label, and an allowlisted scope token in the fenced file name.
+expect_code 0 "a complete report under audits/ passes" \
+  bash "$VAR" "$VAF/audits/audit-report-build-2026-09-25-1200-s1.md"
+
+# The identical bytes outside audits/ must fail: the fence is the location.
+cp "$VAF/audits/audit-report-build-2026-09-25-1200-s1.md" "$VAF/other/audit-report-build-2026-09-25-1200-s1.md"
+expect_code 1 "the same report outside audits/ is rejected" \
+  bash "$VAR" "$VAF/other/audit-report-build-2026-09-25-1200-s1.md"
+
+# A dropped skeleton heading must fail, naming the heading.
+grep -v '^## Fixes$' "$VAF/audits/audit-report-build-2026-09-25-1200-s1.md" > "$VAF/audits/audit-report-build-2026-09-25-1200-no-fixes.md"
+expect_code 1 "a report missing '## Fixes' is rejected" \
+  bash "$VAR" "$VAF/audits/audit-report-build-2026-09-25-1200-no-fixes.md"
+
+# No severity label anywhere outside the ## lines must fail. (The ## Nice-to-haves
+# skeleton heading carries the word Nice, so the check reads only non-heading
+# lines -- otherwise the skeleton would satisfy its own gate.)
+sed -e 's/\*\*Major\*\*/notable/' -e 's/^One Major finding.*/One notable finding, rest clean./' \
+  "$VAF/audits/audit-report-build-2026-09-25-1200-s1.md" > "$VAF/audits/audit-report-build-2026-09-25-1200-no-severity.md"
+expect_code 1 "a report with no body severity label is rejected" \
+  bash "$VAR" "$VAF/audits/audit-report-build-2026-09-25-1200-no-severity.md"
+
+# A scope token outside the allowlist must fail.
+cp "$VAF/audits/audit-report-build-2026-09-25-1200-s1.md" "$VAF/audits/audit-report-frontend-2026-09-25-1200-s1.md"
+expect_code 1 "a report whose scope token is outside the allowlist is rejected" \
+  bash "$VAR" "$VAF/audits/audit-report-frontend-2026-09-25-1200-s1.md"
+
+# A file name with no audit-report-<scope>- shape carries no scope token at all.
+cp "$VAF/audits/audit-report-build-2026-09-25-1200-s1.md" "$VAF/audits/notes.md"
+expect_code 1 "a file name with no scope token is rejected" \
+  bash "$VAR" "$VAF/audits/notes.md"
+
+# Usage errors: two paths, and a path that is not a file.
+expect_code 2 "two report paths is a usage error" \
+  bash "$VAR" "$VAF/audits/audit-report-build-2026-09-25-1200-s1.md" "$VAF/audits/notes.md"
+expect_code 2 "a missing report path is a usage error" \
+  bash "$VAR" "$VAF/audits/does-not-exist.md"
+expect_code 0 "--strict is accepted and ignored (parity with the siblings run-all.sh forwards it to)" \
+  bash "$VAR" --strict "$VAF/audits/audit-report-build-2026-09-25-1200-s1.md"
+rm -rf "$VAF"
+
+echo
 echo "=== validate-release-ledger.sh (Phase 2: six-surface release reconciliation, ported from astral-orchestrator release-ledger.py, MIT) ==="
 
 RL="$CORE/scripts/ci/validate-release-ledger.sh"
