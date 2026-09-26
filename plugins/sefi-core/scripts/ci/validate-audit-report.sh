@@ -45,18 +45,29 @@ errors=0
 
 check_report() {
   # check_report <path> -- one file against the four shape checks.
-  local file="$1" rel base rest scope h slash_path
+  local file="$1" rel base rest scope h audits physical_dir physical_file logical_file current component relative
   rel="${file#"$ROOT"/}"
 
-  # Compare with backslashes folded so a Windows-style audits\... argument is
-  # judged by its location, not its separator. File access still uses $file.
-  slash_path="$(printf '%s' "$file" | tr '\\' '/')"
-  case "$slash_path" in
-    audits/*|*/audits/*) : ;;
-    *)
-      echo "ERROR: $rel - report path is outside audits/"
-      errors=$((errors + 1)); return ;;
+  audits="$ROOT/audits"
+  if [ -L "$audits" ]; then
+    echo "ERROR: $rel - audits root must not be a symlink"
+    errors=$((errors + 1)); return
+  fi
+  audits="$(cd -P -- "$audits" 2>/dev/null && pwd -P)" || {
+    echo "ERROR: $rel - canonical audits root is unavailable"; errors=$((errors + 1)); return;
+  }
+  physical_dir="$(cd -P -- "$(dirname -- "$file")" 2>/dev/null && pwd -P)" || {
+    echo "ERROR: $rel - report path is outside audits/"; errors=$((errors + 1)); return;
+  }
+  physical_file="$physical_dir/$(basename -- "$file")"
+  case "$physical_file" in "$audits"/*) : ;; *) echo "ERROR: $rel - report path is outside audits/"; errors=$((errors + 1)); return;; esac
+  logical_file="$(cd -L -- "$(dirname -- "$file")" 2>/dev/null && pwd -L)/$(basename -- "$file")"
+  case "$logical_file" in "$ROOT"/audits/*)
+    relative="${logical_file#"$ROOT"/audits/}"; current="$ROOT/audits"
+    IFS=/ read -r -a components <<< "${relative%/*}"
+    for component in "${components[@]}"; do [ -z "$component" ] || { current="$current/$component"; [ ! -L "$current" ] || { echo "ERROR: $rel - report path contains a symlink"; errors=$((errors + 1)); return; }; }; done ;;
   esac
+  if [ -L "$file" ]; then echo "ERROR: $rel - report file must not be a symlink"; errors=$((errors + 1)); return; fi
 
   for h in Summary Scope Method Findings Fixes Improvements Nice-to-haves Follow-up; do
     if ! grep -qE "^##[[:space:]]+$h([[:space:]]|$)" "$file"; then

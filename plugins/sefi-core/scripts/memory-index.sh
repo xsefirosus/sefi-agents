@@ -88,7 +88,7 @@ build_manifest() {
       path="${note#./}"
       hash="$(sha_file "$note")"
       printf '%s\t%s\n' "$path" "$hash" >> "$sources"
-    done < <(find audits -type f ! -type l -name '*.md' -print0 | LC_ALL=C sort -z)
+    done < <(find audits -maxdepth 1 -type f ! -type l -name 'audit-report-*.md' -print0 | LC_ALL=C sort -z)
   fi
   cursor="$(sha_text < "$sources")"
   printf '%s\n' '{'

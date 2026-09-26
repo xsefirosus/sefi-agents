@@ -136,6 +136,12 @@
 | 0.9.3 | git-tag | 0.9.3 | 0.9.3 | match | git rev-parse v0.9.3^{commit} -> ec35acad471fea5292fd17e836801fa336c9b4ed (= HEAD = origin/main); git ls-remote --tags origin refs/tags/v0.9.3* -> ec35acad471fea5292fd17e836801fa336c9b4ed refs/tags/v0.9.3 (lightweight tag, single line) | a local tag that was never pushed to origin | 2026-09-23T13:22:39Z |
 | 0.9.3 | github-release | 0.9.3 | 0.9.3 | match | GitHub API POST /repos/xsefirosus/sefi-agents/releases -> tag_name=v0.9.3, name=v0.9.3, target_commitish=main, draft=false, prerelease=false, published_at=2026-09-23T13:22:43Z, url=https://github.com/xsefirosus/sefi-agents/releases/tag/v0.9.3 | a local or pushed tag with no published release | 2026-09-23T13:22:39Z |
 | 0.9.3 | github-marketplace-index | 0.9.3 | 0.9.3 | match | GET /repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main (Accept: raw) -> metadata.version 0.9.3, plugins[0].version 0.9.3 | install commands quoted only in a README | 2026-09-23T13:22:39Z |
+| 0.9.4 | plugin.json | 0.9.4 | 0.9.4 | match | plugins/sefi-core/.claude-plugin/plugin.json:3 -> version 0.9.4; plugins/sefi-core/.codex-plugin/plugin.json:3 -> version 0.9.4 | a README count or CHANGELOG heading that happens to agree | 2026-09-26T15:11:48Z |
+| 0.9.4 | marketplace.json | 0.9.4 | 0.9.4 | match | .claude-plugin/marketplace.json:4 -> metadata.version 0.9.4; .claude-plugin/marketplace.json:10 -> plugins[0].version 0.9.4 | updating one occurrence and assuming the other followed | 2026-09-26T15:11:48Z |
+| 0.9.4 | changelog | 0.9.4 | 0.9.4 | match | CHANGELOG.md:6 -> ## [0.9.4] - 2026-09-26 | a Changed or Added bullet without a dated heading above it | 2026-09-26T15:11:48Z |
+| 0.9.4 | git-tag | 0.9.4 | unobserved | unobserved | git tag --points-at HEAD; git ls-remote --tags origin refs/tags/v0.9.4 refs/tags/v0.9.4^{} -> no output | a local tag that was never pushed to origin | 2026-09-26T15:11:48Z |
+| 0.9.4 | github-release | 0.9.4 | unobserved | unobserved | gh release view v0.9.4 --repo xsefirosus/sefi-agents --json tagName,isDraft,isPrerelease,publishedAt,url -> release not found | a local or pushed tag with no published release | 2026-09-26T15:11:48Z |
+| 0.9.4 | github-marketplace-index | 0.9.4 | 0.9.3 | lag | gh api repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main (Accept: raw) -> metadata.version 0.9.3, plugins[0].version 0.9.3 | install commands quoted only in a README | 2026-09-26T15:11:48Z |
 
 ## Notes
 

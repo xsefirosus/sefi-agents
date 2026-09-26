@@ -58,8 +58,8 @@ installs the right way for it, Claude Code or otherwise:
 > https://raw.githubusercontent.com/xsefirosus/sefi-agents/main/Install.md
 
 **Contents:** [Why this exists](#why-this-exists) -- [How it compares](#how-it-compares) --
-[The team](#the-team-16-agents) -- [The skills](#the-skills-19) --
-[The commands](#the-commands-12) --
+[The team](#the-team-17-agents) -- [The skills](#the-skills-19) --
+[The commands](#the-commands-13) --
 [How a request gets done](#how-a-request-actually-gets-done) --
 [Memory](#memory-that-survives-the-session) -- [Where it runs](#works-with-your-harness) --
 [Safety rules](#safety-rails-all-of-them-in-one-place) -- [Proof](#proof) -- [FAQ](#faq) --

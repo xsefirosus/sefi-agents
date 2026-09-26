@@ -57,6 +57,16 @@ search_tree() {
   done < <(find "$base" -type f ! -type l -name '*.md' -print0 | LC_ALL=C sort -z)
 }
 
+search_audit_reports() {
+  local base='audits' note relative
+  [ -d "$base" ] && [ ! -L "$base" ] || return 0
+  while IFS= read -r -d '' note; do
+    [ ! -L "$note" ] || continue
+    relative="${note#"$base"/}"
+    rank_note "$note" "audits/${relative}"
+  done < <(find "$base" -maxdepth 1 -type f ! -type l -name 'audit-report-*.md' -print0 | LC_ALL=C sort -z)
+}
+
 query="${1:-}"
 [ -n "$query" ] || { echo 'usage: memory-search.sh <query> [--project <slug>]' >&2; exit 2; }
 shift
@@ -85,7 +95,7 @@ else
   case "$vault" in ''|/*|*\\*|*..*|*//* ) echo 'memory-search: unsafe memory.vault_dir' >&2; exit 1 ;; esac
   [ ! -L "$vault" ] || { echo 'memory-search: vault cannot be a symlink' >&2; exit 1; }
   search_tree "$vault/sessions" "$vault/sessions/" > "$results"
-  search_tree "audits" "audits/" >> "$results"
+  search_audit_reports >> "$results"
 fi
 
 sort -t '|' -k1,1nr -k2,2r -k3,3 "$results" | cut -d '|' -f3-

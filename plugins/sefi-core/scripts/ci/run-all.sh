@@ -40,6 +40,8 @@ test-manifest-version.sh
 test-v08-durability.sh
 test-v08-conformance.sh
 test-memory-journalist.sh
+test-audit-integration.sh
+test-audit-report-validator.sh
 test-onboarding-v08.sh
 test-agent-capabilities-v08.sh
 test-design-council.sh

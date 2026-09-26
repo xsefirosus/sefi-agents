@@ -39,9 +39,10 @@ creates a cloud job. Copy `templates/hooks/pre-push` only when it does not repla
 existing hook. A hook is not a security boundary and can be bypassed; remote branch
 protection is separate.
 
-Finish by confirming that initialization succeeded for this project root, then point the
-user to `/sefi:close-session`, `/sefi:memory-search <query>`, and
-`/sefi:memory-index rebuild`.
+Finish by confirming that initialization succeeded for this project root. Explain that
+`/sefi:audit <scope>` runs on demand and writes its ignored-local report under
+`audits/`. Then point the user to `/sefi:close-session`,
+`/sefi:memory-search <query>`, and `/sefi:memory-index rebuild`.
 
 Never auto-initialize during a user-wide install, overwrite a user file, read a
 secret-bearing file, or make cross-project memory ambient. This command is idempotent.

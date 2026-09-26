@@ -20,7 +20,8 @@ describes the package layout.
   read on demand.
 - `commands/` -- `/sefi:init`, `/sefi:close-session`, `/sefi:cross-memory`,
   `/sefi:memory-search`, `/sefi:memory-index`, `/sefi:map-codebase`, `/sefi:scout`,
-  `/sefi:triage`, `/sefi:retro`, `/sefi:status`, `/sefi:loop-new`, and `/sefi:route`.
+  `/sefi:triage`, `/sefi:retro`, `/sefi:status`, `/sefi:loop-new`, `/sefi:route`, and
+  `/sefi:audit`.
 - `scripts/cartographer-runtime.py` -- local map validation, incremental metadata,
   context packets, and offline viewer generation. `scripts/docs-grounding.py` validates
   documentation Claims, performs stale-evidence preflight, and atomically finalizes a
