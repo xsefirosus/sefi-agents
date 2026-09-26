@@ -31,6 +31,7 @@ genuinely ambiguous between two rows, that's a goal_intake case: ask, don't gues
 | inbox item / issue intake | support-engineer | -- | consume-before-act |
 | "write docs / changelog / guide" | technical-writer | override: `agent` | small edit: Writer -> QA; substantial current-state or multi-page work: Cartographer CONTEXT -> Writer -> QA |
 | UI audit / redesign / study a design reference | ui-ux-designer | override: `agent` | never pixel-clone in study |
+| explicit "audit scope" / "audit department outputs" / "review departments" | systems-auditor | override: `agent` | scope in {complete, research, product, design, build, quality, docs, delivery}; reviewer-only, never dispatches, never modifies source |
 
 ## Design Council conditions
 

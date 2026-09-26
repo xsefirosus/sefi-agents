@@ -1,0 +1,15 @@
+# Audit Departments
+
+This is a record of the department checklist in `plugins/sefi-core/agents/systems-auditor.md`. It states no new rule: the agent file is the source of truth, and any conflict resolves in its favor.
+
+Scope rule (recorded, not new): `complete` audits all seven departments in order; any other scope audits only its department. Quality scope covers both Quality agents; Delivery scope covers all three Delivery and Infra agents.
+
+| Department | Agents | Core checks | Sefi-appendix gates |
+|---|---|---|---|
+| 1. Research and Intelligence | research-analyst, research-codebase-cartographer, research-adoption-scout | The digest stays bounded to the request; a map carries source evidence, freshness, and an explicit confidence per claim; an adoption decision records license, provenance, and Adopt/Defer/Reject with reasons. | anti-hallucination (UNKNOWN/PENDING, verify-before-cite); cartographer evidence and freshness rules. |
+| 2. Product and Planning | product-manager, prompt-engineer | The plan uses the fixed heading skeleton; steps are grep-countable with named Done Criteria; the Stage 0 restatement carries only stated constraints. | loop-engineering stop conditions; premortem where the plan claims one. |
+| 3. Design | ui-ux-designer, motion-designer | Direction selected before planning; three isolated variants recorded with an explicit selection; no pixel-cloned reference; motion specified only when nontrivial and never changing layout, content, typography, branding, or direction. | frontend-design workflow and design-record fields; motion-design scope; platform-skill loading rules. |
+| 4. Build | software-engineer | Exactly the assigned slice, built end to end in its worktree; contract fixed at the API seam before the handler; minimization ladder climbed with trust-boundary validation intact; gate.sh run before done. | backend-design contract and validation rules; frontend-design above the seam; loop-engineering budgets. |
+| 5. Quality, cross-cutting | qa-engineer, security-engineer | The verdict cites executed evidence, not the author's report; the delete-the-line test holds for claimed integration; trust-boundary diffs carry a security gate that blocks on Critical. | anti-hallucination bar-comparison where cited; security-review checklist. |
+| 6. Docs and Knowledge | technical-writer, memory-journalist | Every command, path, flag, and number verified against the repo or an executed output; session notes hold filtered facts only -- no raw conversation, secret, command dump, or full diff; one writer for `memory/`. | technical-writing grounding and claim rules; memory-protocol read/write ladder and privacy filter. |
+| 7. Delivery and Infra | devops-engineer, support-engineer, solutions-architect | Worktree procedure with provenance gating; telemetry honest about what ran; per-operation timeout classes; inbox triage consume-before-act; automation specs carry a locked ROI review and recommend only. | loop-engineering receipts and continuation rules; n8n-workflow-design must-haves. |

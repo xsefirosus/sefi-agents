@@ -42,7 +42,7 @@ check_commands_section() {
     echo "ERROR: ${file#"$ROOT"/} - command heading claims ${count:-none}, disk has $commands_n"
     errors=$((errors + 1))
   fi
-  for command in /sefi:init /sefi:close-session /sefi:cross-memory /sefi:memory-search /sefi:memory-index /sefi:map-codebase /sefi:scout /sefi:triage /sefi:retro /sefi:status /sefi:loop-new /sefi:route; do
+  for command in /sefi:init /sefi:close-session /sefi:cross-memory /sefi:memory-search /sefi:memory-index /sefi:map-codebase /sefi:scout /sefi:triage /sefi:retro /sefi:status /sefi:loop-new /sefi:route /sefi:audit; do
     if [ "$(printf '%s\n' "$section" | grep -Foc -- "$command" || true)" -ne 1 ]; then
       echo "ERROR: ${file#"$ROOT"/} - commands section must list $command exactly once"
       errors=$((errors + 1))

@@ -39,6 +39,10 @@ contains "$CORE/commands/init.md" "cross-project memory" "/sefi:init offers the 
 contains "$CORE/commands/init.md" "non-interactive" "/sefi:init specifies a non-interactive choice"
 contains "$CORE/commands/init.md" "cross_project_enabled: false" "/sefi:init chooses a disabled mirror when unattended"
 contains "$CORE/commands/init.md" "memory/" "/sefi:init keeps runtime memory local to the project"
+contains "$CORE/commands/init.md" "audits/" "/sefi:init creates and ignores the local audits/ directory"
+contains "$CORE/commands/init.md" "/sefi:audit <scope>" "/sefi:init names the on-demand audit command"
+contains "$CORE/commands/init.md" "on demand" "/sefi:init states that audits run on demand"
+contains "$CORE/commands/init.md" "ignored-local report" "/sefi:init keeps audit reports local"
 contains "$ROOT/adapters/OPENCODE.md" "opencode/muse-spark-1.3-contributor-free" "OpenCode scheduled examples use the contributor-free model"
 absent "$ROOT/adapters/OPENCODE.md" "paid-model preflight" "OpenCode free workflow docs do not attach a paid-model preflight"
 

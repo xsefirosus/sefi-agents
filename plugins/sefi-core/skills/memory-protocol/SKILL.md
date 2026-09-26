@@ -63,7 +63,9 @@ it and state the consequence generically. Do not log what was removed.
 
 ## Local search and index
 
-`/sefi:memory-search <query>` searches local Markdown notes. Search ranking is exact title
+`/sefi:memory-search <query>` searches local Markdown notes plus ignored-local
+`audits/` reports (local queries only -- audit reports never enter the cross-project
+mirror). Search ranking is exact title
 and keyword matches, then project and related-note matches, then note-body matches, with
 the newest note as the final tie-breaker. `/sefi:memory-index rebuild` reconstructs the
 complete disposable index from Markdown without modifying notes; `status` reports whether

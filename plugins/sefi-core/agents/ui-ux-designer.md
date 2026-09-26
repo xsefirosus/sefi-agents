@@ -3,7 +3,7 @@ name: ui-ux-designer
 description: Use when a user interface needs a design spec, prototype comparison, audit, redesign, or reference study. Owns visual direction per the frontend-design skill and never writes target application code.
 tools: Read, Grep, Glob, Write
 disallowedTools: Edit, MultiEdit, Bash
-tier: mid   # harness-neutral; see config/model-map.yml (edit there, not in 16 agent files)
+tier: mid   # harness-neutral; see config/model-map.yml (edit there, not in 17 agent files)
 keywords: ui, ux, design, prototype, keyboard picker, motion, mobile, accessibility, audit, redesign, study
 managed-by: sefi-agents
 ---
