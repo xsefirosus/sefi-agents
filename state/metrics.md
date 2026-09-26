@@ -14,3 +14,4 @@
 | 2026-09-26 | plugins/sefi-core/scripts/ci/validate-release-ledger.sh | systems-auditor-2026-09-26/slice6 | REJECT | 1 | Whole-branch QA found strict mode rejects superseded lag/unobserved rows after later append-only match evidence | match |
 | 2026-09-26 | plugins/sefi-core/scripts/ci/validate-release-ledger.sh | systems-auditor-2026-09-26/slice6 | PASS | 2 | Re-QA: append-only supersession regression, full branch review, bounded gates, POSIX audit and mirror boundary all checked | match |
 | 2026-09-26 | plugins/sefi-core/scripts/ci/validate-audit-report.sh | systems-auditor-2026-09-26/slice4 | PASS | 2 | Final security re-QA: traversal and symlink escapes rejected; full branch evidence and bounded PENDING states recorded | match |
+| 2026-09-26 | plugins/sefi-core/agents/systems-auditor.md | systems-auditor-token-budget-fix | PASS | 0 | QA: 10,863/10,880 words; audit and onboarding Linux regressions passed; daily bypass $2.40/$2.00 | match |
