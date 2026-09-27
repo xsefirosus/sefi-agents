@@ -1884,9 +1884,10 @@ rm -rf "$RP_OC"
 echo
 echo "=== validate-audit-report.sh (audit report skeleton, severity, and scope gate) ==="
 
-VAR="$CORE/scripts/ci/validate-audit-report.sh"
 VAF="$(mktemp -d)"
-mkdir -p "$VAF/audits" "$VAF/other"
+VAR="$VAF/plugins/sefi-core/scripts/ci/validate-audit-report.sh"
+mkdir -p "$VAF/audits" "$VAF/other" "$(dirname "$VAR")"
+cp "$CORE/scripts/ci/validate-audit-report.sh" "$VAR"
 cat > "$VAF/audits/audit-report-build-2026-09-25-1200-s1.md" <<'EOF'
 # Audit report (build)
 ## Summary
