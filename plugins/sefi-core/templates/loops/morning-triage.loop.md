@@ -9,7 +9,7 @@ requires-tools: git, gh, rg
 cloud: cron `0 6 * * *` via `.github/workflows/triage.yml`   |   local: daily 06:00 interval invoking the headless agent
 
 ## Discovery
-skill: loop-engineering (discovery move)   agent: support-engineer   inputs read: failed CI, issues in the last 24h, commits since the last run, and the prior `state/triage.md`. Judge each finding's actionability; drop the noise.
+skill: loop-engineering (discovery move)   agent: support-engineer   inputs read: failed CI, issues in the last 24h, commits since the last run, and the prior `state/triage.md`. Judge each finding's actionability; drop the noise. Never scan `audits/` on a schedule -- on-demand `/sefi:audit` is the deliberate alternative, never a scheduled input.
 
 ## Handoff
 one worktree per kept finding: branch `triage/<slug>` under `.worktrees/`. Once a finding is planned, `scripts/ready-steps.sh` computes that plan's dispatch set, capped at max parallel: 3 (`config/budget.yml` max_parallel_worktrees) -- never reasoned about in prose. Each dispatched task names its absolute worktree output path. Before opening it, grep other `state/*.md` for a matching `acting_on`; skip and log if already claimed.

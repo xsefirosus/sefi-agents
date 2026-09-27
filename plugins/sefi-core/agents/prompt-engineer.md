@@ -3,7 +3,7 @@ name: prompt-engineer
 description: Use as Stage 0 on an interactive human message, before the engineering-manager opens the routing table. Restates a raw message into unambiguous single-intent statements with only its stated constraints, and never routes, plans, or writes a file.
 tools: Read, Grep, Glob
 disallowedTools: Write, Edit, MultiEdit, Bash
-tier: low   # harness-neutral; see config/model-map.yml (edit there, not in 16 agent files)
+tier: low   # harness-neutral; see config/model-map.yml (edit there, not in 17 agent files)
 keywords: prompt, intent, restate, clarify, stage-0, ambiguity
 managed-by: sefi-agents
 ---

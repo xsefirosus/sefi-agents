@@ -11,6 +11,9 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
 CORE="$ROOT/plugins/sefi-core"
 
+# Ignored-local runtime reports under audits/ (like memory/ notes: written by
+# /sefi:audit into the project worktree, never committed, never packaged) are not
+# managed files, so no walk below demands wiring for them.
 errors=0
 
 # 1. references files referenced from their skill's SKILL.md
@@ -25,7 +28,7 @@ while IFS= read -r ref; do
     echo "ERROR: $rel - unreferenced (not named in $(basename "$skilldir")/SKILL.md)"
     errors=$((errors + 1))
   fi
-done < <(find "$CORE/skills" -type f -path '*/references/*')
+done < <(find "$CORE/skills" -type f -path '*/references/*' ! -path '*/audits/*')
 
 # 2. templates files named in commands/init.md (exclude .gitkeep)
 INIT="$CORE/commands/init.md"
@@ -38,7 +41,7 @@ while IFS= read -r tf; do
     echo "ERROR: $rel - unreferenced (not in commands/init.md copy list)"
     errors=$((errors + 1))
   fi
-done < <(find "$CORE/templates" -type f ! -name '.gitkeep')
+done < <(find "$CORE/templates" -type f ! -name '.gitkeep' ! -path '*/audits/*')
 
 # 3. agents listed in references/roster.md
 ROSTER="$CORE/skills/sefi-orchestration/references/roster.md"
@@ -51,7 +54,7 @@ while IFS= read -r a; do
     echo "ERROR: $rel - not listed in references/roster.md"
     errors=$((errors + 1))
   fi
-done < <(find "$CORE/agents" -name '*.md')
+done < <(find "$CORE/agents" -name '*.md' ! -path '*/audits/*')
 
 # 4. agents listed in sefi-orchestration/SKILL.md's own inline roster table -- a second,
 # shorter summary table distinct from references/roster.md, and not covered by check 3.
@@ -65,7 +68,7 @@ while IFS= read -r a; do
     echo "ERROR: $rel - not listed in sefi-orchestration/SKILL.md's inline roster table"
     errors=$((errors + 1))
   fi
-done < <(find "$CORE/agents" -name '*.md')
+done < <(find "$CORE/agents" -name '*.md' ! -path '*/audits/*')
 
 if [ "$errors" -ne 0 ]; then echo "validate-no-orphans: $errors error(s)"; exit 1; fi
 echo "validate-no-orphans: OK (references, templates, agents all wired)"

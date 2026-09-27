@@ -2,7 +2,7 @@
 #
 # Agents declare a harness-neutral `tier:` (high / mid / low). This file maps each tier to
 # a concrete model AND a reasoning effort for each harness. A new model, a renamed model,
-# or a new harness is an edit HERE and nowhere else -- never a pass over 13 agent files.
+# or a new harness is an edit HERE and nowhere else -- never a pass over 17 agent files.
 #
 # Read by: scripts/model-for.sh, scripts/install-opencode.sh, scripts/apply-model-map.sh,
 # scripts/ci/validate-model-map.sh. Override with --model-map <path> on any installer.

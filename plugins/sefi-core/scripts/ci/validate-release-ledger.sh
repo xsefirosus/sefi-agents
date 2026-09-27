@@ -9,8 +9,9 @@
 # column, and the same strict "partially released until every surface matches" gate.
 #
 # HARD-FAIL (exit 1):
-#   1. within ANY single version group in the ledger (not just the latest), two surfaces
-#      carry contradicting non-`unobserved` observed values;
+#   1. within ANY single version group in the ledger (not just the latest), match and
+#      mismatch observations do not contradict; a lag observation is permitted only when
+#      it is older than that row's expected version;
 #   2. a latest-version row's observed value contradicts the on-disk source it names --
 #      plugin.json, marketplace.json, or the CHANGELOG.md first versioned heading;
 #   3. marketplace.json's two version occurrences (metadata.version, plugins[0].version)
@@ -23,6 +24,7 @@
 # Both spaced (--ledger PATH) and joined (--ledger=PATH) option forms are accepted.
 #
 # WARN (printed, exit 0): any of the six surfaces is `unobserved` for the latest version.
+# --strict also rejects a latest lag or mismatch surface, even when all six were queried.
 #
 # On success prints: validate-release-ledger: OK (latest <v>, N/6 surfaces observed,
 # K warning(s))
@@ -127,6 +129,11 @@ fi
 
 errors=0
 err() { echo "ERROR: $1"; errors=$((errors + 1)); }
+is_older_version() {
+  local observed="$1" expected="$2"
+  [ "$observed" != "-" ] && [ "$observed" != "$expected" ] \
+    && [ "$(printf '%s\n%s\n' "$observed" "$expected" | sort -V | head -1)" = "$observed" ]
+}
 
 # --- structural checks on every row ($6/$7 carry the parse-time normalization,
 #     so this loop forks nothing per row) ---
@@ -146,6 +153,9 @@ while IFS="$(printf '\t')" read -r version surface expected observed status nver
     match|lag|mismatch|unobserved) : ;;
     *) err "unknown status '$status' for $surface (row version $version)" ;;
   esac
+  if [ "$status" = "lag" ] && ! is_older_version "$nobs" "$nver"; then
+    err "lag row for $surface (version $version) must observe an older semantic version than expected $nver"
+  fi
 done <<EOF
 $rows
 EOF
@@ -159,16 +169,19 @@ if [ -z "$latest" ]; then
 fi
 
 latest_rows="$(printf '%s\n' "$rows" | awk -F'\t' -v L="$latest" '$6 == L')"
+# The ledger is append-only: later observations supersede earlier ones for the same
+# surface in the same target-version group. Preparation still inspects all rows above;
+# completion and warnings use this newest observation per surface.
+latest_surface_rows="$(printf '%s\n' "$latest_rows" | awk -F'\t' '{ latest[$2] = $0 } END { for (surface in latest) print latest[surface] }')"
 
-# --- hard-fail 1: within ANY single version group across the whole ledger, two
-#     non-`unobserved` observed surfaces must not contradict. Plan step 8 scopes this
-#     "for the same version claim" -- per version group, not latest-only, because an
-#     append-only ledger accumulates historical version groups. The WARN clause below
-#     stays latest-only, exactly as the plan specifies. ---
+# --- hard-fail 1: within ANY single version group, match/mismatch observations must not
+#     contradict. A lag row is already checked above to be older than its expected target,
+#     so it records a truthful prepublication surface without becoming a false
+#     cross-surface contradiction. This remains per-version-group, not latest-only. ---
 all_groups="$(printf '%s\n' "$rows" | awk -F'\t' '$6 != "-" { print $6 }' | sort -uV)"
 for grp in $all_groups; do
   grp_observed="$(printf '%s\n' "$rows" | awk -F'\t' -v G="$grp" '
-    $6 == G && ($5 == "match" || $5 == "lag" || $5 == "mismatch") && $7 != "-" { print $7 }
+    $6 == G && ($5 == "match" || $5 == "mismatch") && $7 != "-" { print $7 }
   ' | sort -u)"
   g_distinct="$(printf '%s\n' "$grp_observed" | sed '/^$/d' | wc -l | tr -d ' ')"
   if [ "${g_distinct:-0}" -gt 1 ]; then
@@ -224,8 +237,8 @@ if [ "$errors" -ne 0 ]; then
   exit 1
 fi
 
-# --- warnings: surfaces unobserved for the latest version ---
-observed_surfaces="$(printf '%s\n' "$latest_rows" | awk -F'\t' '$5 != "unobserved" { print $2 }' | sort -u | sed '/^$/d')"
+# --- warnings: surfaces unobserved in their newest latest-version observation ---
+observed_surfaces="$(printf '%s\n' "$latest_surface_rows" | awk -F'\t' '$5 != "unobserved" { print $2 }' | sort -u | sed '/^$/d')"
 n_observed="$(printf '%s\n' "$observed_surfaces" | sed '/^$/d' | wc -l | tr -d ' ')"
 warnings=0
 for s in $CANONICAL_SURFACES; do
@@ -237,7 +250,12 @@ done
 
 echo "validate-release-ledger: OK (latest $latest, ${n_observed:-0}/6 surfaces observed, $warnings warning(s))"
 if [ "$STRICT" -eq 1 ] && [ "$warnings" -ne 0 ]; then
-  echo "validate-release-ledger: strict completion requires all 6 surfaces to be observed" >&2
+  echo "validate-release-ledger: strict completion requires all 6 surfaces to match" >&2
+  exit 1
+fi
+strict_nonmatches="$(printf '%s\n' "$latest_surface_rows" | awk -F'\t' '$5 != "match" { print $2 "=" $5 }' | sort -u | paste -sd',' -)"
+if [ "$STRICT" -eq 1 ] && [ -n "$strict_nonmatches" ]; then
+  echo "validate-release-ledger: strict completion requires all 6 surfaces to match (non-match: $strict_nonmatches)" >&2
   exit 1
 fi
 exit 0

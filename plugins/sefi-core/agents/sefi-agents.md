@@ -3,7 +3,7 @@ name: sefi-agents
 description: Sefi-Agents - Use when work must be routed to the agent, sequenced across a handoff chain, or dispatched to a subagent. Routes per the routing table, enforces output contracts and budgets, and never edits files or does the work itself.
 tools: Read, Grep, Glob, Bash
 disallowedTools: Write, Edit, MultiEdit
-tier: mid   # harness-neutral; see config/model-map.yml (edit there, not in 16 agent files)
+tier: mid   # harness-neutral; see config/model-map.yml (edit there, not in 17 agent files)
 keywords: engineering, manager, orchestrate, route, dispatch, handoff, contracts
 managed-by: sefi-agents
 ---

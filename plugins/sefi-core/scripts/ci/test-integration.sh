@@ -50,7 +50,7 @@ git add -A && git commit -q -m "initial commit"
 
 echo
 echo "=== stage 1: /sefi:init scaffold (commands/init.md copy list) ==="
-mkdir -p memory/sessions state inbox loops config
+mkdir -p memory/sessions state inbox loops config audits
 cp "$CORE/templates/memory/index.md"              memory/index.md
 cp "$CORE/templates/memory/promotion-candidates.base" memory/promotion-candidates.base
 cp "$CORE/templates/state/metrics.md"             state/metrics.md
@@ -60,15 +60,29 @@ cp "$CORE/templates/config/sefi.config.yml"       config/sefi.config.yml
 cp "$CORE/templates/loops/morning-triage.loop.md" loops/morning-triage.loop.md
 cp "$CORE/templates/loops/weekly-retro.loop.md"   loops/weekly-retro.loop.md
 cp "$CORE/templates/loops/sync.loop.md"           loops/sync.loop.md
+cp "$CORE/templates/audits/.gitkeep"              audits/.gitkeep
 
 # init.md step 4: the worktree check-ignore gate must pass BEFORE any loop opens one.
-printf '.worktrees/\n' > .gitignore
+printf 'memory/\naudits/\n.worktrees/\n' > .gitignore
 mkdir -p .worktrees/logs
 git add -A && git commit -q -m "chore: sefi scaffold"
 if git check-ignore -q .worktrees; then
   ok "step 4 worktree check-ignore gate passes (.worktrees/ is ignored)"
 else
   bad "step 4 gate failed -- a loop would create an untracked worktree inside the repo"
+fi
+if git check-ignore -q audits/.gitkeep; then
+  ok "audit reports scaffold is ignored locally"
+else
+  bad "audit reports scaffold is not ignored locally"
+fi
+# A second init preserves a local report instead of overwriting the audits scaffold.
+printf 'preserve this audit report\n' > audits/audit-report-existing.md
+[ -e audits/.gitkeep ] || cp "$CORE/templates/audits/.gitkeep" audits/.gitkeep
+if grep -qx 'preserve this audit report' audits/audit-report-existing.md; then
+  ok "repeated init preserves local audit reports"
+else
+  bad "repeated init overwrote a local audit report"
 fi
 
 echo

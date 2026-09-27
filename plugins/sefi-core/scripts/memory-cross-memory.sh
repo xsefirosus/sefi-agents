@@ -101,6 +101,43 @@ project_slug_for_mirror() {
   fi
 }
 
+is_below_directory() {
+  local note="$1" base="$2" base_dir note_dir
+  base_dir="$(cd "$base" 2>/dev/null && pwd -P)" || return 1
+  note_dir="$(cd "$(dirname "$1")" 2>/dev/null && pwd -P)" || return 1
+  case "$note_dir" in
+    "$base_dir"|"$base_dir"/*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+is_audit_path() { is_below_directory "$1" audits; }
+
+has_symlink_component() {
+  local path="$1" component current=''
+  local -a components
+  local IFS='/'
+  read -r -a components <<< "$path"
+  for component in "${components[@]}"; do
+    [ -n "$component" ] || continue
+    current="${current:+$current/}$component"
+    [ ! -L "$current" ] || return 0
+  done
+  return 1
+}
+
+is_session_note_path() {
+  local vault sessions
+  vault="$(cfg_get vault_dir memory)"
+  case "$vault" in ''|/*|*\\*|*..*|*//* ) return 1 ;; esac
+  has_symlink_component "$vault" && return 1
+  [ -d "$vault" ] || return 1
+  sessions="$vault/sessions"
+  has_symlink_component "$sessions" && return 1
+  [ -d "$sessions" ] || return 1
+  is_below_directory "$1" "$sessions"
+}
+
 set_enabled() {
   local wanted="$1" temporary
   [ -f "$CONFIG" ] && [ ! -L "$CONFIG" ] || { echo 'memory-cross-memory: config/sefi.config.yml is required' >&2; return 1; }
@@ -124,6 +161,14 @@ set_enabled() {
 mirror_note() {
   local note="$1" root slug project_dir filename filtered destination
   [ -f "$note" ] && [ ! -L "$note" ] || { echo 'memory-cross-memory: mirror requires a regular note file' >&2; return 1; }
+  if is_audit_path "$note"; then
+    echo 'memory-cross-memory: audit reports must remain project-local' >&2
+    return 1
+  fi
+  is_session_note_path "$note" || {
+    echo 'memory-cross-memory: mirror requires a local session note' >&2
+    return 1
+  }
   root="$(shared_root)" || { echo 'memory-cross-memory: skipped (not explicitly enabled on a confirmed local machine)' >&2; return 1; }
   slug="$(project_slug_for_mirror)" || { echo 'memory-cross-memory: rejected credential-bearing remote' >&2; return 1; }
   safe_component "$slug" || { echo 'memory-cross-memory: rejected unnamed project' >&2; return 1; }

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# memory-index.sh -- rebuild or check the disposable local session-note manifest.
+# memory-index.sh -- rebuild or check the disposable local manifest over session
+# notes and ignored-local audit reports.
 set -euo pipefail
 
 CONFIG="config/sefi.config.yml"
@@ -80,6 +81,14 @@ build_manifest() {
       hash="$(sha_file "$note")"
       printf '%s\t%s\n' "$path" "$hash" >> "$sources"
     done < <(find "$vault/sessions" -type f ! -type l -name '*.md' -print0 | LC_ALL=C sort -z)
+  fi
+  if [ -d audits ] && [ ! -L audits ]; then
+    while IFS= read -r -d '' note; do
+      [ ! -L "$note" ] || continue
+      path="${note#./}"
+      hash="$(sha_file "$note")"
+      printf '%s\t%s\n' "$path" "$hash" >> "$sources"
+    done < <(find audits -maxdepth 1 -type f ! -type l -name 'audit-report-*.md' -print0 | LC_ALL=C sort -z)
   fi
   cursor="$(sha_text < "$sources")"
   printf '%s\n' '{'

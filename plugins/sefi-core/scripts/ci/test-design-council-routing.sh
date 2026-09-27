@@ -60,10 +60,10 @@ done
 
 agent_count="$(find "$CORE/agents" -maxdepth 1 -name '*.md' | wc -l | tr -d ' ')"
 skill_count="$(find "$CORE/skills" -name SKILL.md | wc -l | tr -d ' ')"
-if [ "$agent_count" = '16' ] && [ "$skill_count" = '19' ]; then
-  ok 'v0.9 package source contains 16 agents and 19 skills'
+if [ "$agent_count" = '17' ] && [ "$skill_count" = '19' ]; then
+  ok 'v0.9 package source contains 17 agents and 19 skills'
 else
-  bad "v0.9 package source expected 16 agents and 19 skills, got $agent_count agents and $skill_count skills"
+  bad "v0.9 package source expected 17 agents and 19 skills, got $agent_count agents and $skill_count skills"
 fi
 
 if [ "$fail" -ne 0 ]; then

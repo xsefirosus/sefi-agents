@@ -111,6 +111,34 @@ fi
 bash "$INDEX" rebuild >/dev/null
 bash "$INDEX" status >/dev/null
 
+# Ignored-local audit reports are in local search and index scope, never the
+# cross-project mirror: a local query ranks them, a rebuild hashes them, and a
+# report change makes the disposable index stale.
+mkdir -p audits
+audit_report='audits/audit-report-complete-2026-09-25-1200-session-001.md'
+printf -- '---\ntitle: audit\n---\n# audit\n\ndurable audit finding\n' > "$audit_report"
+printf -- '---\ntitle: unrelated\n---\n# unrelated\n\ndurable non-report\n' > audits/notes.md
+bash "$SEARCH" 'durable' | grep -q 'audits/audit-report-complete-2026-09-25-1200-session-001.md' || {
+  echo 'local audit report was not searchable' >&2; exit 1;
+}
+if bash "$SEARCH" 'durable' | grep -q 'audits/notes.md'; then
+  echo 'non-report Markdown under audits/ was searchable' >&2; exit 1
+fi
+bash "$INDEX" rebuild >/dev/null
+bash "$INDEX" status >/dev/null
+grep -q 'audits/audit-report-complete-2026-09-25-1200-session-001.md' .sefi/memory-index/manifest.json || {
+  echo 'local audit report was not indexed' >&2; exit 1;
+}
+if grep -q 'audits/notes.md' .sefi/memory-index/manifest.json; then
+  echo 'non-report Markdown under audits/ was indexed' >&2; exit 1
+fi
+printf 'updated audit finding\n' >> "$audit_report"
+if bash "$INDEX" status >/dev/null 2>&1; then
+  echo 'changed audit report did not make the index stale' >&2; exit 1
+fi
+bash "$INDEX" rebuild >/dev/null
+bash "$INDEX" status >/dev/null
+
 # Cross-memory remains local and disabled until an explicit enable. A named-project
 # query is still refused while disabled, preventing an unnamed or ambient scan.
 if bash "$SEARCH" 'durable' --project 'journal-project' >/dev/null 2>&1; then
@@ -142,6 +170,14 @@ esac
 "${local_env[@]}" bash "$SEARCH" 'durable' --project 'acme-journal-project' | grep -q 'durable-journal-recovery.md' || {
   echo 'enabled named cross-project search did not find the mirrored note' >&2; exit 1;
 }
+
+# The mirror accepts direct session notes only, so audit paths and normalized aliases
+# are rejected before any cross-project write can happen.
+for audit_path in "$audit_report" "./$audit_report" "audits/../$audit_report"; do
+  if "${local_env[@]}" bash "$CROSS" mirror "$audit_path" >/dev/null 2>&1; then
+    echo "audit path was mirrored: $audit_path" >&2; exit 1
+  fi
+done
 "${local_env[@]}" bash "$CROSS" disable >/dev/null
 "${local_env[@]}" bash "$CROSS" status | grep -qx 'disabled'
 

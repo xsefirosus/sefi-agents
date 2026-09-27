@@ -31,9 +31,10 @@ All factual output follows the anti-hallucination skill: cite or mark UNKNOWN, n
 | technical-writer | user-facing docs, changelogs, guides | low |
 | solutions-architect | n8n / Make / GHL / RAG / Vapi specs | mid |
 | prompt-engineer | Stage 0 -- restate a raw human message before routing | low |
+| systems-auditor | audit department outputs against core checks and appendix gates | mid |
 
 Read `references/roster.md` for each agent's skills, gates, and cost tier; do not inline
-it here. At 16 files the roster stays flat; the research specialists carry a research-
+it here. At 17 files the roster stays flat; the research specialists carry a research-
 filename prefix. A broad source-file reorganization is a separate migration, never an
 incidental addition.
 

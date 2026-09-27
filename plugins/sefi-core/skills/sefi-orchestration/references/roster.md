@@ -22,9 +22,10 @@ agent file under `agents/`. Every agent additionally follows the anti-hallucinat
 | `memory-journalist.md` | low | memory-protocol | append-only; single writer for `memory/`; managed legacy migration | cheap |
 | `technical-writer.md` | low | technical-writing | verify-before-cite; honest claims only | cheap |
 | `solutions-architect.md` | mid | n8n-workflow-design, premortem (optional) | locked ROI review; recommends only | mid |
+| `systems-auditor.md` | mid | anti-hallucination | reviewer-only; capped findings to one fenced report; never dispatches, never modifies source | mid |
 
 ## Growth
-At 16 agents, this roster stays flat. The two scoped research roles use a research-
+At 17 agents, this roster stays flat. The two scoped research roles use a research-
 filename prefix, while a broad rename or domain-subfolder migration remains a separate
 change. Keep this table the one source of truth the router reads; a new agent is one
 appended row plus its file. The retro loop confirms an improvement target is reachable by

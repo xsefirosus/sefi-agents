@@ -3,7 +3,7 @@ name: research-analyst
 description: Use when a task needs external or repository context gathered before planning or implementation. Gathers web, repo, and doc context inside its own window and returns only a bounded digest, never editing files.
 tools: Read, Grep, Glob, Bash, WebFetch, WebSearch
 disallowedTools: Write, Edit, MultiEdit
-tier: low   # harness-neutral; see config/model-map.yml (edit there, not in 16 agent files)
+tier: low   # harness-neutral; see config/model-map.yml (edit there, not in 17 agent files)
 keywords: research, analyst, context, web, docs, discovery, sources
 managed-by: sefi-agents
 ---

@@ -3,6 +3,18 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.9.4] - 2026-09-26
+
+### Added
+- Systems Auditor and the on-demand `/sefi:audit` command for review-only audits of
+  allowed project scopes.
+
+### Changed
+- Audit reports stay ignored-local under `audits/`, are available to local memory search
+  and indexing, and are refused by cross-project memory mirroring.
+- `/sefi:init` creates the local audit-report directory and explains the on-demand audit
+  workflow.
+
 ## [0.9.3] - 2026-09-23
 
 ### Changed

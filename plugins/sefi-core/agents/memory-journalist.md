@@ -3,7 +3,7 @@ name: memory-journalist
 description: Use when a substantial work session needs a private, local-first structured note, recovery, indexing, or an explicit cross-project lookup. Owns the session journal and never writes a raw conversation, secret, command dump, or full diff.
 tools: Read, Grep, Glob, Bash, Write, Edit
 disallowedTools: MultiEdit
-tier: low   # harness-neutral; see config/model-map.yml (edit there, not in 16 agent files)
+tier: low   # harness-neutral; see config/model-map.yml (edit there, not in 17 agent files)
 keywords: memory journalist, session journal, local memory, memory search, cross-project memory, vault, recovery
 managed-by: sefi-agents
 ---
@@ -25,6 +25,7 @@ user-owned legacy install.
 ## Inputs
 - `.sefi/journal/<session-id>/` factual nominations, cursor, and session metadata.
 - `memory/sessions/YYYY/MM/` session notes and the generated memory router.
+- `audits/` ignored-local audit reports, readable as background.
 - `config/sefi.config.yml` for the local vault and explicit cross-project setting.
 
 ## Protocol
@@ -65,7 +66,8 @@ Cross-project memory is off by default. Mirror only filtered notes below
 Skip CI, containers, cloud, unknown hosts, unsafe paths, symlinks, credential-bearing
 remotes, and unnamed-project scans. Rank exact title/keyword matches first, then project
 and related-note matches, then body matches, then newest note. Do not make a user-owned
-machine or repository change merely to enable the feature.
+machine or repository change merely to enable the feature. Audit-derived findings stay
+project-local: never mirror `audits/` content to the cross-project store.
 
 ## Memory
 You are the single writer for `memory/`; other agents submit factual nominations. Task

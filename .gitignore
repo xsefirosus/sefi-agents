@@ -16,6 +16,11 @@ docs/master-prompt-v4-provenance.md
 # scaffolding under plugins/sefi-core/templates/memory/.
 /memory/
 
+# Audit reports are ignored-local like runtime memory: /sefi:audit writes exactly one
+# timestamped report per audit into the project worktree. Never committed, never packaged;
+# the package ships only the scaffold under plugins/sefi-core/templates/audits/.
+/audits/
+
 # Benchmark run artifacts (benchmarks/README.md: blinded paired A/B harness). Raw trial
 # output, worktrees, and judge transcripts -- machine-local evidence with a leak boundary,
 # never committed. The design, cases, fixtures, and scorer under benchmarks/ ARE tracked;

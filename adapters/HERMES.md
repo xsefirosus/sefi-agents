@@ -202,6 +202,8 @@ bash plugins/sefi-core/scripts/model-for.sh hermes high --reasoning  # -> none
 every dispatch runs on whatever you set `provider.model` to in section 1. Reasoning effort
 is likewise left to you to tune, since a hardcoded value (`max`/`high`/`medium`, DeepSeek V4
 Flash's own dial) may not exist or mean the same thing on whatever model you pick.
+The mid-tier systems-auditor resolves the same way -- its audit dispatches run on
+`provider.model` with no per-tier override.
 
 All three tiers share one model here, so the qa-engineer judges on the model it is judging.
 That is not new: the previous pinned-to-one-free-model setup paid the identical price,

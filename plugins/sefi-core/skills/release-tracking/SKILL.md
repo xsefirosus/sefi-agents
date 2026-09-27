@@ -57,8 +57,9 @@ a release: it is drift, and it is reported, not reconciled by editing the ledger
 `validate-release-ledger.sh` (wired into `run-all.sh`) enforces these hard-fail rules:
 
 1. Within any single version group in the ledger -- not only the latest, since an
-   append-only ledger accumulates historical version claims -- two surfaces carry
-   contradicting non-`unobserved` `observed` values.
+   append-only ledger accumulates historical version claims -- `match` and `mismatch`
+   observations do not contradict. A `lag` row is valid only when its observed semantic
+   version is older than its expected target.
 2. A latest-version row's `observed` value contradicts the on-disk source it names
    (`plugin.json`, `marketplace.json`, or the `CHANGELOG.md` first versioned heading).
 3. `marketplace.json`'s two version occurrences (`metadata.version` and
@@ -74,6 +75,8 @@ option forms are accepted, and GFM alignment-marker separator rows (`:---`, `---
 skipped like any other table separator.
 
 Any surface `unobserved` for the latest version is a printed WARNING, not a failure.
+Strict completion requires every latest surface to be `match`; it rejects `lag`,
+`mismatch`, and `unobserved` rows.
 
 ## Surfaces that are deliberately NOT tracked
 

@@ -19,7 +19,7 @@ project's own manifest/lockfile for outdated or deprecated packages (via whichev
 manager's outdated-check the project provides -- `npm outdated`, `pip list --outdated`, or
 equivalent; skipped, not failed, when none applies), CI failures attributable to a
 dependency, and the prior `state/sync.md`. Judge each finding's actionability:
-a patch bump with no CHANGELOG signal ranks below a failing build or a security advisory.
+a patch bump with no CHANGELOG signal ranks below a failing build or a security advisory. Never scan `audits/` on a schedule -- on-demand `/sefi:audit` is the deliberate alternative, never a scheduled input.
 
 ## Handoff
 one worktree per upgrade: branch `sync/<slug>` under `.worktrees/`. Once a finding is
