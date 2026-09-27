@@ -158,12 +158,18 @@ invoked by name).
 **Repository work:** `/sefi:map-codebase` -- `/sefi:scout` -- `/sefi:triage` --
 `/sefi:route`.
 
-**Process:** `/sefi:retro` -- `/sefi:status` -- `/sefi:loop-new` -- `/sefi:audit`.
+**Process:** `/sefi:retro` -- `/sefi:status` -- `/sefi:loop-new` -- `/sefi:audit <scope>`.
 
 The mapping command supports MAP, TRACE, IMPACT, DELTA, VISUALIZE, and CONTEXT. It creates
 evidence-backed local maps and bounded handoff packets; it never changes the mapped source.
 Read [Repository Intelligence](docs/REPOSITORY-INTELLIGENCE.md) for freshness, privacy,
 optional connector, and documentation-grounding rules.
+
+The audit command accepts one scope: `complete`, `research`, `product`, `design`, `build`,
+`quality`, `docs`, or `delivery`. It runs on demand through the Systems Auditor, reviews
+the selected department outputs, and never dispatches subagents, modifies source, or fixes
+findings. Each audit writes one report under
+`audits/audit-report-<scope>-<timestamp>-<session>.md`; the report is ignored-local.
 
 ## Design Council
 
@@ -229,6 +235,9 @@ from the project root. When you explicitly enable it on a confirmed persistent l
 machine, filtered notes mirror under your own `~/sefi-memory/` folder. Search another
 project only by naming it with `/sefi:memory-search`; Sefi never performs a background
 cross-project scan, and it always skips CI, containers, cloud sessions, and unknown hosts.
+
+Local memory search and `/sefi:memory-index rebuild` include ignored-local audit reports.
+Cross-project memory mirroring refuses audit reports, so they remain in the current project.
 
 Read [Memory Journalist](docs/MEMORY-JOURNALIST.md) for the note format and commands,
 [Privacy](docs/PRIVACY.md) for the local data boundary, and the

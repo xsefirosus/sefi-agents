@@ -54,7 +54,19 @@ describes the package layout.
 `/sefi:init` -- `/sefi:close-session` -- `/sefi:cross-memory` --
 `/sefi:memory-search` -- `/sefi:memory-index` -- `/sefi:map-codebase` --
 `/sefi:scout` -- `/sefi:triage` -- `/sefi:retro` -- `/sefi:status` --
-`/sefi:loop-new` -- `/sefi:route` -- `/sefi:audit`.
+`/sefi:loop-new` -- `/sefi:route` -- `/sefi:audit <scope>`.
+
+## On-demand audits
+
+The audit command accepts one scope: `complete`, `research`, `product`, `design`, `build`,
+`quality`, `docs`, or `delivery`. It routes to `systems-auditor` on demand. The auditor
+reviews only the selected department outputs, writes one report, and never dispatches
+subagents, modifies source, or fixes findings.
+
+Reports use the path
+`audits/audit-report-<scope>-<timestamp>-<session>.md`. The `audits/` directory is
+ignored-local. Local memory search and `/sefi:memory-index rebuild` include audit reports, while
+cross-project memory mirroring refuses them.
 
 ## Design rules
 - Generator/evaluator separation: the writer never grades its own work; the qa-engineer
