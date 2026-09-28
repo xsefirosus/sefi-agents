@@ -46,10 +46,11 @@ do not need a `/sefi:*` command for each request. Sefi subagents use the configu
 model policy: Astra for orchestration, Sol for QA/security, Terra for build/planning, and
 Luna for research and writing.
 
-**Other harnesses:** use `bash install.sh --target <claude|opencode|hermes|codex>`. The
-installer reads a verified adapter manifest. A new or private harness can use a complete
-local manifest with `--adapter path/to/adapter.yml`; it is usable locally, not represented
-as a supported harness until its adapter tests are added and pass.
+**Other harnesses:** use `bash install.sh --target <claude|opencode|codex>`. For Hermes,
+run `bash plugins/sefi-core/scripts/install-hermes.sh` so its native skills receive their
+managed runtime. A new or private harness can use a complete local manifest with
+`--adapter path/to/adapter.yml`; it is usable locally, not represented as a supported
+harness until its adapter tests are added and pass.
 
 Or hand the setup to any coding agent -- this one detects which tool you're using and
 installs the right way for it, Claude Code or otherwise:
@@ -58,7 +59,7 @@ installs the right way for it, Claude Code or otherwise:
 > https://raw.githubusercontent.com/xsefirosus/sefi-agents/main/Install.md
 
 **Contents:** [Why this exists](#why-this-exists) -- [How it compares](#how-it-compares) --
-[The team](#the-team-17-agents) -- [The skills](#the-skills-19) --
+[The team](#the-team-17-agents) -- [The skills](#the-skills-20) --
 [The commands](#the-commands-13) --
 [How a request gets done](#how-a-request-actually-gets-done) --
 [Memory](#memory-that-survives-the-session) -- [Where it runs](#works-with-your-harness) --
@@ -125,7 +126,7 @@ writes docs, claims double-checked -- `prompt-engineer` clarifies a raw request 
 `adoption-scout` reviews external repositories before the Product Manager considers a plan
 addition.
 
-## The skills (19)
+## The skills (20)
 
 Playbooks an agent loads only when the task needs it, not another agent -- most load
 automatically, a few you call by name, and a named skill can never chain another one, so
@@ -148,7 +149,8 @@ memory is read and written, the five-step loop pattern, and small self-improveme
 (forensic pre-execution failure analysis, invoked by name), `focus`, `release-tracking`
 (reconciles one version across six publish surfaces before calling anything released),
 `run-sefi-benchmark` (blinded paired A/B benchmark of the chain versus one strong model,
-invoked by name).
+invoked by name), and `systems-audit` (the evidence method and report contract for an
+on-demand department audit).
 
 ## The commands (13)
 
@@ -158,12 +160,29 @@ invoked by name).
 **Repository work:** `/sefi:map-codebase` -- `/sefi:scout` -- `/sefi:triage` --
 `/sefi:route`.
 
-**Process:** `/sefi:retro` -- `/sefi:status` -- `/sefi:loop-new` -- `/sefi:audit`.
+**Process:** `/sefi:retro` -- `/sefi:status` -- `/sefi:loop-new` -- `audit <scope>`
+(Claude Code and OpenCode use the installed audit command).
 
 The mapping command supports MAP, TRACE, IMPACT, DELTA, VISUALIZE, and CONTEXT. It creates
 evidence-backed local maps and bounded handoff packets; it never changes the mapped source.
 Read [Repository Intelligence](docs/REPOSITORY-INTELLIGENCE.md) for freshness, privacy,
 optional connector, and documentation-grounding rules.
+
+The audit accepts one of eight scopes: `complete`, `research`, `product`, `design`, `build`,
+`quality`, `docs`, or `delivery`. The top-level orchestrator owns dispatch. The
+`systems-audit` skill supplies the method and report contract, and `systems-auditor` reviews
+the selected department outputs without dispatching subagents, modifying source, or fixing
+findings. On Claude Code and OpenCode, run `/sefi:audit build`. In Codex, explicitly invoke
+the installed skill with `Use $systems-audit for the build scope`. In Hermes, ask
+`Run the systems-audit skill for the build scope.` These are equivalent installed entry
+points for an on-demand audit; ordinary UI, security, and code-review requests keep their
+normal routes.
+
+Each audit writes one ignored-local report under
+`audits/audit-report-<scope>-<timestamp>-<session>.md`. Local memory search and the memory
+index rebuild include those reports; cross-project memory mirroring refuses them. The skill
+controls the workflow, the command or natural-language request starts it, and the Systems
+Auditor writes the report after reviewing the selected outputs.
 
 ## Design Council
 
@@ -229,6 +248,9 @@ from the project root. When you explicitly enable it on a confirmed persistent l
 machine, filtered notes mirror under your own `~/sefi-memory/` folder. Search another
 project only by naming it with `/sefi:memory-search`; Sefi never performs a background
 cross-project scan, and it always skips CI, containers, cloud sessions, and unknown hosts.
+
+Local memory search and `/sefi:memory-index rebuild` include ignored-local audit reports.
+Cross-project memory mirroring refuses audit reports, so they remain in the current project.
 
 Read [Memory Journalist](docs/MEMORY-JOURNALIST.md) for the note format and commands,
 [Privacy](docs/PRIVACY.md) for the local data boundary, and the
@@ -359,8 +381,9 @@ That rule is enforced automatically across every agent and skill.
 **Why didn't every skill install automatically on Hermes?** Hermes scans skills for
 risky-looking content, and two of ours get flagged by mistake -- they *describe* risky
 patterns in order to guard against them, and the scanner can't yet tell the difference.
-The other 17 skills install fine; the installer prints the two-step manual fix for the
-rest. See [adapters/HERMES.md](adapters/HERMES.md) section 8.
+The installer reports the missing skill and leaves its managed runtime unchanged. Resolve
+the fetch failure, then rerun it so the installed skill bytes and runtime match. See
+[adapters/HERMES.md](adapters/HERMES.md) section 8.
 
 **Do I need a Sefi slash command for every Codex prompt?** No. Run `install-codex.sh` once,
 start a new Codex session, and accept the displayed hook-trust prompt. The installer adds

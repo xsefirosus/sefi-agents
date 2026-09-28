@@ -1394,9 +1394,9 @@ echo "=== install-codex.sh (native Codex bootstrap) ==="
 # The resolver is invoked explicitly through `bash`, so it only needs to be a readable
 # file. Requiring its executable bit fails on Linux checkouts when Git tracks it as 100644;
 # Git Bash on Windows masks that distinction. Keep the portable guard as a regression test.
-if grep -qF '[ -d "$CORE/agents" ] && [ -f "$MODEL_FOR" ]' "$ROOT/install-codex.sh" \
+if grep -qF '[ -d "$PROFILE_CORE/agents" ] && [ -f "$MODEL_FOR" ]' "$ROOT/install-codex.sh" \
   && ! grep -qF '[ -x "$MODEL_FOR" ]' "$ROOT/install-codex.sh"; then
-  ok "install-codex.sh accepts a non-executable resolver invoked through bash"
+  ok "install-codex.sh accepts a non-executable resolver from the verified installed plugin"
 else
   bad "install-codex.sh requires an executable resolver even though it invokes bash explicitly"
 fi
@@ -1425,17 +1425,32 @@ cat > "$CODEX_BIN/codex" <<'FAKECODEX'
 #!/usr/bin/env bash
 set -eu
 printf '%s\n' "$*" >> "${CODEX_TEST_LOG:?}"
+state="${CODEX_TEST_STATE:?}"
+marketplace="$state/marketplace"
+ensure_marketplace() {
+  mkdir -p "$marketplace/plugins/sefi-core"
+  cp -R "${CODEX_FIXTURE_ROOT:?}/plugins/sefi-core/." "$marketplace/plugins/sefi-core/"
+  : > "$state/added"
+}
 case "$*" in
-  'plugin marketplace list --json') printf '%s\n' '{"marketplaces":[]}' ;;
-  'plugin marketplace add xsefirosus/sefi-agents') : ;;
+  'plugin marketplace list --json')
+    if [ -f "$state/added" ]; then
+      printf '{"marketplaces":[{"name":"sefi-agents","root":"%s","marketplaceSource":{"sourceType":"git","source":"https://github.com/xsefirosus/sefi-agents.git"}}]}\n' "$marketplace"
+    else
+      printf '%s\n' '{"marketplaces":[]}'
+    fi
+    ;;
+  'plugin marketplace add xsefirosus/sefi-agents') ensure_marketplace ;;
   'plugin marketplace upgrade sefi-agents') : ;;
   'plugin add sefi-core@sefi-agents') : ;;
+  'plugin list --json') printf '{"installed":[{"pluginId":"sefi-core@sefi-agents","marketplaceName":"sefi-agents","source":{"source":"local","path":"%s/plugins/sefi-core"},"marketplaceSource":{"sourceType":"git","source":"https://github.com/xsefirosus/sefi-agents.git"}}]}\n' "$marketplace" ;;
   *) echo "unexpected fake codex invocation: $*" >&2; exit 64 ;;
 esac
 FAKECODEX
 chmod +x "$CODEX_BIN/codex"
 CODEX_HOME_TMP="$CODEX_TMP/home"
-mkdir -p "$CODEX_HOME_TMP"
+CODEX_TEST_STATE="$CODEX_TMP/state"
+mkdir -p "$CODEX_HOME_TMP" "$CODEX_TEST_STATE"
 printf '# Keep this user instruction.\n' > "$CODEX_HOME_TMP/AGENTS.md"
 mkdir -p "$CODEX_HOME_TMP/agents"
 for source_agent in "$CORE"/agents/*.md; do
@@ -1452,7 +1467,7 @@ EOF
 done
 
 codex_install_rc=0
-env PATH="$CODEX_BIN:$PATH" CODEX_HOME="$CODEX_HOME_TMP" CODEX_TEST_LOG="$CODEX_LOG" \
+env PATH="$CODEX_BIN:$PATH" CODEX_HOME="$CODEX_HOME_TMP" CODEX_TEST_LOG="$CODEX_LOG" CODEX_TEST_STATE="$CODEX_TEST_STATE" CODEX_FIXTURE_ROOT="$ROOT" \
   bash "$ROOT/install-codex.sh" >/dev/null 2>&1 || codex_install_rc=$?
 if [ "$codex_install_rc" -eq 0 ] \
   && grep -qF '# Keep this user instruction.' "$CODEX_HOME_TMP/AGENTS.md" \
@@ -1491,7 +1506,7 @@ else
 fi
 
 codex_second_rc=0
-env PATH="$CODEX_BIN:$PATH" CODEX_HOME="$CODEX_HOME_TMP" CODEX_TEST_LOG="$CODEX_LOG" \
+env PATH="$CODEX_BIN:$PATH" CODEX_HOME="$CODEX_HOME_TMP" CODEX_TEST_LOG="$CODEX_LOG" CODEX_TEST_STATE="$CODEX_TEST_STATE" CODEX_FIXTURE_ROOT="$ROOT" \
   bash "$ROOT/install-codex.sh" >/dev/null 2>&1 || codex_second_rc=$?
 marker_count="$(grep -cF '<!-- sefi-agents:codex-bootstrap:start -->' "$CODEX_HOME_TMP/AGENTS.md" 2>/dev/null || true)"
 if [ "$codex_second_rc" -eq 0 ] && [ "$marker_count" = "1" ]; then
@@ -1507,7 +1522,7 @@ mkdir -p "$WRAPPER_HOME"
 mkdir -p "$WRAPPER_HOME/agents"
 cp "$CODEX_HOME_TMP"/agents/*.toml "$WRAPPER_HOME/agents/"
 wrapper_rc=0
-env PATH="$CODEX_BIN:$PATH" CODEX_HOME="$WRAPPER_HOME" CODEX_TEST_LOG="$CODEX_LOG" \
+env PATH="$CODEX_BIN:$PATH" CODEX_HOME="$WRAPPER_HOME" CODEX_TEST_LOG="$CODEX_LOG" CODEX_TEST_STATE="$CODEX_TEST_STATE" CODEX_FIXTURE_ROOT="$ROOT" \
   bash "$ROOT/install.sh" --target codex >/dev/null 2>&1 || wrapper_rc=$?
 if [ "$wrapper_rc" -eq 0 ] \
   && grep -qF '<!-- sefi-agents:codex-bootstrap:start -->' "$WRAPPER_HOME/AGENTS.md"; then
@@ -2939,12 +2954,29 @@ codex:
 MAP
 CODEX_OVERRIDE_BIN="$CODEX_OVERRIDE_TMP/bin"
 CODEX_OVERRIDE_HOME="$CODEX_OVERRIDE_TMP/home"
-mkdir -p "$CODEX_OVERRIDE_BIN" "$CODEX_OVERRIDE_HOME/agents"
+CODEX_OVERRIDE_STATE="$CODEX_OVERRIDE_TMP/state"
+mkdir -p "$CODEX_OVERRIDE_BIN" "$CODEX_OVERRIDE_HOME/agents" "$CODEX_OVERRIDE_STATE"
 cat > "$CODEX_OVERRIDE_BIN/codex" <<'FAKECODEXOVERRIDE'
 #!/usr/bin/env bash
+set -eu
+state="${CODEX_OVERRIDE_STATE:?}"
+marketplace="$state/marketplace"
+ensure_marketplace() {
+  mkdir -p "$marketplace/plugins/sefi-core"
+  cp -R "${CODEX_FIXTURE_ROOT:?}/plugins/sefi-core/." "$marketplace/plugins/sefi-core/"
+  : > "$state/added"
+}
 case "$*" in
-  'plugin marketplace list --json') printf '%s\n' '{"marketplaces":[]}' ;;
-  'plugin marketplace add xsefirosus/sefi-agents'|'plugin marketplace upgrade sefi-agents'|'plugin add sefi-core@sefi-agents') : ;;
+  'plugin marketplace list --json')
+    if [ -f "$state/added" ]; then
+      printf '{"marketplaces":[{"name":"sefi-agents","root":"%s","marketplaceSource":{"sourceType":"git","source":"https://github.com/xsefirosus/sefi-agents.git"}}]}\n' "$marketplace"
+    else
+      printf '%s\n' '{"marketplaces":[]}'
+    fi
+    ;;
+  'plugin marketplace add xsefirosus/sefi-agents') ensure_marketplace ;;
+  'plugin marketplace upgrade sefi-agents'|'plugin add sefi-core@sefi-agents') : ;;
+  'plugin list --json') printf '{"installed":[{"pluginId":"sefi-core@sefi-agents","marketplaceName":"sefi-agents","source":{"source":"local","path":"%s/plugins/sefi-core"},"marketplaceSource":{"sourceType":"git","source":"https://github.com/xsefirosus/sefi-agents.git"}}]}\n' "$marketplace" ;;
   *) exit 64 ;;
 esac
 FAKECODEXOVERRIDE
@@ -2954,7 +2986,7 @@ for source_agent in "$CORE"/agents/*.md; do
   printf 'name = "%s"\ndeveloper_instructions = "fixture"\n' "$override_name" > "$CODEX_OVERRIDE_HOME/agents/$override_name.toml"
 done
 override_rc=0
-env PATH="$CODEX_OVERRIDE_BIN:$PATH" CODEX_HOME="$CODEX_OVERRIDE_HOME" \
+env PATH="$CODEX_OVERRIDE_BIN:$PATH" CODEX_HOME="$CODEX_OVERRIDE_HOME" CODEX_OVERRIDE_STATE="$CODEX_OVERRIDE_STATE" CODEX_FIXTURE_ROOT="$ROOT" \
   bash "$ROOT/install-codex.sh" --model-map "$CODEX_OVERRIDE_MAP" >/dev/null 2>&1 || override_rc=$?
 if [ "$override_rc" -eq 0 ] \
    && grep -qF 'model = "custom/orchestrator"' "$CODEX_OVERRIDE_HOME/agents/sefi-agents.toml" \

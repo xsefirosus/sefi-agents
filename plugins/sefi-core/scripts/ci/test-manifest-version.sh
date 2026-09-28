@@ -287,27 +287,34 @@ esac
 STUBEOF
 chmod +x "$STUB/hermes"
 HDEST="$HERMES_STATE/skills"
+HRUNTIME="$HERMES_STATE/sefi-core"
 expect_code 0 "stubbed normal install exits 0" env PATH="$STUB:$PATH" bash "$CORE/scripts/install-hermes.sh"
-[ -f "$HDEST/.sefi-agents-version.json" ] \
-  && ok "successful install records the version marker" \
-  || bad "successful install recorded no version marker"
-[ "$(json_field "$HDEST/.sefi-agents-version.json" source_commit)" = "$(git -C "$ROOT" rev-parse HEAD)" ] \
-  && ok "hermes marker derives the commit from the checkout" \
-  || bad "hermes marker commit is $(json_field "$HDEST/.sefi-agents-version.json" source_commit)"
+[ -f "$HRUNTIME/.sefi-agents-manifest.json" ] \
+  && ok "successful install records the canonical runtime manifest" \
+  || bad "successful install recorded no runtime manifest"
+[ "$(json_field "$HRUNTIME/.sefi-agents-manifest.json" source_commit)" = "$(git -C "$ROOT" rev-parse HEAD)" ] \
+  && ok "hermes runtime manifest derives the commit from the checkout" \
+  || bad "hermes runtime manifest commit is $(json_field "$HRUNTIME/.sefi-agents-manifest.json" source_commit)"
+[ -f "$HDEST/anti-hallucination/SKILL.md" ] \
+  && ok "hermes fixture copies verified skill bytes before runtime installation" \
+  || bad "hermes fixture copied no installed skill bytes"
 out="$(PATH="$STUB:$PATH" bash "$CORE/scripts/install-hermes.sh" --auto-update 2>&1)"; rc=$?
 [ "$rc" -eq 0 ] && ok "hermes diff-current exits 0" || bad "hermes --auto-update exited $rc: $out"
 case "$out" in
   *"nothing to do"*) ok "hermes diff-current does nothing" ;;
   *) bad "hermes second run did not report nothing-to-do: $out" ;;
 esac
-printf 'user edit\n' > "$HDEST/anti-hallucination/user-edit.txt"
+mkdir -p "$HRUNTIME/user-content"
+printf 'user edit\n' > "$HRUNTIME/user-content/keep.txt"
+printf 'managed drift\n' >> "$HRUNTIME/scripts/gate.sh"
 out="$(PATH="$STUB:$PATH" bash "$CORE/scripts/install-hermes.sh" --auto-update 2>&1)"; rc=$?
 [ "$rc" -eq 1 ] && ok "hermes diff-drift stops with an error" || bad "hermes drifted --auto-update exited $rc: $out"
 case "$out" in
-  *"anti-hallucination"*) ok "hermes drift error names the modified skill" ;;
-  *) bad "hermes drift error names no skill: $out" ;;
+  *"gate.sh"*) ok "hermes drift error names the modified runtime file" ;;
+  *) bad "hermes drift error names no runtime file: $out" ;;
 esac
-"$PYBIN" - "$HDEST/.sefi-agents-version.json" <<'PYEOF'
+cp "$CORE/scripts/gate.sh" "$HRUNTIME/scripts/gate.sh"
+"$PYBIN" - "$HRUNTIME/.sefi-agents-manifest.json" <<'PYEOF'
 import json
 import sys
 path = sys.argv[1]
@@ -318,12 +325,12 @@ json.dump(payload, open(path, "w", encoding="utf-8"), indent=2, sort_keys=True)
 PYEOF
 out="$(PATH="$STUB:$PATH" bash "$CORE/scripts/install-hermes.sh" --auto-update 2>&1)"; rc=$?
 [ "$rc" -eq 0 ] && ok "hermes diff-stale performs the normal install" || bad "hermes stale --auto-update exited $rc: $out"
-[ ! -e "$HDEST/anti-hallucination/user-edit.txt" ] \
-  && ok "hermes stale update restores installed skills from source" \
-  || bad "hermes stale update left user edits in place"
-[ "$(json_field "$HDEST/.sefi-agents-version.json" source_version)" != "v0.0.0-stale-fixture" ] \
-  && ok "hermes stale update refreshes the version marker" \
-  || bad "hermes stale update left the stale marker in place"
+[ -e "$HRUNTIME/user-content/keep.txt" ] \
+  && ok "hermes stale update preserves unrelated runtime user content" \
+  || bad "hermes stale update removed unrelated runtime user content"
+[ "$(json_field "$HRUNTIME/.sefi-agents-manifest.json" source_version)" != "v0.0.0-stale-fixture" ] \
+  && ok "hermes stale update refreshes the runtime manifest version" \
+  || bad "hermes stale update left the stale runtime manifest in place"
 
 echo
 if [ "$fail" -ne 0 ]; then echo "test-manifest-version: $fail failed, $pass passed"; exit 1; fi

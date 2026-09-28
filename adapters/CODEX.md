@@ -25,7 +25,7 @@ every project loads `sefi-core:sefi-orchestration` before work begins. You do no
 `/sefi:*` command for each prompt. The routing skill still uses its documented trivial-task
 exception, so a short question does not mechanically spawn specialists.
 
-The installed package contains all 17 agents, 19 skills, hooks, commands, and templates.
+The installed package contains all 17 agents, 20 skills, hooks, commands, and templates.
 Re-run `bash install-codex.sh` after an update; it refreshes the marketplace and replaces
 only its own marked instruction block and Sefi's own custom-agent model fields.
 
@@ -33,6 +33,21 @@ The bootstrap is user-wide. From each repository you later use, run `/sefi:init`
 that repository's root before its first routed request. It cannot be done automatically at
 install time because the bootstrap cannot safely choose or modify a project. Init leaves
 cross-project memory off unless an interactive user enables the local/private mirror.
+
+## 1.1 Run a systems audit
+
+Codex invokes an installed skill with a `$` prefix. After `/sefi:init`, ask:
+
+```text
+Use $systems-audit for the build scope.
+```
+
+The skill accepts `complete`, `research`, `product`, `design`, `build`, `quality`, `docs`,
+or `delivery`. The top-level orchestrator owns dispatch, and `systems-auditor` writes the
+report without dispatching another agent or modifying source. Reports are written to
+`audits/audit-report-<scope>-<timestamp>-<session>.md`. Local memory search and
+`/sefi:memory-index rebuild` include audit reports; cross-project memory mirroring refuses
+them. The `$skill-name` invocation form follows the [Codex skill documentation](https://developers.openai.com/plugins/build/skills).
 
 ## 2. Subagents (multi_agent)
 

@@ -76,7 +76,12 @@ cat > "$HERMES_BIN/hermes" <<'HERMES'
 set -euo pipefail
 case "${1:-} ${2:-}" in
   'skills install')
-    printf '%s\n' "${3##*/}" >> "$HERMES_TEST_STATE"
+    name="${3##*/}"
+    skills="${HERMES_TEST_HOME}/skills"
+    mkdir -p "$skills"
+    rm -rf "$skills/$name"
+    cp -R "${HERMES_TEST_SKILLS_SRC:?}/$name" "$skills/$name"
+    printf '%s\n' "$name" >> "$HERMES_TEST_STATE"
     ;;
   'skills list')
     vbar_sp=$(printf '\342\224\202 ')
@@ -97,7 +102,7 @@ esac
 HERMES
 chmod +x "$HERMES_BIN/hermes"
 : > "$HERMES_STATE"
-if PATH="$HERMES_BIN:$PATH" HERMES_TEST_STATE="$HERMES_STATE" HERMES_TEST_HOME="$TMP/hermes-home" \
+if PATH="$HERMES_BIN:$PATH" HERMES_TEST_STATE="$HERMES_STATE" HERMES_TEST_HOME="$TMP/hermes-home" HERMES_TEST_SKILLS_SRC="$CORE/skills" \
   "$BASH_EXEC" "$CORE/scripts/install-hermes.sh" >"$TMP/hermes.out" 2>&1; then
   onboarding_message "$TMP/hermes.out" "Hermes"
 else
@@ -110,23 +115,23 @@ mkdir -p "$CODEX_BIN" "$CODEX_HOME"
 cat > "$CODEX_BIN/codex" <<'CODEX'
 #!/usr/bin/env bash
 set -euo pipefail
+marketplace="$CODEX_HOME/marketplaces/sefi-agents"
+ensure_marketplace() {
+  mkdir -p "$marketplace/plugins/sefi-core"
+  cp -R "${ONBOARDING_CORE:?}/." "$marketplace/plugins/sefi-core/"
+  : > "$CODEX_HOME/.sefi-marketplace-added"
+}
 case "$*" in
   'plugin marketplace list --json')
-    printf '%s\n' '{"marketplaces":[]}'
+    if [ -f "$CODEX_HOME/.sefi-marketplace-added" ]; then
+      printf '{"marketplaces":[{"name":"sefi-agents","root":"%s","marketplaceSource":{"sourceType":"git","source":"https://github.com/xsefirosus/sefi-agents.git"}}]}\n' "$marketplace"
+    else
+      printf '%s\n' '{"marketplaces":[]}'
+    fi
     ;;
-  'plugin marketplace add xsefirosus/sefi-agents'|'plugin marketplace upgrade sefi-agents')
-    ;;
-  'plugin add sefi-core@sefi-agents')
-    mkdir -p "$CODEX_HOME/agents"
-    for source_agent in "$ONBOARDING_CORE"/agents/*.md; do
-      [ -f "$source_agent" ] || continue
-      name="$(sed -n 's/^name:[[:space:]]*\([a-z0-9-]*\).*/\1/p' "$source_agent" | head -1)"
-      cat > "$CODEX_HOME/agents/$name.toml" <<PROFILE
-name = "$name"
-developer_instructions = "fixture"
-PROFILE
-    done
-    ;;
+  'plugin marketplace add xsefirosus/sefi-agents') ensure_marketplace ;;
+  'plugin marketplace upgrade sefi-agents'|'plugin add sefi-core@sefi-agents') : ;;
+  'plugin list --json') printf '{"installed":[{"pluginId":"sefi-core@sefi-agents","marketplaceName":"sefi-agents","source":{"source":"local","path":"%s/plugins/sefi-core"},"marketplaceSource":{"sourceType":"git","source":"https://github.com/xsefirosus/sefi-agents.git"}}]}\n' "$marketplace" ;;
   *)
     printf 'unexpected fake codex invocation: %s\n' "$*" >&2
     exit 64

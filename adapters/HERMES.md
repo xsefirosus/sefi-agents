@@ -45,6 +45,23 @@ one-time route reminder. The successful installer message tells users to run `/s
 from each project root before that request. Init keeps the optional local/private
 cross-project memory mirror off unless an interactive user enables it.
 
+### Run a systems audit
+
+Hermes installs the `systems-audit` skill and its managed canonical runtime. Ask for an
+audit in natural language after `/sefi:init`, for example:
+
+```text
+Run the systems-audit skill for the build scope.
+```
+
+Use one of `complete`, `research`, `product`, `design`, `build`, `quality`, `docs`, or
+`delivery`. The top-level orchestrator owns dispatch, the skill supplies the evidence
+method, and `systems-auditor` writes the report without dispatching another agent or
+modifying source. Reports are written to
+`audits/audit-report-<scope>-<timestamp>-<session>.md`. Local memory search and
+`/sefi:memory-index rebuild` include audit reports; cross-project memory mirroring refuses
+them. The installer provides no Hermes slash command for this workflow.
+
 The cross-project memory mirror (`memory-protocol/SKILL.md` WRITE step 4) needs none of
 the hook wiring above -- `resolve-shared-memory-path.sh` and `write-shared-memory-mirror.sh`
 are plain bash the Memory Journalist runs directly at close_out, so they work identically
@@ -99,59 +116,49 @@ bash plugins/sefi-core/scripts/install-hermes.sh
 ```
 
 The script loops the real `hermes skills install <owner>/<repo>/<path>` command once per
-skill (all 19). After the loop it derives success from `hermes skills list` rather
-than from the per-call exit code, because hermes exits 0 even on a BLOCKED scanner
-verdict.
+skill (all 20). After the loop it derives success from `hermes skills list` and a
+byte-for-byte comparison with the expected source, rather than from the per-call exit code,
+because hermes exits 0 even on a BLOCKED scanner verdict.
 
 Two skills are attempted with `--force` because hermes's community-skill scanner can
 flag their *content* on substring match: `sefi-orchestration` (its references name
 subagent dispatch / hooks / shell) and `security-review` (its checklist names
 dangerous patterns to warn against them). On this Hermes version, `--force` does not
-override a `DANGEROUS` verdict. The script still attempts all 19 skills, verifies the
-real installed set with `hermes skills list`, reports any missing names, and exits 1
-when the verified count is incomplete. The other 17 stay on the default no-override
+override a `DANGEROUS` verdict. The script still attempts all 20 skills, verifies the
+real installed set and fetched bytes, reports any missing names, and exits 1 when the
+verified count is incomplete or content differs. The other 18 stay on the default no-override
 path.
 
-Agents are NOT installed this way -- Hermes has no discrete "install agent" concept.
-The roster maps to Hermes subagent delegation via `delegate_task(...)` (see row 3 of
-section 7 above).
+Hermes has no discrete agent-install command. The installer keeps a managed canonical
+runtime at `sefi-core/` beside the path returned by `hermes config path`; it contains the
+agents, skills, scripts, config, commands, and templates needed by installed references.
+The installed `systems-audit` report contract resolves the validator and formatter from
+that runtime. The roster maps to Hermes subagent delegation via `delegate_task(...)` (see
+row 3 of section 7 above).
 
 ### Updating an existing install (`--auto-update`)
 
-Every install records the laid-down source version (`source_version` and
-`source_commit`, derived from this checkout's git tag and commit) beside the
-installed skills. Re-running with `--auto-update` compares the installed skills
-against the current checkout before installing anything:
+Every install records the laid-down source version (`source_version` and `source_commit`)
+and per-managed-file SHA-256 hashes in `sefi-core/.sefi-agents-manifest.json`. Re-running
+with `--auto-update` compares that managed runtime against the current checkout:
 
-- No differences -- all 19 skills are current. Refreshes only the version
-  record and exits 0, changing nothing.
-- Differences with an older recorded version (`stale`) -- falls through to the
-  normal install below.
-- Differences whose recorded version matches this checkout -- those are
-  user-modified skills (`drift`). Stops with an error naming them rather than
-  overwriting; reconcile by hand, then run without `--auto-update` to
-  reinstall.
-- Differences with no recorded version at all are unclassifiable as an update
-  versus user edits, so the script stops with an error rather than guessing;
-  same remedy: reconcile by hand, then reinstall without the flag.
+- No differences -- the runtime is current and stays untouched.
+- A source-revision or source-file mismatch (`stale`) -- refreshes only verified managed
+  files and preserves unrelated runtime content.
+- A changed managed file (`drift`) -- stops with an error naming it rather than overwriting.
+- A legacy skill-only installation has no runtime, so `--auto-update` adds it. An existing
+  runtime without a valid manifest stops as unclassifiable.
 
-Deriving the source version needs Python 3.11+; without it `--auto-update`
-refuses to guess instead of proceeding on an unknown version.
+Recording and checking the runtime needs Python 3.11+; without it the installer refuses to
+guess. Candidate-checkout simulations prove local installer behavior. Public-source smoke
+checks verify downloaded release bytes only after publication.
 
 ### If sefi-orchestration / security-review still show as missing
 
-`--force` does not guarantee a pass -- the scanner's verdict is not fully deterministic
-(it can pull the same skill from a different source on a retry) and can go either way.
-When the script's final report names either skill as missing, it also prints a ready-to-run
-fix: a direct `cp -r` of the skill folder straight into Hermes's own skills directory
-(path derived from `hermes config path`, not hardcoded), which bypasses the scanner
-entirely. This was verified live: a directly-copied skill shows up in `hermes skills
-list` as `Source=local, Status=enabled` and Hermes reads it exactly like any other
-installed skill -- the scanner only runs as part of the `skills install` fetch path, not
-Hermes's own skill-loading. That printed block is deliberately addressed to whichever
-LLM is operating the terminal (labeled `AGENT INSTRUCTION`), so an agent-run install
-session can read the failure output and complete the fix itself, the same way a human
-would run the printed commands.
+`--force` does not guarantee a pass -- the scanner's verdict is not fully deterministic.
+When the installer reports a missing skill or mismatched bytes, it leaves the managed runtime
+unchanged. Resolve the fetch issue and rerun the installer so the native skill and canonical
+runtime remain a matched set.
 
 ## Troubleshooting
 
@@ -161,7 +168,7 @@ would run the printed commands.
   drift, JSON validity, and synthetic run timing") -- useful only once you have wired the
   memory-injection hook yourself (see section 3). No sefi installer creates it on Hermes, so
   on a stock install this reports nothing about sefi.
-- **GitHub API rate limit exhausted** -- `install-hermes.sh` makes 19 fetches per run
+- **GitHub API rate limit exhausted** -- `install-hermes.sh` makes 20 fetches per run
   (one per skill); Hermes's unauthenticated GitHub API limit is 60 requests/hour, so
   a few re-runs (or other GitHub activity sharing the same limit) can exhaust it. The
   install output says so directly ("GitHub API rate limit exhausted") rather than

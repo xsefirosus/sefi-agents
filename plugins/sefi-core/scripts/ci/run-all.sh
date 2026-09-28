@@ -42,6 +42,9 @@ test-v08-conformance.sh
 test-memory-journalist.sh
 test-audit-integration.sh
 test-audit-report-validator.sh
+test-systems-audit-contract.sh
+test-systems-audit-behavior.sh
+test-systems-audit-installers.sh
 test-onboarding-v08.sh
 test-agent-capabilities-v08.sh
 test-design-council.sh
