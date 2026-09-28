@@ -29,7 +29,26 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-HERE="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_SOURCE="${BASH_SOURCE[0]}"
+SCRIPT_LINK_HOPS=0
+while [ -L "$SCRIPT_SOURCE" ]; do
+  SCRIPT_LINK_HOPS=$((SCRIPT_LINK_HOPS + 1))
+  [ "$SCRIPT_LINK_HOPS" -le 40 ] || {
+    echo "install-hermes.sh: refusing symlink loop while resolving installer path" >&2
+    exit 1
+  }
+  SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_SOURCE")" && pwd)"
+  SCRIPT_LINK="$(readlink "$SCRIPT_SOURCE")"
+  case "$SCRIPT_LINK" in
+    /*) SCRIPT_SOURCE="$SCRIPT_LINK" ;;
+    *) SCRIPT_SOURCE="$SCRIPT_DIR/$SCRIPT_LINK" ;;
+  esac
+done
+[ -f "$SCRIPT_SOURCE" ] || {
+  echo "install-hermes.sh: installer source does not resolve to a regular file" >&2
+  exit 1
+}
+HERE="$(cd -P "$(dirname "$SCRIPT_SOURCE")" && pwd)"
 CORE="$(cd "$HERE/.." && pwd)"
 SKILLS_SRC="$CORE/skills"
 PACKAGE_MANIFEST="$HERE/package-manifest.sh"
@@ -72,7 +91,7 @@ PYBIN="$(find_python)" || {
   echo "install-hermes.sh: Python 3.11+ is required to record and verify the managed runtime" >&2
   exit 2
 }
-[ -x "$PACKAGE_MANIFEST" ] || {
+[ -f "$PACKAGE_MANIFEST" ] || {
   echo "install-hermes.sh: package manifest helper missing at $PACKAGE_MANIFEST" >&2
   exit 1
 }
@@ -431,5 +450,9 @@ fi
 install_runtime
 resolve_systems_audit_runtime
 INSTALL_SUCCEEDED=1
-echo "install-hermes.sh: all $ok of 20 skills installed with verified source bytes and managed runtime $RUNTIME." >&2
+if [ "$RUNTIME_STATE" = "current" ]; then
+  echo "install-hermes.sh: managed runtime is current; nothing to do." >&2
+else
+  echo "install-hermes.sh: all $ok of 20 skills installed with verified source bytes and managed runtime $RUNTIME." >&2
+fi
 print_onboarding

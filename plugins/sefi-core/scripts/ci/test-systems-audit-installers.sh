@@ -212,10 +212,12 @@ case "${1:-}" in
         if [ "${HERMES_TEST_MISMATCH:-}" = "$name" ]; then printf '\ncorrupt\n' >>"$target/SKILL.md"; fi
         ;;
       list)
-        printf '│ Name │ Source │\n'
+        vbar_sp=$(printf '\342\224\202 ')
+        sp_vbar=$(printf ' \342\224\202')
+        printf '%sName%s Source%s\n' "$vbar_sp" "$sp_vbar" "$sp_vbar"
         for skill in "$(dirname "$HERMES_TEST_CONFIG/config.toml")"/skills/*; do
           [ -d "$skill" ] || continue
-          printf '│ %s │ local │\n' "$(basename "$skill")"
+          printf '%s%s%s local%s\n' "$vbar_sp" "$(basename "$skill")" "$sp_vbar" "$sp_vbar"
         done
         ;;
       *) exit 64 ;;
@@ -229,6 +231,37 @@ hermes_env=(env PATH="$fake_bin:$PATH" HERMES_TEST_CONFIG="$hermes_config" HERME
 runtime="$(dirname "$hermes_config/config.toml")/sefi-core"
 
 expect_success "Hermes fresh install creates the managed runtime" "${hermes_env[@]}" bash "$HERMES_INSTALL"
+# A launcher symlink must not redirect the readable package helper lookup to a writable
+# sibling directory.
+attacker_dir="$tmp/hermes-symlink-attacker"
+mkdir -p "$attacker_dir"
+ln -s "$HERMES_INSTALL" "$attacker_dir/install-hermes.sh"
+cat > "$attacker_dir/package-manifest.sh" <<'ATTACKER_HELPER'
+#!/usr/bin/env bash
+printf 'UNTRUSTED_HELPER_EXECUTED\n' > "${HERMES_ATTACK_MARKER:?}"
+exit 99
+ATTACKER_HELPER
+chmod 0644 "$attacker_dir/package-manifest.sh"
+attack_marker="$tmp/untrusted-helper-executed"
+expect_success "Hermes symlink entrypoint binds its package helper to the trusted installer" \
+  env PATH="$fake_bin:$PATH" HERMES_TEST_CONFIG="$hermes_config" HERMES_TEST_SOURCE="$CORE" HERMES_ATTACK_MARKER="$attack_marker" bash "$attacker_dir/install-hermes.sh"
+if [ ! -e "$attack_marker" ]; then
+  ok "Hermes symlink entrypoint never executes an adjacent untrusted helper"
+else
+  bad "Hermes symlink entrypoint executed an adjacent untrusted helper"
+fi
+ln -s "$attacker_dir/missing-installer.sh" "$attacker_dir/broken-installer.sh"
+expect_failure "Hermes rejects a broken installer symlink before helper lookup" \
+  env PATH="$fake_bin:$PATH" HERMES_TEST_CONFIG="$hermes_config" HERMES_TEST_SOURCE="$CORE" HERMES_ATTACK_MARKER="$attack_marker" bash "$attacker_dir/broken-installer.sh"
+ln -s "$attacker_dir/loop-b.sh" "$attacker_dir/loop-a.sh"
+ln -s "$attacker_dir/loop-a.sh" "$attacker_dir/loop-b.sh"
+expect_failure "Hermes bounds an installer symlink loop before helper lookup" \
+  env PATH="$fake_bin:$PATH" HERMES_TEST_CONFIG="$hermes_config" HERMES_TEST_SOURCE="$CORE" HERMES_ATTACK_MARKER="$attack_marker" bash "$attacker_dir/loop-a.sh"
+if [ ! -e "$attack_marker" ]; then
+  ok "Hermes broken and looping entrypoints never execute an adjacent helper"
+else
+  bad "Hermes broken or looping entrypoint executed an adjacent helper"
+fi
 if [ -f "$runtime/.sefi-agents-manifest.json" ] \
   && [ -f "$runtime/agents/systems-auditor.md" ] \
   && [ -f "$runtime/skills/systems-audit/references/report-contract.md" ] \
