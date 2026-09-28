@@ -10,6 +10,12 @@ BASE_HEAD="$(git -C "$ROOT" rev-parse HEAD)"
 BASE_TREE="$(git -C "$ROOT" rev-parse HEAD^{tree})"
 CANDIDATE_TREE="$(git -C "$ROOT" write-tree)"
 CANDIDATE_PATCH_SHA256="$(git -C "$ROOT" diff --cached --binary | sha256sum | awk '{print $1}')"
+EMPTY_PATCH_SHA256="$(printf '' | sha256sum | awk '{print $1}')"
+if [ "$CANDIDATE_TREE" = "$BASE_TREE" ]; then
+  CANDIDATE_IDENTITY="clean-committed"
+else
+  CANDIDATE_IDENTITY="staged"
+fi
 tmp="$(mktemp -d)"
 tmp_resolved="$(cd -P "$tmp" && pwd -P)"
 
@@ -273,7 +279,7 @@ if [ -f "$runtime/.sefi-agents-manifest.json" ] \
 else
   bad "Hermes runtime contains canonical audit dependencies"
 fi
-if python - "$CORE" "$runtime" "$BASE_HEAD" "$BASE_TREE" "$CANDIDATE_TREE" "$CANDIDATE_PATCH_SHA256" <<'PY'
+if python - "$CORE" "$runtime" "$BASE_HEAD" "$BASE_TREE" "$CANDIDATE_TREE" "$CANDIDATE_PATCH_SHA256" "$EMPTY_PATCH_SHA256" "$CANDIDATE_IDENTITY" <<'PY'
 import hashlib
 import json
 import subprocess
@@ -282,14 +288,20 @@ from pathlib import Path
 
 source = Path(sys.argv[1])
 runtime = Path(sys.argv[2])
-base_head, base_tree, candidate_tree, candidate_patch = sys.argv[3:]
+base_head, base_tree, candidate_tree, candidate_patch, empty_patch, identity = sys.argv[3:]
 manifest = json.loads((runtime / ".sefi-agents-manifest.json").read_text(encoding="utf-8"))
 if manifest.get("source_commit") != base_head:
     raise SystemExit("manifest source_commit does not equal base HEAD")
-if candidate_tree == base_tree:
-    raise SystemExit("candidate tree unexpectedly equals the base tree")
 if len(candidate_patch) != 64 or set(candidate_patch) - set("0123456789abcdef"):
     raise SystemExit("candidate patch SHA-256 is invalid")
+if identity == "clean-committed":
+    if candidate_tree != base_tree or candidate_patch != empty_patch:
+        raise SystemExit("clean committed candidate has staged identity data")
+elif identity == "staged":
+    if candidate_tree == base_tree or candidate_patch == empty_patch:
+        raise SystemExit("staged candidate has no staged identity data")
+else:
+    raise SystemExit(f"unknown candidate identity mode: {identity}")
 def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 source_hashes = {
@@ -305,7 +317,7 @@ for relative, expected in source_hashes.items():
 candidate_content = hashlib.sha256(
     "".join(f"{relative}\0{digest}\n" for relative, digest in sorted(source_hashes.items())).encode()
 ).hexdigest()
-print(f"base={base_head} base-tree={base_tree} candidate-tree={candidate_tree} candidate-patch-sha256={candidate_patch} candidate-content-sha256={candidate_content} files={len(source_hashes)}")
+print(f"identity={identity} base={base_head} base-tree={base_tree} candidate-tree={candidate_tree} candidate-patch-sha256={candidate_patch} candidate-content-sha256={candidate_content} files={len(source_hashes)}")
 PY
 then
   ok "Hermes records base revision and every candidate managed-file hash"
