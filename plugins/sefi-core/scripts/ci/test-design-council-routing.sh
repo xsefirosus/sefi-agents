@@ -46,8 +46,9 @@ has_all "$FALLBACK_INSTALLER" 'Claude fallback packages canonical agent and skil
 has_all "$OPENCODE_INSTALLER" 'OpenCode packages every canonical agent and skill' \
   'for src in "$AGENTS_SRC"/*.md; do' \
   'for src_dir in "$SKILLS_SRC" "$COMMANDS_SRC" "$SCRIPTS_SRC"; do'
-has_all "$CODEX_BOOTSTRAP" 'Codex bootstrap derives profiles from canonical agents' \
-  'for source_agent in "$CORE"/agents/*.md; do'
+has_all "$CODEX_BOOTSTRAP" 'Codex bootstrap derives profiles from verified installed plugin agents' \
+  'for source_agent in "$PROFILE_CORE"/agents/*.md; do' \
+  'MODEL_FOR="$PROFILE_CORE/scripts/model-for.sh"'
 has_all "$CORE/.claude-plugin/plugin.json" 'Claude package exposes the canonical skill tree' \
   '"skills": ["./skills/"]'
 has_all "$CORE/.codex-plugin/plugin.json" 'Codex package exposes the canonical skill tree' \
@@ -60,10 +61,10 @@ done
 
 agent_count="$(find "$CORE/agents" -maxdepth 1 -name '*.md' | wc -l | tr -d ' ')"
 skill_count="$(find "$CORE/skills" -name SKILL.md | wc -l | tr -d ' ')"
-if [ "$agent_count" = '17' ] && [ "$skill_count" = '19' ]; then
-  ok 'v0.9 package source contains 17 agents and 19 skills'
+if [ "$agent_count" = '17' ] && [ "$skill_count" = '20' ]; then
+  ok 'v0.9 package source contains 17 agents and 20 skills'
 else
-  bad "v0.9 package source expected 17 agents and 19 skills, got $agent_count agents and $skill_count skills"
+  bad "v0.9 package source expected 17 agents and 20 skills, got $agent_count agents and $skill_count skills"
 fi
 
 if [ "$fail" -ne 0 ]; then

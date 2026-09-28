@@ -224,3 +224,10 @@
   append here. All six 0.9.1 surfaces are observed.
   `validate-release-ledger.sh` exits 0 with
   `OK (latest 0.9.1, 6/6 surfaces observed, 0 warning(s))`.
+
+| 0.9.5 | plugin.json | 0.9.5 | 0.9.5 | match | plugins/sefi-core/.claude-plugin/plugin.json:3 -> version 0.9.5; plugins/sefi-core/.codex-plugin/plugin.json:3 -> version 0.9.5 | a README count or CHANGELOG heading that happens to agree | 2026-09-28T01:59:13Z |
+| 0.9.5 | marketplace.json | 0.9.5 | 0.9.5 | match | .claude-plugin/marketplace.json:4 -> metadata.version 0.9.5; .claude-plugin/marketplace.json:10 -> plugins[0].version 0.9.5 | updating one occurrence and assuming the other followed | 2026-09-28T01:59:13Z |
+| 0.9.5 | changelog | 0.9.5 | 0.9.5 | match | CHANGELOG.md:6 -> ## [0.9.5] - 2026-09-28 | a Changed or Added bullet without a dated heading above it | 2026-09-28T01:59:13Z |
+| 0.9.5 | git-tag | 0.9.5 | unobserved | unobserved | git tag --points-at HEAD; git ls-remote --tags origin refs/tags/v0.9.5 refs/tags/v0.9.5^{} -> no output | a local tag that was never pushed to origin | 2026-09-28T01:59:13Z |
+| 0.9.5 | github-release | 0.9.5 | unobserved | unobserved | gh release view v0.9.5 --repo xsefirosus/sefi-agents --json tagName,name,targetCommitish,isDraft,isPrerelease,publishedAt,url -> release not found | a local or pushed tag with no published release; a draft release | 2026-09-28T01:59:13Z |
+| 0.9.5 | github-marketplace-index | 0.9.5 | 0.9.4 | lag | gh api -H Accept:application/vnd.github.raw+json repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main -> metadata.version 0.9.4; plugins[0].version 0.9.4 | install commands quoted only in a README | 2026-09-28T01:59:13Z |

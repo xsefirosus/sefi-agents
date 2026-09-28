@@ -41,6 +41,11 @@ run_validator() {
   bash "$fixture/plugins/sefi-core/scripts/ci/validate-audit-report.sh" "$report"
 }
 
+run_installed_validator() {
+  local installed="$1" project="$2" report="$3"
+  bash "$installed/plugins/sefi-core/scripts/ci/validate-audit-report.sh" --root "$project" "$report"
+}
+
 echo '=== valid report and preserved report checks ==='
 fixture="$TMP/fixture with spaces"
 make_fixture "$fixture"
@@ -51,6 +56,38 @@ if run_validator "$fixture" "$valid" >/dev/null 2>&1; then
   ok 'valid report beneath audits with spaces passes'
 else
   bad 'valid report beneath audits with spaces passes'
+fi
+
+installed="$TMP/installed package"
+project="$TMP/audited project with spaces"
+mkdir -p "$installed/plugins/sefi-core/scripts/ci" "$project/audits/reports with spaces"
+cp "$VALIDATOR_SOURCE" "$installed/plugins/sefi-core/scripts/ci/validate-audit-report.sh"
+installed_report="$project/audits/reports with spaces/audit-report-quality-2026-09-27-installed.md"
+report_body > "$installed_report"
+if run_installed_validator "$installed" "$project" "$installed_report" >/dev/null 2>&1; then
+  ok 'installed validator accepts an explicit separate project root'
+else
+  bad 'installed validator accepts an explicit separate project root'
+fi
+
+mkdir -p "$project/outside"
+installed_outside="$project/outside/audit-report-quality-2026-09-27-outside.md"
+report_body > "$installed_outside"
+if run_installed_validator "$installed" "$project" "$project/audits/../outside/audit-report-quality-2026-09-27-outside.md" >/dev/null 2>&1; then
+  bad 'installed validator rejects traversal outside the explicit project audits root'
+else
+  ok 'installed validator rejects traversal outside the explicit project audits root'
+fi
+
+if ln -s "$project/outside" "$project/audits/outside-link" 2>/dev/null \
+  && [ -L "$project/audits/outside-link" ]; then
+  if run_installed_validator "$installed" "$project" "$project/audits/outside-link/audit-report-quality-2026-09-27-outside.md" >/dev/null 2>&1; then
+    bad 'installed validator rejects a symlink escape from the explicit project audits root'
+  else
+    ok 'installed validator rejects a symlink escape from the explicit project audits root'
+  fi
+else
+  printf '  SKIP installed validator symlink escape (host cannot create symlinks)\n'
 fi
 
 scanned="$fixture/audits/audit-report-build-2026-09-26-scanned.md"

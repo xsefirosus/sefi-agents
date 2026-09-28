@@ -3,6 +3,16 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.9.5] - 2026-09-28
+
+### Added
+- The on-demand Systems Audit skill and `/sefi:audit` command provide evidence-based,
+  scope-bounded department audits with capped findings and ignored-local reports.
+
+### Changed
+- Claude Code, Codex, OpenCode, and Hermes installations carry the Systems Audit runtime
+  assets and validate installed audit reports against their explicit project roots.
+
 ## [0.9.4] - 2026-09-26
 
 ### Added

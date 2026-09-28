@@ -5,3 +5,8 @@ post-build|qa-engineer
 trust boundary|security-engineer
 inbox item|support-engineer
 write docs|technical-writer
+Sefi department audit|systems-auditor
+systems-audit|systems-auditor
+UI audit|ui-ux-designer
+trust boundary|security-engineer
+post-build|qa-engineer

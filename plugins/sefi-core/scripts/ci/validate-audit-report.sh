@@ -5,10 +5,13 @@
 # landed is actually shaped like one before anything downstream trusts it.
 #
 # Usage:
-#   validate-audit-report.sh [--strict] [<report-path>]
+#   validate-audit-report.sh [--strict] [--root <absolute-project-directory>] [<report-path>]
 #
 #   --strict       accepted and ignored, for parity with the sibling validators
 #                  run-all.sh forwards --strict to (this check has no warning tier).
+#   --root DIR     explicitly select the audited project. DIR must be an absolute,
+#                  existing directory. This lets an installed runtime validate a
+#                  report in a different project; omit it for repository CI.
 #   <report-path>  one report file to check. Omit it to check every
 #                  audits/audit-report-*.md under the repo root instead (vacuous
 #                  pass when audits/ holds no reports -- reports are ignored-local,
@@ -26,16 +29,32 @@
 # 2 usage error (wrong arg count, unknown flag, or the path is not a file).
 set -uo pipefail
 
-ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
+DEFAULT_ROOT="$(cd "$(dirname "$0")/../../../.." && pwd -P)"
+ROOT="$DEFAULT_ROOT"
 
 REPORT=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --strict) shift ;;
-    --*) echo "ERROR: unknown argument: $1" >&2; echo "usage: validate-audit-report.sh [--strict] [<report-path>]" >&2; exit 2 ;;
+    --root)
+      if [ $# -lt 2 ]; then
+        echo "ERROR: --root requires an absolute project directory" >&2
+        exit 2
+      fi
+      case "$2" in
+        /*|[A-Za-z]:[\\/]*) : ;;
+        *) echo "ERROR: --root must be an absolute project directory: $2" >&2; exit 2 ;;
+      esac
+      if [ ! -d "$2" ]; then
+        echo "ERROR: --root directory not found: $2" >&2
+        exit 2
+      fi
+      ROOT="$(cd -P -- "$2" && pwd -P)" || { echo "ERROR: --root directory is unavailable: $2" >&2; exit 2; }
+      shift 2 ;;
+    --*) echo "ERROR: unknown argument: $1" >&2; echo "usage: validate-audit-report.sh [--strict] [--root <absolute-project-directory>] [<report-path>]" >&2; exit 2 ;;
     *)
       if [ -n "$REPORT" ]; then
-        echo "ERROR: at most one report path" >&2; echo "usage: validate-audit-report.sh [--strict] [<report-path>]" >&2; exit 2
+        echo "ERROR: at most one report path" >&2; echo "usage: validate-audit-report.sh [--strict] [--root <absolute-project-directory>] [<report-path>]" >&2; exit 2
       fi
       REPORT="$1"; shift ;;
   esac

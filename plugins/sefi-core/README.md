@@ -11,12 +11,12 @@ describes the package layout.
   ui-ux-designer, motion-designer, software-engineer, qa-engineer, security-engineer, devops-engineer,
   support-engineer, memory-journalist, technical-writer, solutions-architect, systems-auditor. Each carries a `tools`/`disallowedTools` contract, a
   harness-neutral model tier, and the anti-hallucination pointer (CI-enforced).
-- `skills/` -- 19 skills: sefi-orchestration (the always-loaded router),
+- `skills/` -- 20 skills: sefi-orchestration (the always-loaded router),
   anti-hallucination (the canonical no-invention rule), memory-protocol,
   loop-engineering, retro-improve, terse-mode, frontend-design, backend-design,
   security-review, technical-writing, n8n-workflow-design, premortem, focus,
   release-tracking, run-sefi-benchmark, motion-design, swiftui-design,
-  expo-native-design, and design-style-profiles. Deep material lives in each skill's `references/`,
+  expo-native-design, design-style-profiles, and systems-audit. Deep material lives in each skill's `references/`,
   read on demand.
 - `commands/` -- `/sefi:init`, `/sefi:close-session`, `/sefi:cross-memory`,
   `/sefi:memory-search`, `/sefi:memory-index`, `/sefi:map-codebase`, `/sefi:scout`,
@@ -54,19 +54,25 @@ describes the package layout.
 `/sefi:init` -- `/sefi:close-session` -- `/sefi:cross-memory` --
 `/sefi:memory-search` -- `/sefi:memory-index` -- `/sefi:map-codebase` --
 `/sefi:scout` -- `/sefi:triage` -- `/sefi:retro` -- `/sefi:status` --
-`/sefi:loop-new` -- `/sefi:route` -- `/sefi:audit <scope>`.
+`/sefi:loop-new` -- `/sefi:route` -- `/sefi:audit <scope>` (Claude Code and OpenCode).
 
 ## On-demand audits
 
-The audit command accepts one scope: `complete`, `research`, `product`, `design`, `build`,
-`quality`, `docs`, or `delivery`. It routes to `systems-auditor` on demand. The auditor
-reviews only the selected department outputs, writes one report, and never dispatches
-subagents, modifies source, or fixes findings.
+The audit accepts one of eight scopes: `complete`, `research`, `product`, `design`, `build`,
+`quality`, `docs`, or `delivery`. The top-level orchestrator owns dispatch. The
+`systems-audit` skill contains the evidence method and report contract, while
+`systems-auditor` reviews only the selected department outputs, writes one report, and
+never dispatches subagents, modifies source, or fixes findings. Claude Code and OpenCode
+start it with `/sefi:audit build`; Codex explicitly invokes the installed skill with
+`Use $systems-audit for the build scope`; Hermes uses
+`Run the systems-audit skill for the build scope.`
 
 Reports use the path
 `audits/audit-report-<scope>-<timestamp>-<session>.md`. The `audits/` directory is
-ignored-local. Local memory search and `/sefi:memory-index rebuild` include audit reports, while
-cross-project memory mirroring refuses them.
+ignored-local. Local memory search and `/sefi:memory-index rebuild` include audit reports,
+while cross-project memory mirroring refuses them. The command or natural-language request
+starts the workflow, the skill supplies its method, and the Systems Auditor writes the
+report.
 
 ## Design rules
 - Generator/evaluator separation: the writer never grades its own work; the qa-engineer

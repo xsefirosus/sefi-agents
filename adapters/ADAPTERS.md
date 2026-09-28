@@ -11,7 +11,7 @@ install, permission, hook, delegation, model, and verification details.
 | Claude Code | `manifests/claude-code.yml` | mapped, with a guarded orchestration fallback | plugin install or `install.sh --target claude` |
 | Codex | `manifests/codex.yml` | mapped custom-agent profiles | `install-codex.sh` or `install.sh --target codex` |
 | OpenCode | `manifests/opencode.yml` | flexible by default; optional explicit map | `install-opencode.sh` or `install.sh --target opencode` |
-| Hermes | `manifests/hermes.yml` | flexible global model | `install.sh --target hermes` |
+| Hermes | `manifests/hermes.yml` | flexible global model | `plugins/sefi-core/scripts/install-hermes.sh` |
 
 `bash install.sh --target <adapter-id>` loads the corresponding manifest and refuses an
 unknown or incomplete contract. `--model-map path/to/model-map.yml` replaces the shipped
