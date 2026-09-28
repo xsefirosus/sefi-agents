@@ -2769,6 +2769,22 @@ expect_code 0 "the four shipped adapter manifests validate" \
   bash "$CORE/scripts/ci/validate-adapters.sh"
 
 ADAPTER_TMP="$(mktemp -d)"
+
+# Windows checkouts may use CRLF line endings. The parser may discard only the
+# terminator CR: an embedded CR must still fail the schema contract.
+ADAPTER_LF_MANIFEST="$ADAPTER_TMP/opencode-lf.yml"
+ADAPTER_CRLF_MANIFEST="$ADAPTER_TMP/opencode-crlf.yml"
+ADAPTER_EMBEDDED_CR_MANIFEST="$ADAPTER_TMP/opencode-embedded-cr.yml"
+cp "$ROOT/adapters/manifests/opencode.yml" "$ADAPTER_LF_MANIFEST"
+sed 's/$/\r/' "$ADAPTER_LF_MANIFEST" > "$ADAPTER_CRLF_MANIFEST"
+sed '1s/$/\rbad/' "$ADAPTER_LF_MANIFEST" > "$ADAPTER_EMBEDDED_CR_MANIFEST"
+expect_code 0 "an LF adapter manifest remains valid" \
+  bash -c 'source "$1"; adapter_manifest_load "$2"' _ "$CORE/scripts/adapter-manifest.sh" "$ADAPTER_LF_MANIFEST"
+expect_code 0 "a CRLF adapter manifest is valid on Windows checkouts" \
+  bash -c 'source "$1"; adapter_manifest_load "$2"' _ "$CORE/scripts/adapter-manifest.sh" "$ADAPTER_CRLF_MANIFEST"
+expect_code 1 "an embedded CR in an adapter manifest still fails validation" \
+  bash -c 'source "$1"; adapter_manifest_load "$2"' _ "$CORE/scripts/adapter-manifest.sh" "$ADAPTER_EMBEDDED_CR_MANIFEST"
+
 CUSTOM_MANIFEST="$ADAPTER_TMP/custom.yml"
 cat > "$CUSTOM_MANIFEST" <<'MANIFEST'
 schema: sefi-adapter/v1

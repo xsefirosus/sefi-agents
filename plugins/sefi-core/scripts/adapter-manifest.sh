@@ -12,6 +12,10 @@ adapter_manifest_load() {
   ADAPTER_MODEL_STRATEGY=""; ADAPTER_ROUTE_EVIDENCE=""; ADAPTER_DRIVER=""; ADAPTER_DESTINATION=""
 
   while IFS= read -r line || [ -n "$line" ]; do
+    # Git commonly writes checked-out manifests as CRLF on Windows. Strip one line
+    # terminator only; a CR anywhere else remains part of the key/value and fails
+    # the contract validation below.
+    case "$line" in *$'\r') line="${line%$'\r'}" ;; esac
     case "$line" in ''|'#'*) continue ;; esac
     case "$line" in
       *:*) key="${line%%:*}"; value="${line#*:}" ;;
