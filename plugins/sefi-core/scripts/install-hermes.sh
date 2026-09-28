@@ -31,14 +31,13 @@ done
 
 SCRIPT_SOURCE="${BASH_SOURCE[0]}"
 SCRIPT_LINK_HOPS=0
-while [ -L "$SCRIPT_SOURCE" ]; do
+while SCRIPT_LINK="$(readlink "$SCRIPT_SOURCE" 2>/dev/null)"; do
   SCRIPT_LINK_HOPS=$((SCRIPT_LINK_HOPS + 1))
   [ "$SCRIPT_LINK_HOPS" -le 40 ] || {
     echo "install-hermes.sh: refusing symlink loop while resolving installer path" >&2
     exit 1
   }
   SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_SOURCE")" && pwd)"
-  SCRIPT_LINK="$(readlink "$SCRIPT_SOURCE")"
   case "$SCRIPT_LINK" in
     /*) SCRIPT_SOURCE="$SCRIPT_LINK" ;;
     *) SCRIPT_SOURCE="$SCRIPT_DIR/$SCRIPT_LINK" ;;
@@ -336,16 +335,50 @@ contract.write_text(text, encoding="utf-8", newline="\n")
 PYEOF
 }
 
+matches_expected_skill_tree() {
+# Git's Windows checkout conversion changes only LF to CRLF. Compare exact file sets and
+# bytes first; when Markdown bytes differ, accept only the corresponding CRLF-to-LF
+# normalization. Every non-Markdown file remains byte-exact.
+  "$PYBIN" - "$1" "$2" <<'PYEOF'
+import sys
+from pathlib import Path
+
+expected_root = Path(sys.argv[1])
+installed_root = Path(sys.argv[2])
+
+def files(root: Path) -> dict[str, bytes]:
+    if not root.is_dir() or root.is_symlink():
+        raise SystemExit(1)
+    result: dict[str, bytes] = {}
+    for path in root.rglob("*"):
+        if path.is_symlink() or (not path.is_dir() and not path.is_file()):
+            raise SystemExit(1)
+        if path.is_file():
+            result[path.relative_to(root).as_posix()] = path.read_bytes()
+    return result
+
+expected = files(expected_root)
+installed = files(installed_root)
+if expected.keys() != installed.keys():
+    raise SystemExit(1)
+for relative in expected:
+    source = expected[relative]
+    fetched = installed[relative]
+    if source != fetched and (not relative.endswith(".md") or source.replace(b"\r\n", b"\n") != fetched.replace(b"\r\n", b"\n")):
+        raise SystemExit(1)
+PYEOF
+}
+
 matches_expected_skill() {
-  # Accept the source bytes, or the one documented installed-only rewrite that binds the
-  # systems-audit contract to this runtime. Every other change remains an integrity failure.
+  # Accept the source bytes, checkout-only CRLF conversion, or the one documented
+  # installed-only rewrite that binds systems-audit's contract to this runtime.
   local name="$1" installed="$2" staged=""
-  if diff -r -q -- "$SKILLS_SRC/$name" "$installed" >/dev/null 2>&1; then return 0; fi
+  if matches_expected_skill_tree "$SKILLS_SRC/$name" "$installed"; then return 0; fi
   [ "$name" = "systems-audit" ] || return 1
   staged="$(mktemp -d "$SKILL_BACKUPS_ROOT/staged.XXXXXX")"
   cp -R "$SKILLS_SRC/$name" "$staged/$name"
   resolve_audit_contract "$staged/$name/references/report-contract.md"
-  if diff -r -q -- "$staged/$name" "$installed" >/dev/null 2>&1; then
+  if matches_expected_skill_tree "$staged/$name" "$installed"; then
     safe_remove_backup_path "$staged"
     return 0
   fi

@@ -242,31 +242,35 @@ expect_success "Hermes fresh install creates the managed runtime" "${hermes_env[
 attacker_dir="$tmp/hermes-symlink-attacker"
 mkdir -p "$attacker_dir"
 ln -s "$HERMES_INSTALL" "$attacker_dir/install-hermes.sh"
-cat > "$attacker_dir/package-manifest.sh" <<'ATTACKER_HELPER'
+if [ -L "$attacker_dir/install-hermes.sh" ]; then
+  cat > "$attacker_dir/package-manifest.sh" <<'ATTACKER_HELPER'
 #!/usr/bin/env bash
 printf 'UNTRUSTED_HELPER_EXECUTED\n' > "${HERMES_ATTACK_MARKER:?}"
 exit 99
 ATTACKER_HELPER
-chmod 0644 "$attacker_dir/package-manifest.sh"
-attack_marker="$tmp/untrusted-helper-executed"
-expect_success "Hermes symlink entrypoint binds its package helper to the trusted installer" \
-  env PATH="$fake_bin:$PATH" HERMES_TEST_CONFIG="$hermes_config" HERMES_TEST_SOURCE="$CORE" HERMES_ATTACK_MARKER="$attack_marker" bash "$attacker_dir/install-hermes.sh"
-if [ ! -e "$attack_marker" ]; then
-  ok "Hermes symlink entrypoint never executes an adjacent untrusted helper"
+  chmod 0644 "$attacker_dir/package-manifest.sh"
+  attack_marker="$tmp/untrusted-helper-executed"
+  expect_success "Hermes symlink entrypoint binds its package helper to the trusted installer" \
+    env PATH="$fake_bin:$PATH" HERMES_TEST_CONFIG="$hermes_config" HERMES_TEST_SOURCE="$CORE" HERMES_ATTACK_MARKER="$attack_marker" bash "$attacker_dir/install-hermes.sh"
+  if [ ! -e "$attack_marker" ]; then
+    ok "Hermes symlink entrypoint never executes an adjacent untrusted helper"
+  else
+    bad "Hermes symlink entrypoint executed an adjacent helper"
+  fi
+  ln -s "$attacker_dir/missing-installer.sh" "$attacker_dir/broken-installer.sh"
+  expect_failure "Hermes rejects a broken installer symlink before helper lookup" \
+    env PATH="$fake_bin:$PATH" HERMES_TEST_CONFIG="$hermes_config" HERMES_TEST_SOURCE="$CORE" HERMES_ATTACK_MARKER="$attack_marker" bash "$attacker_dir/broken-installer.sh"
+  ln -s "$attacker_dir/loop-b.sh" "$attacker_dir/loop-a.sh"
+  ln -s "$attacker_dir/loop-a.sh" "$attacker_dir/loop-b.sh"
+  expect_failure "Hermes bounds an installer symlink loop before helper lookup" \
+    env PATH="$fake_bin:$PATH" HERMES_TEST_CONFIG="$hermes_config" HERMES_TEST_SOURCE="$CORE" HERMES_ATTACK_MARKER="$attack_marker" bash "$attacker_dir/loop-a.sh"
+  if [ ! -e "$attack_marker" ]; then
+    ok "Hermes broken and looping entrypoints never execute an adjacent helper"
+  else
+    bad "Hermes broken or looping entrypoints executed an adjacent helper"
+  fi
 else
-  bad "Hermes symlink entrypoint executed an adjacent untrusted helper"
-fi
-ln -s "$attacker_dir/missing-installer.sh" "$attacker_dir/broken-installer.sh"
-expect_failure "Hermes rejects a broken installer symlink before helper lookup" \
-  env PATH="$fake_bin:$PATH" HERMES_TEST_CONFIG="$hermes_config" HERMES_TEST_SOURCE="$CORE" HERMES_ATTACK_MARKER="$attack_marker" bash "$attacker_dir/broken-installer.sh"
-ln -s "$attacker_dir/loop-b.sh" "$attacker_dir/loop-a.sh"
-ln -s "$attacker_dir/loop-a.sh" "$attacker_dir/loop-b.sh"
-expect_failure "Hermes bounds an installer symlink loop before helper lookup" \
-  env PATH="$fake_bin:$PATH" HERMES_TEST_CONFIG="$hermes_config" HERMES_TEST_SOURCE="$CORE" HERMES_ATTACK_MARKER="$attack_marker" bash "$attacker_dir/loop-a.sh"
-if [ ! -e "$attack_marker" ]; then
-  ok "Hermes broken and looping entrypoints never execute an adjacent helper"
-else
-  bad "Hermes broken or looping entrypoint executed an adjacent helper"
+  printf 'PENDING: Hermes symlink-entrypoint checks require a physical symlink\n'
 fi
 if [ -f "$runtime/.sefi-agents-manifest.json" ] \
   && [ -f "$runtime/agents/systems-auditor.md" ] \
@@ -377,6 +381,32 @@ printf 'user change\n' >>"$runtime/scripts/sefi-runtime.py"
 expect_failure "Hermes auto-update refuses modified managed runtime content" "${hermes_env[@]}" bash "$HERMES_INSTALL" --auto-update
 
 # A fetched mismatch must restore the exact prior live skill, not merely return failure.
+crlf_core="$tmp/hermes-crlf-checkout/sefi-core"
+mkdir -p "$(dirname "$crlf_core")"
+cp -R "$CORE" "$crlf_core"
+python - "$crlf_core/skills" <<'PY'
+import sys
+from pathlib import Path
+
+for path in Path(sys.argv[1]).rglob("*"):
+    if path.is_file() and path.suffix == ".md":
+        content = path.read_bytes().replace(b"\r\n", b"\n")
+        path.write_bytes(content.replace(b"\n", b"\r\n"))
+PY
+crlf_config="$tmp/hermes-crlf/config"
+mkdir -p "$crlf_config"
+expect_success "Hermes accepts LF fetched skill content from a CRLF checkout source" \
+  env PATH="$fake_bin:$PATH" HERMES_TEST_CONFIG="$crlf_config" HERMES_TEST_SOURCE="$CORE" bash "$crlf_core/scripts/install-hermes.sh"
+crlf_before_mismatch="$(sha256sum "$crlf_config/skills/systems-audit/SKILL.md" | awk '{print $1}')"
+expect_failure "Hermes rejects corrupt fetched skill content against a CRLF checkout source" \
+  env PATH="$fake_bin:$PATH" HERMES_TEST_CONFIG="$crlf_config" HERMES_TEST_SOURCE="$CORE" HERMES_TEST_MISMATCH=systems-audit bash "$crlf_core/scripts/install-hermes.sh"
+crlf_after_mismatch="$(sha256sum "$crlf_config/skills/systems-audit/SKILL.md" | awk '{print $1}')"
+if [ "$crlf_before_mismatch" = "$crlf_after_mismatch" ]; then
+  ok "Hermes CRLF source mismatch restores exact prior live skill bytes"
+else
+  bad "Hermes CRLF source mismatch restores exact prior live skill bytes"
+fi
+
 bad_config="$tmp/hermes-mismatch/config"
 mkdir -p "$bad_config"
 expect_success "Hermes prepares a live skill for rollback verification" \
