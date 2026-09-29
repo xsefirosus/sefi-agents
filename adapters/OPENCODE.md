@@ -69,6 +69,22 @@ routed request; the installer cannot safely auto-initialize an arbitrary reposit
 leaves the optional local/private cross-project memory mirror off unless an interactive user
 explicitly enables it.
 
+## 2.1 Run a systems audit
+
+After `/sefi:init`, run the installed audit command:
+
+```text
+/sefi:audit build
+```
+
+The audit accepts one of `complete`, `research`, `product`, `design`, `build`, `quality`, `docs`, or
+`delivery`. The top-level orchestrator owns dispatch, the `systems-audit` skill supplies the
+evidence method and report contract, and `systems-auditor` writes the report without
+dispatching another agent or modifying source. Reports are written to
+`audits/audit-report-<scope>-<timestamp>-<session>.md`. Local memory search and
+`/sefi:memory-index rebuild` include audit reports; cross-project memory mirroring refuses
+them.
+
 ## 3. Headless (CI loops)
 
 Invoke non-interactively with `opencode run`, piping the prompt via stdin.
@@ -235,7 +251,7 @@ switcher (`primary`), is reachable only via `@ mention` or an `sefi-agents`
 dispatch (`subagent`), or both (`all` -- OpenCode's own default when `mode:` is unset).
 
 Live-observed (2026-08-18): with no `mode:` written, every converted agent defaulted to
-`all`, so all 15 -- every specialist alongside `sefi-agents` -- sit in the same
+`all`, so all 17 agents -- every specialist alongside `sefi-agents` -- sit in the same
 switcher as OpenCode's native `build`/`plan` agents. Nothing distinguished the one entry
 point from the ones it dispatches, and a direct switch to a specialist skips every gate
 that only runs on the dispatched path (`check-reply.sh`, `check-handoff.sh`,
@@ -243,7 +259,7 @@ that only runs on the dispatched path (`check-reply.sh`, `check-handoff.sh`,
 scope-creep bug that motivated `scope-boundary.md`.
 
 `install-opencode.sh` now writes `mode: primary` for `sefi-agents` and
-`mode: subagent` for the other 15, so the switcher shows one entry point and the
+`mode: subagent` for the other 16, so the switcher shows one entry point and the
 specialists remain dispatchable exactly as before. This is enforcement, not a suggestion
-on top of the existing "always go through the EM" convention -- the other 15 are
+on top of the existing "always go through the EM" convention -- the other 16 are
 structurally absent from the switcher, not just discouraged.

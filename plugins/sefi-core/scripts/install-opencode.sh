@@ -23,7 +23,7 @@
 # provider alias made OpenCode's own subagent dispatch fail hard. OpenCode does not
 # silently ignore an unresolvable per-agent model override; it tries to resolve it as a
 # real provider/model identifier and fails when it cannot. Every one of this repo's
-# 13 agents then fails, not just the first dispatched specialist.
+# 17 agents then fails, not just the first dispatched specialist.
 #
 # v0.2.2 fixed that by DROPPING the field. That stopped the crash, but made every
 # agent inherit one session model -- so the qa-engineer judged the
@@ -49,12 +49,12 @@
 #
 # Live-observed (2026-08-18): with no `mode:` field, OpenCode defaults every agent to
 # `mode: all` -- primary (Tab-cycle switchable, a direct human entry point) AND subagent
-# (dispatchable) at once. That put all 13 specialists in the same Tab-cycle list as
+# (dispatchable) at once. That put all 15 specialists in the same Tab-cycle list as
 # engineering-manager, with nothing distinguishing "the one you talk to" from "the ones
 # it dispatches" -- the exact direct-invocation path that caused the prompt-engineer
 # scope-creep bug this repo's whole check-reply.sh/scope-boundary.md mechanism exists for.
 # `mode:` is OpenCode's own native field for this distinction, so this writes it rather
-# than inventing a workaround: engineering-manager gets `mode: primary` (the one entry
+# than inventing a workaround: sefi-agents gets `mode: primary` (the one entry
 # point), every other agent gets `mode: subagent` (dispatchable, invisible to Tab-cycle).
 #
 # Usage: bash plugins/sefi-core/scripts/install-opencode.sh [--force] [--model-map <path>] [--auto-update]

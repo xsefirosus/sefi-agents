@@ -113,7 +113,7 @@ health).
 - **Hook trust was declined** -- start another new session and accept Codex's Sefi hook
   trust prompt. Routing does not require this step; memory SessionStart injection does.
 - **Sefi specialist has the wrong model** -- re-run `bash install-codex.sh`. It updates
-  only `model` and `model_reasoning_effort` in Sefi's 13 custom-agent profiles under
+  only `model` and `model_reasoning_effort` in Sefi's 17 custom-agent profiles under
   `${CODEX_HOME:-~/.codex}/agents`; it does not change your global Codex default or any
   unrelated custom agent.
 
