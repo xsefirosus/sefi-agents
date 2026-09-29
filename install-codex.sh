@@ -269,6 +269,10 @@ mkdir -p "$CODEX_ROOT"
 # before touching AGENTS.md, so a partial installation has no global routing side effect.
 CODEX_AGENTS_DIR="$CODEX_ROOT/agents"
 mkdir -p "$CODEX_AGENTS_DIR"
+[ -d "$CODEX_AGENTS_DIR" ] && [ ! -L "$CODEX_AGENTS_DIR" ] || {
+  echo "install-codex.sh: refusing symlinked or non-directory agents root $CODEX_AGENTS_DIR" >&2
+  exit 1
+}
 
 create_missing_profile() {
   local source_agent="$1" agent_name="$2" agent_profile="$3" description=""
@@ -306,6 +310,10 @@ for source_agent in "$PROFILE_CORE"/agents/*.md; do
     exit 1
   }
   agent_profile="$CODEX_AGENTS_DIR/$agent_name.toml"
+  [ ! -L "$agent_profile" ] || {
+    echo "install-codex.sh: refusing symlinked agent profile $agent_profile" >&2
+    exit 1
+  }
   [ -f "$agent_profile" ] || create_missing_profile "$source_agent" "$agent_name" "$agent_profile"
 done
 

@@ -46,9 +46,9 @@ done < <(find "$CORE/templates" -type f ! -name '.gitkeep' ! -path '*/audits/*')
 # 3. agents listed in references/roster.md
 ROSTER="$CORE/skills/sefi-orchestration/references/roster.md"
 while IFS= read -r a; do
-  base="$(basename "$a")"
+  base="$(basename "$a" .md)"
   rel="${a#"$ROOT"/}"
-  if [ -f "$ROSTER" ] && grep -qF "$base" "$ROSTER"; then
+  if [ -f "$ROSTER" ] && grep -qF "| \`$base\` |" "$ROSTER"; then
     :
   else
     echo "ERROR: $rel - not listed in references/roster.md"

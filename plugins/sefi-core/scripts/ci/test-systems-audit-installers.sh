@@ -160,6 +160,40 @@ else
   bad "Codex fresh session exposes audit invocation and Systems Auditor profile"
 fi
 
+codex_agents_link_home="$tmp/codex-agents-link"
+codex_agents_link_target="$tmp/codex-agents-link-target"
+mkdir -p "$codex_agents_link_home" "$codex_agents_link_target"
+if ln -s "$codex_agents_link_target" "$codex_agents_link_home/agents" 2>/dev/null \
+  && [ -L "$codex_agents_link_home/agents" ]; then
+  expect_failure "Codex rejects a symlinked agents directory" \
+    env PATH="$codex_bin:$PATH" CODEX_HOME="$codex_agents_link_home" CODEX_TEST_SOURCE="$CORE" CODEX_TEST_MARKETPLACE_ROOT="$ROOT" CODEX_TEST_MARKETPLACE_SOURCE="$ROOT" bash "$ROOT/install-codex.sh" --candidate-marketplace "$ROOT"
+  if [ ! -e "$codex_agents_link_target/systems-auditor.toml" ]; then
+    ok "Codex symlinked agents directory leaves its target unchanged"
+  else
+    bad "Codex symlinked agents directory leaves its target unchanged"
+  fi
+else
+  printf 'PENDING: Codex agents-directory symlink check requires a physical symlink\n'
+fi
+
+codex_profile_link_home="$tmp/codex-profile-link"
+codex_profile_link_target="$tmp/codex-profile-link-target"
+mkdir -p "$codex_profile_link_home/agents" "$codex_profile_link_target"
+printf 'unrelated content\n' > "$codex_profile_link_target/keep.txt"
+if ln -s "$codex_profile_link_target/dangling-profile.toml" "$codex_profile_link_home/agents/systems-auditor.toml" 2>/dev/null \
+  && [ -L "$codex_profile_link_home/agents/systems-auditor.toml" ]; then
+  expect_failure "Codex rejects a dangling Sefi profile symlink" \
+    env PATH="$codex_bin:$PATH" CODEX_HOME="$codex_profile_link_home" CODEX_TEST_SOURCE="$CORE" CODEX_TEST_MARKETPLACE_ROOT="$ROOT" CODEX_TEST_MARKETPLACE_SOURCE="$ROOT" bash "$ROOT/install-codex.sh" --candidate-marketplace "$ROOT"
+  if [ ! -e "$codex_profile_link_target/dangling-profile.toml" ] \
+    && grep -qxF 'unrelated content' "$codex_profile_link_target/keep.txt"; then
+    ok "Codex dangling profile symlink leaves unrelated targets unchanged"
+  else
+    bad "Codex dangling profile symlink leaves unrelated targets unchanged"
+  fi
+else
+  printf 'PENDING: Codex profile-symlink check requires a physical symlink\n'
+fi
+
 # Codex's actual local marketplace list contains the candidate root but omits
 # marketplaceSource.source until after the plugin has been installed.
 expect_success "Codex candidate accepts the local marketplace root-only JSON shape" \
@@ -347,6 +381,53 @@ else
 fi
 
 expect_success "Hermes repeat install is idempotent" "${hermes_env[@]}" bash "$HERMES_INSTALL"
+
+hermes_symlink_core="$tmp/hermes-runtime-symlink-source/sefi-core"
+hermes_symlink_config="$tmp/hermes-runtime-symlink/config"
+hermes_symlink_runtime="$(dirname "$hermes_symlink_config/config.toml")/sefi-core"
+mkdir -p "$(dirname "$hermes_symlink_core")" "$hermes_symlink_config"
+cp -R "$CORE" "$hermes_symlink_core"
+rm -f "$hermes_symlink_core/scripts/ci/format-audit-findings.sh"
+expect_success "Hermes prepares a runtime missing one future managed file" \
+  env PATH="$fake_bin:$PATH" HERMES_TEST_CONFIG="$hermes_symlink_config" HERMES_TEST_SOURCE="$hermes_symlink_core" bash "$hermes_symlink_core/scripts/install-hermes.sh"
+mkdir -p "$hermes_symlink_runtime/user-content"
+printf 'unrelated runtime content\n' > "$hermes_symlink_runtime/user-content/keep.txt"
+if ln -s '../../user-content/keep.txt' "$hermes_symlink_runtime/scripts/ci/format-audit-findings.sh" 2>/dev/null \
+  && [ -L "$hermes_symlink_runtime/scripts/ci/format-audit-findings.sh" ]; then
+  expect_failure "Hermes auto-update rejects a managed destination symlink" \
+    env PATH="$fake_bin:$PATH" HERMES_TEST_CONFIG="$hermes_symlink_config" HERMES_TEST_SOURCE="$CORE" bash "$HERMES_INSTALL" --auto-update
+  if grep -qxF 'unrelated runtime content' "$hermes_symlink_runtime/user-content/keep.txt"; then
+    ok "Hermes destination symlink leaves unrelated runtime content unchanged"
+  else
+    bad "Hermes destination symlink leaves unrelated runtime content unchanged"
+  fi
+else
+  printf 'PENDING: Hermes destination-symlink check requires a physical symlink\n'
+fi
+
+hermes_retired_symlink_core="$tmp/hermes-retired-symlink-source/sefi-core"
+hermes_retired_symlink_config="$tmp/hermes-retired-symlink/config"
+hermes_retired_symlink_runtime="$(dirname "$hermes_retired_symlink_config/config.toml")/sefi-core"
+mkdir -p "$(dirname "$hermes_retired_symlink_core")" "$hermes_retired_symlink_config"
+cp -R "$CORE" "$hermes_retired_symlink_core"
+expect_success "Hermes prepares a runtime with a managed file for retirement" \
+  env PATH="$fake_bin:$PATH" HERMES_TEST_CONFIG="$hermes_retired_symlink_config" HERMES_TEST_SOURCE="$hermes_retired_symlink_core" bash "$hermes_retired_symlink_core/scripts/install-hermes.sh"
+rm -f "$hermes_retired_symlink_core/commands/audit.md" "$hermes_retired_symlink_runtime/commands/audit.md"
+mkdir -p "$hermes_retired_symlink_runtime/user-content"
+printf 'unrelated retired-path content\n' > "$hermes_retired_symlink_runtime/user-content/keep.txt"
+if ln -s '../user-content/keep.txt' "$hermes_retired_symlink_runtime/commands/audit.md" 2>/dev/null \
+  && [ -L "$hermes_retired_symlink_runtime/commands/audit.md" ]; then
+  expect_failure "Hermes auto-update rejects a symlinked retired managed path" \
+    env PATH="$fake_bin:$PATH" HERMES_TEST_CONFIG="$hermes_retired_symlink_config" HERMES_TEST_SOURCE="$hermes_retired_symlink_core" bash "$hermes_retired_symlink_core/scripts/install-hermes.sh" --auto-update
+  if [ -L "$hermes_retired_symlink_runtime/commands/audit.md" ] \
+    && grep -qxF 'unrelated retired-path content' "$hermes_retired_symlink_runtime/user-content/keep.txt"; then
+    ok "Hermes retired managed symlink leaves unrelated runtime content unchanged"
+  else
+    bad "Hermes retired managed symlink leaves unrelated runtime content unchanged"
+  fi
+else
+  printf 'PENDING: Hermes retired-path symlink check requires a physical symlink\n'
+fi
 
 # A skill-only v0.9.4-style installation has no runtime; auto-update must add one.
 safe_remove_under_tmp "$runtime"
