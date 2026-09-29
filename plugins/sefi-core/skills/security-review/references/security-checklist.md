@@ -21,7 +21,8 @@ yes/no check against the diff.
 
 ## Transport and process
 - TLS verification never disabled (verify=False, InsecureSkipVerify, -k).
-- Downloads that execute are pinned (checksum or version), never curl | sh unpinned.
+- Downloads that lead to execution are pinned (checksum or version); a network stream
+  never feeds a shell directly.
 - Child processes inherit a minimal environment, not the parent's secrets.
 
 ## Dependencies

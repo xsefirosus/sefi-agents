@@ -32,3 +32,7 @@ A separate Slice 1 QA outcome also reports unexecuted collision refusal and find
 - [ ] Exit this v0.9.5 publication attempt and leave it untagged.
 
 Response: `Proceed`.
+
+## Revalidation update — 2026-09-29
+
+Fresh QA revalidated Slice 1 after the user authorized one additional bounded cycle. `D:/Projects/Sefi-Agents/.worktrees/logs/qa-systems-audit-slice1-revalidation.md` is VERDICT: PASS. Executed evidence covers collision refusal with an unchanged report hash; severity order, exact overflow, and independent per-department caps; all eight scopes; clean and INCOMPLETE reports; separate project roots with spaces; traversal; and all four physical symlink containment cases in a read-only Linux Docker mount. PENDING: none for the requested Slice 1 checks. The earlier interim Slice 1 rejection is superseded by this revalidation.

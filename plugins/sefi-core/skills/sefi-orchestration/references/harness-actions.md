@@ -10,7 +10,7 @@ the one place the harness mapping lives; adapters point here and never duplicate
 |---|---|---|---|---|
 | Dispatch a subagent | Task / subagent | `delegate_task(...)` (prompt-instructed) | subagent run | needs `multi_agent = true`; else sequential |
 | Task tracking | TodoWrite | agent state | task list | agent config |
-| Your instructions file | CLAUDE.md | MEMORY.md | AGENTS.md | AGENTS.md |
+| Project instructions | Claude project file (see coordinator profile) | MEMORY.md | OpenCode project file (see coordinator profile) | Codex project file (see coordinator profile) |
 | Attach a rule for matching files | hook / skill | skill | rule | config |
 | Invoke the harness headless | see row below | HTTP gateway | `opencode run` | `codex exec` |
 

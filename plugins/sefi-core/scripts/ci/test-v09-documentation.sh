@@ -27,6 +27,23 @@ require_once() {
     fail=1
   fi
 }
+require_roster_files() {
+  local roster="plugins/sefi-core/skills/sefi-orchestration/references/roster.md" entry rows=0 missing=0
+  while IFS= read -r entry; do
+    rows=$((rows + 1))
+    if [ ! -f "plugins/sefi-core/agents/$entry.md" ]; then
+      echo "FAIL: roster entry does not resolve to an agent file: $entry" >&2
+      missing=$((missing + 1))
+    fi
+  done < <(sed -n 's/^|[[:space:]]*`\([^`]*\)`.*/\1/p' "$roster")
+  if [ "$rows" -ne 17 ]; then
+    echo "FAIL: roster expected 17 agent entries, found $rows" >&2
+    fail=1
+  fi
+  if [ "$missing" -ne 0 ]; then
+    fail=1
+  fi
+}
 
 for file in docs/DESIGN-COUNCIL.md docs/MIGRATION-v0.9.0.md docs/RELEASE-v0.9.0.md; do
   require_file "$file"
@@ -55,6 +72,19 @@ require_text docs/RELEASE-v0.9.0.md 'partially released'
 require_file docs/RELEASE-v0.9.5.md
 require_text docs/RELEASE-v0.9.5.md 'Systems Audit'
 require_text docs/RELEASE-v0.9.5.md '# v0.9.5 Release Notes'
+require_text plugins/sefi-core/skills/sefi-orchestration/references/harness-actions.md 'Claude project file (see coordinator profile)'
+require_text plugins/sefi-core/skills/sefi-orchestration/references/harness-actions.md 'OpenCode project file (see coordinator profile)'
+require_text plugins/sefi-core/skills/sefi-orchestration/references/harness-actions.md 'Codex project file (see coordinator profile)'
+require_text plugins/sefi-core/agents/sefi-agents.md 'Files: CLAUDE.md (Claude); MEMORY.md (Hermes); AGENTS.md (OpenCode/Codex).'
+require_text plugins/sefi-core/skills/sefi-orchestration/references/roster.md 'basename resolved to `agents/<basename>.md`'
+require_text plugins/sefi-core/skills/release-tracking/SKILL.md '`opencode.json`'
+require_text plugins/sefi-core/skills/release-tracking/SKILL.md 'Codex hidden `config.toml`'
+require_text plugins/sefi-core/skills/release-tracking/SKILL.md '`install-hermes.sh`'
+require_text plugins/sefi-core/skills/release-tracking/SKILL.md '`SKILLS=` list'
+require_text plugins/sefi-core/skills/release-tracking/SKILL.md '`validate-adapters.sh` and `validate-config-wired.sh`'
+require_text plugins/sefi-core/skills/security-review/references/security-checklist.md 'Downloads that lead to execution are pinned (checksum or version); a network stream'
+require_text plugins/sefi-core/skills/security-review/references/security-checklist.md 'never feeds a shell directly.'
+require_roster_files
 
 for text in \
   'Product Context' \
