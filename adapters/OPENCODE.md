@@ -69,6 +69,13 @@ routed request; the installer cannot safely auto-initialize an arbitrary reposit
 leaves the optional local/private cross-project memory mirror off unless an interactive user
 explicitly enables it.
 
+Containment is enforced, not assumed. The script resolves the install destination to a
+physical path before writing and stops when that path resolves outside the destination it
+was given or your home directory. It re-checks containment at every write site rather than
+once at the directory gate, so a subtree swapped for a symlink after that check is caught
+before the write. Each refusal names the path and exits non-zero; fix the path on disk and
+re-run.
+
 ## 2.1 Run a systems audit
 
 After `/sefi:init`, run the installed audit command:
@@ -83,7 +90,10 @@ evidence method and report contract, and `systems-auditor` writes the report wit
 dispatching another agent or modifying source. Reports are written to
 `audits/audit-report-<scope>-<timestamp>-<session>.md`. Local memory search and
 `/sefi:memory-index rebuild` include audit reports; cross-project memory mirroring refuses
-them.
+them. The workflow is on demand only: no shipped loop and no scheduled workflow invokes it.
+An existing report path is refused rather than overwritten, and a path that resolves
+outside the audited project's own `audits/` directory is rejected before any write, because
+the installed runtime root and the audited project root are resolved separately.
 
 ## 3. Headless (CI loops)
 

@@ -20,6 +20,14 @@ The script registers the marketplace when needed, refreshes its Git snapshot, re
 new Codex session afterward and accept the one-time Sefi hook-trust prompt when Codex
 shows it.
 
+Every destination is resolved to a physical path before the bootstrap writes to it. It
+refuses when `CODEX_HOME` resolves outside that root and your home directory, or when the
+agents directory resolves anywhere but the agents child of that root. It also refuses a
+symlinked `AGENTS.md`, a symlinked Sefi agent profile, a symlinked marketplace or plugin
+root, and symlinked content anywhere inside the candidate plugin. Each refusal names the
+path and exits non-zero rather than writing through it; replace the real file or directory,
+then re-run.
+
 That global instruction is the always-on activation point: every normal user prompt in
 every project loads `sefi-core:sefi-orchestration` before work begins. You do not need a
 `/sefi:*` command for each prompt. The routing skill still uses its documented trivial-task
@@ -47,7 +55,11 @@ or `delivery`. The top-level orchestrator owns dispatch, and `systems-auditor` w
 report without dispatching another agent or modifying source. Reports are written to
 `audits/audit-report-<scope>-<timestamp>-<session>.md`. Local memory search and
 `/sefi:memory-index rebuild` include audit reports; cross-project memory mirroring refuses
-them. The `$skill-name` invocation form follows the [Codex skill documentation](https://developers.openai.com/plugins/build/skills).
+them. The workflow is on demand only: no shipped loop and no scheduled workflow invokes it.
+An existing report path is refused rather than overwritten, and a path that resolves
+outside the audited project's own `audits/` directory is rejected before any write, because
+the installed runtime root and the audited project root are resolved separately. The
+`$skill-name` invocation form follows the [Codex skill documentation](https://developers.openai.com/plugins/build/skills).
 
 ## 2. Subagents (multi_agent)
 
