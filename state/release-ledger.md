@@ -231,3 +231,39 @@
 | 0.9.5 | git-tag | 0.9.5 | unobserved | unobserved | git tag --points-at HEAD; git ls-remote --tags origin refs/tags/v0.9.5 refs/tags/v0.9.5^{} -> no output | a local tag that was never pushed to origin | 2026-09-28T01:59:13Z |
 | 0.9.5 | github-release | 0.9.5 | unobserved | unobserved | gh release view v0.9.5 --repo xsefirosus/sefi-agents --json tagName,name,targetCommitish,isDraft,isPrerelease,publishedAt,url -> release not found | a local or pushed tag with no published release; a draft release | 2026-09-28T01:59:13Z |
 | 0.9.5 | github-marketplace-index | 0.9.5 | 0.9.4 | lag | gh api -H Accept:application/vnd.github.raw+json repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main -> metadata.version 0.9.4; plugins[0].version 0.9.4 | install commands quoted only in a README | 2026-09-28T01:59:13Z |
+
+- 2026-09-30: v0.9.5 published from the audited takeover clone. `release/0.9.5` was cut at
+  `04de741` (codex/audit-v095-hermes-scan) and merged into `main` as merge commit
+  `2fe3bb348977a3837a8ef1fb82197afa537d1200`, merge base `51c2305` (the previous
+  `main`, a fast-forward ancestor, so the merge is conflict-free). All three in-repo
+  surfaces were re-read on that merged `main` tree and carry 0.9.5, so they are recorded
+  as `match` here. `github-marketplace-index` is recorded as an OBSERVED `match` rather
+  than an `unobserved`/PENDING placeholder because it was genuinely read this session: the
+  public index at ref `main` already served 0.9.5 in both occurrences, since `origin/main`
+  (`51c2305`) carried the 0.9.5 manifests before this merge and the index is derived from
+  them. The fetch used the public raw endpoint because `gh` is not installed on this host
+  and no `GH_TOKEN`/`GITHUB_TOKEN` is set; an unauthenticated raw read of the published
+  ref is still the public surface itself, the top of the evidence-priority order. `git-tag`
+  and `github-release` are honestly `unobserved`/PENDING: the tag does not exist yet at
+  this commit, and no GitHub release for v0.9.5 could be created or viewed without `gh`.
+  Baseline for the tags that must never move, captured before tagging:
+  `git rev-parse v0.9.3^{commit}` -> `ec35acad471fea5292fd17e836801fa336c9b4ed`,
+  `v0.9.4^{commit}` -> `db5293602a0a795bddde0e618d1732a6ce1c5d64`, matching
+  `git ls-remote --tags origin refs/tags/v0.9.3 refs/tags/v0.9.4`.
+  PRE-EXISTING FAILURE, NOT INTRODUCED HERE: `validate-release-ledger.sh` exits 1 on this
+  ledger with 2 hard-fail-1 errors, `surfaces disagree on the version claim 0.9.4: observed
+  0.9.3,0.9.4` and `surfaces disagree on the version claim 0.9.5: observed 0.9.4,0.9.5`.
+  The identical two errors are produced when the same script is pointed at
+  `origin/main:state/release-ledger.md` (51c2305) before any of this session's appends, so
+  they predate this release. They are the structural collision between append-only lag
+  recording and hard-fail 1, which treats a genuine `lag` row (a surface that observed the
+  previous version) as a contradiction of the in-repo `match` rows in the same version
+  group. They cannot be cleared without hand-editing a historical row, which this ledger
+  forbids.
+
+| 0.9.5 | plugin.json | 0.9.5 | 0.9.5 | match | plugins/sefi-core/.claude-plugin/plugin.json:3 -> "version": "0.9.5"; plugins/sefi-core/.codex-plugin/plugin.json:3 -> "version": "0.9.5", both read on merged main 2fe3bb348977a3837a8ef1fb82197afa537d1200 | a README count or CHANGELOG heading that happens to agree | 2026-09-30T20:14:05Z |
+| 0.9.5 | marketplace.json | 0.9.5 | 0.9.5 | match | .claude-plugin/marketplace.json:4 -> metadata.version "0.9.5"; .claude-plugin/marketplace.json:10 -> plugins[0].version "0.9.5", both read on merged main 2fe3bb348977a3837a8ef1fb82197afa537d1200 | updating one occurrence and assuming the other followed | 2026-09-30T20:14:05Z |
+| 0.9.5 | changelog | 0.9.5 | 0.9.5 | match | CHANGELOG.md:6 -> "## [0.9.5] - 2026-09-28", the first semver-shaped heading on merged main 2fe3bb348977a3837a8ef1fb82197afa537d1200 | a Changed or Added bullet without a dated heading above it | 2026-09-30T20:14:05Z |
+| 0.9.5 | github-marketplace-index | 0.9.5 | 0.9.5 | match | GET https://raw.githubusercontent.com/xsefirosus/sefi-agents/main/.claude-plugin/marketplace.json -> HTTP 200, metadata.version "0.9.5", plugins[0].version "0.9.5" (public raw endpoint at ref main, in place of the gh api call: gh is not installed on this host and no GH_TOKEN/GITHUB_TOKEN is set) | install commands quoted only in a README; a preview or branch ref instead of main | 2026-09-30T20:14:05Z |
+| 0.9.5 | git-tag | 0.9.5 | unobserved | unobserved | PENDING -- pre-tag observation: git tag --list v0.9.5 -> no output; git tag --points-at HEAD -> no output; git ls-remote --tags origin refs/tags/v0.9.5 refs/tags/v0.9.5^{} -> no output | a local tag that was never pushed to origin | 2026-09-30T20:14:05Z |
+| 0.9.5 | github-release | 0.9.5 | unobserved | unobserved | PENDING -- not created and not viewable this session: gh is not installed on this host (gh --version -> "not recognized as the name of a cmdlet") and no GH_TOKEN/GITHUB_TOKEN is set, so no release-creation or gh release view call could be made | a local or pushed tag with no published release; a draft release | 2026-09-30T20:14:05Z |
