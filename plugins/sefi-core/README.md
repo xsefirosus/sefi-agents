@@ -43,7 +43,11 @@ describes the package layout.
   `apply-model-map.sh`, `check-route.py`/`check-route.sh` (post-dispatch: assert a Codex
   run's observed model/effort matches the tier it requested), plus the `ci/` validation
   suite (`run-all.sh` is the entry point, and `validate-rule-presence.sh` asserts every
-  required rule is physically present in each agent and skill, not merely claimed).
+  required rule is physically present in each agent and skill, not merely claimed). The
+  audit runtime adds three more `ci/` scripts: `prepare-audit-report-path.sh` resolves one
+  destination without writing, `format-audit-findings.sh` orders findings by department and
+  severity under the five-item cap, and `validate-audit-report.sh` checks the written
+  report's shape and containment.
 - `templates/` -- copied into the user's project by `/sefi:init`: the local Memory
   Journalist router and session folder, state ledger, inbox, loop specs, config, and a
   GitHub Actions workflow. The plugin never
@@ -67,12 +71,22 @@ start it with `/sefi:audit build`; Codex explicitly invokes the installed skill 
 `Use $systems-audit for the build scope`; Hermes uses
 `Run the systems-audit skill for the build scope.`
 
+The workflow is on demand only. `commands/audit.md` forbids a scheduled or CI trigger from
+invoking it, and each of the three shipped and three template loop specs records that
+`audits/` is never scanned on a schedule.
+
 Reports use the path
 `audits/audit-report-<scope>-<timestamp>-<session>.md`. The `audits/` directory is
 ignored-local. Local memory search and `/sefi:memory-index rebuild` include audit reports,
 while cross-project memory mirroring refuses them. The command or natural-language request
 starts the workflow, the skill supplies its method, and the Systems Auditor writes the
 report.
+
+Two refusals bound the write. An existing destination returns `REFUSED-OVERWRITE` with no
+file changed, so a follow-up audit is a new timestamped file; and a report path that
+resolves outside the audited project's own physical `audits/` directory is rejected before
+any write. The installed runtime root and the audited project root are separate values, so
+the path check stays inside the selected project.
 
 ## Design rules
 - Generator/evaluator separation: the writer never grades its own work; the qa-engineer

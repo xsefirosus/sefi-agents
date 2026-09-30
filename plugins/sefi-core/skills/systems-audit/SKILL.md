@@ -17,9 +17,10 @@ Accept only `complete`, `research`, `product`, `design`, `build`, `quality`, `do
 `complete`. `complete` covers all departments, but disclose sampling and never claim every
 artifact was inspected.
 
-The Systems Auditor agent is authoritative for department criteria; [the department
-record](../../../../docs/AUDIT-DEPARTMENTS.md) is readable context. Preserve department
-order, foundational Research/Product triage, four severities, five displayed findings per
+The Systems Auditor agent is authoritative for department criteria. The repository's
+`docs/AUDIT-DEPARTMENTS.md` may supplement reader context when available; installed audit
+behavior does not depend on checkout-only documentation. Preserve department order,
+foundational Research/Product triage, four severities, five displayed findings per
 department, and exact overflow totals. Report once under `audits/`, refuse collisions, and
 ask for explicit confirmation before fix planning.
 

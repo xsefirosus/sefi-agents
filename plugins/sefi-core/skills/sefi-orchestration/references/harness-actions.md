@@ -10,7 +10,7 @@ the one place the harness mapping lives; adapters point here and never duplicate
 |---|---|---|---|---|
 | Dispatch a subagent | Task / subagent | `delegate_task(...)` (prompt-instructed) | subagent run | needs `multi_agent = true`; else sequential |
 | Task tracking | TodoWrite | agent state | task list | agent config |
-| Your instructions file | CLAUDE.md | MEMORY.md | AGENTS.md | AGENTS.md |
+| Project instructions | Claude project file (see coordinator profile) | MEMORY.md | OpenCode project file (see coordinator profile) | Codex project file (see coordinator profile) |
 | Attach a rule for matching files | hook / skill | skill | rule | config |
 | Invoke the harness headless | see row below | HTTP gateway | `opencode run` | `codex exec` |
 
@@ -22,7 +22,7 @@ Platform constraint (Claude Code, live-verified 2026-08-20): a dispatched subage
 listed in `tools` -- so it cannot itself dispatch. The `engineering-manager` role therefore
 belongs to the top-level session, not a dispatched subagent, on this harness. OpenCode's
 counterpart already covers this: `install-opencode.sh` writes `mode: primary` for
-`sefi-agents` and `mode: subagent` for the other 15 (`adapters/OPENCODE.md`), so
+`sefi-agents` and `mode: subagent` for the other 16 (`adapters/OPENCODE.md`), so
 OpenCode's EM keeps real top-level authority. Hermes and Codex: UNKNOWN -- not yet confirmed
 against `adapters/HERMES.md` / `adapters/CODEX.md`, per this file's own rule above.
 

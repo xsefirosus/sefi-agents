@@ -13,6 +13,15 @@ FIXTURES="$(cd "$(dirname "$0")" && pwd)/fixtures/routing-cases.txt"
 
 errors=0
 
+# 0. Fixture hygiene: routing-cases.txt must be LF-only. A CRLF checkout leaves a
+#    trailing carriage return on the expected-agent field, which silently breaks every
+#    fixture match below. Fail here with a pointed message instead of N confusing ones.
+#    (Read through a redirection, not grep: on some runtimes grep translates CRLF.)
+if [ -n "$(tr -d -c '\r' < "$FIXTURES")" ]; then
+  echo "ERROR: routing fixtures contain carriage returns (CRLF); normalize fixtures/routing-cases.txt to LF"
+  errors=$((errors + 1))
+fi
+
 # 1. Every "Default agent" named in a table row exists as an agent file, unless it is a
 #    known non-file placeholder (per loop spec).
 while IFS= read -r agent; do

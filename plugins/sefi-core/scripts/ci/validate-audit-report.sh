@@ -118,6 +118,10 @@ check_report() {
 }
 
 if [ -n "$REPORT" ]; then
+  case "$REPORT" in
+    /*|[A-Za-z]:[\\/]*) : ;;
+    *) echo "ERROR: report path must be absolute: $REPORT" >&2; echo "usage: validate-audit-report.sh [--strict] [--root <absolute-project-directory>] [<report-path>]" >&2; exit 2 ;;
+  esac
   if [ ! -f "$REPORT" ]; then
     echo "ERROR: $REPORT - report file not found" >&2; exit 2
   fi

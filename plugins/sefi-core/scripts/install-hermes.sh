@@ -240,11 +240,11 @@ def safe_path(relative: str) -> Path:
     path = PurePosixPath(relative)
     if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
         raise SystemExit(f"unsafe managed runtime path: {relative}")
-    candidate = (root / path).resolve(strict=False)
-    try:
-        candidate.relative_to(root)
-    except ValueError:
-        raise SystemExit(f"managed runtime path escapes its root: {relative}")
+    candidate = root
+    for part in path.parts:
+        candidate /= part
+        if candidate.is_symlink():
+            raise SystemExit(f"managed runtime path is symlinked: {relative}")
     return candidate
 
 def digest(path: Path) -> str:
@@ -306,7 +306,10 @@ for path in sorted(source.rglob("*")):
     if path.is_symlink() or not path.is_file():
         continue
     relative = path.relative_to(source)
-    installed = (root / relative).resolve(strict=False)
+    installed_path = root / relative
+    if installed_path.is_symlink():
+        raise SystemExit(f"installed runtime file is missing or symlinked: {relative}")
+    installed = installed_path.resolve(strict=False)
     try:
         installed.relative_to(root)
     except ValueError:

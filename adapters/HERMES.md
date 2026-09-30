@@ -33,12 +33,14 @@ See section 8 below (`install-hermes.sh`) for the tested, real install path -- i
 Hermes's own `skills install` command per skill, not a raw copy, so installs are scanned,
 tracked, and show up correctly in `hermes skills list`.
 
-`install-hermes.sh` installs skills only. It does not install hooks, and neither does
-`install.sh` (it links `agents/`, `skills/`, and `commands/`). The SessionStart memory
-injection ships only through the Claude Code plugin path, so on Hermes you must wire
-`inject-memory.sh` to a session-start event yourself. Nothing breaks without it: the
-memory-protocol READ ladder (frontmatter scan -> index -> at most 2 notes) is what actually
-retrieves vault content; the injection is an optimization on top of it.
+`install-hermes.sh` installs skills only, plus the managed canonical runtime. It installs
+no hooks. Neither does `install.sh` for this harness: it delegates the `opencode` target to
+`install-opencode.sh`, and it merges `hooks/hooks.json` into `settings.json` only for its
+`claude` target. The SessionStart memory therefore ships through the Claude Code plugin
+path, so on Hermes you must wire `inject-memory.sh` to a session-start event yourself.
+Nothing breaks without it: the memory-protocol READ ladder (frontmatter scan -> index ->
+at most 2 notes) is what actually retrieves vault content; the injection is an optimization
+on top of it.
 
 Hermes has no confirmed hook event for a first routed request, so this adapter installs no
 one-time route reminder. The successful installer message tells users to run `/sefi:init`
@@ -61,6 +63,12 @@ modifying source. Reports are written to
 `audits/audit-report-<scope>-<timestamp>-<session>.md`. Local memory search and
 `/sefi:memory-index rebuild` include audit reports; cross-project memory mirroring refuses
 them. The installer provides no Hermes slash command for this workflow.
+
+The workflow is on demand only: no shipped loop and no scheduled workflow invokes it, and
+Hermes contributes no scheduled trigger of its own. An audit report path that already
+exists is refused rather than overwritten, so a follow-up audit is a new timestamped file,
+and a path that resolves outside the audited project's own `audits/` directory is rejected
+before any write.
 
 The cross-project memory mirror (`memory-protocol/SKILL.md` WRITE step 4) needs none of
 the hook wiring above -- `resolve-shared-memory-path.sh` and `write-shared-memory-mirror.sh`
@@ -135,6 +143,13 @@ agents, skills, scripts, config, commands, and templates needed by installed ref
 The installed `systems-audit` report contract resolves the validator and formatter from
 that runtime. The roster maps to Hermes subagent delegation via `delegate_task(...)` (see
 row 3 of section 7 above).
+
+Containment is enforced, not assumed. The installer refuses a skills root that is not a
+real directory, a symlinked live skill, a symlinked managed runtime, and symlinked content
+inside either the source checkout or the runtime. It refuses a managed file whose
+installed path escapes the runtime root, and refuses a rollback or cleanup target outside
+its own quarantine directory. Each refusal names the offending path and exits non-zero
+rather than writing through it; fix the path on disk and re-run.
 
 ### Updating an existing install (`--auto-update`)
 

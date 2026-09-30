@@ -1961,6 +1961,13 @@ expect_code 2 "two report paths is a usage error" \
   bash "$VAR" "$VAF/audits/audit-report-build-2026-09-25-1200-s1.md" "$VAF/audits/notes.md"
 expect_code 2 "a missing report path is a usage error" \
   bash "$VAR" "$VAF/audits/does-not-exist.md"
+# The prepare helper only ever emits absolute destinations, so a relative report
+# path is a usage error even when it names the same good bytes -- otherwise the
+# absolute-path refusal would not hold end to end.
+expect_code 2 "a relative report path is a usage error" \
+  bash -c "cd '$VAF' && bash '$VAR' 'audits/audit-report-build-2026-09-25-1200-s1.md'"
+expect_code 0 "an absolute report path still passes from another working directory" \
+  bash -c "cd '$VAF/other' && bash '$VAR' '$VAF/audits/audit-report-build-2026-09-25-1200-s1.md'"
 expect_code 0 "--strict is accepted and ignored (parity with the siblings run-all.sh forwards it to)" \
   bash "$VAR" --strict "$VAF/audits/audit-report-build-2026-09-25-1200-s1.md"
 rm -rf "$VAF"

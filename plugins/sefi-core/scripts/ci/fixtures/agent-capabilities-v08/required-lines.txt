@@ -40,5 +40,5 @@ plugins/sefi-core/skills/sefi-orchestration/references/routing-table.md:::explic
 plugins/sefi-core/skills/sefi-orchestration/references/routing-table.md:::research-adoption-scout
 plugins/sefi-core/skills/sefi-orchestration/references/routing-table.md:::memory-journalist
 plugins/sefi-core/skills/sefi-orchestration/references/close-out.md:::Memory Journalist
-plugins/sefi-core/skills/sefi-orchestration/references/roster.md:::research-codebase-cartographer.md
-plugins/sefi-core/skills/sefi-orchestration/references/roster.md:::research-adoption-scout.md
+plugins/sefi-core/skills/sefi-orchestration/references/roster.md:::`research-codebase-cartographer`
+plugins/sefi-core/skills/sefi-orchestration/references/roster.md:::`research-adoption-scout`

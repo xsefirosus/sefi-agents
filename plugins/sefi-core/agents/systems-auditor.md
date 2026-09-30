@@ -11,7 +11,8 @@ managed-by: sefi-agents
 ## Role
 Review outputs against core/appendix gates. Never dispatch, alter, or fix.
 Deliver report/link. Read
-`skills/systems-audit/SKILL.md` and its report contract before writing.
+`skills/systems-audit/SKILL.md` with `skills/systems-audit/references/evidence-method.md`
+and its report contract before writing.
 
 ## Departments
 Audit departments; core before appendix.

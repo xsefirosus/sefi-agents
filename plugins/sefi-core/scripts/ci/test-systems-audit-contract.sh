@@ -25,6 +25,7 @@ if [ -f "$SKILL" ]; then
   [ "$(wc -l < "$SKILL")" -le 300 ] && ok 'skill main file is within 300 lines' || bad 'skill main file is within 300 lines'
   contains "$SKILL" 'references/evidence-method.md' 'skill links the evidence method'
   contains "$SKILL" '../anti-hallucination/SKILL.md' 'skill points to anti-hallucination'
+  contains "$SKILL" 'docs/AUDIT-DEPARTMENTS.md' 'skill names the supplemental department record'
 fi
 if [ -f "$METHOD" ]; then
   for source in 'iso.org/standard/19011' 'csrc.nist.gov/pubs/sp/800/53/a/r5/final' 'theiia.org/en/standards/2024-standards' 'gao.gov/assets/d24106786.pdf'; do
@@ -43,6 +44,9 @@ contains "$REPORT_CONTRACT" 'No findings in inspected surfaces.' 'clean reports 
 contains "$AUDITOR" 'STATUS: COMPLETE | STOPPED-TRIAGE | REFUSED-OVERWRITE | REFUSED-SCOPE | INCOMPLETE' 'auditor exposes incomplete status'
 contains "$COMMAND" '--root <designated-project-root>' 'command requires explicit audit project root for report validation'
 contains "$COMMAND" 'INCOMPLETE' 'command preserves incomplete audit status'
+contains "$REPORT_CONTRACT" '<runtime-root>/scripts/ci/prepare-audit-report-path.sh' 'report preparation resolves from runtime root'
+contains "$REPORT_CONTRACT" '<runtime-root>/scripts/ci/format-audit-findings.sh' 'finding formatter resolves from runtime root'
+contains "$REPORT_CONTRACT" '<runtime-root>/scripts/ci/validate-audit-report.sh' 'validator resolves from runtime root'
 
 if [ "$fail" -ne 0 ]; then
   echo "test-systems-audit-contract: $fail failure(s)" >&2

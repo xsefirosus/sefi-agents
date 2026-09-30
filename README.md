@@ -46,11 +46,23 @@ do not need a `/sefi:*` command for each request. Sefi subagents use the configu
 model policy: Astra for orchestration, Sol for QA/security, Terra for build/planning, and
 Luna for research and writing.
 
-**Other harnesses:** use `bash install.sh --target <claude|opencode|codex>`. For Hermes,
-run `bash plugins/sefi-core/scripts/install-hermes.sh` so its native skills receive their
+**Other harnesses:** use `bash install.sh --target <claude|opencode|codex>`. For the
+`claude` target that symlinks `agents/`, `skills/`, `commands/`, and `scripts/` into the
+harness config directory by default, with `--copy` for real file copies. The `opencode` and
+`codex` targets delegate to their own installers -- OpenCode always installs a real copy,
+and `install.sh` rejects `--copy` for the Codex bootstrap -- so read the matching page in
+[Where it runs](#works-with-your-harness) for those two. For Hermes, run
+`bash plugins/sefi-core/scripts/install-hermes.sh` so its native skills receive their
 managed runtime. A new or private harness can use a complete local manifest with
 `--adapter path/to/adapter.yml`; it is usable locally, not represented as a supported
 harness until its adapter tests are added and pass.
+
+Every installer resolves its destination to a physical path before writing and stops when
+that path escapes the destination root it was given or your home directory, re-checking
+containment at each write rather than once at the directory gate. Individual installers add
+their own refusals on top -- a symlinked `settings.json`, `AGENTS.md`, agent profile, skills
+root, or managed runtime -- and each one names the offending path and exits non-zero. These
+are refusals, not repairs: fix the path on disk, then re-run.
 
 Or hand the setup to any coding agent -- this one detects which tool you're using and
 installs the right way for it, Claude Code or otherwise:
@@ -178,11 +190,17 @@ the installed skill with `Use $systems-audit for the build scope`. In Hermes, as
 points for an on-demand audit; ordinary UI, security, and code-review requests keep their
 normal routes.
 
+The audit runs on demand only. No shipped loop and no scheduled workflow invokes it, and
+all three loops record that `audits/` is never scanned on a schedule.
+
 Each audit writes one ignored-local report under
 `audits/audit-report-<scope>-<timestamp>-<session>.md`. Local memory search and the memory
 index rebuild include those reports; cross-project memory mirroring refuses them. The skill
 controls the workflow, the command or natural-language request starts it, and the Systems
-Auditor writes the report after reviewing the selected outputs.
+Auditor writes the report after reviewing the selected outputs. A report path that already
+exists is refused rather than overwritten, so a follow-up audit is a new timestamped file,
+and a report that resolves outside the audited project's own `audits/` directory is
+rejected before anything is written.
 
 ## Design Council
 
@@ -349,8 +367,9 @@ CI: all validators passed
 - The final result lines cover the scripts, full loop skeleton, installation contract, and
   local-first session-journal behavior.
 - The same command also runs workflow-safety, shared-memory, runtime-contract, benchmark-
-  oracle, release-strictness, and CI-coverage regressions, then checks every tracked shell
-  script with `bash -n` and runs the benchmark unit tests.
+  oracle, release-strictness, and CI-coverage regressions, plus the audit-report, audit-
+  contract, audit-behavior, and audit-installer regressions, then checks every tracked
+  shell script with `bash -n` and runs the benchmark unit tests.
 - This proves the machinery works, not that the AI always makes good calls -- every
   agent's part in that test is scripted, not judged.
 - Every agent and skill has a length limit, and going over it fails the build. Exact

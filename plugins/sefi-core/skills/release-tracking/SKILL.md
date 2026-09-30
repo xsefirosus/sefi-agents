@@ -80,9 +80,9 @@ Strict completion requires every latest surface to be `match`; it rejects `lag`,
 
 ## Surfaces that are deliberately NOT tracked
 
-The per-harness install configs `opencode.json`, `.codex/config.toml`, and
-`install-hermes.sh`'s `SKILLS=` list are EXCLUDED from the surface list: none of them
-carries a plugin version string. They are install-transform inputs already gated by
+The per-harness install inputs `opencode.json`, the Codex hidden `config.toml`, and
+`install-hermes.sh`'s `SKILLS=` list are EXCLUDED from the surface list: none carries a
+plugin version string. They are install-transform inputs already gated by
 `validate-adapters.sh` and `validate-config-wired.sh`, not published version surfaces.
 
 ## The ledger

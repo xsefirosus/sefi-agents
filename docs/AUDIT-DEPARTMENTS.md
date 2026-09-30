@@ -1,6 +1,8 @@
 # Audit Departments
 
-This is a record of the department checklist in `plugins/sefi-core/agents/systems-auditor.md`. It states no new rule: the agent file is the source of truth, and any conflict resolves in its favor.
+This is a record of the department checklist in `plugins/sefi-core/agents/systems-auditor.md`. It states no new rule: the agent file is the source of truth, and any conflict resolves in its favor. It is repository documentation, not an installed runtime file: an audit on Codex, OpenCode, or Hermes does not read this file, and `systems-audit`'s `SKILL.md` treats it as optional reader context that installed behavior does not depend on.
+
+Each audit accepts one of eight scopes -- `complete`, `research`, `product`, `design`, `build`, `quality`, `docs`, `delivery` -- and runs on demand only: no shipped loop and no scheduled workflow invokes it. One report per audit is written to the ignored-local `audits/audit-report-<scope>-<timestamp>-<session>.md`, local memory search and `/sefi:memory-index rebuild` include those reports, and cross-project memory mirroring refuses them.
 
 Scope rule (recorded, not new): `complete` audits all seven departments in order; any other scope audits only its department. Quality scope covers both Quality agents; Delivery scope covers all three Delivery and Infra agents.
 

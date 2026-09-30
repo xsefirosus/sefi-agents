@@ -32,8 +32,8 @@ department and add exact overflow totals as `+<count> further <Severity> finding
 scope asks one clarification. `## Fixes` records remedies only after explicit confirmation
 to plan fixes. Inaccessible required artifacts or output failure ends as `STATUS INCOMPLETE`.
 
-Before writing, run [prepare-audit-report-path.sh](../../../scripts/ci/prepare-audit-report-path.sh)
-from the installed runtime as `<runtime-root>/scripts/ci/prepare-audit-report-path.sh`
+Before writing, run `prepare-audit-report-path.sh` from the installed runtime as
+`<runtime-root>/scripts/ci/prepare-audit-report-path.sh`
 with the audited root, allowed scope, and absolute report path. It accepts only a direct
 `<project-root>/audits/audit-report-<scope>-*.md` destination and changes no file. A
 pre-existing compliant destination returns `STATUS: REFUSED-OVERWRITE`; do not invoke
@@ -42,8 +42,8 @@ every finding from one audit through one formatter invocation as
 `Department<TAB>Severity<TAB>finding` rows. The supported canonical department keys are
 `Research`, `Product`, `Design`, `Build`, `Quality`, `Docs`, and `Delivery`; `complete`
 includes every finding from every audited department. Pipe those rows through
-[format-audit-findings.sh](../../../scripts/ci/format-audit-findings.sh) from the installed
-runtime as `<runtime-root>/scripts/ci/format-audit-findings.sh` and use its output exactly.
+`format-audit-findings.sh` from the installed runtime as
+`<runtime-root>/scripts/ci/format-audit-findings.sh` and use its output exactly.
 The formatter preserves canonical department order, orders severities within each
 department, displays at most five findings per department, and emits each exact overflow
 total.
