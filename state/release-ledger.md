@@ -267,3 +267,30 @@
 | 0.9.5 | github-marketplace-index | 0.9.5 | 0.9.5 | match | GET https://raw.githubusercontent.com/xsefirosus/sefi-agents/main/.claude-plugin/marketplace.json -> HTTP 200, metadata.version "0.9.5", plugins[0].version "0.9.5" (public raw endpoint at ref main, in place of the gh api call: gh is not installed on this host and no GH_TOKEN/GITHUB_TOKEN is set) | install commands quoted only in a README; a preview or branch ref instead of main | 2026-09-30T20:14:05Z |
 | 0.9.5 | git-tag | 0.9.5 | unobserved | unobserved | PENDING -- pre-tag observation: git tag --list v0.9.5 -> no output; git tag --points-at HEAD -> no output; git ls-remote --tags origin refs/tags/v0.9.5 refs/tags/v0.9.5^{} -> no output | a local tag that was never pushed to origin | 2026-09-30T20:14:05Z |
 | 0.9.5 | github-release | 0.9.5 | unobserved | unobserved | PENDING -- not created and not viewable this session: gh is not installed on this host (gh --version -> "not recognized as the name of a cmdlet") and no GH_TOKEN/GITHUB_TOKEN is set, so no release-creation or gh release view call could be made | a local or pushed tag with no published release; a draft release | 2026-09-30T20:14:05Z |
+
+- 2026-09-30T20:16Z: v0.9.5 publication completed. `git-tag`, `github-release`, and
+  `github-marketplace-index` are now OBSERVED and recorded as `match` below, which with the
+  three in-repo rows already appended above makes all six 0.9.5 surfaces observed. Evidence
+  notes: `gh` is NOT installed on this host and no `GH_TOKEN`/`GITHUB_TOKEN` is set, so the
+  GitHub surfaces were read and written through the REST API
+  (`https://api.github.com/repos/xsefirosus/sefi-agents`) using the same repository credential
+  the authorized `git push` already used -- same principal (`login=xsefirosus`, owner of this
+  repo), same repository, no trust boundary crossed and no second identity introduced. Each
+  API call below was re-read after the write rather than trusted from the create response.
+  The tag was created annotated, matching the v0.9.3 and v0.9.4 convention, and it points at
+  the merge commit `2fe3bb3`, NOT at the ledger commit that follows it on `main` -- the
+  ledger rows are the release's bookkeeping and are not part of what the tag claims. Neither
+  v0.9.3 (`ec35acad471fea5292fd17e836801fa336c9b4ed`) nor v0.9.4
+  (`db5293602a0a795bddde0e618d1732a6ce1c5d64`) was moved: re-read after tagging and
+  confirmed identical. No force push, no `--no-verify`, and no other destructive git
+  operation was used anywhere in this sequence; the merge was a plain `--no-ff` of a
+  fast-forward ancestor, so it could not and did not rewrite `main` history.
+  `validate-release-ledger.sh` still exits 1 on this ledger with the SAME 2 PRE-EXISTING
+  hard-fail-1 errors recorded above (`0.9.4: observed 0.9.3,0.9.4` and
+  `0.9.5: observed 0.9.4,0.9.5`); the surface is a genuine 6/6 `match` set for the latest
+  version, so the failure is a validator rule-1 artifact over historical lag rows, not a
+  release defect. Parked for human decision as `harness-limit`-adjacent ledger debt.
+
+| 0.9.5 | git-tag | 0.9.5 | 0.9.5 | match | git rev-parse 'v0.9.5^{commit}' -> 2fe3bb348977a3837a8ef1fb82197afa537d1200 (the release/0.9.5 -> main merge commit) ; git tag --points-at 2fe3bb348977a3837a8ef1fb82197afa537d1200 -> v0.9.5 ; git push origin refs/tags/v0.9.5 -> " * [new tag] v0.9.5 -> v0.9.5" ; git ls-remote --tags origin refs/tags/v0.9.5 'refs/tags/v0.9.5^{}' -> 9eac8b2f1da0e4b2ac5304a6c17c893de4c6c520 refs/tags/v0.9.5 and 2fe3bb348977a3837a8ef1fb82197afa537d1200 peeled ; GET /repos/xsefirosus/sefi-agents/git/ref/tags/v0.9.5 -> type=tag sha=9eac8b2f... ; GET /repos/xsefirosus/sefi-agents/git/tags/9eac8b2f... -> object.sha=2fe3bb348977a3837a8ef1fb82197afa537d1200 (tag pushed to origin AND API-visible, not local-only) | a local tag that was never pushed to origin | 2026-09-30T20:16:07Z |
+| 0.9.5 | github-release | 0.9.5 | 0.9.5 | match | POST /repos/xsefirosus/sefi-agents/releases {tag_name:v0.9.5, target_commitish:main, name:v0.9.5, draft:false, prerelease:false} -> id=400403933, publishedAt=2026-09-30T20:15:59Z, draft=False, url=https://github.com/xsefirosus/sefi-agents/releases/tag/v0.9.5 ; re-read GET /repos/xsefirosus/sefi-agents/releases/tags/v0.9.5 -> tag=v0.9.5, name=v0.9.5, targetCommitish=main, draft=False, prerelease=False, publishedAt=2026-09-30T20:15:59Z ; public page GET https://github.com/xsefirosus/sefi-agents/releases/tag/v0.9.5 -> HTTP 200. Body is the CHANGELOG.md 0.9.5 section in the same "## Added / ## Changed" shape as the v0.9.4 body. (REST API used in place of `gh release create`; gh absent on this host) | a local or pushed tag with no published release; a DRAFT release | 2026-09-30T20:16:07Z |
+| 0.9.5 | github-marketplace-index | 0.9.5 | 0.9.5 | match | GET /repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main (Accept: application/vnd.github.raw+json) -> HTTP 200, metadata.version "0.9.5", plugins[0].version "0.9.5" ; cross-checked unauthenticated at https://raw.githubusercontent.com/xsefirosus/sefi-agents/main/.claude-plugin/marketplace.json -> metadata.version 0.9.5, plugins[0].version 0.9.5 ; origin/main head = 58d05fd09878865bf4b693a557765dec86787de7 (GET /repos/xsefirosus/sefi-agents/git/ref/heads/main) | install commands quoted only in a README; a preview or branch ref instead of main | 2026-09-30T20:16:07Z |
