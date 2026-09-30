@@ -1,0 +1,45 @@
+# Line-ending policy for CRLF-sensitive CI fixtures.
+#
+# This repo has no global eol policy, so a fresh Windows clone with
+# core.autocrlf=true checks EVERY text file out as CRLF. Most repo content
+# tolerates that. These three fixtures do not, because each is read by a parser
+# that splits on a delimiter and then compares the trailing field verbatim --
+# there is no [[:space:]] trim in the way, so the CR becomes part of the value:
+#
+#   routing-cases.txt          validate-routing.sh reads it with
+#                              `IFS='|' read -r trig expected`. The CR rides on the
+#                              expected-agent field, so no fixture row ever matches,
+#                              and the step-0 hygiene guard reports the cause.
+#   expected-agent-sources.txt test-agent-capabilities-v08.sh reads it with
+#                              `IFS= read -r agent`. With IFS empty nothing is
+#                              trimmed, so the CR makes the path it builds,
+#                              $CORE/agents/<agent>.md, unresolvable.
+#   required-lines.txt         the same test takes needle="${row#*:::}" and runs
+#                              `grep -Fq -- "$needle"` against a repo source file.
+#                              The CR lands on the needle, so no mid-line literal
+#                              can match and every row reports a false miss.
+#
+# `text eol=lf` pins the working-tree copy to LF whatever core.autocrlf says, so a
+# fresh clone runs the same checks a hand-normalized worktree does -- the fixtures
+# stop being a Windows-only red build. The CRLF guard in validate-routing.sh stays
+# load-bearing: it still fires on a genuinely contaminated fixture (an editor that
+# rewrites line endings, a bad merge, an archive extracted on Windows).
+#
+# Deliberately NOT pinned -- the rest of scripts/ci/fixtures/. Each was run against
+# a simulated fresh core.autocrlf=true checkout and behaved identically to the LF
+# worktree, because every consumer normalizes or parses the CR away:
+#   rule-presence/**     validate-rule-presence.sh collapses [[:space:]] (which
+#                        includes CR) to a single space before it matches.
+#   release-ledger/**    the ledger's awk pass trims [[:space:]] off every cell.
+#   check-route/**       Python json.loads treats CR as whitespace; the malformed
+#                        model-map trust boundary still exits 2 with no JSON line.
+#   manifest-version/**  Python json on the legacy manifest, no byte comparison on
+#                        that path.
+#   memory-journalist/** read as an opaque text blob, matched by substring.
+# A NEW fixture consumed by an IFS-split reader or a byte-comparison guard belongs
+# in the list below -- add it here rather than letting the next Windows-only red
+# build teach someone to ignore a real failure.
+.gitattributes text eol=lf
+plugins/sefi-core/scripts/ci/fixtures/routing-cases.txt text eol=lf
+plugins/sefi-core/scripts/ci/fixtures/agent-capabilities-v08/expected-agent-sources.txt text eol=lf
+plugins/sefi-core/scripts/ci/fixtures/agent-capabilities-v08/required-lines.txt text eol=lf
