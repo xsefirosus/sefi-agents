@@ -306,7 +306,10 @@ for path in sorted(source.rglob("*")):
     if path.is_symlink() or not path.is_file():
         continue
     relative = path.relative_to(source)
-    installed = (root / relative).resolve(strict=False)
+    installed_path = root / relative
+    if installed_path.is_symlink():
+        raise SystemExit(f"installed runtime file is missing or symlinked: {relative}")
+    installed = installed_path.resolve(strict=False)
     try:
         installed.relative_to(root)
     except ValueError:
