@@ -6,8 +6,17 @@ ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
 CORE="$ROOT/plugins/sefi-core"
 
 fail=0
+pending_count=0
 ok() { printf '  OK  %s\n' "$1"; }
 bad() { printf '  BAD %s\n' "$1" >&2; fail=$((fail + 1)); }
+# A host that cannot create a physical symlink (no symlink privilege, an `ln -s` that
+# silently falls back to a copy, a filesystem without link support) cannot produce the
+# case under test, and a BAD there would report a product regression that never ran.
+# Same convention as test-systems-audit-installers.sh: the leg is PENDING and the run
+# continues. A host with real symlinks still runs the assertion and still FAILs on a
+# genuine regression, because the guard is `[ -L ]` (a real link), not `ln -s` (which can
+# succeed while leaving a plain file or directory behind).
+pending() { printf '  PENDING %s\n' "$1"; pending_count=$((pending_count + 1)); }
 contains() { grep -Fq "$2" "$1" && ok "$3" || bad "$3"; }
 
 echo '=== local audit boundary ==='
@@ -32,17 +41,66 @@ printf '%s\n' 'durable non-report' > "$WORK/audits/notes.md"
 git -C "$WORK" init -q
 git -C "$WORK" remote add origin 'https://github.com/acme/audit-project.git'
 
-(
-  cd "$WORK"
-  search_out="$(bash "$CORE/scripts/memory-search.sh" 'durable')"
-  printf '%s\n' "$search_out" | grep -qx 'audits/audit-report-build-2026-09-25-1200-session-001.md'
-  ! printf '%s\n' "$search_out" | grep -q 'audits/notes.md'
-  bash "$CORE/scripts/memory-index.sh" rebuild >/dev/null
-  grep -q 'audits/audit-report-build-2026-09-25-1200-session-001.md' .sefi/memory-index/manifest.json
-  ! grep -q 'audits/notes.md' .sefi/memory-index/manifest.json
-  printf '%s\n' 'changed audit finding' >> audits/audit-report-build-2026-09-25-1200-session-001.md
-  ! bash "$CORE/scripts/memory-index.sh" status >/dev/null 2>&1
-  bash "$CORE/scripts/memory-index.sh" rebuild >/dev/null
+if (
+  # One leg must never silence the rest: errexit stays on outside this subshell,
+  # but inside every leg reports its own OK/BAD and the subshell carries the tally
+  # in its exit status (a subshell cannot touch the parent's $fail counter).
+  set +e
+  subfail=0
+  leg_bad() { bad "$1"; subfail=1; }
+  # Same story as leg_bad for a leg the host cannot express: it prints its PENDING line
+  # and leaves subfail alone. The count itself cannot cross back out of the subshell, so
+  # the PENDING lines in the output are the tally, exactly as OK/BAD lines are read there.
+  leg_pending() { printf '  PENDING %s\n' "$1"; }
+
+  cd "$WORK" || { leg_bad 'fixture project directory is reachable'; exit 1; }
+
+  if search_out="$(bash "$CORE/scripts/memory-search.sh" 'durable')"; then
+    ok 'memory search completes for a durable query'
+  else
+    leg_bad 'memory search completes for a durable query'
+    search_out=''
+  fi
+  if printf '%s\n' "$search_out" | grep -qx 'audits/audit-report-build-2026-09-25-1200-session-001.md'; then
+    ok 'memory search surfaces the durable audit report'
+  else
+    leg_bad 'memory search surfaces the durable audit report'
+  fi
+  if printf '%s\n' "$search_out" | grep -q 'audits/notes.md'; then
+    leg_bad 'memory search excludes non-report audit notes'
+  else
+    ok 'memory search excludes non-report audit notes'
+  fi
+  if bash "$CORE/scripts/memory-index.sh" rebuild >/dev/null; then
+    ok 'memory index rebuild succeeds'
+  else
+    leg_bad 'memory index rebuild succeeds'
+  fi
+  if grep -q 'audits/audit-report-build-2026-09-25-1200-session-001.md' .sefi/memory-index/manifest.json 2>/dev/null; then
+    ok 'memory index manifest includes the audit report'
+  else
+    leg_bad 'memory index manifest includes the audit report'
+  fi
+  if grep -q 'audits/notes.md' .sefi/memory-index/manifest.json 2>/dev/null; then
+    leg_bad 'memory index manifest excludes non-report audit notes'
+  else
+    ok 'memory index manifest excludes non-report audit notes'
+  fi
+  if printf '%s\n' 'changed audit finding' >> audits/audit-report-build-2026-09-25-1200-session-001.md; then
+    ok 'audit report edit lands for the staleness check'
+  else
+    leg_bad 'audit report edit lands for the staleness check'
+  fi
+  if bash "$CORE/scripts/memory-index.sh" status >/dev/null 2>&1; then
+    leg_bad 'memory index status detects staleness after an audit edit'
+  else
+    ok 'memory index status detects staleness after an audit edit'
+  fi
+  if bash "$CORE/scripts/memory-index.sh" rebuild >/dev/null; then
+    ok 'memory index rebuild succeeds after an audit edit'
+  else
+    leg_bad 'memory index rebuild succeeds after an audit edit'
+  fi
 
   local_bin="$TMP/local-bin"
   local_home="$TMP/local-home"
@@ -60,11 +118,26 @@ git -C "$WORK" remote add origin 'https://github.com/acme/audit-project.git'
       mirror_note "$note"
     ' _ "$CORE/scripts/memory-cross-memory.sh" "$1"
   }
-  "${local_env[@]}" bash "$CORE/scripts/memory-cross-memory.sh" enable >/dev/null
-  mirror="$(mirror_with_confirmed_host memory/sessions/2026/09/session.md)"
-  [ -f "$mirror" ]
-  ! mirror_with_confirmed_host audits/audit-report-build-2026-09-25-1200-session-001.md >/dev/null 2>&1
-  ! mirror_with_confirmed_host audits/../audits/audit-report-build-2026-09-25-1200-session-001.md >/dev/null 2>&1
+  if "${local_env[@]}" bash "$CORE/scripts/memory-cross-memory.sh" enable >/dev/null; then
+    ok 'cross-memory enable succeeds in the fixture project'
+  else
+    leg_bad 'cross-memory enable succeeds in the fixture project'
+  fi
+  if mirror="$(mirror_with_confirmed_host memory/sessions/2026/09/session.md)" && [ -f "$mirror" ]; then
+    ok 'session note mirrors to the confirmed local vault'
+  else
+    leg_bad 'session note mirrors to the confirmed local vault'
+  fi
+  if mirror_with_confirmed_host audits/audit-report-build-2026-09-25-1200-session-001.md >/dev/null 2>&1; then
+    leg_bad 'cross-memory mirror refuses an audit report'
+  else
+    ok 'cross-memory mirror refuses an audit report'
+  fi
+  if mirror_with_confirmed_host audits/../audits/audit-report-build-2026-09-25-1200-session-001.md >/dev/null 2>&1; then
+    leg_bad 'cross-memory mirror refuses a traversal-shaped audit path'
+  else
+    ok 'cross-memory mirror refuses a traversal-shaped audit path'
+  fi
 
   # Containment must not follow a configured vault or sessions symlink outside the
   # project, even when the destination holds regular Markdown.
@@ -72,22 +145,56 @@ git -C "$WORK" remote add origin 'https://github.com/acme/audit-project.git'
   mkdir -p "$external/vault/sessions" "$external/sessions" regular-vault
   printf '%s\n' 'external vault note' > "$external/sessions/outside.md"
   printf '%s\n' 'nested external vault note' > "$external/vault/sessions/outside.md"
-  ln -s "$external/vault" symlink-vault
-  [ -L symlink-vault ]
-  sed -i 's/^  vault_dir: .*/  vault_dir: symlink-vault/' config/sefi.config.yml
-  ! mirror_with_confirmed_host symlink-vault/sessions/outside.md >/dev/null 2>&1
+  if ln -s "$external/vault" symlink-vault 2>/dev/null && [ -L symlink-vault ]; then
+    ok 'symlinked vault fixture is a physical symlink'
+    if sed -i 's/^  vault_dir: .*/  vault_dir: symlink-vault/' config/sefi.config.yml; then
+      if mirror_with_confirmed_host symlink-vault/sessions/outside.md >/dev/null 2>&1; then
+        leg_bad 'mirror refuses a note addressed through a symlinked vault'
+      else
+        ok 'mirror refuses a note addressed through a symlinked vault'
+      fi
+    else
+      leg_bad 'fixture vault config points at the symlinked vault'
+    fi
+  else
+    leg_pending 'mirror refuses a note addressed through a symlinked vault requires a physical symlink'
+  fi
 
-  ln -s "$external/sessions" regular-vault/sessions
-  [ -L regular-vault/sessions ]
-  sed -i 's/^  vault_dir: .*/  vault_dir: regular-vault/' config/sefi.config.yml
-  ! mirror_with_confirmed_host regular-vault/sessions/outside.md >/dev/null 2>&1
+  if ln -s "$external/sessions" regular-vault/sessions 2>/dev/null && [ -L regular-vault/sessions ]; then
+    ok 'symlinked sessions fixture is a physical symlink'
+    if sed -i 's/^  vault_dir: .*/  vault_dir: regular-vault/' config/sefi.config.yml; then
+      if mirror_with_confirmed_host regular-vault/sessions/outside.md >/dev/null 2>&1; then
+        leg_bad 'mirror refuses a note addressed through a symlinked sessions dir'
+      else
+        ok 'mirror refuses a note addressed through a symlinked sessions dir'
+      fi
+    else
+      leg_bad 'fixture vault config points at the regular vault'
+    fi
+  else
+    leg_pending 'mirror refuses a note addressed through a symlinked sessions dir requires a physical symlink'
+  fi
 
-  ln -s "$external" vault-parent
-  [ -L vault-parent ]
-  sed -i 's/^  vault_dir: .*/  vault_dir: vault-parent\/vault/' config/sefi.config.yml
-  ! mirror_with_confirmed_host vault-parent/vault/sessions/outside.md >/dev/null 2>&1
-)
-ok 'audit reports are local-only, searchable, indexed, and staleness-tracked'
+  if ln -s "$external" vault-parent 2>/dev/null && [ -L vault-parent ]; then
+    ok 'symlinked vault-parent fixture is a physical symlink'
+    if sed -i 's/^  vault_dir: .*/  vault_dir: vault-parent\/vault/' config/sefi.config.yml; then
+      if mirror_with_confirmed_host vault-parent/vault/sessions/outside.md >/dev/null 2>&1; then
+        leg_bad 'mirror refuses a note addressed through a symlinked vault parent'
+      else
+        ok 'mirror refuses a note addressed through a symlinked vault parent'
+      fi
+    else
+      leg_bad 'fixture vault config points under the symlinked parent'
+    fi
+  else
+    leg_pending 'mirror refuses a note addressed through a symlinked vault parent requires a physical symlink'
+  fi
+  exit "$subfail"
+); then
+  ok 'audit reports are local-only, searchable, indexed, and staleness-tracked'
+else
+  bad 'audit reports are local-only, searchable, indexed, and staleness-tracked'
+fi
 
 echo '=== audit report physical containment ==='
 VALIDATOR_ROOT="$TMP/validator-root"
@@ -98,8 +205,11 @@ report="$VALIDATOR_ROOT/audits/audit-report-build-2026-09-26-x.md"; report_body 
 bash "$VALIDATOR_ROOT/plugins/sefi-core/scripts/ci/validate-audit-report.sh" "$report" >/dev/null && ok 'valid report under audits passes' || bad 'valid report under audits passes'
 outside="$VALIDATOR_ROOT/outside/audit-report-build-2026-09-26-x.md"; report_body > "$outside"
 ! bash "$VALIDATOR_ROOT/plugins/sefi-core/scripts/ci/validate-audit-report.sh" "$VALIDATOR_ROOT/audits/../outside/audit-report-build-2026-09-26-x.md" >/dev/null 2>&1 && ok 'traversal escape fails' || bad 'traversal escape fails'
-if ln -s "$VALIDATOR_ROOT/outside" "$VALIDATOR_ROOT/audits/link" 2>/dev/null; then
+if ln -s "$VALIDATOR_ROOT/outside" "$VALIDATOR_ROOT/audits/link" 2>/dev/null \
+  && [ -L "$VALIDATOR_ROOT/audits/link" ]; then
   ! bash "$VALIDATOR_ROOT/plugins/sefi-core/scripts/ci/validate-audit-report.sh" "$VALIDATOR_ROOT/audits/link/audit-report-build-2026-09-26-x.md" >/dev/null 2>&1 && ok 'intermediate symlink escape fails' || bad 'intermediate symlink escape fails'
+else
+  pending 'intermediate symlink escape fails requires a physical symlink'
 fi
 
 echo '=== orphan exemption ==='
@@ -117,4 +227,8 @@ if [ "$fail" -ne 0 ]; then
   echo "test-audit-integration: $fail failure(s)" >&2
   exit 1
 fi
+# Counted legs are only the ones that live in this shell; the subshell reports its own
+# PENDING lines above and cannot push a number back out. PENDING is not a pass and not a
+# fail, so it is stated on its own line rather than folded into the OK line.
+[ "$pending_count" -eq 0 ] || echo "test-audit-integration: $pending_count PENDING leg(s) the host could not run"
 echo 'test-audit-integration: OK'
