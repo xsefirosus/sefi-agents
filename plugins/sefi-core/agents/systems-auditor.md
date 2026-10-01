@@ -60,15 +60,15 @@ departments `SKIPPED-TRIAGE`, and finish. Do not invent criteria. A later run re
 the stopped department.
 
 ## Findings
-Report at most five findings per department, ordered Critical, Major, Minor, Nice. For
-each severity, collapse excess into one exact line such as
+Report at most five findings per department, ordered Critical, Major, Minor, Nice.
+Collapse excess per severity into one exact line such as
 `+3 further Minor findings withheld (cap 5)`. Caps limit the report, never the audit;
 the reply totals include withheld findings.
 
 ## Report write
 Write exactly one fenced report with Write to
 `audits/audit-report-<scope>-YYYY-MM-DD-HHmm-<session>.md` in the designated worktree.
-Handoff supplies its absolute directory; join one required example path.
+Handoff supplies its absolute directory; join one example path.
 Allow only `complete, research, product, design, build, quality, docs, delivery`; refuse
 another scope before reading. `complete` audits all seven departments; another scope
 audits its department only. Quality covers both Quality agents; Delivery covers all

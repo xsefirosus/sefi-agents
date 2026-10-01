@@ -1273,15 +1273,15 @@ for helper_entry in \
   check_helper_refuses "$helper_name rejects a backslash path" \
     "$harness" sefi_normalize_path 'sub\dir'
   check_helper_refuses "$helper_name rejects a drive-letter path" \
-    "$harness" sefi_normalize_path 'C:\Users\me\.config\opencode'
+    "$harness" sefi_normalize_path 'C:\Users\you\.config\opencode'
   check_helper_refuses "$helper_name rejects a forward-slash drive-letter path" \
-    "$harness" sefi_normalize_path 'C:/Users/me/.config/opencode'
+    "$harness" sefi_normalize_path 'C:/Users/you/.config/opencode'
   check_helper_refuses "$helper_name rejects an MSYS-style drive-letter path" \
-    "$harness" sefi_normalize_path '/C:/Users/me'
+    "$harness" sefi_normalize_path '/C:/Users/you'
   check_helper_refuses "$helper_name propagates a backslash refusal through the canonical helper" \
     "$harness" sefi_canonical_path 'sub\dir'
   check_helper_refuses "$helper_name propagates a drive-letter refusal through the canonical helper" \
-    "$harness" sefi_canonical_path 'C:\Users\me\.config\opencode'
+    "$harness" sefi_canonical_path 'C:\Users\you\.config\opencode'
   # Empty input is unreachable from the installers -- every entry point substitutes a
   # default for an unset or empty variable -- but normalized bare it resolved to $PWD,
   # which would have installed into whatever directory the user happened to be standing
@@ -1299,11 +1299,11 @@ for helper_entry in \
   # letter, where the case could not match it, so //C:/ and ///C:/ folded in as
   # relative components and were installed as directory names.
   check_helper_refuses "$helper_name rejects a double-slash drive-letter path" \
-    "$harness" sefi_normalize_path '//C:/Users/me'
+    "$harness" sefi_normalize_path '//C:/Users/you'
   check_helper_refuses "$helper_name rejects a triple-slash drive-letter path" \
-    "$harness" sefi_normalize_path '///C:/Users/me'
+    "$harness" sefi_normalize_path '///C:/Users/you'
   check_helper_refuses "$helper_name propagates a double-slash drive-letter refusal through the canonical helper" \
-    "$harness" sefi_canonical_path '//C:/Users/me'
+    "$harness" sefi_canonical_path '//C:/Users/you'
   # A UNC-style double slash with no drive letter is a legitimate POSIX path and must
   # keep normalizing, so the refusals above cannot be satisfied by rejecting "//".
   check_helper_prints "$helper_name still normalizes a UNC-style double-slash path" \
@@ -1360,22 +1360,22 @@ fi
 codex_win_probe="$tmp/codex-windows-path-probe"
 mkdir -p "$codex_win_probe"
 expect_failure "Codex refuses a drive-letter CODEX_HOME" \
-  env PATH="$codex_bin:$PATH" CODEX_HOME='C:\Users\me\.codex' CODEX_TEST_SOURCE="$CORE" \
+  env PATH="$codex_bin:$PATH" CODEX_HOME='C:\Users\you\.codex' CODEX_TEST_SOURCE="$CORE" \
   CODEX_TEST_MARKETPLACE_ROOT="$ROOT" CODEX_TEST_MARKETPLACE_SOURCE="$ROOT" \
   bash -c 'cd "$1" || exit 1; shift; exec bash "$@"' _ "$codex_win_probe" "$ROOT/install-codex.sh" --candidate-marketplace "$ROOT"
 # The refusal has to come from the normalizer, not from an incidental failure earlier in
 # the run. A filesystem that cannot represent a backslash inside a directory name rejects
 # the same value for an unrelated reason, so the message is only demanded where the name
 # is representable, and the rest is reported PENDING rather than claimed.
-if mkdir "$codex_win_probe/C:\Users\me\.codex" 2>/dev/null; then
-  rm -rf "$codex_win_probe/C:\Users\me\.codex"
+if mkdir "$codex_win_probe/C:\Users\you\.codex" 2>/dev/null; then
+  rm -rf "$codex_win_probe/C:\Users\you\.codex"
   if grep -qF 'refusing CODEX_HOME that is not a POSIX path' \
     "$tmp/Codex refuses a drive-letter CODEX_HOME.out"; then
     ok "Codex names the non-POSIX-path refusal rather than failing later"
   else
     bad "Codex names the non-POSIX-path refusal rather than failing later"
   fi
-  if [ ! -e "$codex_win_probe/C:\Users\me\.codex/AGENTS.md" ]; then
+  if [ ! -e "$codex_win_probe/C:\Users\you\.codex/AGENTS.md" ]; then
     ok "Codex wrote no bootstrap block through a drive-letter CODEX_HOME"
   else
     bad "Codex wrote no bootstrap block through a drive-letter CODEX_HOME"
@@ -1614,11 +1614,15 @@ if [ "$symlinks_supported" -eq 1 ]; then
   else
     bad "Hermes names the runtime-copy integrity failure rather than reporting success"
   fi
-  if [ -L "$hermes_copy_symlink_runtime/skills/systems-audit/SKILL.md" ] \
-    && grep -qxF 'unrelated runtime-copy victim' "$hermes_copy_symlink_runtime/skills/systems-audit/unrelated-victim.txt"; then
-    ok "Hermes never resolves or rewrites through a fetched runtime-copy symlink"
+  # Refusal rolls the fetch back: with no pre-install backup, restore_skills removes
+  # the fetched tree, so the tainted link must be gone rather than live -- and no
+  # managed runtime may have been materialized from the tainted fetch. Either
+  # survivor means the installer resolved through the link instead of refusing it.
+  if [ ! -e "$hermes_copy_symlink_runtime/skills/systems-audit/SKILL.md" ] \
+    && [ ! -e "$hermes_copy_symlink_runtime/sefi-core" ]; then
+    ok "Hermes quarantines a fetched runtime-copy symlink instead of resolving through it"
   else
-    bad "Hermes never resolves or rewrites through a fetched runtime-copy symlink"
+    bad "Hermes quarantines a fetched runtime-copy symlink instead of resolving through it"
   fi
 else
   printf 'PENDING: Hermes runtime-copy symlink check requires a physical symlink\n'
