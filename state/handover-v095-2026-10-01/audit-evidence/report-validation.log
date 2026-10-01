@@ -1,0 +1,8 @@
+CHECK_REPLY_EXIT=0
+check-reply: OK (agent=qa-engineer, 72/200 words, labels verified)
+CHECK_VERDICT_CITATION_EXIT=0
+check-citation: OK (0 citation(s) checked, all exist and are in bounds -- semantic correctness NOT verified, read them yourself)
+CHECK_REPORT_CITATION_EXIT=0
+check-citation: OK (0 citation(s) checked, all exist and are in bounds -- semantic correctness NOT verified, read them yourself)
+PLACEHOLDER_EXIT=0
+scan-placeholders: 0 total hit(s) across 4 categories (evidence only -- always exits 0)

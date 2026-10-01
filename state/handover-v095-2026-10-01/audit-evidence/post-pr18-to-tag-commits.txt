@@ -1,0 +1,9 @@
+6ab64bec4a8602c540a0e1dd10f297b882481f2d 2026-09-29T06:17:44+04:00 chore(state): consume audit QA escalation
+16dae48caa3e51d5e630c6a91ed83afa731e948f 2026-09-29T06:32:41+04:00 fix(audit): preserve scanner-safe documentation contracts
+8743e0b147a9c156515798cd13bc78c24850d60e 2026-09-29T08:00:49+04:00 fix(audit): close roster and installer symlink gaps
+5888506ba4f318c0b1361f64a7e81ea891269d4a 2026-09-29T13:21:04+04:00 fix(audit): docs counts, validator absolute-path refusal, and fixture coverage from takeover gap analysis
+7b62aa38ce830ac78398899807bf8fb774227eda 2026-09-30T13:41:57+04:00 fix(audit): canonicalize installer paths, per-write containment, behavioral fixtures
+df56db6f5ef1bf1d8267c3cc2a99f276c26b3f1f 2026-09-30T19:30:50+04:00 fix(audit): routing CRLF guard and integration pending convention
+379d2de4b6adc633963dae165627374a456769c2 2026-09-30T22:11:09+04:00 fix(ci): pin fixture eol in .gitattributes, correct stale v08 capability needles
+04de7419f5d1b6690f53f22fb2ae21ac4f1c18da 2026-09-30T22:39:00+04:00 docs(v0.9.5): documentation accuracy pass across README, adapters, and audit docs
+2fe3bb348977a3837a8ef1fb82197afa537d1200 2026-10-01T00:10:20+04:00 chore(release): merge release/0.9.5 into main (v0.9.5)

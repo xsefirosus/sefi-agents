@@ -1,0 +1,23 @@
+213:validate	UNKNOWN STEP	2026-09-30T20:18:48.5286810Z ERROR: plugins/sefi-core/scripts/install-opencode.sh - personal path detected: <windows-profile-fixture>
+214:validate	UNKNOWN STEP	2026-09-30T20:18:48.5311540Z ERROR: plugins/sefi-core/scripts/ci/test-systems-audit-installers.sh - personal path detected: /Users/me
+215:validate	UNKNOWN STEP	2026-09-30T20:18:48.5334515Z ERROR: plugins/sefi-core/scripts/ci/test-systems-audit-installers.sh - personal path detected: /Users/me
+216:validate	UNKNOWN STEP	2026-09-30T20:18:48.5357264Z ERROR: plugins/sefi-core/scripts/ci/test-systems-audit-installers.sh - personal path detected: /Users/me
+217:validate	UNKNOWN STEP	2026-09-30T20:18:48.5380398Z ERROR: plugins/sefi-core/scripts/ci/test-systems-audit-installers.sh - personal path detected: /Users/me
+218:validate	UNKNOWN STEP	2026-09-30T20:18:48.5403549Z ERROR: plugins/sefi-core/scripts/ci/test-systems-audit-installers.sh - personal path detected: /Users/me
+219:validate	UNKNOWN STEP	2026-09-30T20:18:48.5427339Z ERROR: plugins/sefi-core/scripts/ci/test-systems-audit-installers.sh - personal path detected: <windows-profile-fixture>
+220:validate	UNKNOWN STEP	2026-09-30T20:18:48.5450658Z ERROR: plugins/sefi-core/scripts/ci/test-systems-audit-installers.sh - personal path detected: <windows-profile-fixture>
+221:validate	UNKNOWN STEP	2026-09-30T20:18:48.5473574Z ERROR: plugins/sefi-core/scripts/ci/test-systems-audit-installers.sh - personal path detected: <windows-profile-fixture>
+222:validate	UNKNOWN STEP	2026-09-30T20:18:48.5496127Z ERROR: plugins/sefi-core/scripts/ci/test-systems-audit-installers.sh - personal path detected: <windows-profile-fixture>
+223:validate	UNKNOWN STEP	2026-09-30T20:18:48.5519231Z ERROR: plugins/sefi-core/scripts/ci/test-systems-audit-installers.sh - personal path detected: <windows-profile-fixture>
+224:validate	UNKNOWN STEP	2026-09-30T20:18:48.5542288Z ERROR: plugins/sefi-core/scripts/ci/test-systems-audit-installers.sh - personal path detected: <windows-profile-fixture>
+225:validate	UNKNOWN STEP	2026-09-30T20:18:48.5564628Z ERROR: install.sh - personal path detected: <windows-profile-fixture>
+226:validate	UNKNOWN STEP	2026-09-30T20:18:48.5587160Z ERROR: install-codex.sh - personal path detected: <windows-profile-fixture>
+242:validate	UNKNOWN STEP	2026-09-30T20:18:51.1790243Z === validate-release-ledger.sh ===
+243:validate	UNKNOWN STEP	2026-09-30T20:18:51.4045660Z validate-release-ledger: OK (latest 0.9.5, 6/6 surfaces observed, 0 warning(s))
+268:validate	UNKNOWN STEP	2026-09-30T20:18:54.1861635Z === validate-token-budget.sh ===
+269:validate	UNKNOWN STEP	2026-09-30T20:18:54.3526900Z ERROR: plugins/sefi-core/agents - total 10882 words (max 10880 for 17 agents)
+270:validate	UNKNOWN STEP	2026-09-30T20:18:54.5125398Z validate-token-budget: 1 error(s)
+537:validate	UNKNOWN STEP	2026-09-30T20:19:28.2489597Z === validate-release-ledger.sh (Phase 2: six-surface release reconciliation, ported from astral-orchestrator release-ledger.py, MIT) ===
+1200:validate	UNKNOWN STEP	2026-09-30T20:21:24.8585136Z FAIL: Hermes never resolves or rewrites through a fetched runtime-copy symlink
+1323:validate	UNKNOWN STEP	2026-09-30T20:22:03.1258248Z FAIL: test_checkout_line_endings_unset (test_runner.SandboxTests.test_checkout_line_endings_unset)
+1339:validate	UNKNOWN STEP	2026-09-30T20:22:03.3219100Z CI: FAILED -- one or more validators reported errors

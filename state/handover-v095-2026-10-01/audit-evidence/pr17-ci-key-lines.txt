@@ -1,0 +1,11 @@
+268:validate	Run validator suite	2026-09-28T12:55:05.7291853Z === validate-token-budget.sh ===
+269:validate	Run validator suite	2026-09-28T12:55:06.0192775Z validate-token-budget: OK (all within token budgets; agents total 10880 words)
+849:validate	Run validator suite	2026-09-28T12:55:48.2077283Z === test-audit-integration.sh ===
+870:validate	Run validator suite	2026-09-28T12:55:49.1039485Z test-audit-integration: OK
+872:validate	Run validator suite	2026-09-28T12:55:49.1072881Z === test-audit-report-validator.sh ===
+887:validate	Run validator suite	2026-09-28T12:55:49.2946893Z test-audit-report-validator: OK
+889:validate	Run validator suite	2026-09-28T12:55:49.2976123Z === test-systems-audit-contract.sh ===
+912:validate	Run validator suite	2026-09-28T12:55:49.3261423Z test-systems-audit-contract: OK
+914:validate	Run validator suite	2026-09-28T12:55:49.3263491Z === test-systems-audit-behavior.sh ===
+954:validate	Run validator suite	2026-09-28T12:55:49.7018111Z test-systems-audit-behavior: OK
+1104:validate	Run validator suite	2026-09-28T12:56:19.0299358Z CI: all validators passed

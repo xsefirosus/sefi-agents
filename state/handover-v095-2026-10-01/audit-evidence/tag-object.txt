@@ -1,0 +1,6 @@
+object 2fe3bb348977a3837a8ef1fb82197afa537d1200
+type commit
+tag v0.9.5
+tagger Sales Coordinator  : HCM-SLS <salescoordinate@hcm-uae.com> 1790799247 +0400
+
+v0.9.5 -- Systems Audit release: audit skill/command shipped across Claude Code, Codex, OpenCode, and Hermes adapters, with docs accuracy pass. Tag on the release/0.9.5 -> main merge commit.

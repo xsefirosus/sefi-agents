@@ -1,0 +1,48 @@
+state/release-ledger.md:1:# Release ledger -- machine bookkeeping. One row per observed publication surface, appended by the release-tracking skill. Never hand-edited except to append; never rewrite history to hide a lag.
+state/release-ledger.md:2:<!-- surface = one of: plugin.json | marketplace.json | changelog | git-tag | github-release | github-marketplace-index. status = match | lag | mismatch | unobserved. Target version is resolved from plugins/sefi-core/.claude-plugin/plugin.json, never from prose. -->
+state/release-ledger.md:10:| 0.5.2 | git-tag | 0.5.2 | 0.5.2 | match | git tag -l -> v0.5.2 ; git ls-remote --tags origin -> b389809 refs/tags/v0.5.2 . NOTE: v0.5.2 points at 3bd9f5e, and HEAD 6bf47a3 is 1 commit of unreleased work past it (git rev-list --count v0.5.2..HEAD -> 1) -- normal inter-release state, not a lag of the 0.5.2 release, which is fully tagged local and origin | a local tag that was never pushed to origin | 2026-08-30T18:58:58Z |
+state/release-ledger.md:14:| 0.5.1 | changelog | 0.5.1 | 0.5.1 | match | CHANGELOG.md:38 "## [0.5.1] - 2026-08-28" (historical entry retained) | a ### Added bullet with no dated heading above it | 2026-08-30T18:58:58Z |
+state/release-ledger.md:144:| 0.9.4 | github-marketplace-index | 0.9.4 | 0.9.3 | lag | gh api repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main (Accept: raw) -> metadata.version 0.9.3, plugins[0].version 0.9.3 | install commands quoted only in a README | 2026-09-26T15:11:48Z |
+state/release-ledger.md:158:- git-tag status is `match`, not `lag`: the skill's surface contract asks that `v<target>`
+state/release-ledger.md:162:  tag, that future row is a `lag`.
+state/release-ledger.md:168:  `validate-release-ledger.sh` hard-failed on that contradiction as designed. The release
+state/release-ledger.md:197:  `validate-release-ledger.sh` exits 0 with
+state/release-ledger.md:213:  `validate-release-ledger.sh` exits 0 with
+state/release-ledger.md:225:  `validate-release-ledger.sh` exits 0 with
+state/release-ledger.md:233:| 0.9.5 | github-marketplace-index | 0.9.5 | 0.9.4 | lag | gh api -H Accept:application/vnd.github.raw+json repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main -> metadata.version 0.9.4; plugins[0].version 0.9.4 | install commands quoted only in a README | 2026-09-28T01:59:13Z |
+state/release-ledger.md:253:  PRE-EXISTING FAILURE, NOT INTRODUCED HERE: `validate-release-ledger.sh` exits 1 on this
+state/release-ledger.md:257:  `origin/main:state/release-ledger.md` (51c2305) before any of this session's appends, so
+state/release-ledger.md:258:  they predate this release. They are the structural collision between append-only lag
+state/release-ledger.md:259:  recording and hard-fail 1, which treats a genuine `lag` row (a surface that observed the
+state/release-ledger.md:261:  group. They cannot be cleared without hand-editing a historical row, which this ledger
+state/release-ledger.md:288:  `validate-release-ledger.sh` still exits 1 on this ledger with the SAME 2 PRE-EXISTING
+state/release-ledger.md:291:  version, so the failure is a validator rule-1 artifact over historical lag rows, not a
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:2:# validate-release-ledger.sh -- reconcile state/release-ledger.md across the six published
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:8:# release-ledger.py (MIT): same evidence-priority discipline, the same "common false proof"
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:9:# column, and the same strict "partially released until every surface matches" gate.
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:13:#      mismatch observations do not contradict; a lag observation is permitted only when
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:27:# --strict also rejects a latest lag or mismatch surface, even when all six were queried.
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:29:# On success prints: validate-release-ledger: OK (latest <v>, N/6 surfaces observed,
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:32:# Usage: validate-release-ledger.sh [--ledger PATH | --ledger=PATH]
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:33:#                                   [--root DIR | --root=DIR] [--strict]
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:43:      [ $# -ge 2 ] || { echo "ERROR: --ledger requires a path argument"; echo "validate-release-ledger: 1 error(s)"; exit 1; }
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:47:      [ -n "$LEDGER" ] || { echo "ERROR: --ledger= requires a non-empty path argument"; echo "validate-release-ledger: 1 error(s)"; exit 1; }
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:50:      [ $# -ge 2 ] || { echo "ERROR: --root requires a directory argument"; echo "validate-release-ledger: 1 error(s)"; exit 1; }
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:54:      [ -n "$ROOT" ] || { echo "ERROR: --root= requires a non-empty directory argument"; echo "validate-release-ledger: 1 error(s)"; exit 1; }
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:56:    --strict) STRICT=1; shift ;;
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:57:    --*=*)    echo "ERROR: unrecognized joined-form option '${1%%=*}='"; echo "validate-release-ledger: 1 error(s)"; exit 1 ;;
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:61:[ -n "$LEDGER" ] || LEDGER="$ROOT/state/release-ledger.md"
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:67:  echo "validate-release-ledger: 1 error(s)"
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:89:  # version group) pushed --strict past a 25s timeout (exit 124).
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:126:  echo "validate-release-ledger: 1 error(s)"
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:153:    match|lag|mismatch|unobserved) : ;;
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:156:  if [ "$status" = "lag" ] && ! is_older_version "$nobs" "$nver"; then
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:157:    err "lag row for $surface (version $version) must observe an older semantic version than expected $nver"
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:167:  echo "validate-release-ledger: 1 error(s)"
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:178:#     contradict. A lag row is already checked above to be older than its expected target,
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:236:  echo "validate-release-ledger: $errors error(s) -- latest version claim $latest is contradicted"
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:251:echo "validate-release-ledger: OK (latest $latest, ${n_observed:-0}/6 surfaces observed, $warnings warning(s))"
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:253:  echo "validate-release-ledger: strict completion requires all 6 surfaces to match" >&2
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:256:strict_nonmatches="$(printf '%s\n' "$latest_surface_rows" | awk -F'\t' '$5 != "match" { print $2 "=" $5 }' | sort -u | paste -sd',' -)"
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:257:if [ "$STRICT" -eq 1 ] && [ -n "$strict_nonmatches" ]; then
+plugins/sefi-core/scripts/ci/validate-release-ledger.sh:258:  echo "validate-release-ledger: strict completion requires all 6 surfaces to match (non-match: $strict_nonmatches)" >&2
