@@ -1366,9 +1366,11 @@ expect_failure "Codex refuses a drive-letter CODEX_HOME" \
 # The refusal has to come from the normalizer, not from an incidental failure earlier in
 # the run. A filesystem that cannot represent a backslash inside a directory name rejects
 # the same value for an unrelated reason, so the message is only demanded where the name
-# is representable, and the rest is reported PENDING rather than claimed.
-if mkdir "$codex_win_probe/C:\Users\you\.codex" 2>/dev/null; then
-  rm -rf "$codex_win_probe/C:\Users\you\.codex"
+# is representable. Probe a separate fixture so a regression that created the installer
+# destination cannot turn a supported filesystem into a false capability skip.
+codex_win_probe_capability="$(mktemp -d "$tmp/codex-windows-path-capability.XXXXXX")"
+if mkdir "$codex_win_probe_capability/C:\Users\you\.codex" 2>/dev/null; then
+  rm -rf "$codex_win_probe_capability"
   if grep -qF 'refusing CODEX_HOME that is not a POSIX path' \
     "$tmp/Codex refuses a drive-letter CODEX_HOME.out"; then
     ok "Codex names the non-POSIX-path refusal rather than failing later"
@@ -1626,6 +1628,63 @@ if [ "$symlinks_supported" -eq 1 ]; then
   fi
 else
   printf 'PENDING: Hermes runtime-copy symlink check requires a physical symlink\n'
+fi
+
+# The fetched-tree check above must reject a symlink before the installer copies a
+# runtime. This separate fixture exercises the later seam: normal fetch validation
+# completes, then only the runtime cp is wrapped to replace one copied file with a
+# source-byte-identical in-runtime symlink. The post-copy verifier must reject the link
+# directly and restore the live skill snapshot.
+hermes_runtime_copy_bin="$tmp/hermes-runtime-copy-bin"
+hermes_runtime_copy_config="$tmp/hermes-runtime-copy/config"
+hermes_runtime_copy_root="$(dirname "$hermes_runtime_copy_config/config.toml")"
+hermes_runtime_copy_runtime="$hermes_runtime_copy_root/sefi-core"
+hermes_runtime_copy_relative="scripts/ci/validate-audit-report.sh"
+hermes_runtime_copy_target="$hermes_runtime_copy_runtime/.runtime-copy-symlink-victim"
+hermes_runtime_copy_live_skill="$hermes_runtime_copy_root/skills/systems-audit/SKILL.md"
+mkdir -p "$hermes_runtime_copy_bin" "$(dirname "$hermes_runtime_copy_live_skill")" "$hermes_runtime_copy_config"
+printf 'pre-install systems-audit sentinel\n' >"$hermes_runtime_copy_live_skill"
+hermes_runtime_copy_live_before="$(sha256sum "$hermes_runtime_copy_live_skill" | awk '{print $1}')"
+hermes_runtime_copy_source_before="$(sha256sum "$CORE/$hermes_runtime_copy_relative" | awk '{print $1}')"
+cat >"$hermes_runtime_copy_bin/cp" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+/bin/cp "$@"
+if [ "$#" -eq 3 ] && [ "$1" = "-R" ] \
+  && [ "$2" = "$HERMES_RUNTIME_COPY_SOURCE/." ] \
+  && [ "$3" = "$HERMES_RUNTIME_COPY_DEST/" ]; then
+  source_path="$HERMES_RUNTIME_COPY_SOURCE/$HERMES_RUNTIME_COPY_RELATIVE"
+  installed_path="$HERMES_RUNTIME_COPY_DEST/$HERMES_RUNTIME_COPY_RELATIVE"
+  target_path="$HERMES_RUNTIME_COPY_DEST/.runtime-copy-symlink-victim"
+  /bin/cp "$source_path" "$target_path"
+  rm -f "$installed_path"
+  ln -s "../../.runtime-copy-symlink-victim" "$installed_path"
+fi
+EOF
+chmod +x "$hermes_runtime_copy_bin/cp"
+expect_failure "Hermes rejects an in-runtime symlink after normal fetch validation" \
+  env PATH="$hermes_runtime_copy_bin:$fake_bin:$PATH" \
+  HERMES_TEST_CONFIG="$hermes_runtime_copy_config" HERMES_TEST_SOURCE="$CORE" \
+  HERMES_RUNTIME_COPY_SOURCE="$CORE" HERMES_RUNTIME_COPY_DEST="$hermes_runtime_copy_runtime" \
+  HERMES_RUNTIME_COPY_RELATIVE="$hermes_runtime_copy_relative" \
+  bash "$HERMES_INSTALL"
+if grep -qxF "installed runtime file is missing or symlinked: $hermes_runtime_copy_relative" \
+  "$tmp/Hermes rejects an in-runtime symlink after normal fetch validation.out"; then
+  ok "Hermes names the post-copy runtime symlink refusal exactly"
+else
+  bad "Hermes names the post-copy runtime symlink refusal exactly"
+fi
+hermes_runtime_copy_target_after="$(sha256sum "$hermes_runtime_copy_target" | awk '{print $1}')"
+if [ "$hermes_runtime_copy_source_before" = "$hermes_runtime_copy_target_after" ]; then
+  ok "Hermes runtime-copy symlink target retains source-identical bytes"
+else
+  bad "Hermes runtime-copy symlink target retains source-identical bytes"
+fi
+hermes_runtime_copy_live_after="$(sha256sum "$hermes_runtime_copy_live_skill" | awk '{print $1}')"
+if [ "$hermes_runtime_copy_live_before" = "$hermes_runtime_copy_live_after" ]; then
+  ok "Hermes post-copy refusal restores the pre-install skill sentinel"
+else
+  bad "Hermes post-copy refusal restores the pre-install skill sentinel"
 fi
 
 # A skill-only v0.9.4-style installation has no runtime; auto-update must add one.
