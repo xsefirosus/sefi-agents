@@ -1,0 +1,2 @@
+report=D:/Projects/Sefi-Agents/.worktrees/v095-handover-20261001/state/acceptance-v095-2026-10-01/model-evidence/S02/project-baseline/audits/audit-report-research-2026-10-01-0000-sess-803eb26f.md
+pre_exists=False

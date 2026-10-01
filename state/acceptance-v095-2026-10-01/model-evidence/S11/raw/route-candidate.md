@@ -1,0 +1,1 @@
+Model (candidate, sess-b257b568, 2026-10-01): Routing your login-card design request to ui-ux-designer as ordinary UI design work. There is no explicit Sefi department-audit intent and no systems-audit invocation, so the Systems Audit skill does not apply and no audit report was written.

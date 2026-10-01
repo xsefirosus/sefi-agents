@@ -1,0 +1,2 @@
+Model (baseline, sess-8a479b09, 2026-10-01): Which scope should I audit? Valid scopes are complete, research, product, design, build, quality, docs, delivery. I will not assume complete, and no report was written.
+Producer note: exactly one clarification question; audit did not proceed without a scope.

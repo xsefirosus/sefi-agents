@@ -1,0 +1,1 @@
+[Minor] minimization ladder not recorded (build/slice.md line 3); gate PASS log present, so record at convenience.

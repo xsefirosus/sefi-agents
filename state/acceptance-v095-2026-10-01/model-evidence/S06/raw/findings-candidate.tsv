@@ -1,0 +1,2 @@
+Quality	Major	verdict cites the author report only with zero executed evidence attached (quality/verdict.md lines 2-3); verdict stays untrusted until evidenced.
+Quality	Minor	delete-the-line integration test not shown (quality/verdict.md line 4); attach at convenience.

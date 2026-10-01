@@ -1,0 +1,2 @@
+[Major] seam contract fixed after handler plus trust-boundary validation absent on queue-depth (build/slice.md lines 3,5); slice stays untrusted until fixed.
+[Minor] gate.sh PENDING with no log (build/slice.md line 4); run at convenience.

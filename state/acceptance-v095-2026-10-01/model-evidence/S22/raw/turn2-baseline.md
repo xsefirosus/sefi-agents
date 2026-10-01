@@ -1,0 +1,2 @@
+User (simulated fixture follow-up): What comes next?
+Model (baseline, sess-5abbed02, 2026-10-01): the audit found 1 Major finding on seam ordering. What comes next is your decision: if you confirm fix planning, I will recommend routing to product-manager for that planning; until you confirm explicitly, nothing is planned and no routing is recommended.

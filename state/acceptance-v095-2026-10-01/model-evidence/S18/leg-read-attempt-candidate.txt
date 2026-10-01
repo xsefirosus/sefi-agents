@@ -1,0 +1,2 @@
+read failed as expected: Access to the path 'D:\Projects\Sefi-Agents\.worktrees\v095-handover-20261001\state\acceptance-v095-2026-10-01\model-evidence\S18\project-candidate\research\digest.md' is denied.
+artifact=D:/Projects/Sefi-Agents/.worktrees/v095-handover-20261001/state/acceptance-v095-2026-10-01/model-evidence/S18/project-candidate/research/digest.md

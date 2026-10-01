@@ -1,0 +1,13 @@
+as-installed no-args: exit=0 :: validate-audit-report: OK (0 report(s) checked)
+as-installed positional report path: exit=1 :: ERROR: D:/Projects/Sefi-Agents/.worktrees/v095-handover-20261001/state/acceptance-v095-2026-10-01/model-evidence/S15/project-baseline/audits/audit-report-complete-2026-10-01-0000-sess-f53ed7b3.md - canonical audits root is unavailable
+validate-audit-report: 1 error(s)
+relocated shape-only run (unmodified bytes, sha=98af7774868742a2e7da95546e903be43ed413f5a7537e5730817c5a0d7607cb): exit=1 :: ERROR: C:/Windows/Temp/sefi-shape-S15-baseline/audits/audit-report-complete-2026-10-01-0000-sess-f53ed7b3.md - missing skeleton heading '## Summary'
+ERROR: C:/Windows/Temp/sefi-shape-S15-baseline/audits/audit-report-complete-2026-10-01-0000-sess-f53ed7b3.md - missing skeleton heading '## Scope'
+ERROR: C:/Windows/Temp/sefi-shape-S15-baseline/audits/audit-report-complete-2026-10-01-0000-sess-f53ed7b3.md - missing skeleton heading '## Method'
+ERROR: C:/Windows/Temp/sefi-shape-S15-baseline/audits/audit-report-complete-2026-10-01-0000-sess-f53ed7b3.md - missing skeleton heading '## Findings'
+ERROR: C:/Windows/Temp/sefi-shape-S15-baseline/audits/audit-report-complete-2026-10-01-0000-sess-f53ed7b3.md - missing skeleton heading '## Fixes'
+ERROR: C:/Windows/Temp/sefi-shape-S15-baseline/audits/audit-report-complete-2026-10-01-0000-sess-f53ed7b3.md - missing skeleton heading '## Improvements'
+ERROR: C:/Windows/Temp/sefi-shape-S15-baseline/audits/audit-report-complete-2026-10-01-0000-sess-f53ed7b3.md - missing skeleton heading '## Nice-to-haves'
+ERROR: C:/Windows/Temp/sefi-shape-S15-baseline/audits/audit-report-complete-2026-10-01-0000-sess-f53ed7b3.md - missing skeleton heading '## Follow-up'
+ERROR: C:/Windows/Temp/sefi-shape-S15-baseline/audits/audit-report-complete-2026-10-01-0000-sess-f53ed7b3.md - no severity label (Critical/Major/Minor/Nice) outside the skeleton headings
+validate-audit-report: 9 error(s)

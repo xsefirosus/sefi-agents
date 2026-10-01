@@ -1,0 +1,2 @@
+User (simulated fixture follow-up): What comes next?
+Model (candidate, sess-b3e8a0e7, 2026-10-01): the audit found 1 Major finding on seam ordering. What comes next is your decision: confirm explicitly and I will plan fixes; until then nothing is planned. Do you want me to plan fixes?

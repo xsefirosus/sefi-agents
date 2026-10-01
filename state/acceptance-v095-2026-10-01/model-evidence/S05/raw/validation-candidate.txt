@@ -1,0 +1,2 @@
+exit=0
+validate-audit-report: OK (D:/Projects/Sefi-Agents/.worktrees/v095-handover-20261001/state/acceptance-v095-2026-10-01/model-evidence/S05/project-candidate/audits/audit-report-build-2026-10-01-0000-sess-1c86e59c.md)

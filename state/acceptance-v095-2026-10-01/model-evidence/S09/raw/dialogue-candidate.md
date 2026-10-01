@@ -1,0 +1,2 @@
+Model (candidate, sess-95ff3576, 2026-10-01): Scope is missing from your request. Which scope should I audit: complete, research, product, design, build, quality, docs, or delivery? I will not assume complete, and no report was written.
+Producer note: exactly one clarification question; audit did not proceed without a scope.

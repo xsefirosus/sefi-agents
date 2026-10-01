@@ -1,0 +1,2 @@
+[Major] Q2/Q3 systematically lack confidence, provenance, and Adopt/Defer/Reject reasons (research/digest.md lines 3-4); digest stays untrusted until mapped.
+[Minor] Q1 freshness 11 days old, observed 2026-09-20 (research/digest.md line 2); re-observe at convenience.

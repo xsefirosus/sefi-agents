@@ -1,0 +1,1 @@
+Build	Major	seam contract fixed after handler (build/slice.md line 2); slice stays untrusted until reordered. gate PASS log noted, does not clear the ordering gap.

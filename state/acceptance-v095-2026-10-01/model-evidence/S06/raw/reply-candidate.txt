@@ -1,0 +1,1 @@
+Quality: 1 major, 1 minor. Report: audits/audit-report-quality-2026-10-01-0000-sess-19328dbf.md. Do you want me to plan fixes? I will not plan anything until you confirm.

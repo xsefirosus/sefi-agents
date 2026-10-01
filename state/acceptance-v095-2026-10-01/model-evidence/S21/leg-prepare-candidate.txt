@@ -1,0 +1,5 @@
+exit=1
+AUDIT-REPORT: D:/Projects/Sefi-Agents/.worktrees/v095-handover-20261001/state/acceptance-v095-2026-10-01/model-evidence/S21/project-candidate/audits/audit-report-build-2026-10-01-0000-sess-759f88e5.md
+STATUS: REFUSED-OVERWRITE
+
+report=D:/Projects/Sefi-Agents/.worktrees/v095-handover-20261001/state/acceptance-v095-2026-10-01/model-evidence/S21/project-candidate/audits/audit-report-build-2026-10-01-0000-sess-759f88e5.md

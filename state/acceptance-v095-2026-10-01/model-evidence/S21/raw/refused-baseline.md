@@ -1,0 +1,1 @@
+Model (baseline, sess-40384e69, 2026-10-01): the computed path audits/audit-report-build-2026-10-01-0000-sess-40384e69.md already existed, so nothing was written and the existing file was left untouched: STATUS REFUSED-OVERWRITE. Pre and post SHA-256 of the pre-existing file are recorded in prerun.json and manifest.jsonl and are equal. No fix planning without confirmation.
