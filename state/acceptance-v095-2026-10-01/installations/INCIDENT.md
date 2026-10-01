@@ -4,7 +4,7 @@ At Step 4 start, a probe command containing `|` characters was executed through 
 outer Windows shell, which parsed the pipes instead of passing them to git-bash.
 One fragment ran `bash plugins/sefi-core/scripts/install-opencode.sh` (no flags)
 from the local checkout against the REAL user HOME
-(`C:\Users\Mary Rose\.config\opencode`, which already holds a sefi install).
+(`<HOME>\.config\opencode`, which already holds a sefi install).
 
 Observed result (verbatim tool output preserved outside the repo): one
 `refusing to overwrite … (use --force)` line per destination, then
@@ -17,7 +17,7 @@ BEFORE any write and exits 1 when conflicts exist; all writes (incl `mkdir -p`,
 line 462) come after. No `--force` was passed.
 
 Remediation: after this point every command ran pipe-free; all multi-step logic
-moved into script files under `C:/Users/MaryRose/s4stage/` executed as single
+moved into script files under `<STAGE_DIR>/` executed as single
 commands. No further out-of-scope execution occurred. Real-home state was not
 modified; no commit, push, merge, version, tag, or release change was made at any
 point in Step 4.
