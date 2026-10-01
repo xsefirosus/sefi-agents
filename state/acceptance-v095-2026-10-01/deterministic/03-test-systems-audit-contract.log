@@ -1,0 +1,27 @@
+=== systems-audit skill ===
+  OK  skill exists
+  OK  evidence method exists
+  OK  skill description is within 60 words
+  OK  skill main file is within 300 lines
+  OK  skill links the evidence method
+  OK  skill points to anti-hallucination
+  OK  skill names the supplemental department record
+  OK  method links iso.org/standard/19011
+  OK  method links csrc.nist.gov/pubs/sp/800/53/a/r5/final
+  OK  method links theiia.org/en/standards/2024-standards
+  OK  method links gao.gov/assets/d24106786.pdf
+  OK  method distinguishes pending checks
+  OK  method distinguishes unsupported conclusions
+  OK  method disclaims certification
+=== routing and auditor contract ===
+  OK  explicit Sefi department-audit intent routes to the auditor
+  OK  explicit skill invocation routes to the auditor
+  OK  auditor points to the skill
+  OK  clean reports use the required wording
+  OK  auditor exposes incomplete status
+  OK  command requires explicit audit project root for report validation
+  OK  command preserves incomplete audit status
+  OK  report preparation resolves from runtime root
+  OK  finding formatter resolves from runtime root
+  OK  validator resolves from runtime root
+test-systems-audit-contract: OK
