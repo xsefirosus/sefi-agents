@@ -1,0 +1,12 @@
+--- hermes CLI probe ---
+hermes ABSENT (exit 1; install unauthorized)
+--- installer attempt (expect refusal naming missing hermes CLI) ---
+install-hermes.sh: hermes CLI not found on PATH
+exit=1
+--- hermes CLI hard requirement (script source) ---
+84:command -v hermes >/dev/null 2>&1 || {
+98:CONFIG_PATH="$(hermes config path)" || {
+--- candidate checkout has canonical hermes content ---
+/tmp/s4/cand/plugins/sefi-core/.codex-plugin/plugin.json
+/tmp/s4/cand/plugins/sefi-core/skills/systems-audit
+/tmp/s4/cand/plugins/sefi-core/scripts/ci/validate-audit-report.sh

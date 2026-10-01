@@ -1,0 +1,13 @@
+--- candidate path with isolated CODEX_HOME, no codex CLI (expect CLI refusal) ---
+install-codex.sh: Codex CLI not found on PATH
+exit=1
+--- isolated CODEX_HOME after refused run (must be empty) ---
+total 8
+drwxr-xr-x 2 root root 4096 Oct  1 18:54 .
+drwxr-xr-x 9 root root 4096 Oct  1 18:54 ..
+--- real HOME untouched proof ---
+ls: cannot access '/root/.codex': No such file or directory
+no writes to real HOME/.codex by this script
+--- isolation semantics (script source, command-local) ---
+472:CODEX_ROOT="${CODEX_HOME:-$HOME/.codex}"
+54:  [ -n "${CODEX_HOME:-}" ] || { echo "install-codex.sh: --candidate-marketplace requires an explicit isolated CODEX_HOME" >&2; exit 2; }

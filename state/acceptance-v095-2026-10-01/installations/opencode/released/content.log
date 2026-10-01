@@ -1,0 +1,55 @@
+--- layout ---
+agents
+commands
+scripts
+skills
+--- discovery (agents/skills/commands/scripts) ---
+devops-engineer.md
+memory-journalist.md
+motion-designer.md
+product-manager.md
+prompt-engineer.md
+qa-engineer.md
+research-adoption-scout.md
+research-analyst.md
+research-codebase-cartographer.md
+security-engineer.md
+sefi-agents.md
+software-engineer.md
+solutions-architect.md
+support-engineer.md
+systems-auditor.md
+technical-writer.md
+ui-ux-designer.md
+/tmp/s4/home-oc-released/.config/opencode/commands/audit.md
+/tmp/s4/home-oc-released/.config/opencode/skills/systems-audit
+/tmp/s4/home-oc-released/.config/opencode/scripts/ci/validate-audit-report.sh
+--- agent transform: no raw tools string; permission map present ---
+no raw tools: lines (OK)
+/tmp/s4/home-oc-released/.config/opencode/agents/devops-engineer.md
+/tmp/s4/home-oc-released/.config/opencode/agents/memory-journalist.md
+/tmp/s4/home-oc-released/.config/opencode/agents/motion-designer.md
+--- mode fields ---
+/tmp/s4/home-oc-released/.config/opencode/agents/sefi-agents.md:mode: primary
+/tmp/s4/home-oc-released/.config/opencode/agents/systems-auditor.md:mode: subagent
+--- model fields (flexible => absent) ---
+no model: line (flexible, OK)
+--- runtime manifest ---
+{
+  "format": "sefi-package-manifest/v1",
+  "generated_at": "2026-10-01T18:54:07Z",
+  "managed_files": {
+    "adapter-manifest.sh": "256912ba34c801431543fe2c02b918777d421a4be032e833ee021e482fa08e48",
+    "apply-model-map.sh": "beda4860ec6afd1bcbc8beed0b036c8a5932efb7c8ef111301308927802de2ab",
+    "budget-check.sh": "1a0a612864d3512df6b41528ba0c62bc5e1cb95f0857cbc1cde0e36dff62a500",
+    "cartographer-runtime.py": "ee29aef389fad33bf32be2718631a85486c142965e906c82adab3bc57484fc34",
+    "check-bar.sh": "d90f9ebe357ef9da37ff6ee698c4df0d1cfe58f4db6b8c4d256ddf8100709d37",
+    "check-bash-write.sh": "c31d485c99d091cf08023eebede1f5935d4da05be4aa22d259767314c4ee014b",
+    "check-citation.sh": "5c159cc8aca3fe826b93d0f335af65f9330b00c7a682c62097ed983dac462fdd",
+    "check-handoff.sh": "234737b806e91e45f2f6a2971315cd431dfe14e41eecd2aabad7ac538b3c5574",
+--- installed runtime refs (placeholder resolved) ---
+0
+no raw placeholder (OK)
+--- managed-file hashes ---
+b6936a26d09612d413c2764bc33d8137ccc3b073c80ed9c09c8921bb645dd83e  /tmp/s4/home-oc-released/.config/opencode/skills/systems-audit/SKILL.md
+b3c48d975c637b9ff89866535b01eba3239b362bc51b1215667fbe6eaa3437fe  /tmp/s4/home-oc-released/.config/opencode/scripts/ci/validate-audit-report.sh

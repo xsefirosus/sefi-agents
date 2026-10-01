@@ -1,0 +1,23 @@
+=== file format proof (LF, no CRLF) ===
+/s4/s4-00b-help.sh: line 8: file: command not found
+0
+released install.sh: no CR (OK)
+687
+=== rel ===
+usage: /tmp/s4/rel/install.sh (--target <adapter-id> | --adapter <manifest-path>) [--model-map <path>] [--force] [--copy]
+install.sh --help exit=0
+usage: /tmp/s4/rel/install-codex.sh [--model-map <path>] [--candidate-marketplace <repo-root>]
+install-codex.sh --help exit=0
+usage: /tmp/s4/rel/plugins/sefi-core/scripts/install-opencode.sh [--force] [--model-map <path>] [--auto-update]
+install-opencode.sh --help exit=0
+usage: /tmp/s4/rel/plugins/sefi-core/scripts/install-hermes.sh [--auto-update]
+install-hermes.sh --help exit=0
+=== cand ===
+usage: /tmp/s4/cand/install.sh (--target <adapter-id> | --adapter <manifest-path>) [--model-map <path>] [--force] [--copy]
+install.sh --help exit=0
+usage: /tmp/s4/cand/install-codex.sh [--model-map <path>] [--candidate-marketplace <repo-root>]
+install-codex.sh --help exit=0
+usage: /tmp/s4/cand/plugins/sefi-core/scripts/install-opencode.sh [--force] [--model-map <path>] [--auto-update]
+install-opencode.sh --help exit=0
+usage: /tmp/s4/cand/plugins/sefi-core/scripts/install-hermes.sh [--auto-update]
+install-hermes.sh --help exit=0

@@ -294,3 +294,36 @@
 | 0.9.5 | git-tag | 0.9.5 | 0.9.5 | match | git rev-parse 'v0.9.5^{commit}' -> 2fe3bb348977a3837a8ef1fb82197afa537d1200 (the release/0.9.5 -> main merge commit) ; git tag --points-at 2fe3bb348977a3837a8ef1fb82197afa537d1200 -> v0.9.5 ; git push origin refs/tags/v0.9.5 -> " * [new tag] v0.9.5 -> v0.9.5" ; git ls-remote --tags origin refs/tags/v0.9.5 'refs/tags/v0.9.5^{}' -> 9eac8b2f1da0e4b2ac5304a6c17c893de4c6c520 refs/tags/v0.9.5 and 2fe3bb348977a3837a8ef1fb82197afa537d1200 peeled ; GET /repos/xsefirosus/sefi-agents/git/ref/tags/v0.9.5 -> type=tag sha=9eac8b2f... ; GET /repos/xsefirosus/sefi-agents/git/tags/9eac8b2f... -> object.sha=2fe3bb348977a3837a8ef1fb82197afa537d1200 (tag pushed to origin AND API-visible, not local-only) | a local tag that was never pushed to origin | 2026-09-30T20:16:07Z |
 | 0.9.5 | github-release | 0.9.5 | 0.9.5 | match | POST /repos/xsefirosus/sefi-agents/releases {tag_name:v0.9.5, target_commitish:main, name:v0.9.5, draft:false, prerelease:false} -> id=400403933, publishedAt=2026-09-30T20:15:59Z, draft=False, url=https://github.com/xsefirosus/sefi-agents/releases/tag/v0.9.5 ; re-read GET /repos/xsefirosus/sefi-agents/releases/tags/v0.9.5 -> tag=v0.9.5, name=v0.9.5, targetCommitish=main, draft=False, prerelease=False, publishedAt=2026-09-30T20:15:59Z ; public page GET https://github.com/xsefirosus/sefi-agents/releases/tag/v0.9.5 -> HTTP 200. Body is the CHANGELOG.md 0.9.5 section in the same "## Added / ## Changed" shape as the v0.9.4 body. (REST API used in place of `gh release create`; gh absent on this host) | a local or pushed tag with no published release; a DRAFT release | 2026-09-30T20:16:07Z |
 | 0.9.5 | github-marketplace-index | 0.9.5 | 0.9.5 | match | GET /repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main (Accept: application/vnd.github.raw+json) -> HTTP 200, metadata.version "0.9.5", plugins[0].version "0.9.5" ; cross-checked unauthenticated at https://raw.githubusercontent.com/xsefirosus/sefi-agents/main/.claude-plugin/marketplace.json -> metadata.version 0.9.5, plugins[0].version 0.9.5 ; origin/main head = 58d05fd09878865bf4b693a557765dec86787de7 (GET /repos/xsefirosus/sefi-agents/git/ref/heads/main) | install commands quoted only in a README; a preview or branch ref instead of main | 2026-09-30T20:16:07Z |
+
+- 2026-10-01: ledger-narrative correction (append-only; every prior row and
+  note above is left byte-for-byte intact as history). The 2026-09-30 notes
+  claim `validate-release-ledger.sh` "still exits 1" on this ledger with two
+  hard-fail-1 errors over the superseded 0.9.4/0.9.5 `lag` rows. That prose
+  is superseded by the following independent replay, executed 2026-10-01
+  against a disposable checkout of the exact evidence commit (handover logs
+  were not trusted for this result):
+  `git worktree add --detach C:/Windows/Temp/sefi-153-replay 153a7298133d825d0fd2d2fc4a7087e622eadfc3`,
+  then inside that checkout
+  `bash plugins/sefi-core/scripts/ci/validate-release-ledger.sh` -> exit 0,
+  `validate-release-ledger: OK (latest 0.9.5, 6/6 surfaces observed,
+  0 warning(s))`, and
+  `bash plugins/sefi-core/scripts/ci/validate-release-ledger.sh --strict`
+  -> exit 0, identical OK line (logs retained at
+  `state/acceptance-v095-2026-10-01/deterministic/ledger-153-replay-default.log`
+  and `ledger-153-replay-strict.log`, SHA-256
+  BBF9FBF0C4325EBACC88EFACB2BA8F93BA2457FE5255C9F5F9FF67AB4C1A357D for both).
+  The validator resolves its ledger from its own checkout root, so both runs
+  tested the 153a729 ledger bytes. The same two commands on the current tree
+  (commit 6e9f432d25de62abca670ee819ea2442d1aab2d0) also exit 0 with the
+  identical 6/6 line (logs `ledger-current-default.log` /
+  `ledger-current-strict.log`, same SHA-256). No validator relaxation, no
+  historical-row edit, and no removal of ledger checks from CI was made:
+  the validator script is byte-identical between 153a729 and the current
+  HEAD (`git diff 153a7298133d825d0fd2d2fc4a7087e622eadfc3 HEAD --
+  plugins/sefi-core/scripts/ci/validate-release-ledger.sh` empty; only this
+  note is new in the ledger). The genuine other-CI failures on run
+  36771550621 (personal-path violations, token-budget 10882/10880, Hermes
+  symlink and line-ending regressions, terminal CI: FAILED) are separate
+  defects recorded in the audit evidence and are not ledger failures. The
+  2026-09-30 exit-1 observations are preserved above; they describe a state
+  this replay does not reproduce at 153a729.

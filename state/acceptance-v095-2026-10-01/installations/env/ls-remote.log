@@ -1,0 +1,5 @@
+=== remote reachability ===
+6e9f432d25de62abca670ee819ea2442d1aab2d0	refs/heads/handover/v095-acceptance-remediation-20261001
+9eac8b2f1da0e4b2ac5304a6c17c893de4c6c520	refs/tags/v0.9.5
+2fe3bb348977a3837a8ef1fb82197afa537d1200	refs/tags/v0.9.5^{}
+ls-remote exit=0

@@ -70,3 +70,32 @@ own `git credential fill` already supplies (principal `xsefirosus`, owner of thi
 Same principal, same repository, no new identity. If a machine-local `gh` install is
 expected as a baseline for this repo's release procedure, it is worth adding to the setup
 path.
+
+## Superseding correction/status -- 2026-10-01 (original contents above preserved)
+
+- Status: SUPERSEDED-IN-PART. The failure narrative above ("every CI run on
+  `main` is red today") does not reproduce for the ledger validator at the
+  recorded evidence commit.
+- Independent replay executed 2026-10-01 against a disposable checkout of
+  `153a7298133d825d0fd2d2fc4a7087e622eadfc3` (handover logs not trusted):
+  `bash plugins/sefi-core/scripts/ci/validate-release-ledger.sh` exits 0
+  and the same with `--strict` exits 0, both
+  `OK (latest 0.9.5, 6/6 surfaces observed, 0 warning(s))`. Logs retained at
+  `state/acceptance-v095-2026-10-01/deterministic/ledger-153-replay-default.log`
+  and `ledger-153-replay-strict.log`. Same commands on the current tree
+  (commit `6e9f432d25de62abca670ee819ea2442d1aab2d0`, after the dated
+  correction append to `state/release-ledger.md`) also exit 0 with the
+  identical 6/6 line.
+- A dated correction recording these exact commands/results is appended to
+  `state/release-ledger.md`; all prior rows and notes there are preserved
+  as history. No validator relaxation, no historical-row edit, and no
+  removal of ledger checks from CI was made (validator script byte-identical
+  between `153a729` and current HEAD).
+- What remains genuinely red is the *other* CI on run `36771550621`
+  (personal-path violations, token-budget 10882/10880, Hermes symlink and
+  line-ending regressions, terminal `CI: FAILED`), which is a separate
+  defect class from the ledger claim. Any still-open CI concern should be
+  re-filed against those failures, not against the ledger validator.
+- Human decision still required for: whether to close this escalation on
+  the basis of the replay, and for the Step 6 merge decision. This note
+  changes no version, tag, or release.

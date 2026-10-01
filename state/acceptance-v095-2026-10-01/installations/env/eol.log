@@ -1,0 +1,40 @@
+=== blob-level CR counts (released) ===
+released install.sh blob-CR-lines=0
+released install-codex.sh blob-CR-lines=0
+released plugins/sefi-core/scripts/install-opencode.sh blob-CR-lines=0
+released plugins/sefi-core/scripts/install-hermes.sh blob-CR-lines=0
+=== blob-level CR counts (candidate) ===
+candidate install.sh blob-CR-lines=0
+candidate install-codex.sh blob-CR-lines=0
+candidate plugins/sefi-core/scripts/install-opencode.sh blob-CR-lines=0
+candidate plugins/sefi-core/scripts/install-hermes.sh blob-CR-lines=0
+=== .gitattributes (both) ===
+# Line-ending policy for CRLF-sensitive CI fixtures.
+#
+# This repo has no global eol policy, so a fresh Windows clone with
+# core.autocrlf=true checks EVERY text file out as CRLF. Most repo content
+# tolerates that. These three fixtures do not, because each is read by a parser
+# that splits on a delimiter and then compares the trailing field verbatim --
+# there is no [[:space:]] trim in the way, so the CR becomes part of the value:
+#
+#   routing-cases.txt          validate-routing.sh reads it with
+#                              `IFS='|' read -r trig expected`. The CR rides on the
+---
+# Line-ending policy for CRLF-sensitive CI fixtures.
+#
+# This repo has no global eol policy, so a fresh Windows clone with
+# core.autocrlf=true checks EVERY text file out as CRLF. Most repo content
+# tolerates that. These three fixtures do not, because each is read by a parser
+# that splits on a delimiter and then compares the trailing field verbatim --
+# there is no [[:space:]] trim in the way, so the CR becomes part of the value:
+#
+#   routing-cases.txt          validate-routing.sh reads it with
+#                              `IFS='|' read -r trig expected`. The CR rides on the
+=== clone configs ===
+released eol unset
+candidate eol unset
+=== working-tree CR counts (candidate clone) ===
+candidate-wt install.sh CR-lines=687
+candidate-wt install-codex.sh CR-lines=730
+candidate-wt plugins/sefi-core/scripts/install-opencode.sh CR-lines=762
+candidate-wt plugins/sefi-core/scripts/install-hermes.sh CR-lines=0
