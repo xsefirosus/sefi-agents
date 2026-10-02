@@ -1,0 +1,57 @@
+=== utc ===
+2026-10-02T12:52:25Z
+=== model-for (proper args) ===
+model-for: no model for harness='claude' tier='mid' (key 'mid') in /d/Projects/Sefi-Agents/.worktrees/v095-handover-20261001/plugins/sefi-core/scripts/../config/model-map.yml (known harnesses: claude-code codex opencode hermes )
+exit=1
+gpt-5.6-terra
+exit=0
+=== npm search hermes (registry discovery, verbatim) ===
+hermes
+Messenger of the gods.
+Version 0.4.4 published 2014-08-27 by travisjeffery
+Maintainers: ianstormtaylor segmentio travisjeffery
+Keywords: chat bot robot hipchat irc xmpp hubot slack
+https://npm.im/hermes
+
+hermes-parser
+A JavaScript parser built from the Hermes engine
+Version 0.37.0 published 2026-07-14 by hermes-team
+Maintainers: fb flowtype hermes-team
+https://npm.im/hermes-parser
+
+hermes-estree
+Flow types for the Flow-ESTree spec produced by the hermes parser
+Version 0.37.0 published 2026-07-14 by hermes-team
+Maintainers: hermes-team
+https://npm.im/hermes-estree
+
+babel-plugin-syntax-hermes-parser
+Babel plugin which switches Babel to use the Hermes parser.
+Version 0.37.0 published 2026-07-14 by hermes-team
+Maintainers: hermes-team
+https://npm.im/babel-plugin-syntax-hermes-parser
+
+metro-hermes-compiler
+🚇 Hermes bytecode compiler for Metro.
+Version 0.73.10 published 2023-06-07 by metro-bot
+Maintainers: fb metro-bot
+https://npm.im/metro-hermes-compiler
+
+hermes-compiler
+The hermes compiler CLI used during the React Native build process
+Version 250829098.0.19 published 2026-09-07 by GitHub Actions
+Maintainers: fb react-native-bot cortinico
+https://npm.im/hermes-compiler
+
+@pythnetwork/hermes-client
+Pyth Hermes Client
+Version 3.1.0 published 2026-02-06 by pythrelease
+exit=0
+=== npm view candidates (only if search names one) ===
+deferred to evidence verdict below
+=== winget search Hermes (Windows channel, read-only) ===
+timeout: failed to run command 'winget': No such file or directory
+exit=0
+=== ccusage (budget spend source) ===
+20.0.26
+exit=0

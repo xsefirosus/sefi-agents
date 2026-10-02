@@ -1,0 +1,43 @@
+mapped devops-engineer.md         -> model: sonnet
+mapped memory-journalist.md       -> model: haiku
+mapped motion-designer.md         -> model: sonnet
+mapped product-manager.md         -> model: sonnet
+mapped prompt-engineer.md         -> model: haiku
+mapped qa-engineer.md             -> model: opus
+mapped research-adoption-scout.md -> model: haiku
+mapped research-analyst.md        -> model: haiku
+mapped research-codebase-cartographer.md -> model: haiku
+mapped security-engineer.md       -> model: opus
+mapped sefi-agents.md             -> model: fable
+mapped software-engineer.md       -> model: sonnet
+mapped solutions-architect.md     -> model: sonnet
+mapped support-engineer.md        -> model: haiku
+mapped systems-auditor.md         -> model: sonnet
+mapped technical-writer.md        -> model: haiku
+mapped ui-ux-designer.md          -> model: sonnet
+apply-model-map: 17 agent(s) written to /c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/.sefi-agents.yKPmO6/agents for harness 'claude-code'
+
+reasoning effort is read from the harness config, not agent frontmatter. For Codex,
+put this in ~/.codex/config.toml:
+
+    model = "sonnet"          # mid tier: the default
+    model_reasoning_effort = "high"
+    review_model = "opus"   # high tier: the adversarial judge
+
+note: xhigh is only available on top-tier (codex-max) coding models. If a dispatch
+rejects or ignores it, lower claude-code.high_reasoning in the model map to "high".
+generated mapped agents -> /c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/agents
+linked skills -> /c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/skills
+linked commands -> /c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/commands
+linked scripts -> /c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/scripts
+install.sh: jq not found -- hooks/env NOT wired. check-bash-write.sh's
+  disallowedTools enforcement, inject-memory.sh's SessionStart injection, and
+  ${CLAUDE_PLUGIN_ROOT} resolution in a symlinked install will not work. Install
+  jq and re-run, or merge /d/Projects/Sefi-Agents/.worktrees/v095-handover-20261001/plugins/sefi-core/hooks/hooks.json into /c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/settings.json by hand
+  (resolve ${CLAUDE_PLUGIN_ROOT} -> /c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude first) and add
+  "env": {"CLAUDE_PLUGIN_ROOT": "/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude"}.
+install.sh: done. Target=claude-code dest=/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude mode=symlink
+sefi-agents: installation succeeded.
+sefi-agents: run /sefi:init once from each project root before the first routed request.
+sefi-agents: auto-init is unsafe because installation is user-wide and cannot safely choose or modify a project.
+sefi-agents: cross-project memory is optional, local/private, and off by default; /sefi:init asks interactively and keeps it off when unattended.

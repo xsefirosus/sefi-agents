@@ -1,0 +1,2 @@
+ERROR: unknown argument: --bogus-flag
+usage: validate-audit-report.sh [--strict] [--root <absolute-project-directory>] [<report-path>]

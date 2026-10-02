@@ -1,0 +1,53 @@
+=== utc ===
+2026-10-02T12:58:12Z
+=== installed plugin tree ===
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/.claude-plugin
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/.claude-plugin/plugin.json
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/.codex-plugin
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/.codex-plugin/plugin.json
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/.in_use
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/agents
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/agents/devops-engineer.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/agents/memory-journalist.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/agents/motion-designer.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/agents/product-manager.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/agents/prompt-engineer.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/agents/qa-engineer.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/agents/research-adoption-scout.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/agents/research-analyst.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/agents/research-codebase-cartographer.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/agents/security-engineer.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/agents/sefi-agents.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/agents/software-engineer.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/agents/solutions-architect.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/agents/support-engineer.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/agents/systems-auditor.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/agents/technical-writer.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/agents/ui-ux-designer.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/commands
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/commands/audit.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/commands/close-session.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/commands/cross-memory.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/commands/init.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/commands/loop-new.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/commands/map-codebase.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/commands/memory-index.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/commands/memory-search.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/commands/retro.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/commands/route.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/commands/scout.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/commands/status.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/commands/triage.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/config
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/config/model-map.yml
+=== required refs ===
+PRESENT: skills/systems-audit/SKILL.md
+PRESENT: agents/systems-auditor.md
+PRESENT: validate-audit-report
+PRESENT: audit-report
+=== validator presence ===
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache/sefi-agents/sefi-core/0.9.5/scripts/ci/validate-audit-report.sh
+=== native validator smoke (usage exit 2) ===
+validate-audit-report: OK (0 report(s) checked)
+exit=0

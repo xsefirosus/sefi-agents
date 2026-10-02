@@ -1,0 +1,30 @@
+=== utc ===
+2026-10-02T13:12:54Z
+HEAD=25c4b97adc9af0a784e594d64adf1ddd324d2536
+=== hermes CLI presence ===
+hermes: ABSENT
+=== install-hermes.sh attempt (exits before any write) ===
+exit=1
+install-hermes.sh: hermes CLI not found on PATH
+=== opencode run forensic: report written? ===
+/c/Windows/Temp/sefi-native-20261002/proj-opencode
+/c/Windows/Temp/sefi-native-20261002/proj-opencode/Microsoft
+/c/Windows/Temp/sefi-native-20261002/proj-opencode/Microsoft/Windows
+/c/Windows/Temp/sefi-native-20261002/proj-opencode/Microsoft/Windows/PowerShell
+=== opencode run forensic: disposable home new entries ===
+total 64
+drwxr-xr-x 1 SYSTEM 18 0 2026-10-02 17:10:21.193878800 +0400 .
+drwxr-xr-x 1 SYSTEM 18 0 2026-10-02 17:12:54.208645800 +0400 ..
+drwxr-xr-x 1 SYSTEM 18 0 2026-10-02 17:07:48.969577400 +0400 .cache
+drwxr-xr-x 1 SYSTEM 18 0 2026-10-02 17:07:48.970158100 +0400 .config
+drwxr-xr-x 1 SYSTEM 18 0 2026-10-02 17:07:48.970721500 +0400 .local
+drwxr-xr-x 1 SYSTEM 18 0 2026-10-02 17:10:21.196044500 +0400 AppData
+drwxr-xr-x 1 SYSTEM 18 0 2026-10-02 17:09:02.608538500 +0400 agents
+drwxr-xr-x 1 SYSTEM 18 0 2026-10-02 17:10:12.599942900 +0400 commands
+drwxr-xr-x 1 SYSTEM 18 0 2026-10-02 17:10:08.174743500 +0400 scripts
+drwxr-xr-x 1 SYSTEM 18 0 2026-10-02 17:09:20.718617300 +0400 skills
+=== real HOME untouched re-verify (top levels) ===
+no-today-real-opencode-above(empty=untouched)
+=== placeholder lineage (source vs installed) ===
+0
+0

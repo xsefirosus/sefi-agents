@@ -1,0 +1,175 @@
+Codex Doctor v0.160.0 · windows-x86_64
+
+Notes
+   ⚠ security     Microsoft Defender can interfere with Codex. Verify Codex exclusions.
+   ⚠ git          this worktree is not on a Windows Dev Drive; moving it to a trusted Dev Drive can significantly improve repository and filesystem performance - create a trusted Windows Dev Drive for source repositories: https://learn.microsoft.com/en-us/windows/dev-drive/
+   ✗ auth         no Codex credentials were found - Run codex login or provide an API key through a supported auth env var.
+   ⚠ websocket    Responses WebSocket failed; HTTPS fallback may still work - Check proxy, VPN, firewall, DNS, custom CA, and WebSocket policy support.
+─────────────────────────────────────────────────────────────
+
+Environment
+  ✓ system       en-US
+      os                       Windows 10.0.26200 (Windows 11 Core) [64-bit]
+      OS language              en-US
+      VISUAL                   not set
+      EDITOR                   not set
+  ✓ disk         sufficient free disk space (90.7 GiB)
+      warning threshold        5.0 GiB
+      failure threshold        1.0 GiB
+      CODEX_HOME available     90.7 GiB
+      worktree available       106.6 GiB
+  ⚠ security     Microsoft Defender can interfere with Codex. Verify Codex exclusions.
+      endpoint products        Microsoft Defender
+      exclusion targets        signed Codex app; codex.exe; codex-windows-sandbox-setup.exe; codex-command-runner.exe; codex-code-mode-host.exe
+    ▸ Codex exclusions         not verified (expected Codex application and helper exclusions)
+    → Microsoft Defender: Add a certificate or executable-path exclusion for Codex and its helpers. If Attack Surface Reduction blocks Codex, add a rule exclusion. If Controlled Folder Access blocks Codex, allow the app.
+  ✓ runtime      npm (package C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc, bin C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc\bin, resources C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc\codex-resources, path C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc\codex-path)
+      version                  0.160.0
+      install method           npm (package C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc, bin C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc\bin, resources C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc\codex-resources, path C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc\codex-path)
+      commit                   unknown
+      executable               C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc\bin\codex.exe
+  ✓ install      consistent
+      context                  npm (package C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc, bin C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc\bin, resources C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc\codex-resources, path C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc\codex-path)
+      managed by               npm: yes · bun: no · pnpm: no · Vite+: no · package root C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex
+      PATH entries (1)         C:\Windows\Temp\sefi-native-20261002\npm-global\codex.cmd
+      npm update target        not inspected (PATH helpers are not executed)
+  ✓ search       file exists (bundled, `C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc\codex-path\rg.exe`)
+      search command           C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc\codex-path\rg.exe
+      search provider          bundled
+      search command readiness file exists
+  ⚠ git          this worktree is not on a Windows Dev Drive; moving it to a trusted Dev Drive can significantly improve repository and filesystem performance — create a trusted Windows Dev Drive for source repositories: https://learn.microsoft.com/en-us/windows/dev-drive/
+  ✓ git          git executable found; execution not verified
+      selected git             C:\Program Files\Git\mingw64\bin\git.exe
+      repo detected            true
+      repo root                D:\Projects\Sefi-Agents\.worktrees\v095-handover-20261001
+      .git entry               directory
+      PATH entries (2)         C:\Program Files\Git\mingw64\bin\git.exe
+                               C:\Program Files\Git\cmd\git.exe
+      git execution            not inspected (PATH helpers are not executed)
+  ✓ terminal     unknown · TERM=xterm-256color
+      terminal                 unknown
+      TERM                     xterm-256color
+      stdin is terminal        false
+      stdout is terminal       false
+      stderr is terminal       false
+      terminal size            120x30
+      color output             disabled (stdout is not a terminal)
+      console input code page  437
+      console output code page 437
+      stdout console mode      unavailable
+      stderr console mode      unavailable
+  ✓ title        default · project v095-handover-20261001
+      title source             default
+      title items              activity, project-name
+      activity item            true
+      project source           git repo root
+      project value            v095-handover-20261001
+  ✓ state        state paths and databases are inspectable
+      CODEX_HOME               C:\Windows\Temp\sefi-native-20261002\home-codex (dir)
+      log dir                  C:\Windows\Temp\sefi-native-20261002\home-codex\log (missing)
+      sqlite home              C:\Windows\Temp\sefi-native-20261002\home-codex (dir)
+      state DB                 C:\Windows\Temp\sefi-native-20261002\home-codex\state_5.sqlite (missing) · integrity skipped (missing)
+      log DB                   C:\Windows\Temp\sefi-native-20261002\home-codex\logs_2.sqlite (missing) · integrity skipped (missing)
+      goals DB                 C:\Windows\Temp\sefi-native-20261002\home-codex\goals_1.sqlite (missing) · integrity skipped (missing)
+      memories DB              C:\Windows\Temp\sefi-native-20261002\home-codex\memories_1.sqlite (missing) · integrity skipped (missing)
+      active rollouts          0 files · 0 B (avg 0 B)
+      archived rollouts        0 files · 0 B (avg 0 B)
+      memories v2 DB           C:\Windows\Temp\sefi-native-20261002\home-codex\memories_v2_1.sqlite (missing)
+      memories v2 DB integrity skipped (missing)
+      queue DB                 C:\Windows\Temp\sefi-native-20261002\home-codex\queue_1.sqlite (missing)
+      queue DB integrity       skipped (missing)
+      thread history DB        C:\Windows\Temp\sefi-native-20261002\home-codex\thread_history_1.sqlite (missing)
+      thread history DB integrity skipped (missing)
+  ✓ threads      no rollout/state DB inventory to compare
+      default model provider   openai
+      rollout DB active files  0
+      rollout DB archived files 0
+      rollout DB scan errors   0
+      rollout DB malformed file names 0
+      rollout DB scan cap reached false
+      rollout DB rows          skipped (state DB missing)
+
+Configuration
+  ✓ config       loaded
+      model                    <default> · openai
+      cwd                      D:\Projects\Sefi-Agents\.worktrees\v095-handover-20261001
+      config.toml              C:\Windows\Temp\sefi-native-20261002\home-codex\config.toml
+      MCP servers              0
+      feature flags            53 enabled · 0 overridden (full list with --all)
+      configuration scope      invocation config, including cloud-managed policy
+      active thread overrides  not inspected
+      configuration load ms    149
+  ✗ auth         no Codex credentials were found — Run codex login or provide an API key through a supported auth env var.
+      auth storage mode        File
+      auth file                C:\Windows\Temp\sefi-native-20261002\home-codex\auth.json
+  ✓ mcp          no MCP servers configured
+  ✓ sandbox      restricted fs + restricted network · approval OnRequest
+      approval policy          OnRequest
+      filesystem sandbox       restricted
+      denied-read rules        0
+      denied-read glob rules   0
+      glob scan max depth      unbounded
+      managed filesystem source none
+      network sandbox          restricted
+      linux helper             none
+      execve wrapper helper    none
+      sandbox backend          disabled
+      denied-read restrictions false
+  ✓ sandbox      no explicit filesystem paths to probe
+
+Desktop App
+  ✓ desktop      the desktop application is installed
+      version                  26.930.2377.0
+      running                  false
+      log directory            $HOME\AppData\Local\Codex/Logs
+  ✓ desktop      the desktop application is not running
+  ✓ desktop      no locally visible recent Codex security enforcement was found
+
+Updates
+  ✓ updates      update configuration is locally consistent
+      startup update check     true
+      update action            npm install -g @openai/codex
+      version cache            C:\Windows\Temp\sefi-native-20261002\home-codex\version.json
+      version cache            missing
+      npm update target        not inspected (PATH helpers are not executed)
+      latest version           0.160.0
+      latest version status    current version is not older
+
+Connectivity
+  ✓ network      no proxy env vars
+      proxy env vars           none
+      respect system proxy     disabled
+      managed proxy            not configured
+  ⚠ websocket    Responses WebSocket failed; HTTPS fallback may still work — Check proxy, VPN, firewall, DNS, custom CA, and WebSocket policy support.
+      model provider           openai
+      provider name            OpenAI
+      wire API                 responses
+      supports websockets      true
+      proxy env vars           none
+      connect timeout          15000 ms
+      auth mode                none
+      endpoint                 wss://api.openai.com/v1/<redacted>
+      DNS                      2 IPv4, 2 IPv6, first IPv6
+      handshake transport error http 401 Unauthorized: Some("{\"error\":{\"message\":\"Missing bearer or basic authentication in header\",\"type\":\"invalid_request_error\",\"param\":null,\"code\":null}}")
+  ✓ reachability active provider endpoints are reachable over HTTP
+      reachability mode        ChatGPT auth
+      ChatGPT inference URL    https://chatgpt.com/backend-api/<redacted> reachable (HTTP 405)
+      desktop assets CDN       https://persistent.oaistatic.com/codex-app-prod/<redacted> reachable (HTTP 200)
+
+Background Server
+  ○ app-server   not running (ephemeral mode)
+      daemon state dir         C:\Windows\Temp\sefi-native-20261002\home-codex\app-server-daemon
+      settings                 C:\Windows\Temp\sefi-native-20261002\home-codex\app-server-daemon\settings.json (missing)
+      pid file                 C:\Windows\Temp\sefi-native-20261002\home-codex\app-server-daemon\app-server.pid (missing)
+      update-loop pid file     C:\Windows\Temp\sefi-native-20261002\home-codex\app-server-daemon\app-server-updater.pid (missing)
+      dedicated pid file       C:\Windows\Temp\sefi-native-20261002\home-codex\app-server-daemon\daemon.pid (missing)
+      dedicated update-loop pid file C:\Windows\Temp\sefi-native-20261002\home-codex\app-server-daemon\daemon-updater.pid (missing)
+      control socket           C:\Windows\Temp\sefi-native-20261002\home-codex\app-server-control\app-server-control.sock
+      status                   not running
+      mode                     ephemeral
+
+─────────────────────────────────────────────────────────────
+20 ok · 1 idle · 4 notes · 3 warn · 1 fail failed
+
+--summary compact output           --all expand truncated lists
+--json redacted report

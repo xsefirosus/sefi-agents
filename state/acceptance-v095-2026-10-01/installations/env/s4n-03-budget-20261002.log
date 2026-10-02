@@ -1,0 +1,27 @@
+=== utc ===
+2026-10-02T12:52:54Z
+=== install ccusage@20.0.26 ===
+
+added 2 packages in 3s
+npm-exit=0
+ccusage 20.0.26
+exit=0
+=== model routes ===
+claude-code mid => sonnet
+ (exit=0)
+codex mid => gpt-5.6-terra
+ (exit=0)
+opencode mid => flexible
+ (exit=0)
+hermes mid => flexible
+ (exit=0)
+=== ccusage status (offline; fresh CLI ledgers) ===
+Unknown command 'status'
+Run 'ccusage --help' for usage.
+exit=0
+=== budget dispatch ===
+budget-check: CANNOT MEASURE scope=dispatch cap=0.15 -- no usable spend source (ccusage/jq absent or returning nothing, and --spent not supplied); the cap was NOT checked. Pass --spent <usd> (0 asserts zero spend) or install ccusage.
+exit=3
+=== budget daily ===
+budget-check: CANNOT MEASURE scope=daily cap=2.00 -- no usable spend source (ccusage/jq absent or returning nothing, and --spent not supplied); the cap was NOT checked. Pass --spent <usd> (0 asserts zero spend) or install ccusage.
+exit=3

@@ -1,0 +1,114 @@
+=== utc ===
+2026-10-02T13:07:46Z
+HEAD=25c4b97adc9af0a784e594d64adf1ddd324d2536 HOME=/c/Windows/Temp/sefi-native-20261002/home-opencode OPENCODE_HOME=/c/Windows/Temp/sefi-native-20261002/home-opencode
+=== version ===
+1.18.34
+exit=0
+=== candidate install ===
+exit=1
+copied script: record-continuation.sh -> /c/Windows/Temp/sefi-native-20261002/home-opencode/scripts/record-continuation.sh
+copied script: record-run-receipt.sh -> /c/Windows/Temp/sefi-native-20261002/home-opencode/scripts/record-run-receipt.sh
+copied script: resolve-shared-memory-path.sh -> /c/Windows/Temp/sefi-native-20261002/home-opencode/scripts/resolve-shared-memory-path.sh
+copied script: scan-placeholders.sh -> /c/Windows/Temp/sefi-native-20261002/home-opencode/scripts/scan-placeholders.sh
+copied script: sefi-runtime.py -> /c/Windows/Temp/sefi-native-20261002/home-opencode/scripts/sefi-runtime.py
+copied script: validate-plan-structure.sh -> /c/Windows/Temp/sefi-native-20261002/home-opencode/scripts/validate-plan-structure.sh
+copied script: write-shared-memory-mirror.sh -> /c/Windows/Temp/sefi-native-20261002/home-opencode/scripts/write-shared-memory-mirror.sh
+package-manifest: Python is required
+=== discovery: agents/skills/commands/scripts ===
+devops-engineer.md
+memory-journalist.md
+motion-designer.md
+product-manager.md
+prompt-engineer.md
+qa-engineer.md
+research-adoption-scout.md
+research-analyst.md
+research-codebase-cartographer.md
+security-engineer.md
+sefi-agents.md
+software-engineer.md
+solutions-architect.md
+support-engineer.md
+systems-auditor.md
+technical-writer.md
+ui-ux-designer.md
+anti-hallucination
+backend-design
+design-style-profiles
+expo-native-design
+focus
+frontend-design
+loop-engineering
+memory-protocol
+motion-design
+n8n-workflow-design
+premortem
+release-tracking
+retro-improve
+run-sefi-benchmark
+security-review
+sefi-orchestration
+swiftui-design
+systems-audit
+technical-writing
+terse-mode
+audit.md
+close-session.md
+cross-memory.md
+init.md
+loop-new.md
+map-codebase.md
+memory-index.md
+memory-search.md
+retro.md
+route.md
+scout.md
+status.md
+triage.md
+check-unicode-safety.sh
+fixtures
+format-audit-findings.sh
+prepare-audit-report-path.sh
+rule-presence.manifest
+run-all.sh
+test-agent-capabilities-v08.sh
+test-audit-integration.sh
+test-audit-report-validator.sh
+test-benchmark-oracles.sh
+=== transforms ===
+raw-tools-above(empty=transformed)
+mode: primary
+mode: subagent
+raw-model-above(empty=flexible)
+unresolved-placeholder-above(empty=resolved)
+=== manifest ===
+/c/Windows/Temp/sefi-native-20261002/home-opencode/scripts/adapter-manifest.sh
+/c/Windows/Temp/sefi-native-20261002/home-opencode/scripts/ci/fixtures/manifest-version
+/c/Windows/Temp/sefi-native-20261002/home-opencode/scripts/ci/fixtures/manifest-version/legacy/.sefi-agents-manifest.json
+/c/Windows/Temp/sefi-native-20261002/home-opencode/scripts/ci/fixtures/rule-presence/fail/rule-presence.manifest
+/c/Windows/Temp/sefi-native-20261002/home-opencode/scripts/ci/fixtures/rule-presence/missing-target/rule-presence.manifest
+=== hashes ===
+b6936a26d09612d413c2764bc33d8137ccc3b073c80ed9c09c8921bb645dd83e */c/Windows/Temp/sefi-native-20261002/home-opencode/skills/systems-audit/SKILL.md
+0b817a4b603df2fe949bd0e01b160f4717671a98b16bbce93d5ea5986c380b0f */c/Windows/Temp/sefi-native-20261002/home-opencode/scripts/ci/validate-audit-report.sh
+=== audit build attempt (stdin closed, 120s bound) ===
+exit=124
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mGet-ChildItem -Force | Select-Object Mode, Name | Format-Table -AutoSize
+(no output)
+[0m
+[0m$ [0mGet-ChildItem -Force -Recurse -Depth 3 -Directory -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
+(no output)
+[0m
+[0m$ [0mTest-Path -LiteralPath "C:\Windows\Temp\sefi-native-20261002\proj-opencode"; (Get-ChildItem -LiteralPath "C:\Windows\Temp\sefi-native-20261002\proj-opencode" -Force | Measure-Object).Count
+True
+0
+[0m
+[0m$ [0mGet-ChildItem -LiteralPath "C:\Windows\Temp\sefi-native-20261002" -Force -ErrorAction SilentlyContinue | Select-Object Mode,Name | Format-Table -AutoSize
+Mode   Name                             
+----   ----                             
+d----- claude-native                    
+d----- home-claude                      
+d----- home-claude-fb                   
+d----- home-codex                       

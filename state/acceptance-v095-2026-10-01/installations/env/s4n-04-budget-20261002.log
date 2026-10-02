@@ -1,0 +1,12 @@
+=== utc ===
+2026-10-02T12:53:54Z
+=== ccusage daily json (offline) ===
+ccusage-exit=0
+925 /c/Windows/Temp/sefi-native-20261002/ccusage-daily.json
+=== node sum of totalCost ===
+measured=[JSON-PARSE-FAIL]
+=== budget gates with measured spend ===
+budget-check: --spent 'JSON-PARSE-FAIL' is not a number
+dispatch-exit=2
+budget-check: --spent 'JSON-PARSE-FAIL' is not a number
+daily-exit=2

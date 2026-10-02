@@ -1,0 +1,11 @@
+ERROR: audits/bad.md - missing skeleton heading '## Summary'
+ERROR: audits/bad.md - missing skeleton heading '## Scope'
+ERROR: audits/bad.md - missing skeleton heading '## Method'
+ERROR: audits/bad.md - missing skeleton heading '## Findings'
+ERROR: audits/bad.md - missing skeleton heading '## Fixes'
+ERROR: audits/bad.md - missing skeleton heading '## Improvements'
+ERROR: audits/bad.md - missing skeleton heading '## Nice-to-haves'
+ERROR: audits/bad.md - missing skeleton heading '## Follow-up'
+ERROR: audits/bad.md - no severity label (Critical/Major/Minor/Nice) outside the skeleton headings
+ERROR: audits/bad.md - file name carries no audit-report-<scope>- scope token
+validate-audit-report: 10 error(s)

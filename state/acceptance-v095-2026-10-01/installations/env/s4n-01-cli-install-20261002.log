@@ -1,0 +1,61 @@
+=== utc ===
+2026-10-02T12:51:21Z
+=== pinned versions (registry, s4n-00) ===
+claude-code=2.1.287 codex=0.160.0 opencode-ai=1.18.34
+=== npm install (exact pins, no audit/fund noise) ===
+
+added 7 packages in 38s
+npm notice
+npm notice New major version of npm available! 11.12.1 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice
+npm-install-exit=0
+=== versions ===
+2.1.287 (Claude Code)
+claude-exit=0
+codex-cli 0.160.0
+codex-exit=0
+1.18.34
+opencode-exit=0
+=== help excerpts (isolation/pinning discovery) ===
+  --add-dir <directories...>            Additional directories to allow tool
+  --allow-dangerously-skip-permissions  Enable bypassing all permission checks
+                                        in settings and by installed plugins;
+                                        unaffected), LSP, plugin sync,
+                                        apiKeyHelper via --settings (OAuth and
+                                        --append-system-prompt[-file], --add-dir
+                                        --settings, --agents, --plugin-dir.
+  --dangerously-skip-permissions        Bypass all permission checks.
+  --plugin-dir <path>                   Load a plugin from a directory or .zip
+                                        plugins loads each child (repeatable:
+Codex CLI
+
+If no subcommand is specified, options will be forwarded to the interactive CLI.
+
+Usage: codex [OPTIONS] [PROMPT]
+       codex [OPTIONS] <COMMAND> [ARGS]
+
+Commands:
+  agents            Browse all agent sessions on the shared local app-server daemon
+  exec              Run Codex non-interactively [aliases: e]
+  review            Run a code review non-interactively
+  login             Manage login
+  logout            Remove stored authentication credentials
+  mcp               Manage external MCP servers for Codex
+  plugin            Manage Codex plugins
+  app-server        [experimental] Run the app server or related tooling
+  remote-control    [experimental] Manage the app-server daemon with remote control enabled
+  app               Launch the Desktop app (opens the app installer if missing)
+  completion        Generate shell completion scripts
+  update            Update Codex to the latest version
+  doctor            Diagnose local Codex installation, config, auth, and runtime health
+  sandbox           Run commands within a Codex-provided sandbox
+  debug             Debugging tools
+  apply             Apply the latest diff produced by Codex agent as a `git apply` to your local
+                    working tree [aliases: a]
+  resume            Resume a previous interactive session (picker by default; use --last to continue
+                    the most recent)
+  queue             Queue a message for an existing session
+  archive           Archive a saved session by id or session name
+  delete            Permanently delete a saved session by id or session name

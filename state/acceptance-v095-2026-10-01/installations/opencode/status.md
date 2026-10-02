@@ -18,3 +18,21 @@ Source record: `../sources/sources.log`. Per-run bindings:
 | Supported flags (no invention) | RECORDED | `[--force] [--model-map <path>] [--auto-update]` (`../env/help-sources.log:20`); `OPENCODE_HOME` override honored (install-opencode.sh:116); no pinning flags: limitation recorded |
 
 Real user config untouched: all runs used disposable `OPENCODE_HOME`; see `INCIDENT.md` for the one accidental no-force run against the real home (refused, zero writes).
+
+## Native legs, 2026-10-02 (installation engineer assessment; QA judges)
+
+CLI: `opencode` 1.18.34 installed 2026-10-02 into a disposable npm prefix
+(`../env/s4n-01-cli-install-20261002.log:13-20`). All runs with disposable
+`HOME`+`USERPROFILE`+`OPENCODE_HOME`; real `HOME/.config/opencode` has no
+2026-10-02 touches (`native-20261002/forensics-20261002.log` tail section).
+Budget basis: see Claude status note (measured $5.84 EXCEEDED both caps;
+one-time human override only).
+
+| Leg | Verdict | Evidence |
+|---|---|---|
+| `opencode` CLI presence / version | PASS | `native-20261002/s4n-12-opencode.log:5` `1.18.34`, exit 0 |
+| Install from candidate HEAD `25c4b97` (`OPENCODE_HOME` isolated) | PENDING (BLOCKED-as-evidence) | Content fully laid down and transforms verified (below), but installer exit 1: `package-manifest: Python is required` (`s4n-12-opencode.log:8,16`); manifest unwritten; host git-bash has no Python and adding one needs separate authorization |
+| Real discovery (agents/skills/commands/scripts) | PASS (bytes) | 17 agents incl `systems-auditor.md`, 20 skills incl `systems-audit`, commands incl `audit.md`, `scripts/ci` present (`s4n-12-opencode.log:19-60`) |
+| Mode / permission / model transforms | PASS (bytes) | No raw `tools:` lines; `sefi-agents mode: primary`, `systems-auditor mode: subagent`; no `model:` line = shipped `flexible`; no unresolved placeholder (`s4n-12-opencode.log:62-78`) |
+| Installed managed-file hashes | RECORDED | SKILL `b6936a26…` (= Step-4 container value: installer normalizes worktree CRLF to LF, verified by byte dump), validator `0b817a4b…` (`s4n-12-opencode.log:91-92`) |
+| `/sefi:audit build` | PENDING | `opencode run` did not fail fast on auth: it began local read-only exploration and was killed by the 120s bound (exit 124, no report written, `s4n-12-opencode.log:94` + `oc-run.out`); only observed backend is the ambient outer-harness server (env carries its credentials), not an isolated opencode identity, so this is not a valid invocation leg; no isolated model credentials exist. Not repeated; see `../INCIDENT-native-20261002.md` |

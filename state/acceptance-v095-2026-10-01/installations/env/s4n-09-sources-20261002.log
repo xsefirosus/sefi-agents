@@ -1,0 +1,19 @@
+=== utc ===
+2026-10-02T12:57:03Z
+rev=25c4b97adc9af0a784e594d64adf1ddd324d2536
+tree=75ddaa8
+=== archive sha256 (git archive HEAD) ===
+3d48844744ceea41672ee78d1d9f4ffe9c9368fd91579382b89f70377933c2c3 *-
+=== tool versions ===
+git version 2.54.0.windows.1
+GNU bash, version 5.3.9(1)-release (x86_64-pc-cygwin)
+v24.15.0
+11.12.1
+2.1.287 (Claude Code)
+codex-cli 0.160.0
+1.18.34
+=== node os.homedir vs USERPROFILE (disposable check) ===
+HOME=/c/Users/Mary Rose
+C:/Windows/Temp/sefi-native-20261002/home-probe
+=== installer diff 6e9f432..HEAD (scope relevance) ===
+diff-exit=0

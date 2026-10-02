@@ -1,0 +1,30 @@
+# Native-leg source binding, 2026-10-02 (supplements sources.log / host-fetch.log)
+
+Candidate source is the current branch head itself (no separate clone):
+
+- rev=25c4b97adc9af0a784e594d64adf1ddd324d2536
+- tree=75ddaa8
+- archive-sha256=3d48844744ceea41672ee78d1d9f4ffe9c9368fd91579382b89f70377933c2c3
+  (`git archive HEAD | sha256sum`; evidence: `../env/s4n-09-sources-20261002.log:3-6`)
+- Installer/skill/validator inputs unchanged vs Step-4 candidate 6e9f432
+  (`git diff --stat 6e9f432..HEAD` over installers, systems-audit skill and
+  validator is empty; same log).
+
+Published source fetched natively by the Claude marketplace path (not a sefi fetch):
+
+- default-branch HEAD at fetch time: cb4f12451901b7c2e0ed69d43e027be27f03a2a3
+  (2026-10-02; evidence: `claude/native-20261002/s4n-10b-claude-content.log:59-60`,
+  plugin record `:23`). Per the plan this is published-source proof, never
+  presented as candidate proof: the native path offers no candidate pinning.
+
+CLI versions installed 2026-10-02 into a disposable npm prefix
+(`C:/Windows/Temp/sefi-native-20261002/npm-global`, real global npm untouched):
+
+- claude 2.1.287 (Claude Code), codex-cli 0.160.0, opencode 1.18.34, ccusage 20.0.26
+  (evidence: `../env/s4n-01-cli-install-20261002.log:13-20`,
+  `../env/s4n-09-sources-20261002.log:12-14`).
+- hermes: no CLI installed. No install channel is documented in
+  Install.md/adapters/HERMES.md; `npm search hermes` 2026-10-02 surfaces only
+  unrelated packages (2014 chat-bot `hermes` 0.4.4, Meta JS-engine packages,
+  Pyth client); winget is absent from this shell; no package ID is known.
+  Evidence: `../env/s4n-02-hermes-probe-20261002.log`.

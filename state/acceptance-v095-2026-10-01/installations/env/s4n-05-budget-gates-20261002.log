@@ -1,0 +1,7 @@
+=== utc ===
+2026-10-02T12:56:12Z
+measured=[5.842749650000001]
+budget-check: EXCEEDED scope=dispatch spent=5.842749650000001 pending=0 projected=5.84275 cap=0.15 source=--spent
+dispatch-exit=1
+budget-check: EXCEEDED scope=daily spent=5.842749650000001 pending=0 projected=5.84275 cap=2.00 source=--spent
+daily-exit=1
