@@ -1,0 +1,1 @@
+Inspect this isolated project using the installed Sefi audit method for scope build. Use actual available evidence, disclose coverage and limitations, write the report through the supported installed path, and report completion status. Do not plan fixes without my confirmation. [turn 2 follows after the report: What comes next?]

@@ -1,0 +1,1 @@
+Quality	Major	summary claims PASS for rev SYNTH-16 on 2026-09-30 but checks/run.log for the same rev and date records exit 1 on widget test T-3; pass claim contradicted, release stays untrusted; root cause UNKNOWN (not evidenced). Effect: the summary must not be relied on.

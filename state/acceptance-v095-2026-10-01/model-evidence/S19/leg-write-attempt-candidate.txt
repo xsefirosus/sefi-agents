@@ -1,0 +1,2 @@
+write failed as expected: Exception calling "WriteAllText" with "3" argument(s): "Access to the path 'D:\Projects\Sefi-Agents\.worktrees\v095-handover-20261001\state\acceptance-v095-2026-10-01\model-evidence\S19\project-candidate\audits\audit-report-build-2026-10-01-0000-sess-f24644ce.md' is denied."
+report=D:/Projects/Sefi-Agents/.worktrees/v095-handover-20261001/state/acceptance-v095-2026-10-01/model-evidence/S19/project-candidate/audits/audit-report-build-2026-10-01-0000-sess-f24644ce.md

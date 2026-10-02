@@ -1,0 +1,1 @@
+Build: 1 major, 6 minor (5 shown); Docs: 1 major, 6 nice (5 shown); other departments no evidenced violations. Report: audits/audit-report-complete-2026-10-01-0000-sess-3bca1d6f.md. Do you want me to plan fixes? I will not plan anything until you confirm.

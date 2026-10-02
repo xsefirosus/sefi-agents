@@ -1,0 +1,40 @@
+=== report contract and installed validator ===
+  OK  canonical report contract exists
+  OK  report contract has ## Summary
+  OK  report contract has ## Scope
+  OK  report contract has ## Method
+  OK  report contract has ## Findings
+  OK  report contract has ## Fixes
+  OK  report contract has ## Improvements
+  OK  report contract has ## Nice-to-haves
+  OK  report contract has ## Follow-up
+  OK  report contract resolves validator from runtime root
+  OK  report contract specifies severity overflow output
+  OK  report contract specifies collision refusal
+  OK  report contract specifies one scope clarification
+  OK  report contract gates fix planning on confirmation
+  OK  installed validator accepts complete report
+  OK  installed validator accepts research report
+  OK  installed validator accepts product report
+  OK  installed validator accepts design report
+  OK  installed validator accepts build report
+  OK  installed validator accepts quality report
+  OK  installed validator accepts docs report
+  OK  installed validator accepts delivery report
+  OK  clean report with zero severity counts passes
+  OK  incomplete report with the eight headings passes structural validation
+=== routing fixtures ===
+  OK  fixture Sefi department audit|systems-auditor
+  OK  fixture systems-audit|systems-auditor
+  OK  fixture UI audit|ui-ux-designer
+  OK  fixture trust boundary|security-engineer
+  OK  fixture post-build|qa-engineer
+  OK  routing fixtures resolve in the precedence table
+=== report allocation collision ===
+  OK  pre-existing compliant report path refuses overwrite without modifying it
+=== capped finding presentation ===
+  OK  findings are severity ordered, capped at five, and report exact overflow totals
+  OK  complete audit caps and overflows each department independently
+  OK  formatter rejects malformed three-column findings
+  OK  formatter rejects unsupported departments
+test-systems-audit-behavior: OK

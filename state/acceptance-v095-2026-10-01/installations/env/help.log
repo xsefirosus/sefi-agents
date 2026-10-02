@@ -1,0 +1,8 @@
+/checkout-ro/install.sh: line 25: set: pipefail: invalid option name
+install.sh --help exit=2
+/checkout-ro/install-codex.sh: line 5: set: pipefail: invalid option name
+install-codex.sh --help exit=2
+/checkout-ro/plugins/sefi-core/scripts/install-opencode.sh: line 61: set: pipefail: invalid option name
+install-opencode.sh --help exit=2
+/checkout-ro/plugins/sefi-core/scripts/install-hermes.sh: line 21: set: pipefail: invalid option name
+install-hermes.sh --help exit=2

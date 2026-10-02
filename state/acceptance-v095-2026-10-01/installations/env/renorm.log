@@ -1,0 +1,32 @@
+=== released status BEFORE ===
+ M state/release-ledger.md
+(end)
+=== renormalize both clones ===
+error: could not lock config file .git/config: Permission denied
+fatal: Unable to create '/s4/src-released/.git/index.lock': Permission denied
+error: could not lock config file .git/config: Permission denied
+fatal: Unable to create '/s4/src-candidate/.git/index.lock': Permission denied
+=== status AFTER ===
+released modified-count=1
+candidate modified-count=748
+=== CR counts AFTER ===
+released install.sh CR-lines=0
+released install-codex.sh CR-lines=0
+released plugins/sefi-core/scripts/install-opencode.sh CR-lines=0
+released plugins/sefi-core/scripts/install-hermes.sh CR-lines=0
+candidate install.sh CR-lines=687
+candidate install-codex.sh CR-lines=730
+candidate plugins/sefi-core/scripts/install-opencode.sh CR-lines=762
+candidate plugins/sefi-core/scripts/install-hermes.sh CR-lines=0
+=== blob-vs-WT hash equality AFTER ===
+released install.sh WT==blob OK
+candidate install.sh WT!=blob FAIL
+=== --help AFTER ===
+released install.sh exit=0
+released install-codex.sh exit=0
+released install-opencode.sh exit=0
+released install-hermes.sh exit=0
+candidate install.sh exit=2
+candidate install-codex.sh exit=2
+candidate install-opencode.sh exit=2
+candidate install-hermes.sh exit=0

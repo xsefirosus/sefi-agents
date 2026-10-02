@@ -1,0 +1,15 @@
+=== valid report and preserved report checks ===
+  OK  valid report beneath audits with spaces passes
+  OK  installed validator accepts an explicit separate project root
+  OK  installed validator rejects traversal outside the explicit project audits root
+  OK  installed validator rejects a symlink escape from the explicit project audits root
+  OK  default report scan accepts a valid generated report
+  OK  missing skeleton heading fails
+  OK  unsupported scope fails
+=== traversal containment ===
+  OK  audits traversal escape fails
+=== symlink containment ===
+  OK  symlinked audits root fails
+  OK  symlinked intermediate directory fails
+  OK  symlinked final report fails
+test-audit-report-validator: OK

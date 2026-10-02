@@ -1,0 +1,21 @@
+URL=https://github.com/xsefirosus/sefi-agents.git
+=== released ===
+rev=2fe3bb348977a3837a8ef1fb82197afa537d1200
+tree=58fd8163b28316bc4ab2808c7825b431b4ea3f02
+archive-sha256=5e0d4b8ddd301a3fb19fe7b36cca8fca3656a556ca393185519cf850ef733986
+clean-clone-status-lines=1
+install.sh CR-lines=0 WT==blob
+install-codex.sh CR-lines=0 WT==blob
+plugins/sefi-core/scripts/install-opencode.sh CR-lines=0 WT==blob
+plugins/sefi-core/scripts/install-hermes.sh CR-lines=0 WT==blob
+state/release-ledger.md CR-lines=0 WT==blob
+=== candidate ===
+rev=6e9f432d25de62abca670ee819ea2442d1aab2d0
+tree=2353aa029f3a9713e3a14c3d5eae8d18ccda0505
+archive-sha256=1214dad87a3310023a888998e66136ab7296477931c8674c85817f2038d1f1c7
+clean-clone-status-lines=748
+install.sh CR-lines=0 WT==blob
+install-codex.sh CR-lines=0 WT==blob
+plugins/sefi-core/scripts/install-opencode.sh CR-lines=0 WT==blob
+plugins/sefi-core/scripts/install-hermes.sh CR-lines=0 WT==blob
+state/release-ledger.md CR-lines=0 WT==blob

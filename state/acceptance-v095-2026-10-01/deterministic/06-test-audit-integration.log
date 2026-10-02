@@ -1,0 +1,40 @@
+=== local audit boundary ===
+  OK  root ignores audit reports
+  OK  init copies the audit scaffold
+  OK  init is idempotent
+  OK  audit scaffold template exists
+  OK  memory search completes for a durable query
+  OK  memory search surfaces the durable audit report
+  OK  memory search excludes non-report audit notes
+  OK  memory index rebuild succeeds
+  OK  memory index manifest includes the audit report
+  OK  memory index manifest excludes non-report audit notes
+  OK  audit report edit lands for the staleness check
+  OK  memory index status detects staleness after an audit edit
+  OK  memory index rebuild succeeds after an audit edit
+  OK  cross-memory enable succeeds in the fixture project
+  OK  session note mirrors to the confirmed local vault
+  OK  cross-memory mirror refuses an audit report
+  OK  cross-memory mirror refuses a traversal-shaped audit path
+  OK  symlinked vault fixture is a physical symlink
+  OK  mirror refuses a note addressed through a symlinked vault
+  OK  symlinked sessions fixture is a physical symlink
+  OK  mirror refuses a note addressed through a symlinked sessions dir
+  OK  symlinked vault-parent fixture is a physical symlink
+  OK  mirror refuses a note addressed through a symlinked vault parent
+  OK  audit reports are local-only, searchable, indexed, and staleness-tracked
+=== audit report physical containment ===
+  OK  valid report under audits passes
+  OK  traversal escape fails
+  OK  intermediate symlink escape fails
+=== orphan exemption ===
+  OK  all orphan walks exempt audits
+=== scheduled loop exclusions ===
+  OK  morning-triage.loop.md excludes scheduled audit scans
+  OK  sync.loop.md excludes scheduled audit scans
+  OK  weekly-retro.loop.md excludes scheduled audit scans
+  OK  morning-triage.loop.md excludes scheduled audit scans
+  OK  sync.loop.md excludes scheduled audit scans
+  OK  weekly-retro.loop.md excludes scheduled audit scans
+  OK  temporary slice-4 gate helper is absent
+test-audit-integration: OK

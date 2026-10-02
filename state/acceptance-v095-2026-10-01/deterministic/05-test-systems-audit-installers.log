@@ -1,0 +1,234 @@
+REFUSED: cleanup target escapes fixture temp directory: /tmp/sefi-installer-cleanup-outside
+PASS: fixture cleanup refuses targets outside its temporary directory
+PASS: Claude Code isolated candidate exposes audit invocation and auditor
+PASS: Claude Code fallback install includes systems-audit
+PASS: Claude Code fallback retains audit invocation and auditor
+PASS: install.sh refuses a symlinked DEST parent
+PASS: install.sh symlinked parent leaves victim unchanged
+PASS: install.sh refuses a dangling settings.json symlink
+PASS: install.sh dangling settings symlink leaves its target uncreated
+PASS: install.sh refuses a live settings.json symlink
+PASS: install.sh live settings symlink leaves its target unmodified
+PASS: install.sh creates and merges settings.json through a staged file
+PASS: install.sh leaves a merged regular settings.json and no staging leftover
+PASS: install.sh resolves placeholders when DEST contains ampersand
+PASS: install.sh ampersand DEST left no unresolved placeholder
+PASS: install.sh refuses an existing subdir via a symlinked parent
+PASS: install.sh existing subdir via symlinked parent leaves victim unchanged
+PASS: install.sh refuses a trailing-slash DEST through a symlink
+PASS: install.sh trailing-slash symlink leaves victim unchanged
+PASS: install.sh accepts a trailing slash on a real DEST
+PASS: install.sh trailing-slash DEST left no unresolved placeholder
+PASS: install.sh resolves placeholders when DEST contains a hash
+PASS: install.sh hash DEST left no unresolved placeholder
+PASS: install.sh hash DEST resolves to a literal path
+PASS: install.sh resolves placeholders when DEST contains a newline
+PASS: install.sh newline DEST left no unresolved placeholder
+PASS: Codex fresh session bootstrap retains audit invocation and auditor
+PASS: Codex fresh session exposes audit invocation and Systems Auditor profile
+PASS: Codex rejects a symlinked agents directory
+PASS: Codex symlinked agents directory leaves its target unchanged
+PASS: Codex rejects a dangling Sefi profile symlink
+PASS: Codex dangling profile symlink leaves unrelated targets unchanged
+PASS: Codex refuses a symlinked CODEX_HOME parent
+PASS: Codex symlinked parent leaves victim unchanged
+PASS: Codex refuses a symlinked Sefi profile
+PASS: Codex refuses a symlinked profile before writing anything else
+PASS: Codex refuses an AGENTS.md symlinked to a regular file
+PASS: Codex leaves a symlinked AGENTS.md and its file target unmodified
+PASS: Codex refuses an AGENTS.md symlinked to a directory
+PASS: Codex publishes no bootstrap block into a directory symlinked as AGENTS.md
+PASS: Codex refuses an existing subdir via a symlinked parent
+PASS: Codex existing subdir via symlinked parent leaves victim unchanged
+PASS: Codex refuses a trailing-slash CODEX_HOME through a symlink
+PASS: Codex trailing-slash symlink leaves victim unchanged
+PASS: Codex accepts a trailing slash on a real CODEX_HOME
+PASS: Codex trailing-slash CODEX_HOME installs profiles
+PASS: Codex accepts a amp CODEX_HOME
+PASS: Codex amp CODEX_HOME installs the block and profiles
+PASS: Codex accepts a hash CODEX_HOME
+PASS: Codex hash CODEX_HOME installs the block and profiles
+PASS: Codex accepts a newline CODEX_HOME
+PASS: Codex newline CODEX_HOME installs the block and profiles
+PASS: Codex refuses a live Sefi profile symlink
+PASS: Codex live profile symlink leaves its target unmodified
+PASS: Codex re-runs cleanly over its own staged profiles
+PASS: Codex applies the model policy exactly once on re-run
+PASS: Codex leaves one model policy per profile and no staging leftover
+PASS: Codex candidate accepts the local marketplace root-only JSON shape
+PASS: Codex rejects a colliding marketplace despite an unrelated expected source
+PASS: Codex rejects a candidate plugin source outside the selected checkout
+PASS: Codex remote install verifies the expected marketplace and plugin source
+PASS: opencode fresh install includes systems-audit
+PASS: OpenCode installed systems-audit files
+PASS: OpenCode refuses a symlinked destination parent
+PASS: OpenCode symlinked parent leaves victim unchanged
+PASS: OpenCode resolves placeholders when DEST contains ampersand
+PASS: OpenCode ampersand DEST left no unresolved placeholder
+PASS: OpenCode ampersand DEST resolves to a literal path
+PASS: OpenCode refuses an existing subdir via a symlinked parent
+PASS: OpenCode existing subdir via symlinked parent leaves victim unchanged
+PASS: OpenCode refuses a trailing-slash DEST through a symlink
+PASS: OpenCode trailing-slash symlink leaves victim unchanged
+PASS: OpenCode accepts a trailing slash on a real DEST
+PASS: OpenCode trailing-slash DEST left no unresolved placeholder
+PASS: OpenCode resolves placeholders when DEST contains a hash
+PASS: OpenCode hash DEST left no unresolved placeholder
+PASS: OpenCode hash DEST resolves to a literal path
+PASS: OpenCode resolves placeholders when DEST contains a newline
+PASS: OpenCode newline DEST left no unresolved placeholder
+PASS: OpenCode prepares a home for the swapped-profile check
+PASS: OpenCode refuses a swapped-in agent symlink without force
+PASS: OpenCode swapped agent symlink leaves its target unmodified
+PASS: OpenCode force install over an agent symlink keeps the target
+PASS: OpenCode forced agent write never follows the swapped symlink
+PASS: OpenCode prepares a home for the re-check assertions
+PASS: OpenCode force install over an agent symlink moves staged content in
+PASS: OpenCode staged agent content reaches the destination without touching the link target
+PASS: OpenCode continues past a re-checked target and transforms the remaining profiles
+PASS: the swap shim fires on both the mktemp -d and the bare staging-template form
+PASS: Codex aborts when the gated agents dir is swapped for a symlink mid-install
+PASS: Codex confirms the swap actually landed, so the abort is not a vacuous pass
+PASS: Codex writes no profile into a directory swapped in after the gate
+PASS: Codex refuses to read a profile swapped for a symlink after the -L test
+PASS: Codex confirms the profile swap landed, so the refusal is not a vacuous pass
+PASS: Codex never reads or republishes a profile symlinked in after the -L test
+PASS: OpenCode aborts when the gated agents dir is swapped for a symlink mid-install
+PASS: OpenCode confirms the swap actually landed, so the abort is not a vacuous pass
+PASS: OpenCode writes no agent profile into a directory swapped in after the gate
+PASS: install.sh aborts when the gated agents dir is swapped for a symlink mid-install
+PASS: install.sh confirms the swap actually landed, so the abort is not a vacuous pass
+PASS: install.sh writes no agent profile into a directory swapped in after the gate
+PASS: install.sh refuses to create the legacy-restore parent through a swapped root
+PASS: install.sh creates no directory for a legacy restore under a swapped root
+PASS: OpenCode refuses a symlinked agents subtree before creating it
+PASS: OpenCode writes no profile into a subtree symlinked before the mkdir
+PASS: install.sh ships both path helpers and the containment predicate in a loadable form
+PASS: install.sh canonicalizes a root-ancestor path byte-exactly
+PASS: install.sh canonicalizes an existing subdir byte-exactly
+PASS: install.sh strips a trailing slash before comparing
+PASS: install.sh canonicalizes a missing leaf under an existing parent
+PASS: install.sh rejects a backslash path
+PASS: install.sh rejects a drive-letter path
+PASS: install.sh rejects a forward-slash drive-letter path
+PASS: install.sh rejects an MSYS-style drive-letter path
+PASS: install.sh propagates a backslash refusal through the canonical helper
+PASS: install.sh propagates a drive-letter refusal through the canonical helper
+PASS: install.sh rejects empty input instead of resolving to the working directory
+PASS: install.sh still absolutizes a legitimate relative path
+PASS: install.sh rejects a double-slash drive-letter path
+PASS: install.sh rejects a triple-slash drive-letter path
+PASS: install.sh propagates a double-slash drive-letter refusal through the canonical helper
+PASS: install.sh still normalizes a UNC-style double-slash path
+PASS: install.sh containment accepts an exact match
+PASS: install.sh containment accepts a child
+PASS: install.sh containment rejects a sibling sharing the root prefix
+PASS: install.sh containment rejects a hyphen-suffixed sibling
+PASS: install.sh containment rejects an unrelated subtree
+PASS: install.sh containment rejects a prefix of the root
+PASS: install.sh containment accepts the filesystem root as itself
+PASS: install.sh containment rejects anything under a bare filesystem root
+PASS: install.sh containment compares glob characters literally
+PASS: install.sh containment rejects a glob-shaped sibling
+PASS: install.sh containment rejects an empty candidate
+PASS: install.sh containment rejects an empty root
+PASS: install-codex.sh ships both path helpers and the containment predicate in a loadable form
+PASS: install-codex.sh canonicalizes a root-ancestor path byte-exactly
+PASS: install-codex.sh canonicalizes an existing subdir byte-exactly
+PASS: install-codex.sh strips a trailing slash before comparing
+PASS: install-codex.sh canonicalizes a missing leaf under an existing parent
+PASS: install-codex.sh rejects a backslash path
+PASS: install-codex.sh rejects a drive-letter path
+PASS: install-codex.sh rejects a forward-slash drive-letter path
+PASS: install-codex.sh rejects an MSYS-style drive-letter path
+PASS: install-codex.sh propagates a backslash refusal through the canonical helper
+PASS: install-codex.sh propagates a drive-letter refusal through the canonical helper
+PASS: install-codex.sh rejects empty input instead of resolving to the working directory
+PASS: install-codex.sh still absolutizes a legitimate relative path
+PASS: install-codex.sh rejects a double-slash drive-letter path
+PASS: install-codex.sh rejects a triple-slash drive-letter path
+PASS: install-codex.sh propagates a double-slash drive-letter refusal through the canonical helper
+PASS: install-codex.sh still normalizes a UNC-style double-slash path
+PASS: install-codex.sh containment accepts an exact match
+PASS: install-codex.sh containment accepts a child
+PASS: install-codex.sh containment rejects a sibling sharing the root prefix
+PASS: install-codex.sh containment rejects a hyphen-suffixed sibling
+PASS: install-codex.sh containment rejects an unrelated subtree
+PASS: install-codex.sh containment rejects a prefix of the root
+PASS: install-codex.sh containment accepts the filesystem root as itself
+PASS: install-codex.sh containment rejects anything under a bare filesystem root
+PASS: install-codex.sh containment compares glob characters literally
+PASS: install-codex.sh containment rejects a glob-shaped sibling
+PASS: install-codex.sh containment rejects an empty candidate
+PASS: install-codex.sh containment rejects an empty root
+PASS: install-opencode.sh ships both path helpers and the containment predicate in a loadable form
+PASS: install-opencode.sh canonicalizes a root-ancestor path byte-exactly
+PASS: install-opencode.sh canonicalizes an existing subdir byte-exactly
+PASS: install-opencode.sh strips a trailing slash before comparing
+PASS: install-opencode.sh canonicalizes a missing leaf under an existing parent
+PASS: install-opencode.sh rejects a backslash path
+PASS: install-opencode.sh rejects a drive-letter path
+PASS: install-opencode.sh rejects a forward-slash drive-letter path
+PASS: install-opencode.sh rejects an MSYS-style drive-letter path
+PASS: install-opencode.sh propagates a backslash refusal through the canonical helper
+PASS: install-opencode.sh propagates a drive-letter refusal through the canonical helper
+PASS: install-opencode.sh rejects empty input instead of resolving to the working directory
+PASS: install-opencode.sh still absolutizes a legitimate relative path
+PASS: install-opencode.sh rejects a double-slash drive-letter path
+PASS: install-opencode.sh rejects a triple-slash drive-letter path
+PASS: install-opencode.sh propagates a double-slash drive-letter refusal through the canonical helper
+PASS: install-opencode.sh still normalizes a UNC-style double-slash path
+PASS: install-opencode.sh containment accepts an exact match
+PASS: install-opencode.sh containment accepts a child
+PASS: install-opencode.sh containment rejects a sibling sharing the root prefix
+PASS: install-opencode.sh containment rejects a hyphen-suffixed sibling
+PASS: install-opencode.sh containment rejects an unrelated subtree
+PASS: install-opencode.sh containment rejects a prefix of the root
+PASS: install-opencode.sh containment accepts the filesystem root as itself
+PASS: install-opencode.sh containment rejects anything under a bare filesystem root
+PASS: install-opencode.sh containment compares glob characters literally
+PASS: install-opencode.sh containment rejects a glob-shaped sibling
+PASS: install-opencode.sh containment rejects an empty candidate
+PASS: install-opencode.sh containment rejects an empty root
+PASS: all three installers ship byte-identical path helpers
+PASS: Codex refuses a drive-letter CODEX_HOME
+PASS: Codex names the non-POSIX-path refusal rather than failing later
+PASS: Codex wrote no bootstrap block through a drive-letter CODEX_HOME
+PASS: Hermes fresh install creates the managed runtime
+PASS: Hermes symlink entrypoint binds its package helper to the trusted installer
+PASS: Hermes symlink entrypoint never executes an adjacent untrusted helper
+PASS: Hermes rejects a broken installer symlink before helper lookup
+PASS: Hermes bounds an installer symlink loop before helper lookup
+PASS: Hermes broken and looping entrypoints never execute an adjacent helper
+PASS: Hermes runtime contains canonical audit dependencies
+identity=clean-committed base=83c89703d1ef1a1739c1f4d9807d48986632d8b8 base-tree=5072b6da9056997811c617ca8617cff6aaeba707 candidate-tree=5072b6da9056997811c617ca8617cff6aaeba707 candidate-patch-sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 candidate-content-sha256=d407d6ed56f338ef3aaa3661096a76e55f7a670ea3aa4231a94b2528e82a6042 files=220
+PASS: Hermes records base revision and every candidate managed-file hash
+PASS: Hermes installed audit skill resolves its managed runtime
+PASS: Hermes repeat install is idempotent
+PASS: Hermes prepares a runtime missing one future managed file
+PASS: Hermes auto-update rejects a managed destination symlink
+PASS: Hermes destination symlink leaves unrelated runtime content unchanged
+PASS: Hermes prepares a runtime with a managed file for retirement
+PASS: Hermes auto-update rejects a symlinked retired managed path
+PASS: Hermes retired managed symlink leaves unrelated runtime content unchanged
+PASS: Hermes rejects a fetched runtime copy containing a symlink
+PASS: Hermes names the runtime-copy integrity failure rather than reporting success
+PASS: Hermes quarantines a fetched runtime-copy symlink instead of resolving through it
+PASS: Hermes rejects an in-runtime symlink after normal fetch validation
+PASS: Hermes names the post-copy runtime symlink refusal exactly
+PASS: Hermes runtime-copy symlink target retains source-identical bytes
+PASS: Hermes post-copy refusal restores the pre-install skill sentinel
+PASS: Hermes auto-update upgrades a skill-only installation
+PASS: Hermes auto-update detects and repairs missing runtime assets
+PASS: Hermes auto-update refreshes a source-revision mismatch
+PASS: Hermes preserves unrelated runtime content
+PASS: Hermes auto-update removes source-deleted managed runtime files
+PASS: Hermes prunes only source-deleted managed files
+PASS: Hermes auto-update refuses modified managed runtime content
+PASS: Hermes accepts LF fetched skill content from a CRLF checkout source
+PASS: Hermes rejects corrupt fetched skill content against a CRLF checkout source
+PASS: Hermes CRLF source mismatch restores exact prior live skill bytes
+PASS: Hermes prepares a live skill for rollback verification
+PASS: Hermes rejects fetched skill content that differs from expected source
+PASS: Hermes mismatch restores exact prior live skill bytes
+test-systems-audit-installers: PASS

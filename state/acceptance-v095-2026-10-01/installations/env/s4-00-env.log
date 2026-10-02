@@ -1,0 +1,13 @@
+=== tool versions ===
+GNU bash, version 5.2.37(1)-release (x86_64-pc-linux-gnu)
+Python 3.11.15
+git version 2.47.3
+jq-1.7
+timeout (GNU coreutils) 9.7
+ripgrep 14.1.1
+=== native CLI probes (expected: not found) ===
+claude: ABSENT (command -v exit 1; no install attempted, unauthorized)
+codex: ABSENT (command -v exit 1; no install attempted, unauthorized)
+opencode: ABSENT (command -v exit 1; no install attempted, unauthorized)
+hermes: ABSENT (command -v exit 1; no install attempted, unauthorized)
+=== installer usage (supported flags, no invention) ===

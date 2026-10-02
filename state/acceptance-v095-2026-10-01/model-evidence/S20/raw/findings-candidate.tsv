@@ -1,0 +1,14 @@
+Build	Major	B1: seam contract fixed after handler (build/slice.md line 2); slice stays untrusted until reordered.
+Build	Minor	B2: gate.sh PENDING, no log (build/slice.md line 3).
+Build	Minor	B3: minimization ladder not recorded (build/slice.md line 4).
+Build	Minor	B4: trust-boundary check missing on depth param (build/slice.md line 5).
+Build	Minor	B5: slice touched files outside assigned scope (build/slice.md line 6).
+Build	Minor	B6: worktree provenance lacks session id (build/slice.md line 7).
+Build	Minor	B7: handler/core boundary untested (build/slice.md line 8).
+Docs	Major	D1: memory note contains pasted user conversation (docs/notes.md line 2); remove before use.
+Docs	Nice	D2: heading levels skip in notes (docs/notes.md line 3).
+Docs	Nice	D3: example lacks output sample (docs/notes.md line 4).
+Docs	Nice	D4: changelog entry wording verbose (docs/notes.md line 5).
+Docs	Nice	D5: diagram alt text missing (docs/notes.md line 6).
+Docs	Nice	D6: stale link to moved page (docs/notes.md line 7).
+Docs	Nice	D7: typo in appendix title (docs/notes.md line 8).

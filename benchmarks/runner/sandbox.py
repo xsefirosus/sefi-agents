@@ -149,7 +149,10 @@ def sandbox(origin_repo: str | os.PathLike[str], pinned_ref: str) -> Iterator[Pa
     (c) write ``<scratch>/repo/.gitattributes`` with ``* -text`` BEFORE checkout, then
         ``git -C <repo> -c core.autocrlf=false -c core.eol=lf checkout --force
         <pinned_ref> -- .``, so a system ``core.autocrlf=true`` cannot rewrite content on
-        checkout;
+        checkout; the forced checkout restores the repo's COMMITTED
+        ``.gitattributes`` over the transient file, so rewrite ``* -text``
+        afterwards -- the committed pins governed the checkout, the transient
+        file governs the yielded tree;
     (d) ``git -C <repo> -c core.logallrefupdates=false checkout --detach <pinned_ref>`` --
         so ``<repo>/.git/HEAD`` holds a bare SHA, not ``ref: refs/heads/<origin branch>``
         (the origin's branch name is an operator fingerprint too), and again no reflog;
@@ -214,6 +217,12 @@ def sandbox(origin_repo: str | os.PathLike[str], pinned_ref: str) -> Iterator[Pa
             text=True,
             check=True,
         )
+        # The forced checkout restores the repo's COMMITTED .gitattributes over the
+        # transient file above, so re-assert `* -text` afterwards. The committed
+        # pins already governed the checkout itself; from here the transient file
+        # governs the yielded tree, keeping `check-attr text` at `unset` on hosts
+        # whose checkout would otherwise apply repo policy to the trial copy.
+        (repo / ".gitattributes").write_text("* -text\n", encoding="ascii")
         # Detach HEAD onto the pinned commit so ``<repo>/.git/HEAD`` holds a bare SHA
         # rather than ``ref: refs/heads/feat/benchmark-runner`` -- the origin's branch
         # name is as much an operator fingerprint as its path. ``core.logallrefupdates

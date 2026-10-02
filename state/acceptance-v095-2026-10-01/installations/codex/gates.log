@@ -1,0 +1,5 @@
+--- codex CLI probe ---
+codex ABSENT (exit 1; install unauthorized)
+--- candidate gate without CODEX_HOME (expect exit 2, no writes) ---
+install-codex.sh: --candidate-marketplace requires an explicit isolated CODEX_HOME
+exit=2

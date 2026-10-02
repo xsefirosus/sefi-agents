@@ -1,0 +1,1 @@
+[Major] summary claims PASS for rev SYNTH-17 with no execution log on disk; claim unsupported, verification PENDING, conclusion UNKNOWN.

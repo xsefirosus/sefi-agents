@@ -1,0 +1,38 @@
+mapped devops-engineer.md         -> model: sonnet
+mapped memory-journalist.md       -> model: haiku
+mapped motion-designer.md         -> model: sonnet
+mapped product-manager.md         -> model: sonnet
+mapped prompt-engineer.md         -> model: haiku
+mapped qa-engineer.md             -> model: opus
+mapped research-adoption-scout.md -> model: haiku
+mapped research-analyst.md        -> model: haiku
+mapped research-codebase-cartographer.md -> model: haiku
+mapped security-engineer.md       -> model: opus
+mapped sefi-agents.md             -> model: fable
+mapped software-engineer.md       -> model: sonnet
+mapped solutions-architect.md     -> model: sonnet
+mapped support-engineer.md        -> model: haiku
+mapped systems-auditor.md         -> model: sonnet
+mapped technical-writer.md        -> model: haiku
+mapped ui-ux-designer.md          -> model: sonnet
+apply-model-map: 17 agent(s) written to /tmp/s4/home-claude-released/.claude/.sefi-agents.1EWoAA/agents for harness 'claude-code'
+
+reasoning effort is read from the harness config, not agent frontmatter. For Codex,
+put this in ~/.codex/config.toml:
+
+    model = "sonnet"          # mid tier: the default
+    model_reasoning_effort = "high"
+    review_model = "opus"   # high tier: the adversarial judge
+
+note: xhigh is only available on top-tier (codex-max) coding models. If a dispatch
+rejects or ignores it, lower claude-code.high_reasoning in the model map to "high".
+generated mapped agents -> /tmp/s4/home-claude-released/.claude/agents
+linked skills -> /tmp/s4/home-claude-released/.claude/skills
+linked commands -> /tmp/s4/home-claude-released/.claude/commands
+linked scripts -> /tmp/s4/home-claude-released/.claude/scripts
+wired hooks/hooks.json -> /tmp/s4/home-claude-released/.claude/settings.json (SessionStart + PreToolUse:Bash), env.CLAUDE_PLUGIN_ROOT=/tmp/s4/home-claude-released/.claude
+install.sh: done. Target=claude-code dest=/tmp/s4/home-claude-released/.claude mode=symlink
+sefi-agents: installation succeeded.
+sefi-agents: run /sefi:init once from each project root before the first routed request.
+sefi-agents: auto-init is unsafe because installation is user-wide and cannot safely choose or modify a project.
+sefi-agents: cross-project memory is optional, local/private, and off by default; /sefi:init asks interactively and keeps it off when unattended.

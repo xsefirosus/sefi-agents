@@ -1,0 +1,35 @@
+--- layout ---
+total 16
+drwxr-xr-x 3 root root 4096 Oct  1 18:53 .
+drwxr-xr-x 3 root root 4096 Oct  1 18:53 ..
+drwxr-xr-x 2 root root 4096 Oct  1 18:53 agents
+lrwxrwxrwx 1 root root   38 Oct  1 18:53 commands -> /tmp/s4/rel/plugins/sefi-core/commands
+lrwxrwxrwx 1 root root   37 Oct  1 18:53 scripts -> /tmp/s4/rel/plugins/sefi-core/scripts
+-rw------- 1 root root  772 Oct  1 18:53 settings.json
+lrwxrwxrwx 1 root root   36 Oct  1 18:53 skills -> /tmp/s4/rel/plugins/sefi-core/skills
+--- required refs ---
+PRESENT skills/systems-audit/SKILL.md
+PRESENT agents/systems-auditor.md
+PRESENT skills/systems-audit/references/evidence-method.md
+PRESENT skills/systems-audit/references/report-contract.md
+PRESENT scripts/ci/validate-audit-report.sh
+--- content refs (skill/auditor/method/report/validator) ---
+skill self-ref OK
+2
+1
+--- settings wiring ---
+/tmp/s4/home-claude-released/.claude
+PreToolUse,SessionStart
+--- managed-file hashes ---
+b6936a26d09612d413c2764bc33d8137ccc3b073c80ed9c09c8921bb645dd83e  /tmp/s4/home-claude-released/.claude/skills/systems-audit/SKILL.md
+1ebe9ac84fb95b5e62c027a687507b1ad49774932a5db9de8a52202e6b6dc01d  /tmp/s4/home-claude-released/.claude/agents/systems-auditor.md
+b3c48d975c637b9ff89866535b01eba3239b362bc51b1215667fbe6eaa3437fe  /tmp/s4/home-claude-released/.claude/scripts/ci/validate-audit-report.sh
+--- nothing pre-existing overwritten (fresh HOME proof) ---
+/tmp/s4/home-claude-released
+/tmp/s4/home-claude-released/.claude
+/tmp/s4/home-claude-released/.claude/commands
+/tmp/s4/home-claude-released/.claude/settings.json
+/tmp/s4/home-claude-released/.claude/scripts
+/tmp/s4/home-claude-released/.claude/agents
+/tmp/s4/home-claude-released/.claude/agents/qa-engineer.md
+/tmp/s4/home-claude-released/.claude/agents/devops-engineer.md

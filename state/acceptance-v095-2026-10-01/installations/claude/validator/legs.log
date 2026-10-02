@@ -1,0 +1,36 @@
+runtime=/tmp/s4/home-v-claude/.claude
+--- V0 usage proof ---
+ERROR: unknown argument: --bogus
+usage: validate-audit-report.sh [--strict] [--root <absolute-project-directory>] [<report-path>]
+exit=2
+--- V1 absent report (expect 2) ---
+validate-audit-report: OK (0 report(s) checked)
+exit=0
+--- V2 malformed report (expect 1) ---
+ERROR: audits/audit-report-build-20261001-000000-s4.md - missing skeleton heading '## Summary'
+ERROR: audits/audit-report-build-20261001-000000-s4.md - missing skeleton heading '## Scope'
+ERROR: audits/audit-report-build-20261001-000000-s4.md - missing skeleton heading '## Method'
+ERROR: audits/audit-report-build-20261001-000000-s4.md - missing skeleton heading '## Findings'
+ERROR: audits/audit-report-build-20261001-000000-s4.md - missing skeleton heading '## Fixes'
+ERROR: audits/audit-report-build-20261001-000000-s4.md - missing skeleton heading '## Improvements'
+ERROR: audits/audit-report-build-20261001-000000-s4.md - missing skeleton heading '## Nice-to-haves'
+ERROR: audits/audit-report-build-20261001-000000-s4.md - missing skeleton heading '## Follow-up'
+ERROR: audits/audit-report-build-20261001-000000-s4.md - no severity label (Critical/Major/Minor/Nice) outside the skeleton headings
+validate-audit-report: 9 error(s)
+exit=1
+--- V3 known-good Step-3 candidate report (honest exit recorded) ---
+baseline.md
+candidate.md
+findings-candidate.tsv
+findings-formatted.txt
+formatter-exit.txt
+reply-candidate.txt
+turn2-baseline.md
+turn2-candidate.md
+validation-baseline.txt
+validation-candidate.txt
+exit=0
+validate-audit-report: OK (D:/Projects/Sefi-Agents/.worktrees/v095-handover-20261001/state/acceptance-v095-2026-10-01/model-evidence/S22/project-candidate/audits/audit-report-build-2026-10-01-0000-sess-b3e8a0e7.md)
+copy exit=0
+validate-audit-report: OK (/tmp/s4/proj-claude/audits/audit-report-build-20261001-000000-s4.md)
+exit=0

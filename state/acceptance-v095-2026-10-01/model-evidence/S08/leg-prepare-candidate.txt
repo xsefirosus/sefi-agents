@@ -1,0 +1,5 @@
+exit=0
+AUDIT-REPORT: D:/Projects/Sefi-Agents/.worktrees/v095-handover-20261001/state/acceptance-v095-2026-10-01/model-evidence/S08/project-candidate/audits/audit-report-delivery-2026-10-01-0000-sess-793aee2d.md
+STATUS: READY-WRITE
+
+report=D:/Projects/Sefi-Agents/.worktrees/v095-handover-20261001/state/acceptance-v095-2026-10-01/model-evidence/S08/project-candidate/audits/audit-report-delivery-2026-10-01-0000-sess-793aee2d.md

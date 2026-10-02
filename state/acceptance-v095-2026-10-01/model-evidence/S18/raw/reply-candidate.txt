@@ -1,0 +1,1 @@
+The required artifact research/digest.md was inaccessible, so the audit is INCOMPLETE; nothing was marked complete. Report: audits/audit-report-complete-2026-10-01-0000-sess-f3264e9c.md. Shall I retry once access is restored? I will not plan fixes until you confirm.

@@ -1,0 +1,50 @@
+--- released (2fe3bb348977a3837a8ef1fb82197afa537d1200) ---
+Cloning into 'C:/Users/MaryRose/s4stage/src-released'...
+clone exit=0
+Note: switching to '2fe3bb348977a3837a8ef1fb82197afa537d1200'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+HEAD is now at 2fe3bb3 chore(release): merge release/0.9.5 into main (v0.9.5)
+2fe3bb348977a3837a8ef1fb82197afa537d1200
+tree=58fd8163b28316bc4ab2808c7825b431b4ea3f02
+64a3840c9d6521150ae2396f48b06837b4601cac5f7443480de3f74be055629c *-
+checkout exit=0
+--- candidate (6e9f432d25de62abca670ee819ea2442d1aab2d0) ---
+Cloning into 'C:/Users/MaryRose/s4stage/src-candidate'...
+clone exit=0
+Note: switching to '6e9f432d25de62abca670ee819ea2442d1aab2d0'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+HEAD is now at 6e9f432 docs: record v0.9.5 Step 3 scenarios and blinded evaluator verdicts
+6e9f432d25de62abca670ee819ea2442d1aab2d0
+tree=2353aa029f3a9713e3a14c3d5eae8d18ccda0505
+231b417f4ebd716500df8ae2858c1f3ac063a78887eb024f0c8cbc2c5b74da89 *-
+checkout exit=0

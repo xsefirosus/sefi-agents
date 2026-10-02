@@ -1,0 +1,74 @@
+  #!/usr/bin/env bash
+> # Deterministic contract coverage. This validates report and routing inputs, not LLM dispatch behavior.
+  set -euo pipefail
+
+  PATH_GUARD="$CORE/scripts/ci/prepare-audit-report-path.sh"
+> FINDING_FORMATTER="$CORE/scripts/ci/format-audit-findings.sh"
+  REPORT_CONTRACT="$CORE/skills/systems-audit/references/report-contract.md"
+  FIXTURES="$CORE/scripts/ci/fixtures/routing-cases.txt"
+    grep -Fq 'runtime root' "$REPORT_CONTRACT" && ok 'report contract resolves validator from runtime root' || bad 'report contract resolves validator from runtime root'
+>   grep -Fq '+<count> further <Severity> findings withheld' "$REPORT_CONTRACT" && ok 'report contract specifies severity overflow output' || bad 'report contract specifies severity overflow output'
+>   grep -Fq 'REFUSED-OVERWRITE' "$REPORT_CONTRACT" && ok 'report contract specifies collision refusal' || bad 'report contract specifies collision refusal'
+>   grep -Fq 'Missing or unsupported' "$REPORT_CONTRACT" && ok 'report contract specifies one scope clarification' || bad 'report contract specifies one scope clarification'
+    grep -Fq 'explicit confirmation' "$REPORT_CONTRACT" && ok 'report contract gates fix planning on confirmation' || bad 'report contract gates fix planning on confirmation'
+  fi
+  cp "$PATH_GUARD" "$installed/scripts/ci/prepare-audit-report-path.sh"
+> cp "$FINDING_FORMATTER" "$installed/scripts/ci/format-audit-findings.sh"
+
+  for scope in complete research product design build quality docs delivery; do
+
+> clean="$project/audits/audit-report-build-2026-09-27-clean.md"
+> write_report "$clean" build COMPLETE '0 Critical / 0 Major / 0 Minor / 0 Nice' 'No findings in inspected surfaces.'
+> if bash "$installed/scripts/ci/validate-audit-report.sh" --root "$project" "$clean" >/dev/null; then
+>   ok 'clean report with zero severity counts passes'
+  else
+>   bad 'clean report with zero severity counts passes'
+  fi
+
+> incomplete="$project/audits/audit-report-quality-2026-09-27-incomplete.md"
+> write_report "$incomplete" quality INCOMPLETE '0 Critical / 0 Major / 0 Minor / 0 Nice' 'PENDING: required artifact was inaccessible.'
+> if bash "$installed/scripts/ci/validate-audit-report.sh" --root "$project" "$incomplete" >/dev/null; then
+>   ok 'incomplete report with the eight headings passes structural validation'
+  else
+>   bad 'incomplete report with the eight headings passes structural validation'
+  fi
+
+
+> echo '=== report allocation collision ==='
+> collision="$project/audits/audit-report-build-2026-09-27-collision.md"
+> printf '%s\n' 'existing report must remain unchanged' > "$collision"
+> if bash "$installed/scripts/ci/prepare-audit-report-path.sh" --root "$project" --scope build --report "$collision" > "$TMP/collision-result" 2>/dev/null; then
+    bad 'pre-existing compliant report path refuses overwrite'
+> elif grep -qxF 'STATUS: REFUSED-OVERWRITE' "$TMP/collision-result" \
+>   && grep -qxF 'existing report must remain unchanged' "$collision"; then
+    ok 'pre-existing compliant report path refuses overwrite without modifying it'
+  else
+  EOF
+> if bash "$installed/scripts/ci/format-audit-findings.sh" < "$TMP/findings.tsv" > "$TMP/formatted-findings" 2>/dev/null \
+    && [ "$(grep -c '^\[' "$TMP/formatted-findings")" -eq 5 ] \
+    && sed -n '1p' "$TMP/formatted-findings" | grep -qxF '[Critical] critical one' \
+    && grep -qxF '+2 further Minor findings withheld (cap 5)' "$TMP/formatted-findings"; then
+>   ok 'findings are severity ordered, capped at five, and report exact overflow totals'
+  else
+>   bad 'findings are severity ordered, capped at five, and report exact overflow totals'
+  fi
+
+  EOF
+> if bash "$installed/scripts/ci/format-audit-findings.sh" < "$TMP/complete-findings.tsv" > "$TMP/complete-formatted-findings" 2>/dev/null \
+    && [ "$(grep -c '^\[' "$TMP/complete-formatted-findings")" -eq 10 ] \
+    && sed -n '1p' "$TMP/complete-formatted-findings" | grep -qxF '[Major] research finding 1' \
+    && sed -n '12p' "$TMP/complete-formatted-findings" | grep -qxF '+1 further Major findings withheld (cap 5)'; then
+>   ok 'complete audit caps and overflows each department independently'
+  else
+>   bad 'complete audit caps and overflows each department independently'
+  fi
+
+> if printf 'Research\tMajor\n' | bash "$installed/scripts/ci/format-audit-findings.sh" >/dev/null 2>&1; then
+    bad 'formatter rejects malformed three-column findings'
+  else
+
+> if printf 'Unsupported\tMajor\tfinding\n' | bash "$installed/scripts/ci/format-audit-findings.sh" >/dev/null 2>&1; then
+>   bad 'formatter rejects unsupported departments'
+  else
+>   ok 'formatter rejects unsupported departments'
+  fi

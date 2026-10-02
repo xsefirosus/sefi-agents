@@ -271,7 +271,7 @@ sefi_normalize_path() {
   # That refusal is deliberate fail-closed portability, not an oversight. Every
   # installer already runs a Windows-style path through cygpath -u at its entry
   # point, so a backslash or drive letter that survives to here is input nothing
-  # normalized. Read as a path it is ONE legal relative component -- "C:\Users\me"
+  # normalized. Read as a path it is ONE legal relative component -- "C:\Users\you"
   # is a valid directory name -- and mkdir -p would create it under $PWD rather
   # than installing anywhere the caller named. Refusing costs a caller who typed
   # the wrong form one clear message; guessing costs them a silent install in a

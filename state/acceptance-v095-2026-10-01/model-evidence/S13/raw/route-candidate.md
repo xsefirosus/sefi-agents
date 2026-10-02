@@ -1,0 +1,1 @@
+Model (candidate, sess-14990e95, 2026-10-01): Routing your post-build code review to qa-engineer as ordinary review work. There is no explicit Sefi department-audit intent and no systems-audit invocation, so the Systems Audit skill does not apply and no audit report was written.

@@ -1,0 +1,2 @@
+Docs	Major	memory note holds a full pasted user conversation including token-like string FAKETOKEN-007 (docs/notes.md line 3); privacy filter violated, remove before use.
+Docs	Minor	sefi-publish --all --force flags unverified against repo (docs/notes.md line 2); verify at convenience.

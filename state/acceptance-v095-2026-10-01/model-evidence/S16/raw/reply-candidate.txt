@@ -1,0 +1,1 @@
+Quality: 1 major, the PASS claim is contradicted by the exit-1 log for the same revision and date. Report: audits/audit-report-quality-2026-10-01-0000-sess-46c806f0.md. Do you want me to plan fixes? I will not plan anything until you confirm.

@@ -1,0 +1,9 @@
+url=https://github.com/xsefirosus/sefi-agents.git
+rev=6e9f432d25de62abca670ee819ea2442d1aab2d0
+tree=2353aa029f3a9713e3a14c3d5eae8d18ccda0505
+archive-sha256=1214dad87a3310023a888998e66136ab7296477931c8674c85817f2038d1f1c7
+extracted-sha256 install.sh=72e9f2ce1ae490a7471cb4b7fdcda3313052ea98702b31e28867c18f982a0ebd
+extracted-sha256 install-codex.sh=1299012435ac620ca1740399e83e2d7b7525513bbdaba56c4ca541472e1fa5c0
+extracted-sha256 plugins/sefi-core/scripts/install-opencode.sh=721057f0d75e0338157189525202b3cc6a197776d7aed6d3389d7c0f7b2d81bd
+extracted-sha256 plugins/sefi-core/scripts/install-hermes.sh=d28edf854baf6ff96966fc7a618c6f4f9e01e2550d05df49b525b7acfd5d35b3
+authoritative-record=state/acceptance-v095-2026-10-01/installations/sources/sources.log

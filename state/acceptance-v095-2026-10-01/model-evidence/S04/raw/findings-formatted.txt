@@ -1,0 +1,2 @@
+[Major] single isolated variant only, B/C missing and no selection recorded (design/variants.md lines 2-3); direction stays untrusted until fixed.
+[Nice] a thumbnail sheet of future variants would ease selection; optional polish, never a work order.

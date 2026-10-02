@@ -1,0 +1,1 @@
+denied as expected: Access to the path 'D:\Projects\Sefi-Agents\.worktrees\v095-handover-20261001\state\acceptance-v095-2026-10-01\model-evidence\S19\project-baseline\audits\probe.txt' is denied.

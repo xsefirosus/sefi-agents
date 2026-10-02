@@ -1,0 +1,152 @@
+ 145: | 0.9.4 | plugin.json | 0.9.4 | 0.9.4 | match | plugins/sefi-core/.claude-plugin/plugin.json:3 -> version 0.9.4; plugins/sefi-core/.codex-plugin/plugin.json:3 -> version 0.9.4 at origin/main db5293602a0a795bddde0e618d1732a6ce1c5d64 | a README count or CHANGELOG heading that happens to agree | 2026-09-27T03:42:39Z |
+ 146: | 0.9.4 | marketplace.json | 0.9.4 | 0.9.4 | match | .claude-plugin/marketplace.json:4 -> metadata.version 0.9.4; .claude-plugin/marketplace.json:10 -> plugins[0].version 0.9.4 at origin/main db5293602a0a795bddde0e618d1732a6ce1c5d64 | updating one occurrence and assuming the other followed | 2026-09-27T03:42:39Z |
+ 147: | 0.9.4 | changelog | 0.9.4 | 0.9.4 | match | CHANGELOG.md:6 -> ## [0.9.4] - 2026-09-26 at origin/main db5293602a0a795bddde0e618d1732a6ce1c5d64 | an Added or Changed bullet without a dated heading above it | 2026-09-27T03:42:39Z |
+ 148: | 0.9.4 | git-tag | 0.9.4 | 0.9.4 | match | git tag --points-at HEAD -> v0.9.4; git ls-remote --tags origin refs/tags/v0.9.4 refs/tags/v0.9.4^{} -> ae54a4622b8609441954710e067548d54ebd421e refs/tags/v0.9.4 and db5293602a0a795bddde0e618d1732a6ce1c5d64 peeled release commit | a local tag that was never pushed to origin | 2026-09-27T03:42:39Z |
+ 149: | 0.9.4 | github-release | 0.9.4 | 0.9.4 | match | gh release view v0.9.4 --repo xsefirosus/sefi-agents -> tagName=v0.9.4, name=v0.9.4, targetCommitish=main, isDraft=false, isPrerelease=false, publishedAt=2026-09-27T03:42:11Z, url=https://github.com/xsefirosus/sefi-agents/releases/tag/v0.9.4 | a local or pushed tag with no published release; a draft release | 2026-09-27T03:42:39Z |
+ 150: | 0.9.4 | github-marketplace-index | 0.9.4 | 0.9.4 | match | gh api -H Accept:application/vnd.github.raw+json repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main -> metadata.version 0.9.4 and plugins[0].version 0.9.4 | install commands quoted only in a README; a feature-branch index | 2026-09-27T03:42:39Z |
+ 151:
+ 152: ## Notes
+ 153:
+ 154: - 2026-08-30: backfill of the current tree at commit 6bf47a3. All five in-repo / tag
+ 155:   surfaces agree on 0.5.2: `plugin.json`, `marketplace.json` (both occurrences), the
+ 156:   `CHANGELOG.md` top versioned heading, and the `v0.5.2` git tag (local and `origin`).
+ 157:   The GitHub marketplace index (`gh api` raw `marketplace.json`) also reads 0.5.2.
+ 158: - git-tag status is `match`, not `lag`: the skill's surface contract asks that `v<target>`
+ 159:   exist locally and on `origin`, which `v0.5.2` does. It points at 3bd9f5e while HEAD is 1
+ 160:   commit further on; that gap is ordinary unreleased work between releases, not the 0.5.2
+ 161:   release trailing a surface. If a later bump makes `plugin.json` move ahead of the newest
+ 162:   tag, that future row is a `lag`.
+ 163: - `github-release` is `unobserved` for both 0.5.1 and 0.5.2: `gh` was available,
+ 164:   `gh release list` is empty, and `gh release view` exits 1 for each tag. Per the evidence
+ 165:   rule, no confirmed release is recorded as `unobserved`, not as a definitive negative.
+ 166: - Superseded observation (2026-08-30, earlier same day): an orphaned `v0.5.3` tag briefly
+ 167:   existed on HEAD (local and `origin`) while every version surface read 0.5.2;
+ 168:   `validate-release-ledger.sh` hard-failed on that contradiction as designed. The release
+ 169:   owner deleted the premature `v0.5.3` tag from local and `origin`; this backfill reflects
+ 170:   the corrected state. The earlier hard-fail is retained here as history, not erased.
+ 171: - 2026-08-31: evidence-locator correction (append-only; the row above is left byte-for-byte
+ 172:   intact). The `0.5.1` / `changelog` row cites `CHANGELOG.md:38` for the
+ 173:   `## [0.5.1] - 2026-08-28` heading. `CHANGELOG.md:38` does not locate that heading. Cite
+ 174:   the heading text `## [0.5.1] - 2026-08-28` rather than any line number -- the heading's
+ 175:   line keeps moving as content is added to the `[Unreleased]` block above it. The row's
+ 176:   `observed` value (`0.5.1`) is still reproducible from that heading; only its locator
+ 177:   moved. This note supersedes the `:38` locator.
+ 178: - 2026-08-31: re-scan of every other citation in this file for the same line-drift, done at
+ 179:   build time, using non-drifting key-path locators instead of line numbers.
+ 180:   `plugin.json` `version` key -> `0.5.2`, verified. `marketplace.json` `metadata.version`
+ 181:   -> `0.5.2`, verified. `marketplace.json` `plugins[0].version` -> `0.5.2`, verified. Read
+ 182:   the row-level evidence in the table above by the same key-path form (the JSON key name,
+ 183:   which each of those rows already states); the `:3` / `:4` / `:10` prefixes in those
+ 184:   cells are the same drift-prone locators and are superseded by the key paths named beside
+ 185:   them. The `0.5.2` / `changelog` row and the `0.5.2` / `github-marketplace-index` row
+ 186:   cite command output or heading text with no brittle line number. Only the `0.5.1` /
+ 187:   `changelog` row had drifted; it is corrected in the note above.
+ 188: - 2026-09-03: 0.6.0 release-prep rows appended (append-only; every 0.5.x row left
+ 189:   byte-for-byte intact). Three in-repo surfaces observed 0.6.0 in the release commit --
+ 190:   `plugin.json` `version`, `marketplace.json` (both `metadata.version` and
+ 191:   `plugins[0].version`), and the `CHANGELOG.md` top versioned heading
+ 192:   `## [0.6.0] - 2026-09-03`. `git-tag`, `github-release`, and `github-marketplace-index`
+ 193:   are `unobserved` (not `mismatch`): at commit time the release worktree branch
+ 194:   `release/0.6.0` is not tagged, not released, and not pushed -- the orchestrator
+ 195:   fast-forwards `main`, tags `v0.6.0`, pushes, and cuts the GitHub release as the next
+ 196:   step, after which those three rows get their own observed append.
+ 197:   `validate-release-ledger.sh` exits 0 with
+ 198:   `OK (latest 0.6.0, 3/6 surfaces observed, 3 warning(s))`; the three warnings are the
+ 199:   three PENDING surfaces above.
+ 200: - 2026-09-03: 0.6.0 tag + release + marketplace-index reconciled (append-only; the three
+ 201:   PENDING `unobserved` rows above are left byte-for-byte intact as the at-commit-time
+ 202:   record and are superseded, not edited, by the observed appends below them). `v0.6.0` is
+ 203:   now tagged local AND on `origin`: `git tag -l v0.6.0` -> `v0.6.0`;
+ 204:   `git ls-remote --tags origin v0.6.0` -> `192a96ad2e3eacbe3e8d3f5a8c36a586482f3a64
+ 205:   refs/tags/v0.6.0`; `git rev-parse v0.6.0^{commit}` -> `9d5813e7d1bf93d2c6dfc842ad9719d893d7aec9`,
+ 206:   an ancestor of `origin/main`. `main` was pushed and is at `fab099b` on `origin`. The
+ 207:   GitHub release is live and published (not a draft): `gh release view v0.6.0` ->
+ 208:   tagName `v0.6.0`, url https://github.com/xsefirosus/sefi-agents/releases/tag/v0.6.0,
+ 209:   publishedAt `2026-09-03T17:03:41Z`, isDraft=false. `github-marketplace-index` also
+ 210:   caught up -- `gh api .../contents/.claude-plugin/marketplace.json?ref=main` (raw) now
+ 211:   serves `metadata.version` 0.6.0 and `plugins[0].version` 0.6.0 -- so it gets a `match`
+ 212:   append here too. All six 0.6.0 surfaces are now observed.
+ 213:   `validate-release-ledger.sh` exits 0 with
+ 214:   `OK (latest 0.6.0, 6/6 surfaces observed, 0 warning(s))`.
+ 215: - 2026-09-22: 0.9.1 tag retarget reconciled (append-only; the three 2026-09-21T09:26:51Z
+ 216:   rows above are left byte-for-byte intact as the pre-retarget record and are
+ 217:   superseded, not edited, by the observed appends below them). `v0.9.1` was retagged
+ 218:   onto the release-evidence commit: local `git rev-parse v0.9.1^{commit}` and HEAD both
+ 219:   resolve to `ef649de`, and `origin`'s peeled `refs/tags/v0.9.1^{}` resolves there too.
+ 220:   The GitHub release is published against that commit (`targetCommitish`
+ 221:   `ef649dea93631d2ac441ee2fef1865551db369fe`, isDraft=false), and the public
+ 222:   marketplace index at ref `main` reads 0.9.1 in both version occurrences -- so
+ 223:   `git-tag`, `github-release`, and `github-marketplace-index` each get a `match`
+ 224:   append here. All six 0.9.1 surfaces are observed.
+ 225:   `validate-release-ledger.sh` exits 0 with
+ 226:   `OK (latest 0.9.1, 6/6 surfaces observed, 0 warning(s))`.
+ 227:
+ 228: | 0.9.5 | plugin.json | 0.9.5 | 0.9.5 | match | plugins/sefi-core/.claude-plugin/plugin.json:3 -> version 0.9.5; plugins/sefi-core/.codex-plugin/plugin.json:3 -> version 0.9.5 | a README count or CHANGELOG heading that happens to agree | 2026-09-28T01:59:13Z |
+ 229: | 0.9.5 | marketplace.json | 0.9.5 | 0.9.5 | match | .claude-plugin/marketplace.json:4 -> metadata.version 0.9.5; .claude-plugin/marketplace.json:10 -> plugins[0].version 0.9.5 | updating one occurrence and assuming the other followed | 2026-09-28T01:59:13Z |
+ 230: | 0.9.5 | changelog | 0.9.5 | 0.9.5 | match | CHANGELOG.md:6 -> ## [0.9.5] - 2026-09-28 | a Changed or Added bullet without a dated heading above it | 2026-09-28T01:59:13Z |
+ 231: | 0.9.5 | git-tag | 0.9.5 | unobserved | unobserved | git tag --points-at HEAD; git ls-remote --tags origin refs/tags/v0.9.5 refs/tags/v0.9.5^{} -> no output | a local tag that was never pushed to origin | 2026-09-28T01:59:13Z |
+ 232: | 0.9.5 | github-release | 0.9.5 | unobserved | unobserved | gh release view v0.9.5 --repo xsefirosus/sefi-agents --json tagName,name,targetCommitish,isDraft,isPrerelease,publishedAt,url -> release not found | a local or pushed tag with no published release; a draft release | 2026-09-28T01:59:13Z |
+ 233: | 0.9.5 | github-marketplace-index | 0.9.5 | 0.9.4 | lag | gh api -H Accept:application/vnd.github.raw+json repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main -> metadata.version 0.9.4; plugins[0].version 0.9.4 | install commands quoted only in a README | 2026-09-28T01:59:13Z |
+ 234:
+ 235: - 2026-09-30: v0.9.5 published from the audited takeover clone. `release/0.9.5` was cut at
+ 236:   `04de741` (codex/audit-v095-hermes-scan) and merged into `main` as merge commit
+ 237:   `2fe3bb348977a3837a8ef1fb82197afa537d1200`, merge base `51c2305` (the previous
+ 238:   `main`, a fast-forward ancestor, so the merge is conflict-free). All three in-repo
+ 239:   surfaces were re-read on that merged `main` tree and carry 0.9.5, so they are recorded
+ 240:   as `match` here. `github-marketplace-index` is recorded as an OBSERVED `match` rather
+ 241:   than an `unobserved`/PENDING placeholder because it was genuinely read this session: the
+ 242:   public index at ref `main` already served 0.9.5 in both occurrences, since `origin/main`
+ 243:   (`51c2305`) carried the 0.9.5 manifests before this merge and the index is derived from
+ 244:   them. The fetch used the public raw endpoint because `gh` is not installed on this host
+ 245:   and no `GH_TOKEN`/`GITHUB_TOKEN` is set; an unauthenticated raw read of the published
+ 246:   ref is still the public surface itself, the top of the evidence-priority order. `git-tag`
+ 247:   and `github-release` are honestly `unobserved`/PENDING: the tag does not exist yet at
+ 248:   this commit, and no GitHub release for v0.9.5 could be created or viewed without `gh`.
+ 249:   Baseline for the tags that must never move, captured before tagging:
+ 250:   `git rev-parse v0.9.3^{commit}` -> `ec35acad471fea5292fd17e836801fa336c9b4ed`,
+ 251:   `v0.9.4^{commit}` -> `db5293602a0a795bddde0e618d1732a6ce1c5d64`, matching
+ 252:   `git ls-remote --tags origin refs/tags/v0.9.3 refs/tags/v0.9.4`.
+ 253:   PRE-EXISTING FAILURE, NOT INTRODUCED HERE: `validate-release-ledger.sh` exits 1 on this
+ 254:   ledger with 2 hard-fail-1 errors, `surfaces disagree on the version claim 0.9.4: observed
+ 255:   0.9.3,0.9.4` and `surfaces disagree on the version claim 0.9.5: observed 0.9.4,0.9.5`.
+ 256:   The identical two errors are produced when the same script is pointed at
+ 257:   `origin/main:state/release-ledger.md` (51c2305) before any of this session's appends, so
+ 258:   they predate this release. They are the structural collision between append-only lag
+ 259:   recording and hard-fail 1, which treats a genuine `lag` row (a surface that observed the
+ 260:   previous version) as a contradiction of the in-repo `match` rows in the same version
+ 261:   group. They cannot be cleared without hand-editing a historical row, which this ledger
+ 262:   forbids.
+ 263:
+ 264: | 0.9.5 | plugin.json | 0.9.5 | 0.9.5 | match | plugins/sefi-core/.claude-plugin/plugin.json:3 -> "version": "0.9.5"; plugins/sefi-core/.codex-plugin/plugin.json:3 -> "version": "0.9.5", both read on merged main 2fe3bb348977a3837a8ef1fb82197afa537d1200 | a README count or CHANGELOG heading that happens to agree | 2026-09-30T20:14:05Z |
+ 265: | 0.9.5 | marketplace.json | 0.9.5 | 0.9.5 | match | .claude-plugin/marketplace.json:4 -> metadata.version "0.9.5"; .claude-plugin/marketplace.json:10 -> plugins[0].version "0.9.5", both read on merged main 2fe3bb348977a3837a8ef1fb82197afa537d1200 | updating one occurrence and assuming the other followed | 2026-09-30T20:14:05Z |
+ 266: | 0.9.5 | changelog | 0.9.5 | 0.9.5 | match | CHANGELOG.md:6 -> "## [0.9.5] - 2026-09-28", the first semver-shaped heading on merged main 2fe3bb348977a3837a8ef1fb82197afa537d1200 | a Changed or Added bullet without a dated heading above it | 2026-09-30T20:14:05Z |
+ 267: | 0.9.5 | github-marketplace-index | 0.9.5 | 0.9.5 | match | GET https://raw.githubusercontent.com/xsefirosus/sefi-agents/main/.claude-plugin/marketplace.json -> HTTP 200, metadata.version "0.9.5", plugins[0].version "0.9.5" (public raw endpoint at ref main, in place of the gh api call: gh is not installed on this host and no GH_TOKEN/GITHUB_TOKEN is set) | install commands quoted only in a README; a preview or branch ref instead of main | 2026-09-30T20:14:05Z |
+ 268: | 0.9.5 | git-tag | 0.9.5 | unobserved | unobserved | PENDING -- pre-tag observation: git tag --list v0.9.5 -> no output; git tag --points-at HEAD -> no output; git ls-remote --tags origin refs/tags/v0.9.5 refs/tags/v0.9.5^{} -> no output | a local tag that was never pushed to origin | 2026-09-30T20:14:05Z |
+ 269: | 0.9.5 | github-release | 0.9.5 | unobserved | unobserved | PENDING -- not created and not viewable this session: gh is not installed on this host (gh --version -> "not recognized as the name of a cmdlet") and no GH_TOKEN/GITHUB_TOKEN is set, so no release-creation or gh release view call could be made | a local or pushed tag with no published release; a draft release | 2026-09-30T20:14:05Z |
+ 270:
+ 271: - 2026-09-30T20:16Z: v0.9.5 publication completed. `git-tag`, `github-release`, and
+ 272:   `github-marketplace-index` are now OBSERVED and recorded as `match` below, which with the
+ 273:   three in-repo rows already appended above makes all six 0.9.5 surfaces observed. Evidence
+ 274:   notes: `gh` is NOT installed on this host and no `GH_TOKEN`/`GITHUB_TOKEN` is set, so the
+ 275:   GitHub surfaces were read and written through the REST API
+ 276:   (`https://api.github.com/repos/xsefirosus/sefi-agents`) using the same repository credential
+ 277:   the authorized `git push` already used -- same principal (`login=xsefirosus`, owner of this
+ 278:   repo), same repository, no trust boundary crossed and no second identity introduced. Each
+ 279:   API call below was re-read after the write rather than trusted from the create response.
+ 280:   The tag was created annotated, matching the v0.9.3 and v0.9.4 convention, and it points at
+ 281:   the merge commit `2fe3bb3`, NOT at the ledger commit that follows it on `main` -- the
+ 282:   ledger rows are the release's bookkeeping and are not part of what the tag claims. Neither
+ 283:   v0.9.3 (`ec35acad471fea5292fd17e836801fa336c9b4ed`) nor v0.9.4
+ 284:   (`db5293602a0a795bddde0e618d1732a6ce1c5d64`) was moved: re-read after tagging and
+ 285:   confirmed identical. No force push, no `--no-verify`, and no other destructive git
+ 286:   operation was used anywhere in this sequence; the merge was a plain `--no-ff` of a
+ 287:   fast-forward ancestor, so it could not and did not rewrite `main` history.
+ 288:   `validate-release-ledger.sh` still exits 1 on this ledger with the SAME 2 PRE-EXISTING
+ 289:   hard-fail-1 errors recorded above (`0.9.4: observed 0.9.3,0.9.4` and
+ 290:   `0.9.5: observed 0.9.4,0.9.5`); the surface is a genuine 6/6 `match` set for the latest
+ 291:   version, so the failure is a validator rule-1 artifact over historical lag rows, not a
+ 292:   release defect. Parked for human decision as `harness-limit`-adjacent ledger debt.
+ 293:
+ 294: | 0.9.5 | git-tag | 0.9.5 | 0.9.5 | match | git rev-parse 'v0.9.5^{commit}' -> 2fe3bb348977a3837a8ef1fb82197afa537d1200 (the release/0.9.5 -> main merge commit) ; git tag --points-at 2fe3bb348977a3837a8ef1fb82197afa537d1200 -> v0.9.5 ; git push origin refs/tags/v0.9.5 -> " * [new tag] v0.9.5 -> v0.9.5" ; git ls-remote --tags origin refs/tags/v0.9.5 'refs/tags/v0.9.5^{}' -> 9eac8b2f1da0e4b2ac5304a6c17c893de4c6c520 refs/tags/v0.9.5 and 2fe3bb348977a3837a8ef1fb82197afa537d1200 peeled ; GET /repos/xsefirosus/sefi-agents/git/ref/tags/v0.9.5 -> type=tag sha=9eac8b2f... ; GET /repos/xsefirosus/sefi-agents/git/tags/9eac8b2f... -> object.sha=2fe3bb348977a3837a8ef1fb82197afa537d1200 (tag pushed to origin AND API-visible, not local-only) | a local tag that was never pushed to origin | 2026-09-30T20:16:07Z |
+ 295: | 0.9.5 | github-release | 0.9.5 | 0.9.5 | match | POST /repos/xsefirosus/sefi-agents/releases {tag_name:v0.9.5, target_commitish:main, name:v0.9.5, draft:false, prerelease:false} -> id=400403933, publishedAt=2026-09-30T20:15:59Z, draft=False, url=https://github.com/xsefirosus/sefi-agents/releases/tag/v0.9.5 ; re-read GET /repos/xsefirosus/sefi-agents/releases/tags/v0.9.5 -> tag=v0.9.5, name=v0.9.5, targetCommitish=main, draft=False, prerelease=False, publishedAt=2026-09-30T20:15:59Z ; public page GET https://github.com/xsefirosus/sefi-agents/releases/tag/v0.9.5 -> HTTP 200. Body is the CHANGELOG.md 0.9.5 section in the same "## Added / ## Changed" shape as the v0.9.4 body. (REST API used in place of `gh release create`; gh absent on this host) | a local or pushed tag with no published release; a DRAFT release | 2026-09-30T20:16:07Z |
+ 296: | 0.9.5 | github-marketplace-index | 0.9.5 | 0.9.5 | match | GET /repos/xsefirosus/sefi-agents/contents/.claude-plugin/marketplace.json?ref=main (Accept: application/vnd.github.raw+json) -> HTTP 200, metadata.version "0.9.5", plugins[0].version "0.9.5" ; cross-checked unauthenticated at https://raw.githubusercontent.com/xsefirosus/sefi-agents/main/.claude-plugin/marketplace.json -> metadata.version 0.9.5, plugins[0].version 0.9.5 ; origin/main head = 58d05fd09878865bf4b693a557765dec86787de7 (GET /repos/xsefirosus/sefi-agents/git/ref/heads/main) | install commands quoted only in a README; a preview or branch ref instead of main | 2026-09-30T20:16:07Z |
