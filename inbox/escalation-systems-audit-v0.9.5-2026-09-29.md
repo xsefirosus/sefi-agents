@@ -23,6 +23,7 @@ A separate Slice 1 QA outcome also reports unexecuted collision refusal and find
 
 - PR #18 is merged to `main` at `51c23051e951f39f2c74eca55368e871ef1c77ba`.
 - The scanner-remediation candidate is being corrected on the release branch.
+- Pre-sync local working tree (2026-09-29) recorded: the scanner-remediation candidate remained uncommitted in `.worktrees/systems-audit-v095`.
 - No `v0.9.5` tag or GitHub release has been created.
 
 ## Consumed decision
