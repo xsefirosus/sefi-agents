@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# budget-check.sh [--scope run|daily|dispatch] [--spent <usd>] [--pending <usd>] [--config <path>]
+# budget-check.sh [--scope run|daily|dispatch] [--spent <usd>] [--pending <usd>] [--config <path>] [--harness <name>]
 # Enforce caps from config/budget.yml. Uses ccusage for real local spend when available
 # (offline, no network); else the caller-supplied --spent. ccusage is optional -- the
 # fallback keeps the zero-dependency install intact. --pending adds a not-yet-spent
@@ -21,6 +21,7 @@ SPENT_ARG=""
 PENDING_ARG="0"
 SCOPE="daily"
 CONFIG="config/budget.yml"
+HARNESS_ARG=""
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -36,6 +37,13 @@ while [ "$#" -gt 0 ]; do
     --config)
       [ "$#" -ge 2 ] && [ -n "${2:-}" ] || { echo "budget-check: --config requires a path" >&2; exit 2; }
       CONFIG="$2"; shift 2 ;;
+    --harness)
+      [ "$#" -ge 2 ] && [ -n "${2:-}" ] || { echo "budget-check: --harness requires a value" >&2; exit 2; }
+      case "$2" in
+        opencode|hermes|codex|claude-code|claude) HARNESS_ARG="$2" ;;
+        *) echo "budget-check: unknown harness '$2' (expected opencode, hermes, codex, claude-code, or claude)" >&2; exit 2 ;;
+      esac
+      shift 2 ;;
     *) echo "budget-check: unknown arg $1" >&2; exit 2 ;;
   esac
 done
@@ -59,19 +67,56 @@ esac
 # Spend-mode switch (docs/BUDGET.md): dollar-denominated scopes enforce only when
 # billing is metered. On flat or free plans there is no per-dollar spend to bound --
 # and ccusage-imputed dollars on free usage must never block work -- so the dollar
-# check is skipped with an explicit recorded reason. A config predating the key
-# defaults to metered, preserving current behavior. Non-dollar discipline (retry
-# caps, reply caps, minimization, worktree caps) lives outside this script and stays
-# always on regardless of mode.
+# check is skipped with an explicit recorded reason. An explicit billing_mode in the
+# config always wins. When the key is absent, a per-harness default applies:
+# opencode and hermes resolve free, codex and claude-code resolve flat; no (or an
+# unrecognized) harness signal resolves metered, fail-closed. The harness comes from
+# --harness, then $SEFI_HARNESS, then the machine-local .sefi/harness marker written
+# by /sefi:init. Non-dollar discipline (retry caps, reply caps, minimization,
+# worktree caps) lives outside this script and stays always on regardless of mode.
+default_billing_mode() {
+  # default_billing_mode -- print the billing_mode for a config without the key.
+  # Never fails: ambient signals ($SEFI_HARNESS, the marker file) sanitize to
+  # metered on any surprise, exactly like write-shared-memory-mirror.sh falls back
+  # to unknown-harness. Only the explicit --harness flag is validated strictly
+  # (at arg-parse time above), because it is an API claim, not an ambient signal.
+  local h="unknown" marker=""
+  if [ -n "$HARNESS_ARG" ]; then
+    h="$HARNESS_ARG"
+  elif [ -n "${SEFI_HARNESS:-}" ]; then
+    case "$SEFI_HARNESS" in
+      opencode|hermes|codex|claude-code|claude) h="$SEFI_HARNESS" ;;
+    esac
+  elif [ -f .sefi/harness ]; then
+    marker="$(head -n1 .sefi/harness 2>/dev/null | tr -d '\r\n' | tr -d '[:space:]')"
+    case "$marker" in
+      opencode|hermes|codex|claude-code|claude) h="$marker" ;;
+    esac
+  fi
+  case "$h" in
+    opencode|hermes) printf 'free\n' ;;
+    codex|claude-code|claude) printf 'flat\n' ;;
+    *) printf 'metered\n' ;;
+  esac
+}
+
 BILLING_MODE="$(get_cap billing_mode)"
-[ -z "$BILLING_MODE" ] && BILLING_MODE="metered"
+BILLING_DEFAULTED=0
+if [ -z "$BILLING_MODE" ]; then
+  BILLING_MODE="$(default_billing_mode)"
+  BILLING_DEFAULTED=1
+fi
 if [ "$(grep -c '^billing_mode:' "$CONFIG" || true)" -gt 1 ]; then
   echo "budget-check: billing_mode is ambiguous in $CONFIG (declared more than once)" >&2; exit 2
 fi
 case "$BILLING_MODE" in
   metered) : ;;
   flat|free)
-    echo "budget-check: skip scope=$SCOPE billing_mode=$BILLING_MODE -- dollar caps do not apply under $BILLING_MODE billing; non-dollar discipline stays always on" >&2
+    if [ "$BILLING_DEFAULTED" -eq 1 ]; then
+      echo "budget-check: skip scope=$SCOPE billing_mode=$BILLING_MODE -- dollar caps do not apply under $BILLING_MODE billing (per-harness default; set billing_mode explicitly to override); non-dollar discipline stays always on" >&2
+    else
+      echo "budget-check: skip scope=$SCOPE billing_mode=$BILLING_MODE -- dollar caps do not apply under $BILLING_MODE billing; non-dollar discipline stays always on" >&2
+    fi
     exit 0 ;;
   *) echo "budget-check: billing_mode '$BILLING_MODE' is invalid in $CONFIG (expected metered, flat, or free)" >&2; exit 2 ;;
 esac

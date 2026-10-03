@@ -26,17 +26,25 @@ off.
 
 ## Spend modes (`billing_mode`)
 
-Dollar caps mean different things on different plans, so `config/budget.yml` declares
-how dollars should be treated:
+Dollar caps mean different things on different plans, so `config/budget.yml` may
+declare how dollars should be treated:
 
 | `billing_mode` | Dollar caps (`per_run_usd_cap`, `daily_usd_cap`, `per_dispatch_usd_cap`) | When to use |
 |---|---|---|
-| `metered` (default) | Enforced -- `budget-check.sh` exits nonzero when spend exceeds a cap, or when spend cannot be measured at all (exit 3). | Any usage-based billing, where each token has a marginal dollar cost. |
+| `metered` | Enforced -- `budget-check.sh` exits nonzero when spend exceeds a cap, or when spend cannot be measured at all (exit 3). | Usage-based billing, where each token has a marginal dollar cost. Explicit opt-in. |
 | `flat` | Skipped -- `budget-check.sh` exits 0 with a recorded skip reason (`skip scope=... billing_mode=flat`). | A flat-rate plan: spend is bounded by the subscription, not by per-token dollars. |
 | `free` | Skipped -- same recorded skip as `flat` (`billing_mode=free`). | Free-tier usage: there are no dollars to bound. |
 
-- A config that predates the `billing_mode` key behaves as `metered` -- current behavior
-  is preserved unless the operator opts into `flat` or `free`. `validate-budget.sh`
+- Resolution order: an explicit `billing_mode` in `config/budget.yml` always wins.
+  When the key is absent, `budget-check.sh` resolves a per-harness default --
+  `opencode` and `hermes` resolve `free`, `codex` and `claude-code` resolve `flat`.
+  The harness comes from the `--harness` flag, then `$SEFI_HARNESS`, then the
+  machine-local `.sefi/harness` marker written by `/sefi:init`. No harness signal
+  (or an unrecognized one) resolves `metered`: a gate that cannot tell must
+  enforce, not skip.
+- `metered` is opt-in: set `billing_mode: metered` explicitly. A config that
+  predates the `billing_mode` key follows the per-harness rule above (previously it
+  always behaved as `metered`). `validate-budget.sh` accepts a missing key and
   rejects any other value as a usage error.
 - Rationale: on `flat` and especially `free` usage, a dollar figure is either
   plan-rate accounting or an imputation (e.g., ccusage-attributed dollars for tokens

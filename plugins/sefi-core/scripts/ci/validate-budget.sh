@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# validate-budget.sh -- budget.yml declares billing_mode, a per-run cap, daily cap,
+# validate-budget.sh -- budget.yml declares a per-run cap, daily cap,
 # per-dispatch cap, max-retries, max-parallel-worktrees, and per-agent return-token
-# cap; fail if any is missing or unbounded (non-numeric), or if billing_mode is not
-# one of metered, flat, free.
+# cap; fail if any is missing or unbounded (non-numeric). billing_mode is optional:
+# when absent, budget-check.sh resolves a per-harness default (opencode and hermes
+# free, codex and claude-code flat, unknown harness metered); when present it must
+# be one of metered, flat, free, and the explicit value always wins.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
@@ -23,7 +25,7 @@ done
 
 mode="$(sed -n "s/^billing_mode:[[:space:]]*\([^[:space:]#]*\).*/\1/p" "$CONFIG" | head -1)"
 case "$mode" in
-  metered|flat|free) : ;;
+  ""|metered|flat|free) : ;;
   *) echo "ERROR: $rel - billing_mode must be one of metered, flat, free (got '${mode:-<missing>}')"; errors=$((errors + 1)) ;;
 esac
 

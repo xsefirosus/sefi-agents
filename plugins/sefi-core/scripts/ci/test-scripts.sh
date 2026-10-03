@@ -27,6 +27,16 @@ expect_code() {
 
 echo "=== budget-check.sh (audit gap 8.1: the fail-open) ==="
 
+# The shipped template carries no billing_mode key (a missing key resolves via the
+# per-harness default at runtime), so metered-assuming assertions use an
+# explicit-metered copy: identical expectations to when the template pinned
+# metered, and immune to any ambient harness signal on the machine running this
+# suite (an explicit config value always wins over flag, env, and marker).
+METERED_FIX="$(mktemp -d)"
+cat "$BUDGET_TPL" > "$METERED_FIX/metered.yml"
+printf 'billing_mode: metered\n' >> "$METERED_FIX/metered.yml"
+METERED_TPL="$METERED_FIX/metered.yml"
+
 # The fix: no ccusage AND no --spent means there is no spend source, so the cap cannot be
 # checked and the gate must fail -- now with exit 3 (CANNOT MEASURE), distinct from exit 1
 # (EXCEEDED). A caller reading only the exit code could not previously tell "you blew the
@@ -36,26 +46,26 @@ if command -v ccusage >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
   echo "  SKIP: no-spend-source assertion (ccusage present locally; CI has none)"
 else
   expect_code 3 "no ccusage + no --spent exits 3 (CANNOT MEASURE, not EXCEEDED)" \
-    bash "$CORE/scripts/budget-check.sh" --scope daily --config "$BUDGET_TPL"
+    bash "$CORE/scripts/budget-check.sh" --scope daily --config "$METERED_TPL"
 fi
 
 # An explicit --spent 0 is a real claim of zero spend and must still pass.
 expect_code 0 "explicit --spent 0 still passes" \
-  bash "$CORE/scripts/budget-check.sh" --scope daily --spent 0 --config "$BUDGET_TPL"
+  bash "$CORE/scripts/budget-check.sh" --scope daily --spent 0 --config "$METERED_TPL"
 
 # The pre-existing over-cap path must not regress: 3.00 against the template's 2.00 daily.
 expect_code 1 "--spent 3.00 over the 2.00 daily cap exits nonzero" \
-  bash "$CORE/scripts/budget-check.sh" --scope daily --spent 3.00 --config "$BUDGET_TPL"
+  bash "$CORE/scripts/budget-check.sh" --scope daily --spent 3.00 --config "$METERED_TPL"
 
 # A non-numeric figure must be rejected as a usage error, never coerced to 0 by awk.
 expect_code 2 "--spent abc is a usage error, not a silent zero" \
-  bash "$CORE/scripts/budget-check.sh" --scope daily --spent abc --config "$BUDGET_TPL"
+  bash "$CORE/scripts/budget-check.sh" --scope daily --spent abc --config "$METERED_TPL"
 expect_code 2 "--pending 1.2.3 is a usage error" \
-  bash "$CORE/scripts/budget-check.sh" --scope daily --spent 0 --pending 1.2.3 --config "$BUDGET_TPL"
+  bash "$CORE/scripts/budget-check.sh" --scope daily --spent 0 --pending 1.2.3 --config "$METERED_TPL"
 
 # --pending must catch an overrun BEFORE it happens: 1.90 spent + 0.50 pending > 2.00 cap.
 expect_code 1 "--pending pushes a within-cap spend over the cap" \
-  bash "$CORE/scripts/budget-check.sh" --scope daily --spent 1.90 --pending 0.50 --config "$BUDGET_TPL"
+  bash "$CORE/scripts/budget-check.sh" --scope daily --spent 1.90 --pending 0.50 --config "$METERED_TPL"
 
 # The SECOND fail-open, found 2026-08-11: ccusage present but returning null/empty/crashing.
 # The old code assigned that straight to `spent`, and `awk -v s="null" '{print s+0}'` is 0 --
@@ -71,26 +81,27 @@ mkfake() {
 
 mkfake 'echo "{}"' 'echo null'
 expect_code 3 "ccusage returning null fails closed (was: coerced to 0 and passed)" \
-  env PATH="$FAKEBIN:$PATH" bash "$CORE/scripts/budget-check.sh" --scope daily --config "$BUDGET_TPL"
+  env PATH="$FAKEBIN:$PATH" bash "$CORE/scripts/budget-check.sh" --scope daily --config "$METERED_TPL"
 
 mkfake 'exit 1' 'echo 0'
 expect_code 3 "a crashing ccusage fails closed" \
-  env PATH="$FAKEBIN:$PATH" bash "$CORE/scripts/budget-check.sh" --scope daily --config "$BUDGET_TPL"
+  env PATH="$FAKEBIN:$PATH" bash "$CORE/scripts/budget-check.sh" --scope daily --config "$METERED_TPL"
 
 mkfake 'echo "{}"' 'echo ""'
 expect_code 3 "ccusage returning an empty figure fails closed" \
-  env PATH="$FAKEBIN:$PATH" bash "$CORE/scripts/budget-check.sh" --scope daily --config "$BUDGET_TPL"
+  env PATH="$FAKEBIN:$PATH" bash "$CORE/scripts/budget-check.sh" --scope daily --config "$METERED_TPL"
 
 # A broken ccusage must still defer to an explicit caller claim rather than hard-failing.
 mkfake 'echo "{}"' 'echo null'
 expect_code 0 "a broken ccusage falls back to an explicit --spent" \
-  env PATH="$FAKEBIN:$PATH" bash "$CORE/scripts/budget-check.sh" --scope daily --spent 0 --config "$BUDGET_TPL"
+  env PATH="$FAKEBIN:$PATH" bash "$CORE/scripts/budget-check.sh" --scope daily --spent 0 --config "$METERED_TPL"
 
 # And a WORKING ccusage must still be read and still enforce the cap.
 mkfake 'echo "{}"' 'echo 5.00'
 expect_code 1 "a working ccusage over the cap still exits EXCEEDED" \
-  env PATH="$FAKEBIN:$PATH" bash "$CORE/scripts/budget-check.sh" --scope daily --config "$BUDGET_TPL"
+  env PATH="$FAKEBIN:$PATH" bash "$CORE/scripts/budget-check.sh" --scope daily --config "$METERED_TPL"
 rm -rf "$FAKEBIN"
+rm -rf "$METERED_FIX"
 
 echo
 echo "=== budget-check.sh billing_mode (metered-vs-flat spend-mode switching) ==="
@@ -98,15 +109,29 @@ echo "=== budget-check.sh billing_mode (metered-vs-flat spend-mode switching) ==
 # Dollar-denominated scopes enforce only when billing is metered. On flat or free
 # plans there is no per-dollar spend to bound -- and ccusage-imputed dollars on free
 # usage must never block work -- so the dollar check is skipped with an explicit
-# recorded reason. A config predating the key defaults to metered (current
-# behavior). Non-dollar discipline (retry caps, reply caps, minimization, worktree
-# caps) lives outside this script and stays always on regardless of mode.
+# recorded reason. An explicit billing_mode in the config always wins; a config
+# without the key resolves a per-harness default (opencode/hermes free,
+# codex/claude-code flat, no signal metered fail-closed) from --harness, then
+# $SEFI_HARNESS, then the machine-local .sefi/harness marker. Non-dollar discipline
+# (retry caps, reply caps, minimization, worktree caps) lives outside this script
+# and stays always on regardless of mode.
 MODETMP="$(mktemp -d)"
-sed 's/^billing_mode:.*/billing_mode: metered/' "$BUDGET_TPL" > "$MODETMP/metered.yml"
-sed 's/^billing_mode:.*/billing_mode: flat/' "$BUDGET_TPL" > "$MODETMP/flat.yml"
-sed 's/^billing_mode:.*/billing_mode: free/' "$BUDGET_TPL" > "$MODETMP/free.yml"
-grep -v '^billing_mode:' "$BUDGET_TPL" > "$MODETMP/nomode.yml"
-sed 's/^billing_mode:.*/billing_mode: gold/' "$BUDGET_TPL" > "$MODETMP/badmode.yml"
+mkbilling() {
+  # mkbilling <name> [mode] -- write $MODETMP/<name>.yml as the keyless template,
+  # plus an explicit billing_mode line when <mode> is given. The template carries
+  # no billing_mode key (the default resolves at runtime), so explicit fixtures
+  # are built by appending rather than by sed-replacing a pinned line.
+  if [ "$#" -ge 2 ]; then
+    { cat "$BUDGET_TPL"; printf 'billing_mode: %s\n' "$2"; } > "$MODETMP/$1.yml"
+  else
+    cat "$BUDGET_TPL" > "$MODETMP/$1.yml"
+  fi
+}
+mkbilling metered metered
+mkbilling flat flat
+mkbilling free free
+mkbilling nomode
+mkbilling badmode gold
 
 # Metered enforcement is unchanged: 999.00 against the template's 2.00 daily cap.
 expect_code 1 "billing_mode=metered still enforces the dollar cap" \
@@ -128,9 +153,87 @@ case "$free_skip" in
   *) bad "the free skip recorded no explicit reason: $free_skip" ;;
 esac
 
-# A config predating the key defaults to metered: the same over-cap spend enforces.
-expect_code 1 "a config without billing_mode defaults to metered (enforces)" \
-  bash "$CORE/scripts/budget-check.sh" --scope daily --spent 999.00 --config "$MODETMP/nomode.yml"
+# Per-harness defaults for a config without the key: opencode and hermes resolve
+# free, codex and claude-code resolve flat. Hermetic by construction: an explicit
+# --harness flag, so no ambient marker or env on the machine running this suite
+# can flip them.
+for free_harness in opencode hermes; do
+  expect_code 0 "a config without billing_mode on $free_harness defaults to free (never blocks)" \
+    env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" --harness "$free_harness" --scope daily --spent 999.00 --config "$MODETMP/nomode.yml"
+done
+for flat_harness in codex claude-code; do
+  expect_code 0 "a config without billing_mode on $flat_harness defaults to flat (never blocks)" \
+    env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" --harness "$flat_harness" --scope daily --spent 999.00 --config "$MODETMP/nomode.yml"
+done
+op_skip="$(env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" --harness opencode --scope daily --spent 999.00 --config "$MODETMP/nomode.yml" 2>&1 >/dev/null)"
+case "$op_skip" in
+  *"skip"*"billing_mode=free"*) ok "the opencode default skip records its reason (scope + mode)" ;;
+  *) bad "the opencode default skip recorded no explicit reason: $op_skip" ;;
+esac
+codex_skip="$(env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" --harness codex --scope daily --spent 999.00 --config "$MODETMP/nomode.yml" 2>&1 >/dev/null)"
+case "$codex_skip" in
+  *"skip"*"billing_mode=flat"*) ok "the codex default skip records its reason (scope + mode)" ;;
+  *) bad "the codex default skip recorded no explicit reason: $codex_skip" ;;
+esac
+case "$op_skip" in
+  *"per-harness default"*) ok "a defaulted skip names its source (and how to override it)" ;;
+  *) bad "a defaulted skip did not name its source: $op_skip" ;;
+esac
+case "$flat_skip" in
+  *"per-harness default"*) bad "an explicit skip must not claim a defaulted source: $flat_skip" ;;
+  *) ok "an explicit skip claims no defaulted source" ;;
+esac
+
+# No harness signal at all stays metered, fail-closed: a gate that cannot tell
+# must enforce, not skip. Marker-free temp cwd plus an unset SEFI_HARNESS, so a
+# machine-local .sefi/harness on the suite runner cannot flip this assertion.
+NOSIGTMP="$(mktemp -d)"
+expect_code 1 "a config without billing_mode and no harness signal stays metered (enforces, fail-closed)" \
+  bash -c "cd '$NOSIGTMP' && env -u SEFI_HARNESS bash '$CORE/scripts/budget-check.sh' --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'"
+
+# $SEFI_HARNESS is the documented env fallback: below --harness, above the marker.
+expect_code 0 "SEFI_HARNESS=codex resolves flat for a missing key" \
+  env SEFI_HARNESS=codex bash "$CORE/scripts/budget-check.sh" --scope daily --spent 999.00 --config "$MODETMP/nomode.yml"
+prec="$(env SEFI_HARNESS=codex bash "$CORE/scripts/budget-check.sh" --harness opencode --scope daily --spent 999.00 --config "$MODETMP/nomode.yml" 2>&1 >/dev/null)"
+case "$prec" in
+  *"billing_mode=free"*) ok "--harness beats SEFI_HARNESS (flag opencode over env codex resolves free)" ;;
+  *) bad "--harness did not beat SEFI_HARNESS: $prec" ;;
+esac
+
+# The machine-local .sefi/harness marker resolves the default; a surprising
+# marker sanitizes to metered rather than failing or skipping.
+MARKTMP="$(mktemp -d)"
+mkdir -p "$MARKTMP/.sefi"
+printf 'hermes\n' > "$MARKTMP/.sefi/harness"
+expect_code 0 "a .sefi/harness marker resolves the default (hermes -> free)" \
+  bash -c "cd '$MARKTMP' && env -u SEFI_HARNESS bash '$CORE/scripts/budget-check.sh' --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'"
+printf 'definitely-not-a-harness\n' > "$MARKTMP/.sefi/harness"
+expect_code 1 "an unrecognized marker sanitizes to metered (fail-closed, never a skip)" \
+  bash -c "cd '$MARKTMP' && env -u SEFI_HARNESS bash '$CORE/scripts/budget-check.sh' --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'"
+
+# An explicit user value always wins over every default signal -- and metered
+# stays available as an opt-in on any harness.
+expect_code 1 "explicit metered beats an opencode free default (metered opt-in)" \
+  env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" --harness opencode --scope daily --spent 999.00 --config "$MODETMP/metered.yml"
+expect_code 1 "explicit metered beats SEFI_HARNESS=opencode" \
+  env SEFI_HARNESS=opencode bash "$CORE/scripts/budget-check.sh" --scope daily --spent 999.00 --config "$MODETMP/metered.yml"
+expect_code 1 "explicit metered beats a free marker" \
+  bash -c "cd '$MARKTMP' && env -u SEFI_HARNESS bash '$CORE/scripts/budget-check.sh' --scope daily --spent 999.00 --config '$MODETMP/metered.yml'"
+printf 'opencode\n' > "$MARKTMP/.sefi/harness"
+expect_code 0 "explicit flat wins over an opencode free default (still a skip, not free)" \
+  env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" --harness opencode --scope daily --spent 999.00 --config "$MODETMP/flat.yml"
+flat_wins="$(env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" --harness opencode --scope daily --spent 999.00 --config "$MODETMP/flat.yml" 2>&1 >/dev/null)"
+case "$flat_wins" in
+  *"billing_mode=flat"*) ok "the explicit win records the explicit mode (flat, not the free default)" ;;
+  *) bad "the explicit win recorded the wrong mode: $flat_wins" ;;
+esac
+
+# An unknown --harness is a usage error, never a silent default: the flag is an
+# explicit API claim, so garbage in must fail loudly at the trust boundary.
+expect_code 2 "--harness gold is a usage error, not a silent default" \
+  env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" --harness gold --scope daily --spent 0 --config "$MODETMP/nomode.yml"
+expect_code 2 "--harness with no value is a usage error" \
+  env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" --harness --config "$MODETMP/nomode.yml"
 
 # Exit-3 semantics are unchanged for metered: no ccusage AND no --spent still means
 # CANNOT MEASURE. Skipped when ccusage is installed locally; CI has none, and CI is
@@ -154,7 +257,7 @@ expect_code 2 "billing_mode=gold is a usage error, not a silent default" \
 # Scope handling is unchanged by mode: an unknown scope still fails even when flat.
 expect_code 2 "an unknown scope is still rejected when billing_mode=flat" \
   bash "$CORE/scripts/budget-check.sh" --scope unknown --spent 0 --config "$MODETMP/flat.yml"
-rm -rf "$MODETMP"
+rm -rf "$MODETMP" "$NOSIGTMP" "$MARKTMP"
 
 echo
 echo "=== gate.sh (2026-08-11 audit: no timeout, wrong npm flag, top-level-only shellcheck) ==="
