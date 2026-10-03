@@ -4,6 +4,10 @@ set -euo pipefail
 
 CORE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SCRIPT="$CORE/scripts/prune-stale-skill-entries.sh"
+# Fixture rewrites below pass an MSYS path to Python, which a native interpreter
+# reads as \c\... -- the 2>/dev/null then hid the traceback and the suite exited 1
+# with only a FileNotFoundError to show for it. Use the MSYS-safe wrapper.
+. "$CORE/scripts/sefi-python.sh"
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/test-prune.XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT
 
@@ -81,14 +85,8 @@ fi
 
 # 5. A consistent registry is left completely alone.
 make_fixture "$TMP/root2"
-python3 -c '
-import json, os, pathlib, sys
-p = pathlib.Path(sys.argv[1])
-d = json.loads(p.read_text(encoding="utf-8"))
-del d["installed"]["ghost"]
-p.write_text(json.dumps(d, indent=2) + "\n", encoding="utf-8")
-' "$TMP/root2/.hub/lock.json" 2>/dev/null || python -c '
-import json, os, pathlib, sys
+"$(sefi_python_bin)" -c '
+import json, pathlib, sys
 p = pathlib.Path(sys.argv[1])
 d = json.loads(p.read_text(encoding="utf-8"))
 del d["installed"]["ghost"]
