@@ -93,6 +93,70 @@ expect_code 1 "a working ccusage over the cap still exits EXCEEDED" \
 rm -rf "$FAKEBIN"
 
 echo
+echo "=== budget-check.sh billing_mode (metered-vs-flat spend-mode switching) ==="
+
+# Dollar-denominated scopes enforce only when billing is metered. On flat or free
+# plans there is no per-dollar spend to bound -- and ccusage-imputed dollars on free
+# usage must never block work -- so the dollar check is skipped with an explicit
+# recorded reason. A config predating the key defaults to metered (current
+# behavior). Non-dollar discipline (retry caps, reply caps, minimization, worktree
+# caps) lives outside this script and stays always on regardless of mode.
+MODETMP="$(mktemp -d)"
+sed 's/^billing_mode:.*/billing_mode: metered/' "$BUDGET_TPL" > "$MODETMP/metered.yml"
+sed 's/^billing_mode:.*/billing_mode: flat/' "$BUDGET_TPL" > "$MODETMP/flat.yml"
+sed 's/^billing_mode:.*/billing_mode: free/' "$BUDGET_TPL" > "$MODETMP/free.yml"
+grep -v '^billing_mode:' "$BUDGET_TPL" > "$MODETMP/nomode.yml"
+sed 's/^billing_mode:.*/billing_mode: gold/' "$BUDGET_TPL" > "$MODETMP/badmode.yml"
+
+# Metered enforcement is unchanged: 999.00 against the template's 2.00 daily cap.
+expect_code 1 "billing_mode=metered still enforces the dollar cap" \
+  bash "$CORE/scripts/budget-check.sh" --scope daily --spent 999.00 --config "$MODETMP/metered.yml"
+
+# Flat and free skip the same over-cap spend with an explicit recorded reason.
+expect_code 0 "billing_mode=flat skips the dollar check (never blocks)" \
+  bash "$CORE/scripts/budget-check.sh" --scope daily --spent 999.00 --config "$MODETMP/flat.yml"
+flat_skip="$(bash "$CORE/scripts/budget-check.sh" --scope daily --spent 999.00 --config "$MODETMP/flat.yml" 2>&1 >/dev/null)"
+case "$flat_skip" in
+  *"skip"*"billing_mode=flat"*) ok "the flat skip records its reason (scope + mode)" ;;
+  *) bad "the flat skip recorded no explicit reason: $flat_skip" ;;
+esac
+expect_code 0 "billing_mode=free skips the dollar check (never blocks)" \
+  bash "$CORE/scripts/budget-check.sh" --scope daily --spent 999.00 --config "$MODETMP/free.yml"
+free_skip="$(bash "$CORE/scripts/budget-check.sh" --scope daily --spent 999.00 --config "$MODETMP/free.yml" 2>&1 >/dev/null)"
+case "$free_skip" in
+  *"skip"*"billing_mode=free"*) ok "the free skip records its reason (scope + mode)" ;;
+  *) bad "the free skip recorded no explicit reason: $free_skip" ;;
+esac
+
+# A config predating the key defaults to metered: the same over-cap spend enforces.
+expect_code 1 "a config without billing_mode defaults to metered (enforces)" \
+  bash "$CORE/scripts/budget-check.sh" --scope daily --spent 999.00 --config "$MODETMP/nomode.yml"
+
+# Exit-3 semantics are unchanged for metered: no ccusage AND no --spent still means
+# CANNOT MEASURE. Skipped when ccusage is installed locally; CI has none, and CI is
+# the authority for this assertion (same guard as the gap-8.1 case above).
+if command -v ccusage >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
+  echo "  SKIP: metered no-source assertion (ccusage present locally; CI has none)"
+else
+  expect_code 3 "metered with no spend source still exits 3 (CANNOT MEASURE)" \
+    bash "$CORE/scripts/budget-check.sh" --scope daily --config "$MODETMP/metered.yml"
+fi
+
+# And the converse: flat with no spend source at all still skips (exit 0), never 3 --
+# an unmeasurable ledger must not block work that has no dollars to bound.
+expect_code 0 "billing_mode=flat with no spend source still skips (never CANNOT MEASURE)" \
+  bash "$CORE/scripts/budget-check.sh" --scope daily --config "$MODETMP/flat.yml"
+
+# An unknown mode is a usage error, never a silent default.
+expect_code 2 "billing_mode=gold is a usage error, not a silent default" \
+  bash "$CORE/scripts/budget-check.sh" --scope daily --spent 0 --config "$MODETMP/badmode.yml"
+
+# Scope handling is unchanged by mode: an unknown scope still fails even when flat.
+expect_code 2 "an unknown scope is still rejected when billing_mode=flat" \
+  bash "$CORE/scripts/budget-check.sh" --scope unknown --spent 0 --config "$MODETMP/flat.yml"
+rm -rf "$MODETMP"
+
+echo
 echo "=== gate.sh (2026-08-11 audit: no timeout, wrong npm flag, top-level-only shellcheck) ==="
 
 GW="$(mktemp -d)"

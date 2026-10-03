@@ -1,3 +1,10 @@
+billing_mode: metered   # metered enforces the dollar caps below; flat and free skip
+                        # dollar-cap checks (budget-check.sh exits 0 with a recorded
+                        # skip reason). Allowed: metered, flat, free. A config that
+                        # predates this key defaults to metered (current behavior).
+                        # Non-dollar discipline (max_retries, per_agent_return_tokens,
+                        # max_parallel_worktrees, minimization) stays always on --
+                        # see docs/BUDGET.md.
 per_run_usd_cap: 0.50
 daily_usd_cap: 2.00
 per_dispatch_usd_cap: 0.15   # one subagent dispatch; catches a runaway dispatch long before the daily cap notices (a predecessor system: one self-batching dispatch hit 1.36M tokens)

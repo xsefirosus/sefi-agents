@@ -56,6 +56,26 @@ case "$SCOPE" in
   *) echo "budget-check: unknown scope '$SCOPE' (expected run, daily, or dispatch)" >&2; exit 2 ;;
 esac
 
+# Spend-mode switch (docs/BUDGET.md): dollar-denominated scopes enforce only when
+# billing is metered. On flat or free plans there is no per-dollar spend to bound --
+# and ccusage-imputed dollars on free usage must never block work -- so the dollar
+# check is skipped with an explicit recorded reason. A config predating the key
+# defaults to metered, preserving current behavior. Non-dollar discipline (retry
+# caps, reply caps, minimization, worktree caps) lives outside this script and stays
+# always on regardless of mode.
+BILLING_MODE="$(get_cap billing_mode)"
+[ -z "$BILLING_MODE" ] && BILLING_MODE="metered"
+if [ "$(grep -c '^billing_mode:' "$CONFIG" || true)" -gt 1 ]; then
+  echo "budget-check: billing_mode is ambiguous in $CONFIG (declared more than once)" >&2; exit 2
+fi
+case "$BILLING_MODE" in
+  metered) : ;;
+  flat|free)
+    echo "budget-check: skip scope=$SCOPE billing_mode=$BILLING_MODE -- dollar caps do not apply under $BILLING_MODE billing; non-dollar discipline stays always on" >&2
+    exit 0 ;;
+  *) echo "budget-check: billing_mode '$BILLING_MODE' is invalid in $CONFIG (expected metered, flat, or free)" >&2; exit 2 ;;
+esac
+
 is_number() {
   # A bare `awk '{print $1+0}'` coerces "null", "" and "abc" to 0 -- which is precisely how
   # a broken telemetry source turns this gate into a no-op that always passes. Validate

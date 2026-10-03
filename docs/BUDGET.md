@@ -24,6 +24,32 @@ off.
   mid-loop; `--by-agent` for per-adapter spend). ccusage is never required -- the
   `--spent` fallback keeps the zero-dependency install intact.
 
+## Spend modes (`billing_mode`)
+
+Dollar caps mean different things on different plans, so `config/budget.yml` declares
+how dollars should be treated:
+
+| `billing_mode` | Dollar caps (`per_run_usd_cap`, `daily_usd_cap`, `per_dispatch_usd_cap`) | When to use |
+|---|---|---|
+| `metered` (default) | Enforced -- `budget-check.sh` exits nonzero when spend exceeds a cap, or when spend cannot be measured at all (exit 3). | Any usage-based billing, where each token has a marginal dollar cost. |
+| `flat` | Skipped -- `budget-check.sh` exits 0 with a recorded skip reason (`skip scope=... billing_mode=flat`). | A flat-rate plan: spend is bounded by the subscription, not by per-token dollars. |
+| `free` | Skipped -- same recorded skip as `flat` (`billing_mode=free`). | Free-tier usage: there are no dollars to bound. |
+
+- A config that predates the `billing_mode` key behaves as `metered` -- current behavior
+  is preserved unless the operator opts into `flat` or `free`. `validate-budget.sh`
+  rejects any other value as a usage error.
+- Rationale: on `flat` and especially `free` usage, a dollar figure is either
+  plan-rate accounting or an imputation (e.g., ccusage-attributed dollars for tokens
+  that cost nothing). Enforcing a dollar cap against such a figure blocks work over
+  money that was never spent -- so ccusage-imputed dollars on free usage must never
+  block work, and the dollar scopes sleep while the mode says so.
+- Always on, regardless of mode: everything that is not a dollar cap. Retry caps
+  (`max_retries`, with the loop's `state/*.md` cycle counter never reset on resume),
+  reply caps (`per_agent_return_tokens` hard cap and its soft target), worktree caps
+  (`max_parallel_worktrees`, exactly one worktree per finding per loop spec), the
+  code-and-scope minimization ladder, and the token-discipline stack below. Switching
+  to `flat` or `free` silences only the dollar scopes -- discipline does not sleep.
+
 ## Benchmark runs are out-of-loop and use their own enforced ceiling
 
 The blinded paired A/B benchmark (`plugins/sefi-core/skills/run-sefi-benchmark/SKILL.md`,
