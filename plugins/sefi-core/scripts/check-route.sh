@@ -72,9 +72,22 @@ usable() {
 # Resolve to the ABSOLUTE interpreter path (command -v result), not the bare name, so the
 # exec is not a second PATH lookup at exec time.
 INTERP=""
-if usable python3; then
+# Prefer the MSYS-safe launcher. `command -v python3` yields the PATH entry, which under
+# git-bash is an MSYS path (/c/...) that the native Windows interpreter cannot use for a
+# script argument -- check-route.py then fails with "can't open file 'C:\\c\\Users\\...'".
+# sefi-python rewrites those arguments to native form; on a POSIX host it resolves to plain
+# python3, so this is a no-op there. Keep the usable() probe so a too-old or broken
+# interpreter still falls through to the explicit exit 3 below.
+if [ -f "$HERE/sefi-python.sh" ]; then
+  # shellcheck source=/dev/null
+  . "$HERE/sefi-python.sh"
+  if candidate="$(sefi_python_bin 2>/dev/null)" && [ -n "$candidate" ] && usable "$candidate"; then
+    INTERP="$candidate"
+  fi
+fi
+if [ -z "$INTERP" ] && usable python3; then
   INTERP="$(command -v python3)"
-elif usable python; then
+elif [ -z "$INTERP" ] && usable python; then
   INTERP="$(command -v python)"
 fi
 
