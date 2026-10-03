@@ -51,19 +51,20 @@ HERE="$(cd -P "$(dirname "$SCRIPT_SOURCE")" && pwd)"
 CORE="$(cd "$HERE/.." && pwd)"
 SKILLS_SRC="$CORE/skills"
 PACKAGE_MANIFEST="$HERE/package-manifest.sh"
+PRUNE_STALE="$HERE/prune-stale-skill-entries.sh"
 
 find_python() {
-  # find_python -- print a Python 3.11+ binary name, or nothing. sefi-runtime.py
+  # find_python -- print a Python 3.11+ launcher, or nothing. sefi-runtime.py
   # needs 3.11 (datetime.UTC), so the probe matches run-all.sh's floor.
-  local candidate
-  for candidate in python3 python; do
-    if command -v "$candidate" >/dev/null 2>&1 \
-      && "$candidate" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)' >/dev/null 2>&1; then
-      printf '%s\n' "$candidate"
-      return 0
-    fi
-  done
-  return 1
+  #
+  # The shared helper returns the path-translating wrapper under MSYS/Cygwin.
+  # That wrapper is required here, not optional: this script resolves paths
+  # with pwd/mktemp and hands them to native Windows Python, which reads
+  # /c/Users/... as \c\Users\... and raises FileNotFoundError. Every
+  # verification step then failed and the installer refused to report success
+  # (live-confirmed 2026-10-03 on Windows/git-bash).
+  . "$HERE/sefi-python.sh"
+  sefi_python_bin
 }
 
 REPO="xsefirosus/sefi-agents"
@@ -71,6 +72,63 @@ BASE_PATH="plugins/sefi-core/skills"
 SKILLS="sefi-orchestration anti-hallucination memory-protocol loop-engineering retro-improve terse-mode frontend-design motion-design swiftui-design expo-native-design design-style-profiles backend-design security-review technical-writing n8n-workflow-design premortem focus release-tracking run-sefi-benchmark systems-audit"
 # Known scanner false positives; see comment above.
 FORCE_SKILLS="sefi-orchestration security-review"
+
+install_commands_plugin() {
+  # Stage the sefi-commands plugin so /sefi-init and the other 12 packaged
+  # commands actually exist. Without this the installer's own success message
+  # names a command that cannot be typed: the 13 commands/*.md files ship inside
+  # the managed runtime, and Hermes never reads them on its own.
+  #
+  # Two Hermes-specific facts, both live-confirmed 2026-10-03:
+  #   * plugin command handlers' return values are only PRINTED to the terminal
+  #     (cli.py:1309), so the handler delivers the command body through
+  #     inject_message instead of returning it.
+  #   * a user plugin is DISABLED by default -- discovery logged
+  #     "Skipping 'sefi-commands' (not in plugins.enabled)" until it was
+  #     explicitly enabled. Copying the directory is therefore not enough.
+  local src="$CORE/hermes" dest="$CONFIG_DIR/plugins/sefi-commands"
+  [ -d "$src" ] || return 0
+  [ -d "$CONFIG_DIR/plugins" ] && [ ! -L "$CONFIG_DIR/plugins" ] || {
+    mkdir -p "$CONFIG_DIR/plugins"
+    [ -d "$CONFIG_DIR/plugins" ] && [ ! -L "$CONFIG_DIR/plugins" ] || {
+      echo "install-hermes.sh: refusing non-directory plugin root $CONFIG_DIR/plugins" >&2
+      exit 1
+    }
+  }
+  rm -rf "$dest"
+  mkdir -p "$dest"
+  cp -R "$src/." "$dest/"
+  # The wrapper is invoked by path; it must carry the exec bit on POSIX hosts.
+  chmod +x "$dest"/__init__.py 2>/dev/null || true
+  if command -v hermes >/dev/null 2>&1; then
+    hermes plugins enable sefi-commands >/dev/null 2>&1 \
+      || echo "install-hermes.sh: could not enable the sefi-commands plugin; run 'hermes plugins enable sefi-commands'" >&2
+  fi
+  echo "install-hermes.sh: sefi-commands plugin staged at $dest (restart Hermes to activate)" >&2
+}
+
+install_plugin_root_env() {
+  # 45 installed files reference ${CLAUDE_PLUGIN_ROOT}/scripts/... for the gate
+  # scripts (check-route.sh, check-handoff.sh, model-for.sh, budget-check.sh...).
+  # Claude Code exports that variable itself; Hermes does not, so it resolved to
+  # /scripts/... and every gate silently no-opped.
+  #
+  # The Hermes home .env is the file Hermes actually reads: cli.py:338 calls
+  # load_hermes_dotenv(hermes_home=...) at import, which is what puts the variable
+  # into os.environ for every process Hermes spawns (the cron scheduler and the
+  # ACP adapter load the same file). Writing it here -- rather than hand-editing
+  # config.yaml -- keeps the installer's "no manual config edits" promise.
+  local env_file="$(dirname "$CONFIG_PATH")/.env"
+  if [ -f "$env_file" ] && grep -q '^CLAUDE_PLUGIN_ROOT=' "$env_file" 2>/dev/null; then
+    return 0
+  fi
+  {
+    printf '\n# sefi-agents: resolves ${CLAUDE_PLUGIN_ROOT}/scripts/... in the installed\n'
+    printf '# skills to the managed canonical runtime. Added by install-hermes.sh.\n'
+    printf 'CLAUDE_PLUGIN_ROOT=%s\n' "$RUNTIME"
+  } >> "$env_file"
+  echo "install-hermes.sh: CLAUDE_PLUGIN_ROOT recorded in $env_file -> $RUNTIME" >&2
+}
 
 print_onboarding() {
   cat <<'EOF'
@@ -180,7 +238,17 @@ cleanup_skill_backups() {
   [ -n "$SKILL_BACKUPS_ROOT" ] || return 0
   if [ "$INSTALL_SUCCEEDED" -ne 1 ]; then
     restore_skills || echo "install-hermes.sh: failed to restore the pre-install skill snapshot" >&2
-  fi
+    # Rollback removes skill directories, but Hermes' own registry
+    # (skills/.hub/lock.json) is NOT part of that snapshot. Left alone, it keeps
+    # entries whose directories are gone, and the next run then reports every
+    # rolled-back skill as "already installed" from a path that no longer exists.
+    # That was the third of three causes behind the first Windows install
+        # failure (2026-10-03). Prune entries whose recorded directory is absent.
+        if [ -f "$PRUNE_STALE" ]; then
+          bash "$PRUNE_STALE" --skills-root "$HERMES_SKILLS" --apply \
+            || echo "install-hermes.sh: could not prune stale Hermes skill registry entries" >&2
+        fi
+      fi
   local parent=""
   parent="$(cd -P "$(dirname "$SKILL_BACKUPS_ROOT")" && pwd -P)" || return 1
   [ "$parent" = "$SKILL_BACKUPS_PARENT" ] || return 1
@@ -436,12 +504,22 @@ if [ "$attempt_fail" -ne 0 ]; then
   echo "install-hermes.sh: $attempt_fail install call(s) failed; verifying installed state anyway." >&2
 fi
 
-# hermes skills list is a unicode-bordered table. The data lines start with
-# U+2502 (vertical box char) + space; the next U+2502 + space ends the name
-# column. Use awk with those patterns directly -- a tr-based collapse would map
-# each byte of the multi-byte char to the same replacement (3 pipes for one
-# glyph), and re-encoding the U+2502 as an ASCII byte sequence keeps this
-# script ASCII-only for the repo's check-unicode-safety.sh.
+# hermes skills list is a unicode-bordered table whose Name column is width-limited
+# and TRUNCATED with an ellipsis past ~15 characters ("anti-hallucina…"). The
+# verification below greps full skill names against that column, so on a default
+# 80-column terminal every name longer than the column compares unequal to itself
+# and is reported missing even though it is installed -- 10 of 20 falsely failed
+# on first run. Widening COLUMNS makes the table print full names. Verified
+# 2026-10-03 on Windows/git-bash; a POSIX CI runner is unaffected.
+#
+# The data lines start with U+2502 (vertical box char) + space; the next
+# U+2502 + space ends the name column. Use awk with those patterns directly --
+# a tr-based collapse would map each byte of the multi-byte char to the same
+# replacement (3 pipes for one glyph), and re-encoding the U+2502 as an ASCII
+# byte sequence keeps this script ASCII-only for check-unicode-safety.sh.
+COLUMNS="${COLUMNS:-200}"
+export COLUMNS
+
 vbar_sp=$(printf '\342\224\202 ')   # U+2502 + space
 sp_vbar=$(printf ' \342\224\202')   # space + U+2502
 installed_names=$(hermes skills list 2>&1 | awk -v lead="$vbar_sp" -v sep="$sp_vbar" '
@@ -485,6 +563,8 @@ if [ -n "$content_mismatch" ]; then
 fi
 install_runtime
 resolve_systems_audit_runtime
+install_commands_plugin
+install_plugin_root_env
 INSTALL_SUCCEEDED=1
 if [ "$RUNTIME_STATE" = "current" ]; then
   echo "install-hermes.sh: managed runtime is current; nothing to do." >&2

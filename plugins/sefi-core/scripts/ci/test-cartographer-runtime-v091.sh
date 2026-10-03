@@ -4,6 +4,10 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
 RUNTIME="$ROOT/plugins/sefi-core/scripts/cartographer-runtime.py"
+# MSYS-safe interpreters/paths; see scripts/sefi-python.sh and
+# scripts/sefi-native-path.sh.
+. "$ROOT/plugins/sefi-core/scripts/sefi-python.sh"
+. "$ROOT/plugins/sefi-core/scripts/sefi-native-path.sh"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 if command -v python3 >/dev/null 2>&1 && python3 --version >/dev/null 2>&1; then PYTHON=(python3)
@@ -25,11 +29,12 @@ EOF
 cat >"$tmp/docs/outside.md" <<'EOF'
 # Outside the requested context
 EOF
-git -C "$tmp" init -q
-git -C "$tmp" config user.email fixtures@example.invalid
-git -C "$tmp" config user.name fixture
-git -C "$tmp" add src
-git -C "$tmp" commit -qm initial
+NATIVE_TMP="$(sefi_native_path "$tmp")"
+git -C "$NATIVE_TMP" init -q
+git -C "$NATIVE_TMP" config user.email fixtures@example.invalid
+git -C "$NATIVE_TMP" config user.name fixture
+git -C "$NATIVE_TMP" add src
+git -C "$NATIVE_TMP" commit -qm initial
 
 run_python "$RUNTIME" map --root "$tmp" --slug sample --target src
 run_python "$RUNTIME" validate --root "$tmp" --map state/codebase-map-sample.json

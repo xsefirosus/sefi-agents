@@ -4,6 +4,10 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
 RUNTIME="$ROOT/plugins/sefi-core/scripts/docs-grounding.py"
+# MSYS-safe interpreters/paths; see scripts/sefi-python.sh and
+# scripts/sefi-native-path.sh.
+. "$ROOT/plugins/sefi-core/scripts/sefi-python.sh"
+. "$ROOT/plugins/sefi-core/scripts/sefi-native-path.sh"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
@@ -69,11 +73,12 @@ EOF
 
 # A compact local history fixture: an unchanged page, a changed source fact, and a later
 # matching page revision exercise the same evolution shape without a provider or network.
-git -C "$tmp" init -q
-git -C "$tmp" config user.email fixtures@example.invalid
-git -C "$tmp" config user.name fixture
-git -C "$tmp" add docs/guide.md source.txt state/docs-claims/docs/guide.md.claims.json
-git -C "$tmp" commit -qm initial
+NATIVE_TMP="$(sefi_native_path "$tmp")"
+git -C "$NATIVE_TMP" init -q
+git -C "$NATIVE_TMP" config user.email fixtures@example.invalid
+git -C "$NATIVE_TMP" config user.name fixture
+git -C "$NATIVE_TMP" add docs/guide.md source.txt state/docs-claims/docs/guide.md.claims.json
+git -C "$NATIVE_TMP" commit -qm initial
 
 run_python "$RUNTIME" validate-claims --root "$tmp" --claims state/docs-claims/docs/guide.md.claims.json
 run_python "$RUNTIME" preflight --root "$tmp" --claims state/docs-claims/docs/guide.md.claims.json --document docs/guide.md --baseline baseline-a >"$tmp/preflight.json"

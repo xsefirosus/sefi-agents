@@ -1,0 +1,4 @@
+name: sefi-commands
+version: 0.9.7
+description: "Exposes the Sefi command set as Hermes slash commands (/sefi-init, /sefi-route, ...) by injecting each packaged command body as a model-facing instruction turn."
+author: "sefi-agents"

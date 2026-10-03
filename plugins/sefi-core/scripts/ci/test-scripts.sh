@@ -8,6 +8,19 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
 CORE="$ROOT/plugins/sefi-core"
+# Native Windows programs (jq, git) read bash's /c/... paths as \c\... and fail.
+# jq's failure is SILENT -- it returns nothing, so a caller checking for
+# emptiness blames the fixture instead of the unreadable path. Route those calls
+# through the wrapper; see scripts/sefi-native-tool.
+NTOOL="$CORE/scripts/sefi-native-tool"
+jq_path() { "$NTOOL" jq "$@"; }
+# Native git aborts on `git -C /c/...` ("cannot change to"), so fixture repos
+# would silently never be created. Convert at the definition site.
+. "$CORE/scripts/sefi-native-path.sh"
+# Sourced HERE, not at its first use near the check-route.py block: extract_plan_example
+# (line ~958) also calls sefi_python_bin, and a source below a call site leaves the
+# function undefined at that point.
+. "$CORE/scripts/sefi-python.sh"
 BUDGET_TPL="$CORE/templates/config/budget.yml"
 
 fail=0
@@ -70,22 +83,40 @@ else
 fi
 
 # An explicit --spent 0 is a real claim of zero spend and must still pass.
+# ISOLATION (2026-10-03): these four --spent assertions previously ran against the
+# developer's real PATH. budget-check.sh reads ccusage FIRST and only falls back to
+# --spent when ccusage yields no figure, so on any machine with ccusage installed the
+# fixture silently measured that person's real spend instead of the fixture's number.
+# On this Windows host (ccusage 20.0.26) --spent 3.00 therefore exited 0 against a
+# 2.00 cap and the suite reported 3 false failures; --spent abc reported exit 0
+# instead of its intended exit 2, i.e. a genuine usage error read as a pass. The
+# assertions were environment-dependent, not the script under test. A later
+# section already stubs ccusage/jq for exactly this reason -- these now do too,
+# with an empty stub so --spent is unambiguously the spend source.
+EMPTYBIN="$(mktemp -d)"
+# The stub must exit 0 while yielding NO usable figure -- the same "present but
+# unreadable telemetry" shape the section below already exercises. A stub that
+# exits nonzero aborts budget-check.sh under `set -e` and every case returns 127.
+printf '#!/bin/sh\nexit 0\n' > "$EMPTYBIN/ccusage"
+chmod +x "$EMPTYBIN/ccusage"
+without_ccusage() { env PATH="$EMPTYBIN:$PATH" "$@"; }
+
 expect_code 0 "explicit --spent 0 still passes" \
-  bash "$CORE/scripts/budget-check.sh" --scope daily --spent 0 --config "$METERED_TPL"
+  without_ccusage bash "$CORE/scripts/budget-check.sh" --scope daily --spent 0 --config "$METERED_TPL"
 
 # The pre-existing over-cap path must not regress: 3.00 against the template's 2.00 daily.
 expect_code 1 "--spent 3.00 over the 2.00 daily cap exits nonzero" \
-  bash "$CORE/scripts/budget-check.sh" --scope daily --spent 3.00 --config "$METERED_TPL"
+  without_ccusage bash "$CORE/scripts/budget-check.sh" --scope daily --spent 3.00 --config "$METERED_TPL"
 
 # A non-numeric figure must be rejected as a usage error, never coerced to 0 by awk.
 expect_code 2 "--spent abc is a usage error, not a silent zero" \
-  bash "$CORE/scripts/budget-check.sh" --scope daily --spent abc --config "$METERED_TPL"
+  without_ccusage bash "$CORE/scripts/budget-check.sh" --scope daily --spent abc --config "$METERED_TPL"
 expect_code 2 "--pending 1.2.3 is a usage error" \
-  bash "$CORE/scripts/budget-check.sh" --scope daily --spent 0 --pending 1.2.3 --config "$METERED_TPL"
+  without_ccusage bash "$CORE/scripts/budget-check.sh" --scope daily --spent 0 --pending 1.2.3 --config "$METERED_TPL"
 
 # --pending must catch an overrun BEFORE it happens: 1.90 spent + 0.50 pending > 2.00 cap.
 expect_code 1 "--pending pushes a within-cap spend over the cap" \
-  bash "$CORE/scripts/budget-check.sh" --scope daily --spent 1.90 --pending 0.50 --config "$METERED_TPL"
+  without_ccusage bash "$CORE/scripts/budget-check.sh" --scope daily --spent 1.90 --pending 0.50 --config "$METERED_TPL"
 
 # The SECOND fail-open, found 2026-08-11: ccusage present but returning null/empty/crashing.
 # The old code assigned that straight to `spent`, and `awk -v s="null" '{print s+0}'` is 0 --
@@ -161,7 +192,7 @@ mkbilling commentmode "   # left holding only a comment"
 
 # Metered enforcement is unchanged: 999.00 against the template's 2.00 daily cap.
 expect_code 1 "billing_mode=metered still enforces the dollar cap" \
-  bash "$CORE/scripts/budget-check.sh" --scope daily --spent 999.00 --config "$MODETMP/metered.yml"
+  without_ccusage bash "$CORE/scripts/budget-check.sh" --scope daily --spent 999.00 --config "$MODETMP/metered.yml"
 
 # Flat and free skip the same over-cap spend with an explicit recorded reason.
 expect_code 0 "billing_mode=flat skips the dollar check (never blocks)" \
@@ -320,9 +351,21 @@ case "$hv_end" in
   *) bad "--harness at the end of the arguments reported something else: $hv_end" ;;
 esac
 
+# A config predating the key, on a harness with NO per-harness default and with no
+# harness signal at all, still defaults to metered -- fail-closed, so the over-cap
+# spend enforces. A config predating the key ON a mapped harness resolves to that
+# harness's default instead; the per-harness cases above already cover those.
+expect_code 1 "an unmapped harness with no signal still defaults to metered (enforces)" \
+  without_ccusage env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" \
+    --scope daily --spent 999.00 --config "$MODETMP/nomode.yml"
+
 # Exit-3 semantics are unchanged for metered: no ccusage AND no --spent still means
 # CANNOT MEASURE. Skipped when ccusage is installed locally; CI has none, and CI is
 # the authority for this assertion (same guard as the gap-8.1 case above).
+# 2026-10-03: this could now run everywhere, because without_ccusage stubs ccusage to
+# exit 0 with no figure -- exactly "present but unreadable". Left guarded to keep the
+# diff to this block minimal; the two assertions above it were the ones silently
+# measuring real local spend.
 if command -v ccusage >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
   echo "  SKIP: metered no-source assertion (ccusage present locally; CI has none)"
 else
@@ -534,7 +577,7 @@ echo "=== state/ and memory/ personal-path scan; tracked Markdown only ==="
 # Active state and memory notes ship in the repository too. A path in either must be
 # caught even though these directories are not plugin or adapter source trees.
 for note_path in state/leak.md memory/sessions/2026/01/leak.md; do
-  NPS="$(mktemp -d)"
+  NPS="$(sefi_native_path "$(mktemp -d)")"
   mkdir -p "$NPS/plugins/sefi-core/scripts/ci" "$(dirname "$NPS/$note_path")"
   cp "$VNP" "$NPS/plugins/sefi-core/scripts/ci/validate-no-personal-paths.sh"
   printf 'leak: C:\\Users\\Mary Rose\\private\n' > "$NPS/$note_path"
@@ -549,7 +592,7 @@ echo
 echo "=== validate-links.sh tracked-target enforcement ==="
 
 VLINK="$CORE/scripts/ci/validate-links.sh"
-LNT="$(mktemp -d)"
+LNT="$(sefi_native_path "$(mktemp -d)")"
 mkdir -p "$LNT/plugins/sefi-core/scripts/ci" "$LNT/docs/archive"
 cp "$VLINK" "$LNT/plugins/sefi-core/scripts/ci/validate-links.sh"
 git -C "$LNT" init -q
@@ -755,7 +798,8 @@ rm -rf "$RSM"
 echo
 echo "=== write-shared-memory-mirror.sh (project-slug sanitization and harness fallback) ==="
 
-WSM="$(mktemp -d)"
+# Native form for git -C (native git rejects MSYS /c/...); MSYS tools accept it too.
+WSM="$(sefi_native_path "$(mktemp -d)")"
 mkdir -p "$WSM/config" "$WSM/fakehome"
 printf 'memory:\n  cross_project_enabled: true\n  cross_project_folder_name: sefi-memory\n' > "$WSM/config/sefi.config.yml"
 printf 'quick test note\n' > "$WSM/note.md"
@@ -803,7 +847,7 @@ echo "=== hook script executable bit (inject-memory.sh shipped as 100644, breaki
 # working-tree file, since the tracked mode is what a fresh clone actually ships.
 HOOKS_JSON="$CORE/hooks/hooks.json"
 if command -v jq >/dev/null 2>&1 && [ -f "$HOOKS_JSON" ]; then
-  hook_cmds="$(jq -r '.. | .command? // empty' "$HOOKS_JSON")"
+  hook_cmds="$(jq_path -r '.. | .command? // empty' "$HOOKS_JSON")"
   if [ -z "$hook_cmds" ]; then
     bad "hooks.json yielded no .command entries to check (parser or fixture broke)"
   fi
@@ -988,7 +1032,13 @@ echo "=== check-reply.sh (live 2026-08-17: prompt-engineer returned a full HTML 
 CR="$CORE/scripts/check-reply.sh"
 AG="$CORE/agents"
 RTMP="$(mktemp -d)"
-BUDGET_ARG="--config $BUDGET_TPL"
+# Do NOT build this as an unquoted "$BUDGET_ARG" word and expand it into the call.
+# Word splitting then tears the path at every space, so check-reply.sh receives
+# "/c/Users/Mary", "Rose/.../budget.yml" as separate arguments, rejects the extras with
+# "unexpected arg" and exits 2 (its usage code). That turned 13 real assertions
+# into failures on any checkout whose path contains a space. A function passes the
+# path as a single argv entry, which is what the script was always written for.
+check_reply() { bash "$CR" --config "$BUDGET_TPL" "$@"; }
 
 # The shape a valid prompt-engineer reply takes -- all three declared labels, nothing else.
 cat > "$RTMP/good.txt" <<'EOF'
@@ -997,7 +1047,7 @@ CONSTRAINTS: minimalist; black and white; contrast compliance; HTML file is the 
 SUGGESTED: "design / UI / UX spec" then "build / implement slice".
 EOF
 expect_code 0 "a well-formed prompt-engineer digest passes" \
-  bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/good.txt"
+  check_reply "$AG/prompt-engineer.md" "$RTMP/good.txt"
 
 # The actual observed failure: the digest, plus a deliverable owned by two other agents.
 # The tool whitelist held here (no file was written) -- only content leaked, which is
@@ -1005,13 +1055,13 @@ expect_code 0 "a well-formed prompt-engineer digest passes" \
 cp "$RTMP/good.txt" "$RTMP/leak.txt"
 printf '<!DOCTYPE html>\n<html lang="en"><body><h1>About</h1></body></html>\n' >> "$RTMP/leak.txt"
 expect_code 1 "a digest plus a full HTML document is rejected (the live failure)" \
-  bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/leak.txt"
+  check_reply "$AG/prompt-engineer.md" "$RTMP/leak.txt"
 
 # Verbosity bound: per_agent_return_tokens had sat in budget.yml since v0.2.1 with no
 # script reading it.
 { cat "$RTMP/good.txt"; for _ in $(seq 1 200); do printf 'padding '; done; } > "$RTMP/long.txt"
 expect_code 1 "an over-budget reply is rejected against per_agent_return_tokens" \
-  bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/long.txt"
+  check_reply "$AG/prompt-engineer.md" "$RTMP/long.txt"
 
 # Cap raised 150 -> 200 (2026-08-18): live data showed qa-engineer's verdict-with-evidence
 # replies landing at 162 and 172 words against the old cap -- not rambling, just the natural
@@ -1020,10 +1070,10 @@ expect_code 1 "an over-budget reply is rejected against per_agent_return_tokens"
 # here can only be the word-count check); a reply that is actually bloated must still fail.
 { cat "$RTMP/good.txt"; for _ in $(seq 1 131); do printf 'word '; done; } > "$RTMP/onceoverold.txt"
 expect_code 0 "a 172-word reply (the real qa-engineer incident) passes against the 200 cap" \
-  bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/onceoverold.txt"
+  check_reply "$AG/prompt-engineer.md" "$RTMP/onceoverold.txt"
 { cat "$RTMP/good.txt"; for _ in $(seq 1 179); do printf 'word '; done; } > "$RTMP/stilltoolong.txt"
 expect_code 1 "a 220-word reply is still rejected -- the raise did not remove the ceiling" \
-  bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/stilltoolong.txt"
+  check_reply "$AG/prompt-engineer.md" "$RTMP/stilltoolong.txt"
 
 # per_agent_return_tokens_target (150, soft): "aim for 150, 200 only if not possible" --
 # the 172-word reply passes (above) AND must carry a visible, non-blocking NOTE that it
@@ -1034,12 +1084,12 @@ expect_code 1 "a 220-word reply is still rejected -- the raise did not remove th
 # and under this file's own `set -o pipefail`, the writer can get SIGPIPE (exit 141) for
 # writing past a closed pipe -- clobbering the reported status even when the match was
 # real. Same `case` idiom the gate.sh checks above already use for exactly this reason.
-target_note_over="$(bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/onceoverold.txt" 2>&1 >/dev/null)"
+target_note_over="$(check_reply "$AG/prompt-engineer.md" "$RTMP/onceoverold.txt" 2>&1 >/dev/null)"
 case "$target_note_over" in
   *"NOTE:"*"over the 150-word target"*) ok "a 172-word reply still gets a non-blocking NOTE that it missed the 150-word target" ;;
   *) bad "a 172-word reply did not get the target-missed advisory NOTE" ;;
 esac
-target_note_under="$(bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/good.txt" 2>&1 >/dev/null)"
+target_note_under="$(check_reply "$AG/prompt-engineer.md" "$RTMP/good.txt" 2>&1 >/dev/null)"
 case "$target_note_under" in
   *"NOTE:"*"target"*) bad "a well-under-target reply wrongly got the target-missed advisory NOTE" ;;
   *) ok "a well-under-target reply gets no target advisory (only a real miss should note)" ;;
@@ -1047,26 +1097,26 @@ esac
 
 grep -v '^SUGGESTED:' "$RTMP/good.txt" > "$RTMP/missing.txt"
 expect_code 1 "a reply omitting a declared label is rejected" \
-  bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/missing.txt"
+  check_reply "$AG/prompt-engineer.md" "$RTMP/missing.txt"
 
 # Guards against a gate that only accepts one agent's shape. qa-engineer's contract names
 # "If REJECT:" and "If PASS:" as conditional branches mid-line; requiring those as labels
 # would fail every valid verdict, so only start-of-line labels count.
 printf 'VERDICT: PASS\nExecuted npm test -- 14 passing, before/after in .worktrees/logs/.\n' > "$RTMP/qa.txt"
 expect_code 0 "a qa-engineer VERDICT reply passes (conditional branches are not labels)" \
-  bash "$CR" $BUDGET_ARG "$AG/qa-engineer.md" "$RTMP/qa.txt"
+  check_reply "$AG/qa-engineer.md" "$RTMP/qa.txt"
 
 # A table-shaped contract must report CANNOT-CHECK, never a false rejection: a gate that
 # cries wolf on valid replies trains its caller to ignore it.
 printf 'item | class | evidence | routed-to | urgency\nCI red | actionable | run 412 | devops-engineer | routine\n' > "$RTMP/support.txt"
 expect_code 3 "support-engineer's table-shaped contract exits 3 CANNOT-CHECK, not a false 1" \
-  bash "$CR" $BUDGET_ARG "$AG/support-engineer.md" "$RTMP/support.txt"
+  check_reply "$AG/support-engineer.md" "$RTMP/support.txt"
 
 # A second live gap found by hunting further (2026-08-17): an unanchored label match let a
 # mid-sentence mention of a label word pass as if it were a real section.
 printf 'INTENTS: build a page.\nCONSTRAINTS: none stated.\nI could not form a SUGGESTED: route because the request was ambiguous.\n' > "$RTMP/prose_label.txt"
 expect_code 1 "a label merely MENTIONED in prose (not a real section) is rejected" \
-  bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/prose_label.txt"
+  check_reply "$AG/prompt-engineer.md" "$RTMP/prose_label.txt"
 
 # A third: a single accurate verbatim quote of one plan heading must not be mistaken for a
 # leaked plan -- only correlated presence of several headings is real evidence.
@@ -1077,7 +1127,7 @@ CONSTRAINTS: the message verbatim-quotes an existing plan section: "## Done Crit
 SUGGESTED: "build / implement slice" (software-engineer).
 EOF
 expect_code 0 "quoting ONE plan heading verbatim is not a leaked plan" \
-  bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/quote_one_heading.txt"
+  check_reply "$AG/prompt-engineer.md" "$RTMP/quote_one_heading.txt"
 
 # A genuinely leaked plan (multiple correlated headings) must still be caught.
 cat > "$RTMP/leaked_plan.txt" <<'EOF'
@@ -1092,7 +1142,7 @@ Add the feature.
 tests pass
 EOF
 expect_code 1 "a reply carrying 3+ correlated plan headings is still rejected as a leaked plan" \
-  bash "$CR" $BUDGET_ARG "$AG/prompt-engineer.md" "$RTMP/leaked_plan.txt"
+  check_reply "$AG/prompt-engineer.md" "$RTMP/leaked_plan.txt"
 
 rm -rf "$RTMP"
 
@@ -1150,12 +1200,25 @@ extract_plan_example() {
   # then python, then py). `command -v` alone cannot tell the Microsoft Store
   # python3 alias stub from a real interpreter; each candidate is smoke-tested.
   # Returns 0 when the file was written.
+  # Prefer the shared MSYS-safe resolver: the heredoc below passes "$dest" as an
+  # argument, and a native interpreter reads a /c/Users/... dest as \c\Users\... and
+  # raises FileNotFoundError, which the 2>/dev/null here hides -- so the function
+  # silently returned non-zero and the suite reported "could not extract the worked
+  # example from product-manager.md". Fall back to the original probe order if the
+  # resolver is unavailable. The smoke test stays: `command -v` alone cannot tell the
+  # Microsoft Store python3 alias stub from a real interpreter.
   local dest="$1" py=""
-  for t in python3 python py; do
-    if command -v "$t" >/dev/null 2>&1 && "$t" -c 'import json,sys' >/dev/null 2>&1; then
-      py="$t"; break
-    fi
-  done
+  py="$(sefi_python_bin 2>/dev/null)" || py=""
+  if [ -n "$py" ] && "$py" -c 'import json,sys' >/dev/null 2>&1; then
+    :
+  else
+    py=""
+    for t in python3 python py; do
+      if command -v "$t" >/dev/null 2>&1 && "$t" -c 'import json,sys' >/dev/null 2>&1; then
+        py="$t"; break
+      fi
+    done
+  fi
   [ -n "$py" ] || return 1
   ( cd "$ROOT" && "$py" - "$dest" <<'EXTRACT' 2>/dev/null
 import sys, pathlib, re
@@ -1269,7 +1332,13 @@ fi
 # engineering-manager -- the exact direct-invocation path that caused the
 # prompt-engineer scope-creep bug. Exactly one agent may be mode: primary.
 primary_n="$(grep -l '^mode: primary$' "$TMP_OC"/agents/*.md 2>/dev/null | wc -l | tr -d ' ')"
-primary_file="$(grep -l '^mode: primary$' "$TMP_OC"/agents/*.md 2>/dev/null | xargs -n1 basename)"
+# Do NOT use `xargs -n1 basename` here: xargs splits its input on whitespace, and a
+# checkout path containing a space ("C:/Users/Mary Rose/...") becomes two arguments, so
+# basename runs on the fragment "/c/Users/Mary" and yields "Mary". The test then reports
+# a mode-split failure that exists only because of the space in the username. `basename`
+# is a filter and processes its own arguments, so invoking it without xargs handles the
+# space correctly. Same one-file expectation, so no loop is needed.
+primary_file="$(grep -l '^mode: primary$' "$TMP_OC"/agents/*.md 2>/dev/null | { read -r first || true; basename "$first"; })"
 subagent_n="$(grep -l '^mode: subagent$' "$TMP_OC"/agents/*.md 2>/dev/null | wc -l | tr -d ' ')"
 agent_n="$(find "$AG" -maxdepth 1 -name '*.md' | wc -l | tr -d ' ')"
 expected_subagent_n=$((agent_n - 1))
@@ -1877,17 +1946,17 @@ if command -v jq >/dev/null 2>&1; then
   # Commands are quote-wrapped (step-1 fix for a space-containing resolved path), so strip
   # the embedded literal quotes before matching the suffix rather than asserting the raw
   # (now-quoted) string.
-  if [ -f "$SETTINGS" ] && jq -e '.hooks.PreToolUse[0].hooks[0].command | gsub("\"";"") | endswith("scripts/check-bash-write.sh")' "$SETTINGS" >/dev/null 2>&1; then
+  if [ -f "$SETTINGS" ] && jq_path -e '.hooks.PreToolUse[0].hooks[0].command | gsub("\"";"") | endswith("scripts/check-bash-write.sh")' "$SETTINGS" >/dev/null 2>&1; then
     ok "install.sh --target claude wires check-bash-write.sh into settings.json's PreToolUse hook"
   else
     bad "install.sh --target claude did not wire check-bash-write.sh into settings.json"
   fi
-  if jq -e '.hooks.SessionStart[].hooks[] | select(.command | gsub("\"";"") | endswith("scripts/inject-memory.sh"))' "$SETTINGS" >/dev/null 2>&1; then
+  if jq_path -e '.hooks.SessionStart[].hooks[] | select(.command | gsub("\"";"") | endswith("scripts/inject-memory.sh"))' "$SETTINGS" >/dev/null 2>&1; then
     ok "install.sh --target claude wires inject-memory.sh into settings.json's SessionStart hook"
   else
     bad "install.sh --target claude did not wire inject-memory.sh into settings.json"
   fi
-  if jq -e '.hooks.PreToolUse[0].hooks[0].command | contains("${CLAUDE_PLUGIN_ROOT}") | not' "$SETTINGS" >/dev/null 2>&1; then
+  if jq_path -e '.hooks.PreToolUse[0].hooks[0].command | contains("${CLAUDE_PLUGIN_ROOT}") | not' "$SETTINGS" >/dev/null 2>&1; then
     ok "the wired hook command is a resolved literal path, not the raw placeholder"
   else
     bad "the wired hook command still carries the unresolved \${CLAUDE_PLUGIN_ROOT} placeholder"
@@ -1904,9 +1973,9 @@ if command -v jq >/dev/null 2>&1; then
 PRESEED
   HOME="$HOOK_TMP" bash "$ROOT/install.sh" --target claude --copy --force >/dev/null 2>&1
   HOME="$HOOK_TMP" bash "$ROOT/install.sh" --target claude --copy --force >/dev/null 2>&1
-  stop_count="$(jq '.hooks.Stop | length' "$SETTINGS" 2>/dev/null)"
-  pretool_count="$(jq '.hooks.PreToolUse | length' "$SETTINGS" 2>/dev/null)"
-  perm_kept="$(jq -e '.permissions.allow == ["Skill"]' "$SETTINGS" >/dev/null 2>&1 && echo yes || echo no)"
+  stop_count="$(jq_path '.hooks.Stop | length' "$SETTINGS" 2>/dev/null)"
+  pretool_count="$(jq_path '.hooks.PreToolUse | length' "$SETTINGS" 2>/dev/null)"
+  perm_kept="$(jq_path -e '.permissions.allow == ["Skill"]' "$SETTINGS" >/dev/null 2>&1 && echo yes || echo no)"
   if [ "$stop_count" = "1" ] && [ "$pretool_count" = "1" ] && [ "$perm_kept" = "yes" ]; then
     ok "a pre-existing unrelated hook and permissions block survive the merge, and re-running twice does not duplicate the wired hook"
   else
@@ -1950,7 +2019,7 @@ if command -v jq >/dev/null 2>&1; then
   ENV_TMP="$(mktemp -d)"
   HOME="$ENV_TMP" bash "$ROOT/install.sh" --target claude >/dev/null 2>&1
   ENV_SETTINGS="$ENV_TMP/.claude/settings.json"
-  if [ -f "$ENV_SETTINGS" ] && jq -e --arg dest "$ENV_TMP/.claude" \
+  if [ -f "$ENV_SETTINGS" ] && jq_path -e --arg dest "$ENV_TMP/.claude" \
       '.env.CLAUDE_PLUGIN_ROOT == $dest' "$ENV_SETTINGS" >/dev/null 2>&1; then
     ok "a default symlink-mode install (no --copy) sets env.CLAUDE_PLUGIN_ROOT to the resolved destination"
   else
@@ -1967,8 +2036,8 @@ if command -v jq >/dev/null 2>&1; then
 PRESEED2
   HOME="$ENV_TMP" bash "$ROOT/install.sh" --target claude --force >/dev/null 2>&1
   HOME="$ENV_TMP" bash "$ROOT/install.sh" --target claude --force >/dev/null 2>&1
-  other_kept="$(jq -e '.env.SOME_OTHER_VAR == "keep-me"' "$ENV_SETTINGS" >/dev/null 2>&1 && echo yes || echo no)"
-  plugin_root_set="$(jq -e --arg dest "$ENV_TMP/.claude" '.env.CLAUDE_PLUGIN_ROOT == $dest' "$ENV_SETTINGS" >/dev/null 2>&1 && echo yes || echo no)"
+  other_kept="$(jq_path -e '.env.SOME_OTHER_VAR == "keep-me"' "$ENV_SETTINGS" >/dev/null 2>&1 && echo yes || echo no)"
+  plugin_root_set="$(jq_path -e --arg dest "$ENV_TMP/.claude" '.env.CLAUDE_PLUGIN_ROOT == $dest' "$ENV_SETTINGS" >/dev/null 2>&1 && echo yes || echo no)"
   if [ "$other_kept" = "yes" ] && [ "$plugin_root_set" = "yes" ]; then
     ok "a pre-existing unrelated env key survives the merge, and re-running twice does not corrupt env.CLAUDE_PLUGIN_ROOT"
   else
@@ -2018,7 +2087,7 @@ ORCH_HOOK="$CORE/scripts/inject-orchestrator-role.sh"
 # cannot silently regress back to a bare ${CLAUDE_PLUGIN_ROOT}/... string that a harness
 # substituting an unquoted path with a space would split.
 if command -v jq >/dev/null 2>&1; then
-  all_cmds="$(jq -r '[.. | .command? // empty] | .[]' "$HOOKS_JSON" 2>/dev/null)"
+  all_cmds="$(jq_path -r '[.. | .command? // empty] | .[]' "$HOOKS_JSON" 2>/dev/null)"
   unquoted="$(printf '%s\n' "$all_cmds" | grep -vE '^".*"$' || true)"
   if [ -n "$all_cmds" ] && [ -z "$unquoted" ]; then
     ok "every command string in hooks.json is quote-wrapped"
@@ -2038,7 +2107,7 @@ mkdir -p "$SPACE_DEST"
 cp "$CORE/scripts/inject-memory.sh" "$SPACE_DEST/inject-memory.sh"
 chmod +x "$SPACE_DEST/inject-memory.sh"
 space_resolved="$(sed "s#\${CLAUDE_PLUGIN_ROOT}#$SPACE_TMP/first word#g" "$HOOKS_JSON" \
-  | jq -r '.hooks.SessionStart[0].hooks[0].command')"
+  | jq_path -r '.hooks.SessionStart[0].hooks[0].command')"
 expect_code 0 "a resolved command whose path contains a space executes cleanly (quoted)" \
   bash -c "$space_resolved"
 rm -rf "$SPACE_TMP"
@@ -2095,8 +2164,8 @@ if command -v jq >/dev/null 2>&1; then
   BOTH_SETTINGS="$BOTH_TMP/.claude/settings.json"
   has_memory="no"; has_orch="no"
   if [ -f "$BOTH_SETTINGS" ]; then
-    jq -e '.hooks.SessionStart[].hooks[] | select(.command | gsub("\"";"") | endswith("scripts/inject-memory.sh"))' "$BOTH_SETTINGS" >/dev/null 2>&1 && has_memory="yes"
-    jq -e '.hooks.SessionStart[].hooks[] | select(.command | gsub("\"";"") | endswith("scripts/inject-orchestrator-role.sh"))' "$BOTH_SETTINGS" >/dev/null 2>&1 && has_orch="yes"
+    jq_path -e '.hooks.SessionStart[].hooks[] | select(.command | gsub("\"";"") | endswith("scripts/inject-memory.sh"))' "$BOTH_SETTINGS" >/dev/null 2>&1 && has_memory="yes"
+    jq_path -e '.hooks.SessionStart[].hooks[] | select(.command | gsub("\"";"") | endswith("scripts/inject-orchestrator-role.sh"))' "$BOTH_SETTINGS" >/dev/null 2>&1 && has_orch="yes"
   fi
   if [ "$has_memory" = "yes" ] && [ "$has_orch" = "yes" ]; then
     ok "settings.json's SessionStart array carries both inject-memory.sh and inject-orchestrator-role.sh after install.sh --target claude"
@@ -2654,12 +2723,14 @@ echo "=== check-route.sh (Phase 3 deferred half: LIVE Codex requested-vs-observe
 CRT="$CORE/scripts/check-route.sh"
 CRF="$CORE/scripts/ci/fixtures/check-route"
 CRPY="$CORE/scripts/check-route.py"
-PYBIN=""
-for _c in python3 python; do
-  command -v "$_c" >/dev/null 2>&1 || continue
-  "$_c" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)' >/dev/null 2>&1 || continue
-  PYBIN="$_c"; break
-done
+# Use the shared MSYS-safe resolver rather than a raw `python3`. These direct calls pass
+# fixture paths (--rollout-file "$CRF/...") as arguments, and a native Windows
+# interpreter reads bash's /c/Users/... as \c\Users\... -> FileNotFoundError, which the
+# case matcher then reports as a wrong verdict ("did not report mismatch") instead of an
+# unreadable file. Live-confirmed 2026-10-03: same interpreter + native-form path works.
+# On a POSIX host sefi_python_bin is plain `python3` and behavior is unchanged.
+PYBIN="$(sefi_python_bin 2>/dev/null)" || PYBIN=""
+[ -n "$PYBIN" ] || PYBIN="python3"
 [ -n "$PYBIN" ] || echo "  SKIP: no python3/python 3.11+ for direct check-route.py cases"
 
 # --- still-valid non-Codex cases, through the .sh shim ------------------------------

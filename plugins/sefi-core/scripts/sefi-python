@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# sefi-python -- a MSYS/Cygwin-safe Python launcher for the sefi scripts.
+#
+# WHY THIS EXISTS (live-confirmed on Windows/git-bash, 2026-10-03)
+# The sefi scripts resolve their paths with `pwd`, `mktemp`, and friends. Under
+# git-bash those yield MSYS form -- /c/Users/Mary Rose/... -- which a NATIVE
+# Windows Python cannot resolve: it reads /c/Users/... as \c\Users\... and every
+# file open raises FileNotFoundError. The script then exits 2 (a usage error)
+# before it can judge anything, so callers report "expected exit 1, got 2" and
+# installers report a bare failure. One bug, dozens of unrelated-looking test
+# failures.
+#
+# This wrapper translates MSYS drive paths into native forward-slash form
+# (C:/Users/...) before exec'ing the real interpreter. Only a leading
+# `/<single letter>/` is translated, so an absolute POSIX path such as /tmp/x
+# and inline code passed to -c are both left untouched.
+#
+# Point the scripts' interpreter lookup at this file instead of "python3"/"python"
+# and every call site is fixed without editing each one. See find_python() in
+# install-hermes.sh and the sibling scripts.
+#
+# Non-MSYS hosts (Linux, macOS, WSL's Linux side) never reach this path: the
+# lookup only selects it when cygpath exists.
+set -eu
+
+# Resolve the real interpreter once. Prefer python3, then python; require 3.11+
+# for datetime.UTC, matching run-all.sh's floor.
+REAL=""
+for candidate in python3 python; do
+  if command -v "$candidate" >/dev/null 2>&1 \
+    && "$candidate" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)' >/dev/null 2>&1; then
+    REAL="$candidate"
+    break
+  fi
+done
+
+if [ -z "$REAL" ]; then
+  echo "sefi-python: no Python 3.11+ interpreter found" >&2
+  exit 2
+fi
+
+# Translate only MSYS drive paths. Anything else -- /tmp/x, -c code, flags,
+# "-" (stdin script) -- passes through byte for byte.
+#
+# The rebuild writes into a separate array rather than rotating "$@" in place:
+# shifting the real parameter list left it the same length every pass, so the
+# loop never terminated.
+args=()
+for arg in "$@"; do
+  case "$arg" in
+    /[a-zA-Z]/*)
+      converted="$(cygpath -m "$arg" 2>/dev/null)" || converted=""
+      if [ -n "$converted" ]; then
+        args+=("$converted")
+        continue
+      fi
+      ;;
+  esac
+  args+=("$arg")
+done
+
+exec "$REAL" "${args[@]}"

@@ -2,14 +2,10 @@
 # memory-filter.sh -- remove known secrets and raw command/diff dumps before journaling.
 set -euo pipefail
 
-python_bin=""
-for candidate in python python3; do
-  if command -v "$candidate" >/dev/null 2>&1 && "$candidate" -c 'import sys' >/dev/null 2>&1; then
-    python_bin="$candidate"
-    break
-  fi
-done
-[ -n "$python_bin" ] || { echo 'memory-filter: Python is required' >&2; exit 1; }
+# MSYS-safe interpreter: the wrapper translates /c/... paths a native Windows
+# Python cannot resolve. Plain python/python3 elsewhere.
+. "$(cd "$(dirname "$0")" && pwd)/sefi-python.sh"
+python_bin="$(sefi_python_bin)" || { echo 'memory-filter: Python 3.11+ is required' >&2; exit 1; }
 
 "$python_bin" -c '
 import re
