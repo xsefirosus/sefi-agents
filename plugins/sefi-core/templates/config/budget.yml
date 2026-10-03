@@ -1,8 +1,10 @@
 # billing_mode is OPTIONAL. When absent, budget-check.sh resolves a per-harness
 # default: opencode and hermes resolve free, codex and claude-code resolve flat
-# (from --harness, $SEFI_HARNESS, or the machine-local .sefi/harness marker written
-# by /sefi:init; an unknown harness stays metered, fail-closed). An explicit value
-# always wins. Uncomment to opt in -- e.g. metered on usage-based billing:
+# (claude is accepted as an alias of claude-code), resolved from --harness,
+# $SEFI_HARNESS, or the machine-local .sefi/harness marker written by /sefi:init;
+# an unknown harness stays metered, fail-closed. An explicit value always wins. A
+# key present with no value is a usage error, not a request for the default.
+# Uncomment to opt in -- e.g. metered on usage-based billing:
 # billing_mode: free   # allowed: metered, flat, free. See docs/BUDGET.md.
 # Non-dollar discipline (max_retries, per_agent_return_tokens,
 # max_parallel_worktrees, minimization) stays always on --

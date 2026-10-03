@@ -4,7 +4,8 @@
 # cap; fail if any is missing or unbounded (non-numeric). billing_mode is optional:
 # when absent, budget-check.sh resolves a per-harness default (opencode and hermes
 # free, codex and claude-code flat, unknown harness metered); when present it must
-# be one of metered, flat, free, and the explicit value always wins.
+# carry one of metered, flat, free -- declared with no value it is an error, not a
+# request for the default -- and the explicit value always wins.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
@@ -24,6 +25,16 @@ for key in $required; do
 done
 
 mode="$(sed -n "s/^billing_mode:[[:space:]]*\([^[:space:]#]*\).*/\1/p" "$CONFIG" | head -1)"
+declared="$(grep -c '^billing_mode:' "$CONFIG" || true)"
+# Absent is allowed (budget-check.sh resolves the per-harness default); present-but-empty
+# is a config error. The two are indistinguishable from $mode alone -- a keyless config and
+# a key with nothing after the colon both yield an empty string -- so the declaration count
+# is what separates them. Reading empty as "use the default" would pass a config that
+# budget-check.sh refuses to run.
+if [ "$declared" -gt 0 ] && [ -z "$mode" ]; then
+  echo "ERROR: $rel - billing_mode is declared with no value (expected metered, flat, or free; remove the key to use the per-harness default)"
+  errors=$((errors + 1))
+fi
 case "$mode" in
   ""|metered|flat|free) : ;;
   *) echo "ERROR: $rel - billing_mode must be one of metered, flat, free (got '${mode:-<missing>}')"; errors=$((errors + 1)) ;;

@@ -38,14 +38,19 @@ declare how dollars should be treated:
 - Resolution order: an explicit `billing_mode` in `config/budget.yml` always wins.
   When the key is absent, `budget-check.sh` resolves a per-harness default --
   `opencode` and `hermes` resolve `free`, `codex` and `claude-code` resolve `flat`.
+  The four canonical harness names are `opencode`, `hermes`, `codex`, and
+  `claude-code`; `claude` is accepted everywhere as an alias of `claude-code`
+  (`--harness`, `$SEFI_HARNESS`, and the `.sefi/harness` marker all take either).
   The harness comes from the `--harness` flag, then `$SEFI_HARNESS`, then the
   machine-local `.sefi/harness` marker written by `/sefi:init`. No harness signal
   (or an unrecognized one) resolves `metered`: a gate that cannot tell must
-  enforce, not skip.
+  enforce, not skip. A marker that cannot be read counts as no signal.
 - `metered` is opt-in: set `billing_mode: metered` explicitly. A config that
   predates the `billing_mode` key follows the per-harness rule above (previously it
-  always behaved as `metered`). `validate-budget.sh` accepts a missing key and
-  rejects any other value as a usage error.
+  always behaved as `metered`). `validate-budget.sh` accepts a missing key,
+  rejects a key present with no value, and rejects any other value as a usage error
+  -- absent is absent, empty is invalid, in both `validate-budget.sh` and
+  `budget-check.sh` (exit 2).
 - Rationale: on `flat` and especially `free` usage, a dollar figure is either
   plan-rate accounting or an imputation (e.g., ccusage-attributed dollars for tokens
   that cost nothing). Enforcing a dollar cap against such a figure blocks work over

@@ -3,6 +3,40 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [Unreleased]
+
+### Changed
+- Per-harness billing defaults for a config with no `billing_mode` key:
+  `budget-check.sh` resolves `opencode` and `hermes` to `free`, and `codex` and
+  `claude-code` (`claude` is accepted as an alias) to `flat`, from `--harness`,
+  then `$SEFI_HARNESS`, then the machine-local `.sefi/harness` marker written by
+  `/sefi:init`. No harness signal, or an unrecognized one, resolves `metered` --
+  fail-closed. `metered` becomes opt-in. A defaulted skip names its source
+  (`skip scope=... billing_mode=... (per-harness default; ...)`).
+- A `billing_mode` key that is present with no value is now a usage error (exit 2)
+  in both `budget-check.sh` and `validate-budget.sh`: absent is absent, empty is
+  invalid. Reading empty as "use the default" would have silently downgraded a
+  metered install to a skip.
+- `--harness` now rejects a following flag as a missing value
+  (`budget-check: --harness requires a value (got flag '--config')`) instead of
+  consuming it as a harness name; the same check covers every value-taking flag.
+- A `.sefi/harness` marker that cannot be read is handled explicitly: the read is
+  guarded, the case is reported, and the default falls back to `metered`
+  (fail-closed) rather than depending on `errexit` behavior nobody named.
+- Documented the accepted `claude` alias and the empty-value rule in
+  `docs/BUDGET.md`, `Install.md`, `plugins/sefi-core/commands/init.md`,
+  `config/budget.yml`, and the shipped `templates/config/budget.yml`.
+
+### Fixed
+- 2026-10-03 correction (append-only; the v0.9.6 entry below is left byte-for-byte
+  intact as published history -- its GitHub release body is that same text). The
+  v0.9.6 bullets "A config that predates the key defaults to `metered`" and "a
+  missing key defaults to metered" described v0.9.6 behavior and no longer
+  describe this tree: the missing-key default is now per-harness (`opencode` and
+  `hermes` free, `codex` and `claude-code` flat, no signal metered), as the
+  Unreleased section above and `docs/BUDGET.md` state. Those two sentences are
+  superseded for current trees; nothing else in the v0.9.6 entry changes.
+
 ## [0.9.6] - 2026-10-03
 
 ### Added

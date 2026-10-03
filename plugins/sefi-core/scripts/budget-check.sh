@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# budget-check.sh [--scope run|daily|dispatch] [--spent <usd>] [--pending <usd>] [--config <path>] [--harness <name>]
+# budget-check.sh [--scope run|daily|dispatch] [--spent <usd>] [--pending <usd>] [--config <path>]
+#                 [--harness opencode|hermes|codex|claude-code|claude]
 # Enforce caps from config/budget.yml. Uses ccusage for real local spend when available
 # (offline, no network); else the caller-supplied --spent. ccusage is optional -- the
 # fallback keeps the zero-dependency install intact. --pending adds a not-yet-spent
@@ -23,22 +24,35 @@ SCOPE="daily"
 CONFIG="config/budget.yml"
 HARNESS_ARG=""
 
+need_value() {
+  # need_value <flag> <next-token> -- succeed only when the flag is followed by a real value.
+  # A following flag is a MISSING value, not a value: without this, "--harness --config x"
+  # consumed "--config" as the harness name and reported "unknown harness '--config'",
+  # pointing the operator at the wrong flag entirely. Every value-taking flag shares this
+  # one check so the message is the same wherever the mistake is made.
+  case "${2:-}" in
+    '')  echo "budget-check: $1 requires a value (no argument follows it)" >&2; return 1 ;;
+    -*)  echo "budget-check: $1 requires a value (got flag '${2}')" >&2; return 1 ;;
+  esac
+  return 0
+}
+
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --spent)
-      [ "$#" -ge 2 ] && [ -n "${2:-}" ] || { echo "budget-check: --spent requires a value" >&2; exit 2; }
+      need_value "$1" "${2:-}" || exit 2
       SPENT_ARG="$2"; shift 2 ;;
     --pending)
-      [ "$#" -ge 2 ] && [ -n "${2:-}" ] || { echo "budget-check: --pending requires a value" >&2; exit 2; }
+      need_value "$1" "${2:-}" || exit 2
       PENDING_ARG="$2"; shift 2 ;;
     --scope)
-      [ "$#" -ge 2 ] && [ -n "${2:-}" ] || { echo "budget-check: --scope requires a value" >&2; exit 2; }
+      need_value "$1" "${2:-}" || exit 2
       SCOPE="$2"; shift 2 ;;
     --config)
-      [ "$#" -ge 2 ] && [ -n "${2:-}" ] || { echo "budget-check: --config requires a path" >&2; exit 2; }
+      need_value "$1" "${2:-}" || exit 2
       CONFIG="$2"; shift 2 ;;
     --harness)
-      [ "$#" -ge 2 ] && [ -n "${2:-}" ] || { echo "budget-check: --harness requires a value" >&2; exit 2; }
+      need_value "$1" "${2:-}" || exit 2
       case "$2" in
         opencode|hermes|codex|claude-code|claude) HARNESS_ARG="$2" ;;
         *) echo "budget-check: unknown harness '$2' (expected opencode, hermes, codex, claude-code, or claude)" >&2; exit 2 ;;
@@ -70,10 +84,12 @@ esac
 # check is skipped with an explicit recorded reason. An explicit billing_mode in the
 # config always wins. When the key is absent, a per-harness default applies:
 # opencode and hermes resolve free, codex and claude-code resolve flat; no (or an
-# unrecognized) harness signal resolves metered, fail-closed. The harness comes from
-# --harness, then $SEFI_HARNESS, then the machine-local .sefi/harness marker written
-# by /sefi:init. Non-dollar discipline (retry caps, reply caps, minimization,
-# worktree caps) lives outside this script and stays always on regardless of mode.
+# unrecognized) harness signal resolves metered, fail-closed. A key that is present
+# but has no value is a usage error, not a request for that default. The harness
+# comes from --harness, then $SEFI_HARNESS, then the machine-local .sefi/harness
+# marker written by /sefi:init (claude is accepted as an alias of claude-code).
+# Non-dollar discipline (retry caps, reply caps, minimization, worktree caps) lives
+# outside this script and stays always on regardless of mode.
 default_billing_mode() {
   # default_billing_mode -- print the billing_mode for a config without the key.
   # Never fails: ambient signals ($SEFI_HARNESS, the marker file) sanitize to
@@ -88,7 +104,18 @@ default_billing_mode() {
       opencode|hermes|codex|claude-code|claude) h="$SEFI_HARNESS" ;;
     esac
   elif [ -f .sefi/harness ]; then
-    marker="$(head -n1 .sefi/harness 2>/dev/null | tr -d '\r\n' | tr -d '[:space:]')"
+    # Guarded, because what the guard costs is one line and what skipping it costs is the
+    # exit code a caller acts on. An unguarded `marker="$(head ...)"` has two failure modes:
+    # where errexit applies to the assignment (the function called directly), the script dies
+    # with a bare exit 1 that no reader can tell from EXCEEDED; inside this script's actual
+    # call path -- `BILLING_MODE="$(default_billing_mode)"` -- errexit does not reach the
+    # substitution, so the failure is swallowed instead and the marker silently becomes empty.
+    # Either way nothing names the unreadable marker. Now it is named, and "no signal" is
+    # treated explicitly: sanitize to metered, say so, fail closed.
+    if ! marker="$(head -n1 .sefi/harness 2>/dev/null | tr -d '\r\n' | tr -d '[:space:]')"; then
+      marker=""
+      echo "budget-check: .sefi/harness is present but unreadable; the per-harness default falls back to metered (fail-closed)" >&2
+    fi
     case "$marker" in
       opencode|hermes|codex|claude-code|claude) h="$marker" ;;
     esac
@@ -100,14 +127,22 @@ default_billing_mode() {
   esac
 }
 
+billing_declared="$(grep -c '^billing_mode:' "$CONFIG" || true)"
+if [ "$billing_declared" -gt 1 ]; then
+  echo "budget-check: billing_mode is ambiguous in $CONFIG (declared more than once)" >&2; exit 2
+fi
 BILLING_MODE="$(get_cap billing_mode)"
 BILLING_DEFAULTED=0
-if [ -z "$BILLING_MODE" ]; then
+if [ "$billing_declared" -eq 0 ]; then
   BILLING_MODE="$(default_billing_mode)"
   BILLING_DEFAULTED=1
-fi
-if [ "$(grep -c '^billing_mode:' "$CONFIG" || true)" -gt 1 ]; then
-  echo "budget-check: billing_mode is ambiguous in $CONFIG (declared more than once)" >&2; exit 2
+elif [ -z "$BILLING_MODE" ]; then
+  # Absent is absent; declared-with-no-value is a config error. Reading an empty value as
+  # "use the default" is how a metered install silently becomes a skip because someone
+  # emptied the key or left only a comment -- the operator asked for nothing, which is not
+  # the same as asking for the per-harness default.
+  echo "budget-check: billing_mode is declared with no value in $CONFIG (expected metered, flat, or free; remove the key entirely to use the per-harness default)" >&2
+  exit 2
 fi
 case "$BILLING_MODE" in
   metered) : ;;

@@ -40,7 +40,10 @@ skip the dollar-cap checks (`budget-check.sh` exits 0 with a recorded skip
 reason). An explicit `billing_mode` always wins; when the key is absent a
 per-harness default applies -- `opencode` and `hermes` resolve `free`, `codex`
 and `claude-code` resolve `flat` (from `--harness`, `$SEFI_HARNESS`, or the
-`.sefi/harness` marker) -- and `metered` is opt-in. Everything that is not a dollar
+`.sefi/harness` marker; the four canonical harness names are `opencode`,
+`hermes`, `codex`, and `claude-code`, and `claude` is accepted everywhere as an
+alias of `claude-code`) -- and `metered` is opt-in. A `billing_mode` key present
+with no value is a usage error, not a request for the default. Everything that is not a dollar
 cap -- retry caps, reply caps, worktree caps, the minimization ladder, and the
 token-discipline stack -- stays always on regardless of mode. See
 `docs/BUDGET.md` for the full spend-mode table and rationale.

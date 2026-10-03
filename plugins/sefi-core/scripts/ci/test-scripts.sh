@@ -25,6 +25,26 @@ expect_code() {
   if [ "$got" -eq "$want" ]; then ok "$label (exit $got)"; else bad "$label (expected exit $want, got $got)"; fi
 }
 
+expect_diagnosed() {
+  # expect_diagnosed <label> <cmd...> -- the run must end in one of budget-check.sh's own
+  # documented exits (0 within cap, 1 exceeded, 2 usage, 3 cannot measure) AND say which on
+  # stderr. The exit code alone is the contract a caller can act on, so an exit nobody named
+  # -- an aborted script, or a bare 1 from an unguarded pipeline under `set -e` -- fails here
+  # even though it shares its number with a legitimate EXCEEDED.
+  local label="$1"
+  shift
+  local out="" got=0
+  out="$("$@" 2>&1 >/dev/null)" || got=$?
+  case "$got" in
+    0|1|2|3) : ;;
+    *) bad "$label (exit $got is outside the documented set 0/1/2/3): $out"; return ;;
+  esac
+  case "$out" in
+    budget-check:*) ok "$label (exit $got, and it named itself)" ;;
+    *) bad "$label (exit $got with no budget-check diagnostic): $out" ;;
+  esac
+}
+
 echo "=== budget-check.sh (audit gap 8.1: the fail-open) ==="
 
 # The shipped template carries no billing_mode key (a missing key resolves via the
@@ -112,9 +132,11 @@ echo "=== budget-check.sh billing_mode (metered-vs-flat spend-mode switching) ==
 # recorded reason. An explicit billing_mode in the config always wins; a config
 # without the key resolves a per-harness default (opencode/hermes free,
 # codex/claude-code flat, no signal metered fail-closed) from --harness, then
-# $SEFI_HARNESS, then the machine-local .sefi/harness marker. Non-dollar discipline
-# (retry caps, reply caps, minimization, worktree caps) lives outside this script
-# and stays always on regardless of mode.
+# $SEFI_HARNESS, then the machine-local .sefi/harness marker (claude is accepted as an
+# alias of claude-code). A key that is present but empty is a usage error on both sides
+# (budget-check.sh and validate-budget.sh), never a silent request for that default.
+# Non-dollar discipline (retry caps, reply caps, worktree caps) lives outside this
+# script and stays always on regardless of mode.
 MODETMP="$(mktemp -d)"
 mkbilling() {
   # mkbilling <name> [mode] -- write $MODETMP/<name>.yml as the keyless template,
@@ -132,6 +154,10 @@ mkbilling flat flat
 mkbilling free free
 mkbilling nomode
 mkbilling badmode gold
+# The two "no value" shapes an operator actually writes: a bare key, and a key whose
+# only content is a comment. Both are declared-but-empty, which is a usage error.
+mkbilling emptymode ""
+mkbilling commentmode "   # left holding only a comment"
 
 # Metered enforcement is unchanged: 999.00 against the template's 2.00 daily cap.
 expect_code 1 "billing_mode=metered still enforces the dollar cap" \
@@ -211,6 +237,50 @@ printf 'definitely-not-a-harness\n' > "$MARKTMP/.sefi/harness"
 expect_code 1 "an unrecognized marker sanitizes to metered (fail-closed, never a skip)" \
   bash -c "cd '$MARKTMP' && env -u SEFI_HARNESS bash '$CORE/scripts/budget-check.sh' --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'"
 
+# An unreadable marker must be handled explicitly, not by accident. An unguarded
+# `marker="$(head ...)"` has two failure modes, both bad and both silent about the marker:
+# where errexit reaches the assignment the script dies with a bare exit 1 a caller cannot
+# tell from EXCEEDED; inside budget-check.sh's actual call path (`BILLING_MODE="$(...)"`)
+# errexit does not reach the substitution, so the failure is swallowed and the marker
+# silently becomes empty. The read is guarded and the unreadable case now names itself,
+# resolving metered, fail-closed.
+#
+# Forced portably by stubbing the reader itself, the same idiom as the ccusage stubs above:
+# what the guard must survive is a FAILING read, and a mode-000 file is not a portable way
+# to produce one (NTFS under msys/Git-bash serves a mode-000 file happily). The real
+# permission-denied case is probed separately below and SKIPs where the platform will not
+# produce an unreadable file.
+printf 'opencode\n' > "$MARKTMP/.sefi/harness"
+RDSTUB="$(mktemp -d)"
+printf '#!/bin/sh\nexit 1\n' > "$RDSTUB/head"
+chmod +x "$RDSTUB/head"
+expect_code 1 "a failing marker read falls back to metered (fail-closed, never a skip)" \
+  bash -c "cd '$MARKTMP' && env -u SEFI_HARNESS PATH='$RDSTUB:$PATH' bash '$CORE/scripts/budget-check.sh' --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'"
+read_fail_out="$(bash -c "cd '$MARKTMP' && env -u SEFI_HARNESS PATH='$RDSTUB:$PATH' bash '$CORE/scripts/budget-check.sh' --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'" 2>&1 >/dev/null)"
+case "$read_fail_out" in
+  *unreadable*) ok "a failing marker read is reported explicitly, not swallowed" ;;
+  *) bad "a failing marker read produced no recorded reason: $read_fail_out" ;;
+esac
+expect_diagnosed "a failing marker read never aborts with a bare exit 1" \
+  bash -c "cd '$MARKTMP' && env -u SEFI_HARNESS PATH='$RDSTUB:$PATH' bash '$CORE/scripts/budget-check.sh' --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'"
+rm -rf "$RDSTUB"
+
+# The real thing, where the filesystem can produce it: mode 000 on the marker itself.
+chmod 000 "$MARKTMP/.sefi/harness" 2>/dev/null
+if head -n1 "$MARKTMP/.sefi/harness" >/dev/null 2>&1; then
+  chmod 644 "$MARKTMP/.sefi/harness" 2>/dev/null
+  echo "  SKIP: permission-denied marker assertion (this filesystem still serves a mode-000 file)"
+else
+  expect_code 1 "a permission-denied .sefi/harness marker falls back to metered (fail-closed, never a skip)" \
+    bash -c "cd '$MARKTMP' && env -u SEFI_HARNESS bash '$CORE/scripts/budget-check.sh' --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'"
+  denied_out="$(bash -c "cd '$MARKTMP' && env -u SEFI_HARNESS bash '$CORE/scripts/budget-check.sh' --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'" 2>&1 >/dev/null)"
+  case "$denied_out" in
+    *unreadable*) ok "a permission-denied marker is reported explicitly, not swallowed" ;;
+    *) bad "a permission-denied marker produced no recorded reason: $denied_out" ;;
+  esac
+  chmod 644 "$MARKTMP/.sefi/harness" 2>/dev/null
+fi
+
 # An explicit user value always wins over every default signal -- and metered
 # stays available as an opt-in on any harness.
 expect_code 1 "explicit metered beats an opencode free default (metered opt-in)" \
@@ -234,6 +304,21 @@ expect_code 2 "--harness gold is a usage error, not a silent default" \
   env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" --harness gold --scope daily --spent 0 --config "$MODETMP/nomode.yml"
 expect_code 2 "--harness with no value is a usage error" \
   env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" --harness --config "$MODETMP/nomode.yml"
+expect_code 2 "--harness as the final argument is a usage error" \
+  env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" --scope daily --spent 0 --config "$MODETMP/nomode.yml" --harness
+
+# A flag following --harness is a MISSING value, not a harness name. Reading "--config" as
+# the harness reported "unknown harness '--config'", sending the operator to the wrong flag.
+hv_flag="$(env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" --harness --config "$MODETMP/nomode.yml" 2>&1 >/dev/null)"
+case "$hv_flag" in
+  *"--harness requires a value"*) ok "--harness followed by a flag is reported as a missing value" ;;
+  *) bad "--harness swallowed the following flag as a harness name: $hv_flag" ;;
+esac
+hv_end="$(env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" --scope daily --spent 0 --config "$MODETMP/nomode.yml" --harness 2>&1 >/dev/null)"
+case "$hv_end" in
+  *"--harness requires a value"*) ok "--harness at the end of the arguments is reported as a missing value" ;;
+  *) bad "--harness at the end of the arguments reported something else: $hv_end" ;;
+esac
 
 # Exit-3 semantics are unchanged for metered: no ccusage AND no --spent still means
 # CANNOT MEASURE. Skipped when ccusage is installed locally; CI has none, and CI is
@@ -253,6 +338,59 @@ expect_code 0 "billing_mode=flat with no spend source still skips (never CANNOT 
 # An unknown mode is a usage error, never a silent default.
 expect_code 2 "billing_mode=gold is a usage error, not a silent default" \
   bash "$CORE/scripts/budget-check.sh" --scope daily --spent 0 --config "$MODETMP/badmode.yml"
+
+# Absent is absent; declared-but-empty is invalid. The two are indistinguishable from the
+# parsed value alone (both read as the empty string), so each needs its own fixture: one
+# resolving through the per-harness default, one refused. An empty value must NOT be read
+# as a request for that default -- the operator declared the key and gave it nothing, which
+# is a config error, not a choice between free, flat, and metered.
+expect_code 0 "a config with no billing_mode key at all still resolves (absent is allowed)" \
+  env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" --harness opencode --scope daily --spent 999.00 --config "$MODETMP/nomode.yml"
+expect_code 2 "a declared-but-empty billing_mode is a usage error, not the per-harness default" \
+  env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" --harness opencode --scope daily --spent 999.00 --config "$MODETMP/emptymode.yml"
+expect_code 2 "a billing_mode holding only a comment is a usage error too" \
+  env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" --harness opencode --scope daily --spent 999.00 --config "$MODETMP/commentmode.yml"
+empty_out="$(env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" --harness opencode --scope daily --spent 999.00 --config "$MODETMP/emptymode.yml" 2>&1 >/dev/null)"
+case "$empty_out" in
+  *"declared with no value"*) ok "the empty billing_mode error names the defect and the fix" ;;
+  *) bad "the empty billing_mode error did not name the defect: $empty_out" ;;
+esac
+
+# The same absent-vs-empty contract on the validator's side. validate-budget.sh resolves its
+# own path from its own location, so the fixtures run it from a throwaway tree holding the
+# script and a budget.yml under the path it expects (no --config flag to add for a test).
+VB="$(mktemp -d)"
+VB_CORE="$VB/plugins/sefi-core"
+VB_TPL="$VB_CORE/templates/config/budget.yml"
+mkdir -p "$VB_CORE/scripts/ci" "$VB_CORE/templates/config"
+cp "$CORE/scripts/ci/validate-budget.sh" "$VB_CORE/scripts/ci/validate-budget.sh"
+mkvb() {
+  # mkvb [mode] -- write the throwaway tree's budget.yml: the keyless template with no mode
+  # argument, or with an explicit billing_mode line appended when one is given.
+  if [ "$#" -ge 1 ]; then
+    { cat "$BUDGET_TPL"; printf 'billing_mode: %s\n' "$1"; } > "$VB_TPL"
+  else
+    cat "$BUDGET_TPL" > "$VB_TPL"
+  fi
+}
+mkvb
+expect_code 0 "validate-budget.sh accepts a config with no billing_mode key (absent is allowed)" \
+  bash "$VB_CORE/scripts/ci/validate-budget.sh"
+mkvb metered
+expect_code 0 "validate-budget.sh accepts an explicit metered" \
+  bash "$VB_CORE/scripts/ci/validate-budget.sh"
+mkvb ""
+expect_code 1 "validate-budget.sh rejects a declared-but-empty billing_mode (not the per-harness default)" \
+  bash "$VB_CORE/scripts/ci/validate-budget.sh"
+vb_empty="$(bash "$VB_CORE/scripts/ci/validate-budget.sh" 2>&1)"
+case "$vb_empty" in
+  *"declared with no value"*) ok "the validator's empty-value error names the defect and the fix" ;;
+  *) bad "the validator's empty-value error did not name the defect: $vb_empty" ;;
+esac
+mkvb gold
+expect_code 1 "validate-budget.sh still rejects an unrecognized mode" \
+  bash "$VB_CORE/scripts/ci/validate-budget.sh"
+rm -rf "$VB"
 
 # Scope handling is unchanged by mode: an unknown scope still fails even when flat.
 expect_code 2 "an unknown scope is still rejected when billing_mode=flat" \

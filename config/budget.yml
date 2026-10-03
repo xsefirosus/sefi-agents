@@ -1,7 +1,12 @@
 billing_mode: metered   # metered enforces the dollar caps below; flat and free skip
                         # dollar-cap checks (budget-check.sh exits 0 with a recorded
-                        # skip reason). Allowed: metered, flat, free. A config that
-                        # predates this key defaults to metered (current behavior).
+                        # skip reason). Allowed: metered, flat, free. This file sets the
+                        # key explicitly, which always wins. If the key is ABSENT instead,
+                        # budget-check.sh resolves a per-harness default: opencode and
+                        # hermes resolve free, codex and claude-code (claude is accepted as
+                        # an alias) resolve flat, and no or unknown harness stays metered
+                        # (fail-closed). A key present with no value is a usage error, not
+                        # a request for that default.
                         # Non-dollar discipline (max_retries, per_agent_return_tokens,
                         # max_parallel_worktrees, minimization) stays always on --
                         # see docs/BUDGET.md.

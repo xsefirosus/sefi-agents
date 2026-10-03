@@ -24,10 +24,11 @@ file:
 - `templates/config/sefi.config.yml` to `config/sefi.config.yml`
 
 Create `.sefi/` and `.worktrees/logs/` locally. Write the harness name that ran
-init (`opencode`, `hermes`, `codex`, or `claude-code`) as one line in
-`.sefi/harness` -- a machine-local install fact that `budget-check.sh` reads to
-resolve the per-harness billing default and the memory mirror reads to name
-mirrored files; never overwrite an existing marker. Add `memory/`, `audits/`, `.sefi/`, and
+init (`opencode`, `hermes`, `codex`, or `claude-code`; `claude` is accepted as an
+alias of `claude-code`) as one line in `.sefi/harness` -- a machine-local install
+fact that `budget-check.sh` reads to resolve the per-harness billing default and
+the memory mirror reads to name mirrored files; never overwrite an existing
+marker. Add `memory/`, `audits/`, `.sefi/`, and
 `.worktrees/logs/` to `.gitignore` only when absent. Runtime memory and audit reports
 are private, local, and never committed. The packaged `plugins/sefi-core/templates/memory/`
 and `templates/audits/` sources remain part of the plugin.
