@@ -3,6 +3,27 @@
 All notable changes to sefi-agents are documented here. Format follows Keep a
 Changelog; this project adheres to Semantic Versioning.
 
+## [0.9.6] - 2026-10-03
+
+### Added
+- Spend-mode switching for installs: `config/budget.yml` (and the shipped
+  template) declares `billing_mode` -- `metered`, `flat`, or `free`. A config
+  that predates the key defaults to `metered`, preserving current behavior.
+  `validate-budget.sh` rejects any other value as a usage error.
+- Fixture coverage for the spend-mode switch in `test-scripts.sh`: metered
+  enforcement is unchanged, `flat` and `free` skip with a recorded reason, a
+  missing key defaults to metered, metered exit-3 (CANNOT MEASURE) semantics
+  are unchanged, and unknown modes or scopes remain usage errors.
+
+### Changed
+- Dollar-denominated budget scopes (`per_run_usd_cap`, `daily_usd_cap`,
+  `per_dispatch_usd_cap`) enforce only when billing is metered. On `flat` or
+  `free` plans `budget-check.sh` exits 0 with a recorded skip reason
+  (`skip scope=... billing_mode=...`), so ccusage-imputed dollars on free
+  usage never block work. Everything that is not a dollar cap -- retry caps,
+  reply caps, worktree caps, the minimization ladder, and the token-discipline
+  stack in `docs/BUDGET.md` -- stays always on regardless of mode.
+
 ## [0.9.5] - 2026-09-28
 
 ### Added

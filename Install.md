@@ -31,6 +31,18 @@ installer verifies every fetched skill against its expected source before report
 success. Candidate-checkout tests and public-source smoke checks are separate evidence.
 See `adapters/OPENCODE.md` and `adapters/HERMES.md` for exact limits.
 
+## v0.9.6 spend modes (`billing_mode`)
+
+The installed v0.9.6 package declares how dollars are treated in
+`config/budget.yml`: `metered` (default) enforces the dollar caps
+(`per_run_usd_cap`, `daily_usd_cap`, `per_dispatch_usd_cap`); `flat` and `free`
+skip the dollar-cap checks (`budget-check.sh` exits 0 with a recorded skip
+reason). A config that predates the key behaves as `metered`, and
+`validate-budget.sh` rejects any other value. Everything that is not a dollar
+cap -- retry caps, reply caps, worktree caps, the minimization ladder, and the
+token-discipline stack -- stays always on regardless of mode. See
+`docs/BUDGET.md` for the full spend-mode table and rationale.
+
 ## Operating Rules
 - Be idempotent: a second run changes nothing already in place.
 - Never overwrite an existing config or memory file.

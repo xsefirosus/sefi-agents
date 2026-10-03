@@ -327,3 +327,11 @@
   defects recorded in the audit evidence and are not ledger failures. The
   2026-09-30 exit-1 observations are preserved above; they describe a state
   this replay does not reproduce at 153a729.
+
+| 0.9.6 | plugin.json | 0.9.6 | 0.9.6 | match | plugins/sefi-core/.claude-plugin/plugin.json version key -> 0.9.6; plugins/sefi-core/.codex-plugin/plugin.json version key -> 0.9.6 | a README count or CHANGELOG heading that happens to agree | 2026-10-03T00:00:00Z |
+| 0.9.6 | marketplace.json | 0.9.6 | 0.9.6 | match | .claude-plugin/marketplace.json metadata.version -> 0.9.6 | updating one occurrence and assuming the other followed | 2026-10-03T00:00:00Z |
+| 0.9.6 | marketplace.json | 0.9.6 | 0.9.6 | match | .claude-plugin/marketplace.json plugins[0].version -> 0.9.6 | updating one occurrence and assuming the other followed | 2026-10-03T00:00:00Z |
+| 0.9.6 | changelog | 0.9.6 | 0.9.6 | match | CHANGELOG.md first versioned heading -> ## [0.9.6] - 2026-10-03 | a Changed or Added bullet without a dated heading above it | 2026-10-03T00:00:00Z |
+| 0.9.6 | git-tag | 0.9.6 | unobserved | unobserved | PENDING before publication: no local or remote v0.9.6 tag was created by this implementation work | a local tag that was never pushed to origin | 2026-10-03T00:00:00Z |
+| 0.9.6 | github-release | 0.9.6 | unobserved | unobserved | PENDING before publication: no GitHub v0.9.6 release was created by this implementation work | a local or pushed tag with no release | 2026-10-03T00:00:00Z |
+| 0.9.6 | github-marketplace-index | 0.9.6 | unobserved | unobserved | PENDING before publication: public marketplace state was not changed by this implementation work | install commands quoted only in a README | 2026-10-03T00:00:00Z |
