@@ -1,0 +1,45 @@
+=== utc ===
+2026-10-02T12:58:28Z
+fatal: detected dubious ownership in repository at 'D:/Projects/Sefi-Agents/.worktrees/v095-handover-20261001'
+'D:/Projects/Sefi-Agents/.worktrees/v095-handover-20261001' is owned by:
+	LAPTOP-F5LS80H7/CodexSandboxOffline (S-1-5-21-2598177735-2198754906-1183799802-1004)
+but the current user is:
+	NT AUTHORITY/SYSTEM (S-1-5-18)
+To add an exception for this directory, call:
+
+	git config --global --add safe.directory D:/Projects/Sefi-Agents/.worktrees/v095-handover-20261001
+HOME=/c/Windows/Temp/sefi-native-20261002/home-claude-fb USERPROFILE=/c/Windows/Temp/sefi-native-20261002/home-claude-fb HEAD=
+=== fallback install ===
+install-exit=0
+install.sh: done. Target=claude-code dest=/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude mode=symlink
+sefi-agents: installation succeeded.
+sefi-agents: run /sefi:init once from each project root before the first routed request.
+sefi-agents: auto-init is unsafe because installation is user-wide and cannot safely choose or modify a project.
+sefi-agents: cross-project memory is optional, local/private, and off by default; /sefi:init asks interactively and keeps it off when unattended.
+=== content refs ===
+systems-audit files=17
+systems-auditor files=12
+validate-audit-report files=10
+audit-report files=16
+=== settings wiring ===
+grep: /c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/settings.json: No such file or directory
+grep: /c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/settings.json: No such file or directory
+=== managed hashes ===
+74ce82187583dc59f46477906473e64d840f30b745529b6987a26c4509bbd74b */c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/skills/systems-audit/SKILL.md
+=== validator legs (candidate runtime) ===
+runtime=/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/scripts/ci/validate-audit-report.sh
+ERROR: unknown argument: --help
+usage: validate-audit-report.sh [--strict] [--root <absolute-project-directory>] [<report-path>]
+usage-exit=0
+ERROR: audits/bad.md - missing skeleton heading '## Summary'
+ERROR: audits/bad.md - missing skeleton heading '## Scope'
+ERROR: audits/bad.md - missing skeleton heading '## Method'
+ERROR: audits/bad.md - missing skeleton heading '## Findings'
+ERROR: audits/bad.md - missing skeleton heading '## Fixes'
+ERROR: audits/bad.md - missing skeleton heading '## Improvements'
+ERROR: audits/bad.md - missing skeleton heading '## Nice-to-haves'
+ERROR: audits/bad.md - missing skeleton heading '## Follow-up'
+ERROR: audits/bad.md - no severity label (Critical/Major/Minor/Nice) outside the skeleton headings
+ERROR: audits/bad.md - file name carries no audit-report-<scope>- scope token
+validate-audit-report: 10 error(s)
+malformed-exit=0

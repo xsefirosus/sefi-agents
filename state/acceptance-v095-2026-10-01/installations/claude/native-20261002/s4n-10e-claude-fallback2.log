@@ -1,0 +1,49 @@
+=== utc ===
+2026-10-02T12:59:15Z
+HEAD=25c4b97adc9af0a784e594d64adf1ddd324d2536 (captured before HOME override; git honors safe.directory only via real HOME)
+=== installed tree ===
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/agents
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/agents/devops-engineer.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/agents/memory-journalist.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/agents/motion-designer.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/agents/product-manager.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/agents/prompt-engineer.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/agents/qa-engineer.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/agents/research-adoption-scout.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/agents/research-analyst.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/agents/research-codebase-cartographer.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/agents/security-engineer.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/agents/sefi-agents.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/agents/software-engineer.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/agents/solutions-architect.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/agents/support-engineer.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/agents/systems-auditor.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/agents/technical-writer.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/agents/ui-ux-designer.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/commands
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/commands/audit.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/commands/close-session.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/commands/cross-memory.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/commands/init.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/commands/loop-new.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/commands/map-codebase.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/commands/memory-index.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/commands/memory-search.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/commands/retro.md
+/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/commands/route.md
+=== settings files ===
+no settings.json under disposable home
+=== hash lineage ===
+74ce82187583dc59f46477906473e64d840f30b745529b6987a26c4509bbd74b *plugins/sefi-core/skills/systems-audit/SKILL.md
+installed=/c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/skills/systems-audit/SKILL.md
+74ce82187583dc59f46477906473e64d840f30b745529b6987a26c4509bbd74b */c/Windows/Temp/sefi-native-20261002/home-claude-fb/.claude/skills/systems-audit/SKILL.md
+=== validator true exits (no pipe) ===
+badflag-exit=2
+ERROR: unknown argument: --bogus-flag
+usage: validate-audit-report.sh [--strict] [--root <absolute-project-directory>] [<report-path>]
+malformed-exit=1
+ERROR: audits/bad.md - file name carries no audit-report-<scope>- scope token
+validate-audit-report: 10 error(s)
+noreport-exit=0
+validate-audit-report: OK (0 report(s) checked)

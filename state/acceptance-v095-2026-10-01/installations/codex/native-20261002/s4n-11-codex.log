@@ -1,0 +1,52 @@
+=== utc ===
+2026-10-02T12:59:42Z
+HEAD=25c4b97adc9af0a784e594d64adf1ddd324d2536 CODEX_HOME=/c/Windows/Temp/sefi-native-20261002/home-codex
+=== version ===
+codex-cli 0.160.0
+exit=0
+=== gate: --candidate-marketplace without CODEX_HOME ===
+exit=2
+install-codex.sh: --candidate-marketplace requires an explicit isolated CODEX_HOME
+=== candidate install with isolated CODEX_HOME ===
+exit=2
+install-codex.sh: Python is required to verify the installed plugin source and write TOML profiles
+=== isolated home content ===
+/c/Windows/Temp/sefi-native-20261002/home-codex
+=== bootstrap block ===
+grep: /c/Windows/Temp/sefi-native-20261002/home-codex/AGENTS.md: No such file or directory
+=== doctor (auth/config diagnosis, read-only) ===
+exit=1
+Codex Doctor v0.160.0 · windows-x86_64
+
+Notes
+   ⚠ security     Microsoft Defender can interfere with Codex. Verify Codex exclusions.
+   ⚠ git          this worktree is not on a Windows Dev Drive; moving it to a trusted Dev Drive can significantly improve repository and filesystem performance - create a trusted Windows Dev Drive for source repositories: https://learn.microsoft.com/en-us/windows/dev-drive/
+   ✗ auth         no Codex credentials were found - Run codex login or provide an API key through a supported auth env var.
+   ⚠ websocket    Responses WebSocket failed; HTTPS fallback may still work - Check proxy, VPN, firewall, DNS, custom CA, and WebSocket policy support.
+─────────────────────────────────────────────────────────────
+
+Environment
+  ✓ system       en-US
+      os                       Windows 10.0.26200 (Windows 11 Core) [64-bit]
+      OS language              en-US
+      VISUAL                   not set
+      EDITOR                   not set
+  ✓ disk         sufficient free disk space (90.7 GiB)
+      warning threshold        5.0 GiB
+      failure threshold        1.0 GiB
+      CODEX_HOME available     90.7 GiB
+      worktree available       106.6 GiB
+  ⚠ security     Microsoft Defender can interfere with Codex. Verify Codex exclusions.
+      endpoint products        Microsoft Defender
+      exclusion targets        signed Codex app; codex.exe; codex-windows-sandbox-setup.exe; codex-command-runner.exe; codex-code-mode-host.exe
+    ▸ Codex exclusions         not verified (expected Codex application and helper exclusions)
+    → Microsoft Defender: Add a certificate or executable-path exclusion for Codex and its helpers. If Attack Surface Reduction blocks Codex, add a rule exclusion. If Controlled Folder Access blocks Codex, allow the app.
+  ✓ runtime      npm (package C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc, bin C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc\bin, resources C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc\codex-resources, path C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc\codex-path)
+      version                  0.160.0
+      install method           npm (package C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc, bin C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc\bin, resources C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc\codex-resources, path C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc\codex-path)
+      commit                   unknown
+      executable               C:\Windows\Temp\sefi-native-20261002\npm-global\node_modules\@openai\codex\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc\bin\codex.exe
+=== invocation attempt (stdin closed, 120s bound) ===
+exit=1
+Reading additional input from stdin...
+Not inside a trusted directory and --skip-git-repo-check was not specified.

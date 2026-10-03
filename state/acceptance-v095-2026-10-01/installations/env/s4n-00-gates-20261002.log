@@ -1,0 +1,25 @@
+=== utc ===
+2026-10-02T12:50:19Z
+=== head ===
+25c4b97adc9af0a784e594d64adf1ddd324d2536
+=== budget dispatch ===
+budget-check: CANNOT MEASURE scope=dispatch cap=0.15 -- no usable spend source (ccusage/jq absent or returning nothing, and --spent not supplied); the cap was NOT checked. Pass --spent <usd> (0 asserts zero spend) or install ccusage.
+exit=3
+=== budget daily ===
+budget-check: CANNOT MEASURE scope=daily cap=2.00 -- no usable spend source (ccusage/jq absent or returning nothing, and --spent not supplied); the cap was NOT checked. Pass --spent <usd> (0 asserts zero spend) or install ccusage.
+exit=3
+=== model-for ===
+model-for: usage: model-for.sh <harness> <tier>
+exit=2
+=== PATH CLI probes ===
+claude: ABSENT
+codex: ABSENT
+opencode: ABSENT
+hermes: ABSENT
+=== npm registry reachability ===
+2.1.287
+exit=0
+0.160.0
+exit=0
+1.18.34
+exit=0

@@ -1,0 +1,49 @@
+=== utc ===
+2026-10-02T13:07:09Z
+=== real ~/.codex top-level, today-dated entries ===
+drwxr-xr-x 1 SYSTEM 18         0 2026-10-02 17:06:50.574488900 +0400 .
+drwxr-xr-x 1 SYSTEM 18         0 2026-10-02 07:49:49.122739000 +0400 ..
+-rw-r--r-- 1 SYSTEM 18    186753 2026-10-02 17:06:50.567424400 +0400 .codex-global-state.json
+-rw-r--r-- 1 SYSTEM 18    186753 2026-10-02 17:06:50.572003200 +0400 .codex-global-state.json.bak
+-rw-r--r-- 1 SYSTEM 18         0 2026-10-02 11:17:30.361287300 +0400 .codex-provisioning-b0711aba7d0702fa.guard
+-rw-r--r-- 1 SYSTEM 18 115728384 2026-10-02 17:00:17.611852000 +0400 logs_2.sqlite
+-rw-r--r-- 1 SYSTEM 18     32768 2026-10-02 17:00:37.603006300 +0400 logs_2.sqlite-shm
+-rw-r--r-- 1 SYSTEM 18    374952 2026-10-02 17:05:37.599969100 +0400 logs_2.sqlite-wal
+-rw-r--r-- 1 SYSTEM 18    418902 2026-10-02 17:05:16.332164100 +0400 models_cache.json
+-rw-r--r-- 1 SYSTEM 18   4136960 2026-10-02 14:44:38.946698800 +0400 state_5.sqlite
+drwxr-xr-x 1 SYSTEM 18         0 2026-10-02 00:39:37.893707400 +0400 thread-writer-locks
+-rw-r--r-- 1 SYSTEM 18 165466112 2026-10-02 00:54:52.807090800 +0400 thread_history_1.sqlite
+=== real ~/.codex pre-existing settings (mtimes must predate 2026-10-02T12:50Z) ===
+-rw-r--r-- 1 SYSTEM 18  474 2026-09-11 16:47:50.928844400 +0400 /c/Users/Mary Rose/.codex/AGENTS.md
+-rw-r--r-- 1 SYSTEM 18 4002 2026-10-01 10:24:31.023659800 +0400 /c/Users/Mary Rose/.codex/auth.json
+-rw-r--r-- 1 SYSTEM 18 5996 2026-10-01 15:36:25.338111200 +0400 /c/Users/Mary Rose/.codex/config.toml
+=== real ~/.claude top-level ===
+total 1387
+drwxr-xr-x 1 SYSTEM 18      0 2026-09-09 15:45:59.454272300 +0400 .
+drwxr-xr-x 1 SYSTEM 18      0 2026-10-02 07:49:49.122739000 +0400 ..
+-rw-r--r-- 1 SYSTEM 18   5966 2026-09-09 15:45:59.415786800 +0400 .credentials.json
+-rw-r--r-- 1 SYSTEM 18     24 2026-09-03 22:06:16.969167300 +0400 .last-cleanup
+-rw-r--r-- 1 SYSTEM 18    165 2026-09-04 19:16:08.587157800 +0400 .last-update-result.json
+drwxr-xr-x 1 SYSTEM 18      0 2026-08-29 11:44:48.037004200 +0400 agents
+drwxr-xr-x 1 SYSTEM 18      0 2026-09-09 15:46:00.388776100 +0400 backups
+drwxr-xr-x 1 SYSTEM 18      0 2026-09-03 20:57:03.878848100 +0400 cache
+drwxr-xr-x 1 SYSTEM 18      0 2026-08-29 11:44:48.261873300 +0400 commands
+drwxr-xr-x 1 SYSTEM 18      0 2026-08-11 00:50:33.499758300 +0400 daemon
+drwxr-xr-x 1 SYSTEM 18      0 2026-08-30 22:44:14.269612500 +0400 file-history
+-rw-r--r-- 1 SYSTEM 18 166845 2026-09-04 19:30:11.053134600 +0400 history.jsonl
+drwxr-xr-x 1 SYSTEM 18      0 2026-07-08 16:06:01.354950600 +0400 ide
+drwxr-xr-x 1 SYSTEM 18      0 2026-07-28 20:45:50.211172500 +0400 jobs
+=== real opencode config top-level ===
+total 68
+drwxr-xr-x 1 SYSTEM 18     0 2026-09-20 08:14:19.710179200 +0400 .
+drwxr-xr-x 1 SYSTEM 18     0 2026-08-18 22:00:10.560844100 +0400 ..
+-rw-r--r-- 1 SYSTEM 18    63 2026-04-21 23:15:10.848511300 +0400 .gitignore
+drwxr-xr-x 1 SYSTEM 18     0 2026-09-23 12:40:41.528580600 +0400 agents
+drwxr-xr-x 1 SYSTEM 18     0 2026-09-23 12:41:00.329189100 +0400 commands
+drwxr-xr-x 1 SYSTEM 18     0 2026-09-23 00:28:36.376674800 +0400 node_modules
+-rw-r--r-- 1 SYSTEM 18   314 2026-05-15 23:51:42.235852200 +0400 opencode.json
+-rw-r--r-- 1 SYSTEM 18 13972 2026-09-23 00:28:36.409856200 +0400 package-lock.json
+-rw-r--r-- 1 SYSTEM 18   111 2026-05-11 23:11:12.198541000 +0400 package.json
+drwxr-xr-x 1 SYSTEM 18     0 2026-09-23 12:41:01.160400500 +0400 scripts
+-rw-r--r-- 1 SYSTEM 18    64 2026-09-20 08:14:19.707889200 +0400 service.json
+drwxr-xr-x 1 SYSTEM 18     0 2026-09-23 12:40:44.851533400 +0400 skills

@@ -1,0 +1,84 @@
+[0m
+> build · big-pickle
+[0m
+[0m$ [0mGet-ChildItem -Force | Select-Object Mode, Name | Format-Table -AutoSize
+(no output)
+[0m
+[0m$ [0mGet-ChildItem -Force -Recurse -Depth 3 -Directory -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
+(no output)
+[0m
+[0m$ [0mTest-Path -LiteralPath "C:\Windows\Temp\sefi-native-20261002\proj-opencode"; (Get-ChildItem -LiteralPath "C:\Windows\Temp\sefi-native-20261002\proj-opencode" -Force | Measure-Object).Count
+True
+0
+[0m
+[0m$ [0mGet-ChildItem -LiteralPath "C:\Windows\Temp\sefi-native-20261002" -Force -ErrorAction SilentlyContinue | Select-Object Mode,Name | Format-Table -AutoSize
+Mode   Name                             
+----   ----                             
+d----- claude-native                    
+d----- home-claude                      
+d----- home-claude-fb                   
+d----- home-codex                       
+d----- home-opencode                    
+d----- home-probe                       
+d----- npm-cache                        
+d----- npm-global                       
+d----- proj-claude                      
+d----- proj-codex                       
+d----- proj-opencode                    
+-a---- ccusage-daily.err                
+-a---- ccusage-daily.json               
+-a---- claude-fb-install.log            
+-a---- cx-doctor.out                    
+-a---- cx-exec.out                      
+-a---- cx-exec2.out                     
+-a---- cx-gate.out                      
+-a---- cx-install.out                   
+-a---- oc-install.out                   
+-a---- oc-run.out                       
+-a---- s4n-00-gates.log                 
+-a---- s4n-00.sh                        
+-a---- s4n-01-install.log               
+-a---- s4n-01.sh                        
+-a---- s4n-02-hermes-probe.log          
+-a---- s4n-02.sh                        
+-a---- s4n-03-budget.log                
+-a---- s4n-03.sh                        
+-a---- s4n-04-budget-measured.log       
+-a---- s4n-04.sh                        
+-a---- s4n-05-budget-gates.log          
+-a---- s4n-05.sh                        
+-a---- s4n-09-sources.log               
+-a---- s4n-09.sh                        
+-a---- s4n-10-claude.log                
+-a---- s4n-10.sh                        
+-a---- s4n-10b-claude-content.log       
+-a---- s4n-10b.sh                       
+-a---- s4n-10c-claude-native-content.log
+-a---- s4n-10c.sh                       
+-a---- s4n-10d-claude-fallback.log      
+-a---- s4n-10d.sh                       
+-a---- s4n-10e-claude-fallback2.log     
+-a---- s4n-10e.sh                       
+-a---- s4n-11-codex.log                 
+-a---- s4n-11.sh                        
+-a---- s4n-11b-codex.log                
+-a---- s4n-11b.sh                       
+-a---- s4n-11c-codex-python-probe.log   
+-a---- s4n-11c.sh                       
+-a---- s4n-11d-codex-impact.log         
+-a---- s4n-11d.sh                       
+-a---- s4n-12-opencode.log              
+-a---- s4n-12.sh                        
+-a---- sum.js                           
+-a---- v-malformed.out                  
+-a---- v-noreport.out                   
+-a---- v-usage.out
+[0m
+[0m$ [0m$paths = @("$env:USERPROFILE\.config\opencode", "$env:APPDATA\opencode", ".opencode", "opencode.json", "opencode.jsonc", "AGENTS.md"); foreach ($p in $paths) { "{0} -> {1}" -f $p, (Test-Path -LiteralPath $p) }
+C:/Windows/Temp/sefi-native-20261002/home-opencode\.config\opencode -> True
+C:\Users\Mary Rose\AppData\Roaming\opencode -> False
+.opencode -> False
+opencode.json -> False
+opencode.jsonc -> False
+AGENTS.md -> False
+[0m

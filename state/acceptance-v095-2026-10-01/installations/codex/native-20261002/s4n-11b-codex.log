@@ -1,0 +1,45 @@
+=== utc ===
+2026-10-02T13:00:10Z
+=== real HOME codex state (must be absent or pre-existing) ===
+total 285249
+drwxr-xr-x 1 SYSTEM 18         0 Oct  2 16:58 .
+drwxr-xr-x 1 SYSTEM 18         0 Oct  2 07:49 ..
+-rw-r--r-- 1 SYSTEM 18    396792 Sep 11 01:05 ..codex-global-state.json.bak.tmp-1789074339141-038feaf7-3e76-4139-bdb2-b569cb00b432
+-rw-r--r-- 1 SYSTEM 18         0 Sep 13 12:25 ..codex-global-state.json.tmp-1789287904552-ff8d2bbe-043b-4a2f-b79a-3d1e206af52d
+=== isolated home after doctor ===
+/c/Windows/Temp/sefi-native-20261002/home-codex
+/c/Windows/Temp/sefi-native-20261002/home-codex/goals_1.sqlite
+/c/Windows/Temp/sefi-native-20261002/home-codex/goals_1.sqlite-shm
+/c/Windows/Temp/sefi-native-20261002/home-codex/goals_1.sqlite-wal
+/c/Windows/Temp/sefi-native-20261002/home-codex/logs_2.sqlite
+/c/Windows/Temp/sefi-native-20261002/home-codex/logs_2.sqlite-shm
+/c/Windows/Temp/sefi-native-20261002/home-codex/logs_2.sqlite-wal
+/c/Windows/Temp/sefi-native-20261002/home-codex/memories_1.sqlite
+/c/Windows/Temp/sefi-native-20261002/home-codex/memories_1.sqlite-shm
+/c/Windows/Temp/sefi-native-20261002/home-codex/memories_1.sqlite-wal
+=== exec retry with --skip-git-repo-check ===
+exit=1
+Reading additional input from stdin...
+OpenAI Codex v0.160.0
+--------
+workdir: C:\Windows\Temp\sefi-native-20261002\proj-codex
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: none
+reasoning summaries: none
+session id: 01a0fcb3-6c9c-7463-8fc7-d33723ece719
+--------
+user
+Use $systems-audit for the build scope
+2026-10-02T13:00:12.914405Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
+2026-10-02T13:00:13.196104Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
+2026-10-02T13:00:13.458653Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
+ERROR: Reconnecting... 2/5
+2026-10-02T13:00:13.924875Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
+ERROR: Reconnecting... 3/5
+=== container toolchain probe ===
+/usr/local/bin/python3
+Python 3.11.15
+exit=0

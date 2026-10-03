@@ -1,0 +1,1 @@
+install-codex.sh: Python is required to verify the installed plugin source and write TOML profiles

@@ -1,0 +1,40 @@
+{
+  "daily": [
+    {
+      "agent": "all",
+      "cacheCreationTokens": 0,
+      "cacheReadTokens": 11432021,
+      "inputTokens": 3000291,
+      "metadata": {
+        "agents": [
+          "opencode"
+        ]
+      },
+      "modelBreakdowns": [
+        {
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 11432021,
+          "cost": 5.842749650000001,
+          "inputTokens": 3000291,
+          "modelName": "muse-spark-1.3-contributor-free",
+          "outputTokens": 41480
+        }
+      ],
+      "modelsUsed": [
+        "muse-spark-1.3-contributor-free"
+      ],
+      "outputTokens": 41480,
+      "period": "2026-10-02",
+      "totalCost": 5.842749650000001,
+      "totalTokens": 14521155
+    }
+  ],
+  "totals": {
+    "cacheCreationTokens": 0,
+    "cacheReadTokens": 11432021,
+    "inputTokens": 3000291,
+    "outputTokens": 41480,
+    "totalCost": 5.842749650000001,
+    "totalTokens": 14521155
+  }
+}

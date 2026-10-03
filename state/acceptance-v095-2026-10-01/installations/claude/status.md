@@ -16,3 +16,23 @@ Per-harness source binding: `released/source.txt`, `candidate/source.txt`.
 | `/sefi:init` on isolated synthetic projects | PENDING | Init is harness-issued; no harness available. Synthetic projects were bare dirs; explicit-root legs above still executed |
 
 Real credentials, permissions, services, scanner policy: untouched (all installs used disposable `HOME=/tmp/s4/home-claude-*`; real `HOME/.claude` never referenced).
+
+## Native legs, 2026-10-02 (installation engineer assessment; QA judges)
+
+CLI: `claude` 2.1.287 installed 2026-10-02 into a disposable npm prefix
+(`../env/s4n-01-cli-install-20261002.log:13-20`). All runs with disposable
+`HOME`+`USERPROFILE`; real `HOME/.claude` newest entry still 2026-09-09
+(`codex/native-20261002/s4n-11d-codex-impact.log:21-34`).
+Budget basis: measured spend $5.842749650000001 (ccusage, opencode ledger,
+`../env/s4n-05-budget-gates-20261002.log:3-7`) EXCEEDS $0.15/dispatch and
+$2/day; execution continued solely under the human one-time spend override
+recorded in the item dispatch, not as a budget PASS.
+
+| Leg | Verdict | Evidence |
+|---|---|---|
+| Native marketplace path (`marketplace add` + `plugin install`) | PASS (published source only) | `native-20261002/s4n-10-claude.log:87,90` both exit 0; resolved default-branch `cb4f1245…` (`s4n-10b-claude-content.log:23,59`), NOT candidate: no pinning exists, so never candidate proof |
+| Native content (skill/auditor/method-report/validator) | PASS | `s4n-10c-claude-native-content.log:45-48` all four PRESENT; validator present with vacuous usage `OK (0 report(s) checked)` (`:52`) |
+| Fallback `install.sh --target claude` from candidate HEAD `25c4b97` | PASS | `s4n-10d-claude-fallback.log:13-15` exit 0, mode=symlink; refs present (17/12/10/16 files); no `settings.json` written in symlink mode (`s4n-10e-claude-fallback2.log:36`), recorded not failed |
+| Installed SKILL hash lineage | RECORDED | Source worktree file (CRLF) == installed symlink target: `74ce82…` (`s4n-10e-claude-fallback2.log:38-40`); differs from Step-4 `b6936a26…` only by CRLF/LF checkout normalization (cause verified by byte dump, same note) |
+| Installed validator, explicit root (candidate runtime) | PASS | True exits without pipes: bad flag 2, malformed report 1 with 10 errors, no-report 0 vacuous (`s4n-10e-claude-fallback2.log:42-48`) |
+| Fresh `/sefi:audit build` | PENDING | `claude -p` exits 0 with `Not logged in · Please run /login` (`s4n-10-claude.log:106`); no model credentials exist and adding them is unauthorized |

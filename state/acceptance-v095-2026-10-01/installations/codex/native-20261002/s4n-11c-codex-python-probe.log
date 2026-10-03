@@ -1,0 +1,64 @@
+=== utc ===
+2026-10-02T13:01:13Z
+=== full real HOME/.codex listing with times ===
+total 283905
+drwxr-xr-x 1 SYSTEM 18         0 2026-10-02 17:00:50.610547800 +0400 .
+drwxr-xr-x 1 SYSTEM 18         0 2026-10-02 07:49:49.122739000 +0400 ..
+-rw-r--r-- 1 SYSTEM 18    396792 2026-09-11 01:05:39.151856900 +0400 ..codex-global-state.json.bak.tmp-1789074339141-038feaf7-3e76-4139-bdb2-b569cb00b432
+-rw-r--r-- 1 SYSTEM 18         0 2026-09-13 12:25:04.557441500 +0400 ..codex-global-state.json.tmp-1789287904552-ff8d2bbe-043b-4a2f-b79a-3d1e206af52d
+-rw-r--r-- 1 SYSTEM 18    330468 2026-09-22 23:52:39.601266300 +0400 ..codex-global-state.json.tmp-1790106759335-a89f0540-7049-4264-8ac1-730c84dd399f
+-rw-r--r-- 1 SYSTEM 18    524288 2026-09-26 13:18:52.516441900 +0400 ..codex-global-state.json.tmp-1790414332251-d39d2856-2fec-4717-b6bd-779ad71153f5
+-rw-r--r-- 1 SYSTEM 18         0 2026-07-12 08:53:19.510904800 +0400 .app-server-state-reconciled-v1
+-rw-r--r-- 1 SYSTEM 18    186753 2026-10-02 17:00:50.603234800 +0400 .codex-global-state.json
+-rw-r--r-- 1 SYSTEM 18    186753 2026-10-02 17:00:50.608198200 +0400 .codex-global-state.json.bak
+-rw-r--r-- 1 SYSTEM 18         0 2026-10-02 11:17:30.361287300 +0400 .codex-provisioning-b0711aba7d0702fa.guard
+-rw-r--r-- 1 SYSTEM 18         3 2026-05-16 13:55:38.543430200 +0400 .personality_migration
+drwxr-xr-x 1 SYSTEM 18         0 2026-10-01 15:32:35.972244800 +0400 .sandbox
+drwxr-xr-x 1 SYSTEM 18         0 2026-10-01 15:55:41.807442200 +0400 .sandbox-bin
+drwxr-xr-x 1 SYSTEM 18         0 2026-05-16 21:35:28.097067200 +0400 .sandbox-secrets
+-rw-r--r-- 1 SYSTEM 18         3 2026-08-09 18:21:19.678424000 +0400 .sandbox_migration
+drwxr-xr-x 1 SYSTEM 18         0 2026-10-01 10:27:03.747313400 +0400 .tmp
+-rw-r--r-- 1 SYSTEM 18       474 2026-09-11 16:47:50.928844400 +0400 AGENTS.md
+drwxr-xr-x 1 SYSTEM 18         0 2026-09-11 16:48:06.966841000 +0400 agents
+drwxr-xr-x 1 SYSTEM 18         0 2026-09-26 13:08:51.313380700 +0400 ambient-suggestions
+drwxr-xr-x 1 SYSTEM 18         0 2026-09-10 23:51:06.081524300 +0400 archived_sessions
+drwxr-xr-x 1 SYSTEM 18         0 2026-08-09 18:21:10.396247300 +0400 attachments
+-rw-r--r-- 1 SYSTEM 18      4002 2026-10-01 10:24:31.023659800 +0400 auth.json
+drwxr-xr-x 1 SYSTEM 18         0 2026-09-11 01:01:10.318398300 +0400 cache
+-rw-r--r-- 1 SYSTEM 18      3606 2026-09-29 06:41:59.439845600 +0400 cap_sid
+-rw-r--r-- 1 SYSTEM 18        42 2026-06-15 09:30:09.760092500 +0400 chrome-native-hosts-v2.json
+drwxr-xr-x 1 SYSTEM 18         0 2026-10-01 10:25:28.300897800 +0400 code-review-plugin
+drwxr-xr-x 1 SYSTEM 18         0 2026-09-29 06:41:29.398971100 +0400 computer-use
+-rw-r--r-- 1 SYSTEM 18      5996 2026-10-01 15:36:25.338111200 +0400 config.toml
+drwxr-xr-x 1 SYSTEM 18         0 2026-08-09 18:23:07.186235600 +0400 dictation-history
+=== files dated 2026-10-02 under real .codex ===
+/c/Users/Mary Rose/.codex
+/c/Users/Mary Rose/.codex/.codex-global-state.json
+/c/Users/Mary Rose/.codex/.codex-global-state.json.bak
+/c/Users/Mary Rose/.codex/.codex-provisioning-b0711aba7d0702fa.guard
+/c/Users/Mary Rose/.codex/cache/codex_apps_server_info
+/c/Users/Mary Rose/.codex/cache/codex_apps_server_info/816ef4924c1661ab25aabc703d5893bfe642a7cb.json
+/c/Users/Mary Rose/.codex/cache/codex_apps_tools
+/c/Users/Mary Rose/.codex/cache/codex_apps_tools/816ef4924c1661ab25aabc703d5893bfe642a7cb.json
+/c/Users/Mary Rose/.codex/logs_2.sqlite
+/c/Users/Mary Rose/.codex/logs_2.sqlite-shm
+/c/Users/Mary Rose/.codex/logs_2.sqlite-wal
+/c/Users/Mary Rose/.codex/models_cache.json
+/c/Users/Mary Rose/.codex/plugins/cache/openai-curated-remote/github
+/c/Users/Mary Rose/.codex/plugins/cache/openai-curated-remote/github/.codex-remote-plugin-install.json
+/c/Users/Mary Rose/.codex/plugins/cache/openai-curated-remote/openai-templates
+/c/Users/Mary Rose/.codex/plugins/cache/openai-curated-remote/openai-templates/.codex-remote-plugin-install.json
+/c/Users/Mary Rose/.codex/plugins/cache/openai-curated-remote/plugin-management
+/c/Users/Mary Rose/.codex/plugins/cache/openai-curated-remote/plugin-management/.codex-remote-plugin-install.json
+/c/Users/Mary Rose/.codex/plugins/cache/openai-curated-remote/work-pets
+/c/Users/Mary Rose/.codex/plugins/cache/openai-curated-remote/work-pets/.codex-remote-plugin-install.json
+=== host python probes ===
+/c/Windows/Temp/sefi-native-20261002/s4n-11c.sh: line 13: py: command not found
+ls: cannot access '/c/Python*': No such file or directory
+ls: cannot access '/c/Program Files/Python*': No such file or directory
+ls: cannot access '/c/Windows/py.exe': No such file or directory
+=== container network probe (npm ping, 60s) ===
+/usr/bin/apt-get
+sh: 1: cannot open /dev/tcp/registry.npmjs.org/443: No such file
+TCP-443-FAIL
+exit=0

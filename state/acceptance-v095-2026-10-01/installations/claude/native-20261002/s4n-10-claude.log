@@ -1,0 +1,107 @@
+=== utc ===
+2026-10-02T12:57:22Z
+HOME=/c/Windows/Temp/sefi-native-20261002/home-claude USERPROFILE=/c/Windows/Temp/sefi-native-20261002/home-claude
+=== version ===
+2.1.287 (Claude Code)
+exit=0
+=== plugin help (supported options discovery) ===
+Usage: claude plugin|plugins [options] [command]
+
+Manage Claude Code plugins
+
+Options:
+  -h, --help                           Display help for command
+
+Commands:
+  configure [options] <plugin>         Show a plugin's options and which are
+                                       unset, or save values from stdin with
+                                       --values-stdin
+  details [options] <name>             Show a plugin's component inventory and
+                                       projected token cost
+  disable [options] [plugin]           Disable an enabled plugin
+  enable [options] <plugin>            Enable a disabled plugin
+  eval [options] [target]              Run eval cases (<eval dir>/**/case.yaml
+                                       or prompt.md + graders/*.md; the eval dir
+                                       is evals/ unless --eval-dir or the
+                                       manifest says otherwise) against a plugin
+                                       and report scored results. Target is a
+                                       path, a plugin name, or a
+                                       `plugin@marketplace` id — installed and
+                                       skills-dir plugins both resolve (and add
+                                       a no-plugin baseline arm). It loads the
+                                       plugin and runs its eval suite (prompts,
+                                       graders; scaffold scripts and real MCP
+                                       servers only when you opt in) on your
+                                       machine, as you: only evaluate plugins
+                                       you trust — the run's sandboxing limits
+                                       what a malicious plugin can reach but is
+                                       not a guarantee, and a bundled suite
+                                       passing is not a security vetting. The
+                                       first run in an untrusted plugin
+                                       directory asks you to confirm
+                                       (--trust-plugin answers for CI)
+  help [command]                       display help for command
+  init|new [options] <name>            Scaffold a new plugin at
+                                       ~/.claude/skills/<name>/ (auto-loads next
+                                       session as <name>@skills-dir)
+  install|i [options] <plugin>         Install a plugin from available
+                                       marketplaces (use plugin@marketplace for
+                                       specific marketplace)
+  list [options]                       List installed plugins
+  marketplace                          Manage Claude Code marketplaces
+  prune|autoremove [options]           Remove auto-installed dependencies that
+                                       are no longer needed
+  tag [options] [path]                 Create a {name}--v{version} git tag for a
+                                       plugin release, validating that
+                                       plugin.json and any enclosing marketplace
+                                       entry agree
+  test [dir]                           Run a mod's tests
+  uninstall|remove [options] <plugin>  Uninstall an installed plugin
+  update [options] <plugin>            Update a plugin to the latest version
+                                       (restart required to apply)
+  validate [options] <path>            Validate a plugin or marketplace
+                                       manifest, or the skills, agents, and
+                                       commands in a directory
+exit=0
+Usage: claude plugin marketplace [options] [command]
+
+Manage Claude Code marketplaces
+
+Options:
+  -h, --help                  Display help for command
+
+Commands:
+  add [options] <source>      Add a marketplace from a URL, path, or GitHub repo
+  help [command]              display help for command
+  list [options]              List all configured marketplaces
+  remove|rm [options] <name>  Remove a configured marketplace
+  update [options] [name]     Update marketplace(s) from their source - updates
+                              all if no name specified
+exit=0
+=== native marketplace add attempt (stdin closed, 60s bound) ===
+Adding marketplace…SSH not configured, cloning via HTTPS: https://github.com/xsefirosus/sefi-agents.git
+Refreshing marketplace cache (timeout: 120s)…
+Cloning repository (timeout: 120s): https://github.com/xsefirosus/sefi-agents.git
+Clone complete, validating marketplace…
+Cleaning up old marketplace cache…
+✔ Successfully added marketplace: sefi-agents (declared in user settings)
+exit=0
+=== native plugin install attempt (stdin closed, 60s bound) ===
+Installing plugin "sefi-core@sefi-agents"...✔ Successfully installed plugin: sefi-core@sefi-agents (scope: user)
+exit=0
+=== disposable home content after native attempts ===
+/c/Windows/Temp/sefi-native-20261002/home-claude
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/backups
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/backups/.claude.json.backup.1790945845483
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/.last_inuse_sweep
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/cache
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/installed_plugins.json
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/known_marketplaces.json
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/settings.json
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude.json
+=== fresh audit build attempt (stdin closed, 120s bound) ===
+Not logged in · Please run /login
+exit=0

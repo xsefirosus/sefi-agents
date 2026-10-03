@@ -1,0 +1,88 @@
+=== utc ===
+2026-10-02T12:58:01Z
+=== known_marketplaces + installed_plugins ===
+{
+  "sefi-agents": {
+    "source": {
+      "source": "github",
+      "repo": "xsefirosus/sefi-agents"
+    },
+    "installLocation": "C:\\Windows\\Temp\\sefi-native-20261002\\home-claude\\.claude\\plugins\\marketplaces\\sefi-agents",
+    "lastUpdated": "2026-10-02T12:57:35.568Z"
+  }
+}{
+  "version": 2,
+  "plugins": {
+    "sefi-core@sefi-agents": [
+      {
+        "scope": "user",
+        "installPath": "C:\\Windows\\Temp\\sefi-native-20261002\\home-claude\\.claude\\plugins\\cache\\sefi-agents\\sefi-core\\0.9.5",
+        "version": "0.9.5",
+        "installedAt": "2026-10-02T12:57:38.107Z",
+        "lastUpdated": "2026-10-02T12:57:38.107Z",
+        "gitCommitSha": "cb4f12451901b7c2e0ed69d43e027be27f03a2a3"
+      }
+    ]
+  }
+}=== marketplace cache ===
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.agents
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.agents/plugins
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.claude
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.claude/settings.json
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.claude-plugin
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.claude-plugin/marketplace.json
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.codex
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.codex/config.toml
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.git
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.git/claude-code-sparse-paths.json
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.git/config
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.git/description
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.git/HEAD
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.git/hooks
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.git/index
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.git/info
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.git/logs
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.git/objects
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.git/packed-refs
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.git/refs
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.git/shallow
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.gitattributes
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.github
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.github/actions
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.github/workflows
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/.gitignore
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/adapters
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/adapters/ADAPTERS.md
+=== resolved revision of fetched marketplace ===
+cb4f12451901b7c2e0ed69d43e027be27f03a2a3
+2026-10-02 05:53:22 +0400
+=== installed plugin location ===
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/adapters/ADAPTERS.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/adapters/CODEX.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/adapters/HERMES.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/adapters/OPENCODE.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/AGENTS.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/benchmarks/README.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/CHANGELOG.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/CREDITS.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/docs/ANTIPATTERNS.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/docs/AUDIT-DEPARTMENTS.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/inbox/approval-systems-auditor-v0.9.4-2026-09-27.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/inbox/escalation-systems-audit-v0.9.5-2026-09-29.md
+/c/Windows/Temp/sefi-native-20261002/home-claude/.claude/plugins/marketplaces/sefi-agents/state/plan-systems-auditor.md
+=== settings.json (plugin roots) ===
+{
+  "extraKnownMarketplaces": {
+    "sefi-agents": {
+      "source": {
+        "source": "github",
+        "repo": "xsefirosus/sefi-agents"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "sefi-core@sefi-agents": true
+  }
+}
