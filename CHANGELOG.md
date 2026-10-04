@@ -79,6 +79,10 @@ registration.
   and a live skill directory never touched.
 - Two new suites: `ci/test-sefi-python.sh` (6/6 passing, exit 0) and
   `ci/test-prune-stale-skill-entries.sh` (11/11 passing, exit 0).
+- `docs/CI-WINDOWS-BASELINE.md` -- the Windows failure inventory, the fixture
+  isolation rules (`ccusage` stub, `TMPDIR`, `COLUMNS`), and the procedure for
+  telling a real defect from a fixture handing a native program an unreadable
+  path.
 
 ### Fixed
 
