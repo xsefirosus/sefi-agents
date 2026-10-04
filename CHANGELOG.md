@@ -48,6 +48,103 @@ Changelog; this project adheres to Semantic Versioning.
   `## [0.9.7]` section above and `docs/BUDGET.md` state. Those two sentences are
   superseded for current trees; nothing else in the v0.9.6 entry changes.
 
+## [0.9.8] - 2026-10-04
+
+Windows/MSYS install support, and the two real product defects it surfaced. This is
+the 0.9.8 entry: the work landed on a branch that diverged from `main` at `983a2f4`,
+so the released `v0.9.7` contains none of it. The command spells `/sefi-init` --
+Hermes slugifies the colon out of command names, so `/sefi:init` does not survive
+registration.
+
+### Added
+
+- Windows/MSYS path translation for native tools. Under `plugins/sefi-core/scripts/`,
+  five new helpers convert bash's `/c/...` paths before native Windows programs see
+  them: `sefi-native-path.sh` (sourceable `sefi_native_path`) for `git -C`;
+  `sefi-python.sh` (sourceable `sefi_python_bin`, the shared 3.11+ interpreter
+  resolver) plus the `sefi-python` wrapper it returns on MSYS hosts, which rewrites
+  path arguments for native Python; and `sefi-native-tool`, which runs a native
+  program with a leading `/<single letter>/` argument translated and jq programs, git
+  refspecs like `HEAD^{commit}`, and ordinary POSIX paths passed through untouched.
+  On POSIX hosts each helper returns its input unchanged. All five carry a shebang
+  and are committed `100755`: `sefi-python` and `sefi-native-tool` are exec'd as
+  commands, not `bash <path>`, so without the exec bit they fail on any POSIX host
+  with `Permission denied`.
+- Hermes install hardening. `install-hermes.sh` now stages the `sefi-commands` plugin
+  from `plugins/sefi-core/hermes/` and enables it -- a user plugin is disabled by
+  default, so copying the directory is not enough -- records `CLAUDE_PLUGIN_ROOT` in
+  the Hermes `.env` rather than asking for a hand edit, and prunes stale registry
+  entries during rollback via the new `prune-stale-skill-entries.sh`: dry-run by
+  default, `--apply` to mutate, a timestamped `lock.json.bak-<stamp>` written first,
+  and a live skill directory never touched.
+- Two new suites: `ci/test-sefi-python.sh` (6/6 passing, exit 0) and
+  `ci/test-prune-stale-skill-entries.sh` (11/11 passing, exit 0).
+
+### Fixed
+
+- **The `sefi-commands` plugin was never installed, so `/sefi-init` did not exist** even
+  though the installer's own success message named it. The 13 packaged `commands/*.md`
+  files ship inside the managed runtime and Hermes never reads them on its own. Plugin
+  command handlers' return values are only printed to the terminal, so the staged
+  handler delivers each command body through `inject_message` instead of returning
+  it. Verified on a live run: 20/20 skills installed with verified source bytes and
+  13/13 commands registered.
+- **Rollback left dangling registry entries.** Rollback removes skill directories, but
+  Hermes' own `skills/.hub/lock.json` is not part of that snapshot, so it kept entries
+  whose directories were gone and the next run reported every rolled-back skill as
+  already installed from a path that no longer existed.
+- **jq failures were silent and got misread as malformed fixtures.** Native jq on
+  Windows cannot open an MSYS path; it returned nothing rather than erroring, so a
+  caller checking for emptiness concluded the file was empty or malformed instead of
+  unreadable and reported a fixture failure. `install.sh` merged `hooks/hooks.json`
+  through a bare `jq`, so `install.sh --target claude` exited 1 with hooks unwired and
+  no `CLAUDE_PLUGIN_ROOT` in env; that path-taking call now routes through
+  `sefi-native-tool` and exits 0 with `check-bash-write.sh` and `inject-memory.sh`
+  wired and `env.CLAUDE_PLUGIN_ROOT` populated. The stdin-fed `jq '.hooks'` still
+  reads a pipe and needs no wrapper.
+- **Installer verification read truncated skill names until `COLUMNS` was set.**
+  `hermes skills list` truncates at roughly 15 characters, so verification reported 10
+  of 20 installed skills as missing; the installer now sets `COLUMNS`.
+- **`check-route.sh` resolved its interpreter to an unusable path.** `command -v
+  python3` under git-bash returns an MSYS path that the native interpreter cannot use
+  for a script argument, so 9 assertions across the claude-code, opencode, hermes and
+  codex cases reported the *verdict* as wrong (`did not report mismatch`) instead of
+  the file as unreadable. It now sources `sefi-python.sh` and prefers `sefi_python_bin`,
+  keeping the existing `usable()` probe and the explicit exit 3 when no interpreter
+  qualifies, so the too-old-interpreter and none-found paths are unchanged and POSIX
+  hosts are unaffected.
+
+### Changed
+
+- **The Codex fake-CLI test stub now reports its marketplace root in native form -- a
+  stub artifact, not a shipped-code change, and the identity check it satisfies was
+  deliberately left intact.** `install-codex.sh` aborted with `root is not a physical
+  directory`. That check verifies marketplace identity and it was correct: the real
+  Codex CLI is a native Windows program printing `C:/...` paths, while the bash test
+  stub echoed back the MSYS `/c/...` form bash handed it, which a native interpreter
+  cannot stat. Established by running the *unmodified* installer against both root
+  styles -- a native root passes the identity check and proceeds to a later,
+  unrelated assertion, while only the MSYS form fails this one -- so loosening the
+  shipped check to satisfy a fake CLI would have weakened a real security property to
+  accommodate a test. The stub converts the root with `cygpath -m` (a no-op fallback
+  off MSYS) in both copies of the fake `codex`, for both the marketplace listing and
+  the plugin list path.
+- MSYS-safe interpreter adoption on the remaining committed call sites:
+  `ci/run-all.sh` for the benchmark suite, and `package-manifest.sh` -- the one script
+  that execs Python outright, where under git-bash every recorded
+  `source_version`/`source_commit` came back `UNKNOWN` and both installers reported
+  their runtime as unclassifiable. The prune-stale suite also called raw `python3` with
+  an MSYS path argument and piped `2>/dev/null` into a raw Python fallback, discarding
+  both errors so the suite exited 1 with nothing but a traceback on stderr as evidence;
+  both calls now route through `sefi_python_bin` with the masking redirect dropped, and
+  the suite's exit 0 is its own rather than `tail`'s.
+- `.gitattributes` pins `text eol=lf` for the `manifest-version/legacy/` fixture. That
+  tree was previously listed as safe on the grounds that there was "no byte comparison
+  on that path" -- which is wrong, and that reasoning is what hid the bug. Fixture 5
+  copies `legacy/file.txt` into both roles, source tree and recorded manifest, and
+  `core.autocrlf` made it hash differently from itself, so the diff reported drift in a
+  file the fixture asserts is byte-identical to itself. The note now says why the
+  original reasoning was wrong instead of just replacing it.
 ## [0.9.6] - 2026-10-03
 
 ### Added
