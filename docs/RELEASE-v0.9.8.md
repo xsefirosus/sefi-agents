@@ -102,6 +102,13 @@ Measured on Windows 11 / git-bash, not estimated:
 | `ci/test-sefi-python.sh` | 6/6, exit 0 |
 | `install-hermes.sh` (live) | exit 0 — 20/20 skills with verified source bytes, 13/13 commands registered |
 | `install.sh --target claude` | exit 0 — hooks wired, `CLAUDE_PLUGIN_ROOT` set |
+| **`run-all.sh` aggregate (post-rebase)** | **493 passing, 0 failing, 0 tracebacks, 128 sections** |
+| **`benchmarks` unittest discovery** | **`Ran 104 tests` — `OK (skipped=2)`** |
+
+The aggregate exits 1 solely because `validate-no-personal-paths` rejects one
+pre-existing evidence file (see below). No suite contributed a failure: the
+`FAIL` line count is 0, no suite reported a Python traceback, and every focused
+suite above exited 0 on its own.
 
 ## Known findings not fixed in this release
 
