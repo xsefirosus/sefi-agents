@@ -103,6 +103,35 @@ Measured on Windows 11 / git-bash, not estimated:
 | `install-hermes.sh` (live) | exit 0 — 20/20 skills with verified source bytes, 13/13 commands registered |
 | `install.sh --target claude` | exit 0 — hooks wired, `CLAUDE_PLUGIN_ROOT` set |
 
+## Known findings not fixed in this release
+
+**`validate-no-personal-paths` is red on `main`, and this branch does not fix it.**
+`state/acceptance-v095-2026-10-01/installations/hermes/native-20261003.md` -- a
+v0.9.5 Hermes install-evidence file committed in `fe22a31` -- quotes a real install
+log path containing a literal username (`C:\Users\<user>\...`). The validator rejects
+it. This branch has zero commits in that directory and the same content is present
+on `origin/main`, so the red is pre-existing rather than introduced here. It is left
+in place deliberately: the line is genuine install evidence, and rewriting recorded
+evidence to satisfy a linter is the wrong trade. Fixing the release line is a
+separate change against `main`.
+
+**11 of 17 agents have no machine-checkable output contract.**
+`check-reply.sh` derives its expected labels from an agent's `## Output contract`
+section, and matches labels shaped like `^[A-Z][A-Z_]{2,}:`. Six agents declare
+such labels (`prompt-engineer`, `qa-engineer`, `research-analyst`,
+`security-engineer`, `ui-ux-designer`, and `systems-auditor` once its heading is
+normalized). The remaining eleven describe their output in prose, so the script
+exits 3 (`CANNOT-CHECK`) for them and runs only its word-count and
+foreign-deliverable checks.
+
+This is not a defect in the agents. All 17 run; a `3` is an explicit "unverifiable"
+verdict, not a rejection, and the same fail-open shape `check-bash-write.sh` uses.
+The gap is test coverage in a verification script. `systems-auditor.md` differs only
+in kind: it declares four real labels under a nonstandard `## Reply and output`
+heading, so they are invisible to the script. Normalizing agent contracts would
+change what agents are told to emit, which is a behavioral change rather than a
+documentation fix, and is out of scope for a Windows/MSYS release.
+
 ## Release status
 
 **Pending.** The in-repo surfaces for 0.9.8 (changelog, this document) are
