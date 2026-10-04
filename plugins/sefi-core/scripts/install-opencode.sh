@@ -493,8 +493,17 @@ check_target() {
     # made that unrecoverable. sefi_archive_put copies first and returns
     # non-zero if the copy failed, so a target we cannot archive is one we do
     # not touch -- the delete is the reclaim, the copy is the safety net.
-    sefi_archive_put "$target" --label "opencode-$(basename "$target")" \
-      || return 1
+    #
+    # The rm below does not follow the link either way: `rm -rf` on a symlink
+    # removes the link, never its target. So when the target is a symlink there
+    # is nothing to archive -- sefi_archive_put refuses symlinks precisely so it
+    # cannot copy through one -- and forcing a failure here would replace the
+    # link with a real file, which is the documented --force behavior and what
+    # the "never follows the swapped symlink" assertion requires.
+    if [ ! -L "$target" ]; then
+      sefi_archive_put "$target" --label "opencode-$(basename "$target")" \
+        || return 1
+    fi
     rm -rf "$target"
   fi
   return 0
