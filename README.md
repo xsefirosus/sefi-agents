@@ -285,6 +285,14 @@ Read [Memory Journalist](docs/MEMORY-JOURNALIST.md) for the note format and comm
 
 The common manifest contract is documented in [adapters/ADAPTERS.md](adapters/ADAPTERS.md).
 
+**Windows (git-bash):** All four harnesses install and the full CI suite runs on
+Windows 11 under git-bash/MSYS, verified rather than assumed. Set `TMPDIR` to a real
+Windows temp directory (not `/tmp`), and use the repo's `sefi-python.sh` /
+`sefi-native-path.sh` / `sefi-native-tool` helpers wherever a path crosses from
+git-bash into a native Windows program. Platform specifics and the failure modes
+they prevent are in [adapters/HERMES.md](adapters/HERMES.md#windows-and-msys-git-bash);
+the CI triage table is in [docs/CI-WINDOWS-BASELINE.md](docs/CI-WINDOWS-BASELINE.md).
+
 **Local or hosted loops:** Clone this repository for local Sefi use. To run scheduled
 triage, retro, and sync, fork it or push your clone to a GitHub repository you control.
 Those workflows maintain only the repository that contains them. Forking is the shortest
