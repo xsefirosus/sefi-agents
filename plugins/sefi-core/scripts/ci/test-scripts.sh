@@ -3019,7 +3019,11 @@ CH_TWO="$(mktemp -d)"; mkdir -p "$CH_TWO/sessions/nested"
 # Native form: check-route.py runs under a real interpreter and cannot stat an
 # MSYS CODEX_HOME, which made it report sessions-dir-unavailable for a directory
 # that exists. Verified: a native CODEX_HOME yields the correct verdict.
-CH_TWO_N="$(cygpath -m "$CH_TWO")"
+# sefi_native_path (not a raw cygpath) because this suite also runs on Linux CI,
+# where cygpath is absent: the raw call failed there, leaving CODEX_HOME empty
+# and the fixture reporting sessions-dir-unavailable. Live CI failure,
+# 2026-10-04, run 37203696158. The helper returns the path unchanged off MSYS.
+CH_TWO_N="$(sefi_native_path "$CH_TWO")"
 cp "$CRF/match/rollout.jsonl" "$CH_TWO/sessions/rollout-2026-a-$CH_UUID.jsonl"
 cp "$CRF/match/rollout.jsonl" "$CH_TWO/sessions/nested/rollout-2026-b-$CH_UUID.jsonl"
 crt_out="$(env CODEX_HOME="$CH_TWO_N" sh "$CRT" codex mid "$CH_UUID" 2>&1)"; crt_rc=$?
@@ -3032,7 +3036,7 @@ esac
 rm -rf "$CH_TWO"
 
 CH_EMPTY="$(mktemp -d)"; mkdir -p "$CH_EMPTY/sessions"
-CH_EMPTY_N="$(cygpath -m "$CH_EMPTY")"
+CH_EMPTY_N="$(sefi_native_path "$CH_EMPTY")"
 crt_out="$(env CODEX_HOME="$CH_EMPTY_N" sh "$CRT" codex mid "$CH_UUID" 2>&1)"; crt_rc=$?
 case "$crt_out" in
   *'"status":"unavailable"'*'rollout-unavailable'*)
