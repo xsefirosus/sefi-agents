@@ -3016,9 +3016,13 @@ esac
 # sessions dir unavailable.
 CH_UUID="aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
 CH_TWO="$(mktemp -d)"; mkdir -p "$CH_TWO/sessions/nested"
+# Native form: check-route.py runs under a real interpreter and cannot stat an
+# MSYS CODEX_HOME, which made it report sessions-dir-unavailable for a directory
+# that exists. Verified: a native CODEX_HOME yields the correct verdict.
+CH_TWO_N="$(cygpath -m "$CH_TWO")"
 cp "$CRF/match/rollout.jsonl" "$CH_TWO/sessions/rollout-2026-a-$CH_UUID.jsonl"
 cp "$CRF/match/rollout.jsonl" "$CH_TWO/sessions/nested/rollout-2026-b-$CH_UUID.jsonl"
-crt_out="$(env CODEX_HOME="$CH_TWO" sh "$CRT" codex mid "$CH_UUID" 2>&1)"; crt_rc=$?
+crt_out="$(env CODEX_HOME="$CH_TWO_N" sh "$CRT" codex mid "$CH_UUID" 2>&1)"; crt_rc=$?
 case "$crt_out" in
   *'"status":"invalid"'*'rollout-ambiguous'*)
     [ "$crt_rc" -ne 0 ] && ok "CODEX_HOME with two rollout-*-<uuid>.jsonl -> invalid / rollout-ambiguous, exit $crt_rc" \
@@ -3028,7 +3032,8 @@ esac
 rm -rf "$CH_TWO"
 
 CH_EMPTY="$(mktemp -d)"; mkdir -p "$CH_EMPTY/sessions"
-crt_out="$(env CODEX_HOME="$CH_EMPTY" sh "$CRT" codex mid "$CH_UUID" 2>&1)"; crt_rc=$?
+CH_EMPTY_N="$(cygpath -m "$CH_EMPTY")"
+crt_out="$(env CODEX_HOME="$CH_EMPTY_N" sh "$CRT" codex mid "$CH_UUID" 2>&1)"; crt_rc=$?
 case "$crt_out" in
   *'"status":"unavailable"'*'rollout-unavailable'*)
     [ "$crt_rc" -ne 0 ] && ok "CODEX_HOME with an empty sessions/ -> unavailable / rollout-unavailable, exit $crt_rc" \
