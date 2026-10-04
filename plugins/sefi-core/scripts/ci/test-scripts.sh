@@ -1034,7 +1034,7 @@ AG="$CORE/agents"
 RTMP="$(mktemp -d)"
 # Do NOT build this as an unquoted "$BUDGET_ARG" word and expand it into the call.
 # Word splitting then tears the path at every space, so check-reply.sh receives
-# "/c/Users/Mary", "Rose/.../budget.yml" as separate arguments, rejects the extras with
+# "/c/Users/<user>", "Rose/.../budget.yml" as separate arguments, rejects the extras with
 # "unexpected arg" and exits 2 (its usage code). That turned 13 real assertions
 # into failures on any checkout whose path contains a space. A function passes the
 # path as a single argv entry, which is what the script was always written for.
@@ -1201,7 +1201,7 @@ extract_plan_example() {
   # python3 alias stub from a real interpreter; each candidate is smoke-tested.
   # Returns 0 when the file was written.
   # Prefer the shared MSYS-safe resolver: the heredoc below passes "$dest" as an
-  # argument, and a native interpreter reads a /c/Users/... dest as \c\Users\... and
+  # argument, and a native interpreter reads a /c/Users/<user>/... dest as \c\Users\<user>\... and
   # raises FileNotFoundError, which the 2>/dev/null here hides -- so the function
   # silently returned non-zero and the suite reported "could not extract the worked
   # example from product-manager.md". Fall back to the original probe order if the
@@ -1333,8 +1333,8 @@ fi
 # prompt-engineer scope-creep bug. Exactly one agent may be mode: primary.
 primary_n="$(grep -l '^mode: primary$' "$TMP_OC"/agents/*.md 2>/dev/null | wc -l | tr -d ' ')"
 # Do NOT use `xargs -n1 basename` here: xargs splits its input on whitespace, and a
-# checkout path containing a space ("C:/Users/Mary Rose/...") becomes two arguments, so
-# basename runs on the fragment "/c/Users/Mary" and yields "Mary". The test then reports
+# checkout path containing a space ("C:/Users/<user> Rose/...") becomes two arguments, so
+# basename runs on the fragment "/c/Users/<user>" and yields the first name token. The test then reports
 # a mode-split failure that exists only because of the space in the username. `basename`
 # is a filter and processes its own arguments, so invoking it without xargs handles the
 # space correctly. Same one-file expectation, so no loop is needed.
@@ -2731,7 +2731,7 @@ CRF="$CORE/scripts/ci/fixtures/check-route"
 CRPY="$CORE/scripts/check-route.py"
 # Use the shared MSYS-safe resolver rather than a raw `python3`. These direct calls pass
 # fixture paths (--rollout-file "$CRF/...") as arguments, and a native Windows
-# interpreter reads bash's /c/Users/... as \c\Users\... -> FileNotFoundError, which the
+# interpreter reads bash's /c/Users/<user>/... as \c\Users\<user>\... -> FileNotFoundError, which the
 # case matcher then reports as a wrong verdict ("did not report mismatch") instead of an
 # unreadable file. Live-confirmed 2026-10-03: same interpreter + native-form path works.
 # On a POSIX host sefi_python_bin is plain `python3` and behavior is unchanged.

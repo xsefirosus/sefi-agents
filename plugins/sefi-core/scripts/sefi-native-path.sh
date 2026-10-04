@@ -2,8 +2,8 @@
 # sefi-native-path.sh -- sourceable helper: convert an MSYS path for native tools.
 #
 # WHY THIS EXISTS (live-confirmed 2026-10-03, Windows/git-bash)
-# bash under MSYS reports paths as /c/Users/Mary Rose/... Native Windows programs
-# read that as \c\Users\Mary Rose\... and fail. Two distinct casualties showed up
+# bash under MSYS reports paths as /c/Users/<user>/... Native Windows programs
+# read that as \c\Users\<user>\... and fail. Two distinct casualties showed up
 # in CI:
 #
 #   * native Python  -> FileNotFoundError on every path (see sefi-python.sh)

@@ -2,7 +2,7 @@
 # sefi-native-tool -- run a native Windows program with MSYS paths translated.
 #
 # WHY THIS EXISTS (live-confirmed 2026-10-03, Windows/git-bash)
-# bash reports paths as /c/Users/...; native Windows programs read that as
+# bash reports paths as /c/Users/<user>/...; native Windows programs read that as
 # \c\Users\... and fail. It is not only Python. Live-confirmed victims in this
 # suite, each failing with a different message:
 #

@@ -3,15 +3,15 @@
 #
 # WHY THIS EXISTS (live-confirmed on Windows/git-bash, 2026-10-03)
 # The sefi scripts resolve their paths with `pwd`, `mktemp`, and friends. Under
-# git-bash those yield MSYS form -- /c/Users/Mary Rose/... -- which a NATIVE
-# Windows Python cannot resolve: it reads /c/Users/... as \c\Users\... and every
+# git-bash those yield MSYS form -- /c/Users/<user>/... -- which a NATIVE
+# Windows Python cannot resolve: it reads /c/Users/<user>/... as \c\Users\<user>\... and every
 # file open raises FileNotFoundError. The script then exits 2 (a usage error)
 # before it can judge anything, so callers report "expected exit 1, got 2" and
 # installers report a bare failure. One bug, dozens of unrelated-looking test
 # failures.
 #
 # This wrapper translates MSYS drive paths into native forward-slash form
-# (C:/Users/...) before exec'ing the real interpreter. Only a leading
+# (C:/Users/<user>/...) before exec'ing the real interpreter. Only a leading
 # `/<single letter>/` is translated, so an absolute POSIX path such as /tmp/x
 # and inline code passed to -c are both left untouched.
 #

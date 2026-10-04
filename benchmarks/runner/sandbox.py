@@ -174,12 +174,12 @@ def sandbox(origin_repo: str | os.PathLike[str], pinned_ref: str) -> Iterator[Pa
     # reports ``'/C:/repo' does not appear to be a git repository``, exit 128. Measured
     # against this repo, holding every other flag constant:
     #
-    #   file:///C:/Users/...   (as_uri)          -> exit 128
-    #   file://C:/Users/...    (two slashes)     -> exit 0
-    #   C:/Users/...           (plain path)      -> exit 0
+    #   file:///C:/<user>/...   (as_uri)          -> exit 128
+    #   file://C:/<user>/...    (two slashes)     -> exit 0
+    #   C:/<user>/...           (plain path)      -> exit 0
     #
     # The space in the path is NOT the cause -- the plain and two-slash forms both clone
-    # successfully from ``C:/Users/Mary Rose/sefi-agents`` with %20 encoded, and
+    # successfully from a space-containing repo path with %20 encoded, and
     # ``--no-local``/``--no-hardlinks`` are irrelevant (dropping either changes nothing).
     # Two slashes is also correct for POSIX, where ``file:///home/u/repo`` and
     # ``file://home/u/repo`` both resolve; so this one form serves both platforms.

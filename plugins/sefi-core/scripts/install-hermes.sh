@@ -60,7 +60,7 @@ find_python() {
   # The shared helper returns the path-translating wrapper under MSYS/Cygwin.
   # That wrapper is required here, not optional: this script resolves paths
   # with pwd/mktemp and hands them to native Windows Python, which reads
-  # /c/Users/... as \c\Users\... and raises FileNotFoundError. Every
+  # /c/Users/<user>/... as \c\Users\<user>\... and raises FileNotFoundError. Every
   # verification step then failed and the installer refused to report success
   # (live-confirmed 2026-10-03 on Windows/git-bash).
   . "$HERE/sefi-python.sh"
@@ -505,7 +505,7 @@ if [ "$attempt_fail" -ne 0 ]; then
 fi
 
 # hermes skills list is a unicode-bordered table whose Name column is width-limited
-# and TRUNCATED with an ellipsis past ~15 characters ("anti-hallucina…"). The
+# and TRUNCATED with an ellipsis past ~15 characters ("anti-hallucina..."). The
 # verification below greps full skill names against that column, so on a default
 # 80-column terminal every name longer than the column compares unequal to itself
 # and is reported missing even though it is installed -- 10 of 20 falsely failed

@@ -8,7 +8,7 @@ inferred from reading the code.
 
 ## The one root cause
 
-git-bash builds paths as `/c/Users/...`. Native Windows programs read that as
+git-bash builds paths as `/c/Users/<user>/...`. Native Windows programs read that as
 `\c\Users\...`, which does not exist.
 
 | Native program | Symptom | Helper |

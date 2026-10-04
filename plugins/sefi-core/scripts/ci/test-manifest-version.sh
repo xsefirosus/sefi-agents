@@ -8,7 +8,6 @@
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
-ROOT_NATIVE="$(sefi_native_path "$ROOT")"
 CORE="$ROOT/plugins/sefi-core"
 RUNTIME="$CORE/scripts/sefi-runtime.py"
 FIX="$CORE/scripts/ci/fixtures/manifest-version"
@@ -34,6 +33,10 @@ expect_code() {
 # path-translating wrapper on MSYS hosts and the plain interpreter elsewhere.
 . "$CORE/scripts/sefi-python.sh"
 . "$CORE/scripts/sefi-native-path.sh"
+# sefi_native_path must be sourced BEFORE the first use: ROOT_NATIVE is needed by
+# every native git call below, and calling it earlier failed with
+# "sefi_native_path: command not found" while the suite still reported PASS.
+ROOT_NATIVE="$(sefi_native_path "$ROOT")"
 PYBIN="$(sefi_python_bin)" || {
   echo "SKIP: test-manifest-version (Python 3.11+ unavailable; CI always has it)"
   exit 0
@@ -54,7 +57,7 @@ git_repo() {
   # git_repo <dir> -- init a repo with src/file.txt committed; echoes HEAD.
   #
   # -C gets a cygpath-translated path on MSYS hosts. Native Windows git reads
-  # /c/Users/... as \c\Users\... and aborts with "cannot change to", which left
+  # /c/Users/<user>/... as \c\Users\<user>\... and aborts with "cannot change to", which left
   # the fixture with no commit at all -- every version field then correctly read
   # UNKNOWN, which looks like a manifest bug but is a path-translation bug.
   local dir="$1" native
