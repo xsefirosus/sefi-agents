@@ -11,15 +11,13 @@ RUNTIME="$ROOT/plugins/sefi-core/scripts/docs-grounding.py"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
-if command -v python3 >/dev/null 2>&1 && python3 --version >/dev/null 2>&1; then
-  PYTHON=(python3)
-elif command -v py >/dev/null 2>&1; then
-  PYTHON=(py -3)
-else
-  echo 'FAIL: Python 3 is required' >&2
-  exit 1
-fi
-run_python() { "${PYTHON[@]}" "$@"; }
+# Use sefi_python_bin, NOT a bare `command -v python3`. On MSYS that yields
+# /usr/bin/python3, which is not a usable native interpreter argument: the heredoc reads
+# C:\c\Users\...\docs\guide.md and dies with FileNotFoundError inside a command
+# substitution whose failure nobody checks, so the suite printed a traceback and still
+# reported PASS. Sourcing sefi-python.sh is not enough if the selection below ignores it.
+PYBIN="$(sefi_python_bin)" || { echo 'FAIL: no usable Python 3 interpreter' >&2; exit 1; }
+run_python() { "$PYBIN" "$@"; }
 
 mkdir -p "$tmp/docs" "$tmp/state/docs-claims/docs"
 cat >"$tmp/docs/guide.md" <<'EOF'
@@ -87,8 +85,8 @@ test -f "$tmp/.sefi/docs/manual/preflight.json"
 
 # A source edit makes the Claim stale. It cannot be published without an explicit decision.
 printf 'tool --safer\n' >"$tmp/source.txt"
-git -C "$tmp" add source.txt
-git -C "$tmp" commit -qm source-change
+git -C "$NATIVE_TMP" add source.txt
+git -C "$NATIVE_TMP" commit -qm source-change
 run_python "$RUNTIME" preflight --root "$tmp" --claims state/docs-claims/docs/guide.md.claims.json --document docs/guide.md --baseline baseline-b >"$tmp/stale.json"
 grep -Fq '"status": "stale"' "$tmp/stale.json"
 if run_python "$RUNTIME" finalize --root "$tmp" --claims state/docs-claims/docs/guide.md.claims.json --document docs/guide.md --baseline baseline-b --decisions "$tmp/missing.json"; then
@@ -103,9 +101,9 @@ The guide documents the safer inspection command.
 
 Run `tool --safer` to inspect the repository.
 EOF
-git -C "$tmp" add docs/guide.md
-git -C "$tmp" commit -qm document-update
-test "$(git -C "$tmp" rev-list --count HEAD)" -eq 3
+git -C "$NATIVE_TMP" add docs/guide.md
+git -C "$NATIVE_TMP" commit -qm document-update
+test "$(git -C "$NATIVE_TMP" rev-list --count HEAD)" -eq 3
 
 cat >"$tmp/decisions.json" <<'EOF'
 [{"id":"docs-guide-c0001","decision":"update","statement":"The guide documents the safer inspection command.","evidence":[{"id":"ev-source-command-v2","path":"source.txt","start_line":1,"end_line":1,"origin":"direct-repo","derivation":"observed","confidence":"high"}]}]

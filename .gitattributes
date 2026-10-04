@@ -63,3 +63,16 @@ plugins/sefi-core/scripts/ci/fixtures/manifest-version/legacy/file.txt text eol=
 # benchmark failure that reproduces on a pristine checkout. Same class as the fixture
 # pins above: hold the working tree at LF so a Windows red build stops being a red build.
 benchmarks/sandbox/deploy.sh text eol=lf
+
+# The benchmark oracle fingerprints pin the CONTENT of each case's prompt and check
+# script, and cases.json records a hash computed over their LF bytes. Under
+# core.autocrlf=true the working tree served CRLF, so test-benchmark-oracles.sh hashed
+# different bytes than the fingerprint was recorded from and reported "stale fingerprint"
+# for the case -- a fixture conversion, not stale content. Measured: for all three cases
+# the LF-normalized hash equals the recorded value exactly, while the working-tree hash
+# matches none of them.
+#
+# Pin the whole benchmark tree rather than three named files: the hash contract is a
+# property of every case, not of the three that failed first, and a per-file list would
+# leave the next added case exposed to the same red.
+benchmarks/** text eol=lf
