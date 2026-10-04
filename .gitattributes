@@ -53,3 +53,13 @@ plugins/sefi-core/scripts/ci/fixtures/routing-cases.txt text eol=lf
 plugins/sefi-core/scripts/ci/fixtures/agent-capabilities-v08/expected-agent-sources.txt text eol=lf
 plugins/sefi-core/scripts/ci/fixtures/agent-capabilities-v08/required-lines.txt text eol=lf
 plugins/sefi-core/scripts/ci/fixtures/manifest-version/legacy/file.txt text eol=lf
+
+# benchmarks/sandbox/deploy.sh is byte-compared, not read as prose.
+# check_sh-strict-mode.sh `cmp`s the trial's copy (LF: sandbox.py forces
+# core.autocrlf=false and the arm writes explicit LF joins) against its OWN repo
+# copy with the strict line stripped. Under core.autocrlf=true that baseline sits in
+# the working tree as CRLF, so cmp disagrees on a byte the test never meant to compare
+# and the case fails as "content changed beyond the strict-mode insertion" -- the one
+# benchmark failure that reproduces on a pristine checkout. Same class as the fixture
+# pins above: hold the working tree at LF so a Windows red build stops being a red build.
+benchmarks/sandbox/deploy.sh text eol=lf
