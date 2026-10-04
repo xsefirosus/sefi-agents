@@ -1801,6 +1801,12 @@ set -eu
 printf '%s\n' "$*" >> "${CODEX_TEST_LOG:?}"
 state="${CODEX_TEST_STATE:?}"
 marketplace="$state/marketplace"
+# Report the marketplace root in NATIVE form. The real Codex CLI is a native
+# Windows program and prints C:/...; this stub is a bash script, so an unconverted
+# "$marketplace" would hand install-codex.sh an MSYS path (/c/...) that its identity
+# check cannot stat. That failure is an artifact of the stub, not a product bug --
+# verified by running the unmodified installer against both root styles.
+marketplace_native="$(cygpath -m "$marketplace" 2>/dev/null || printf '%s' "$marketplace")"
 ensure_marketplace() {
   mkdir -p "$marketplace/plugins/sefi-core"
   cp -R "${CODEX_FIXTURE_ROOT:?}/plugins/sefi-core/." "$marketplace/plugins/sefi-core/"
@@ -1809,7 +1815,7 @@ ensure_marketplace() {
 case "$*" in
   'plugin marketplace list --json')
     if [ -f "$state/added" ]; then
-      printf '{"marketplaces":[{"name":"sefi-agents","root":"%s","marketplaceSource":{"sourceType":"git","source":"https://github.com/xsefirosus/sefi-agents.git"}}]}\n' "$marketplace"
+      printf '{"marketplaces":[{"name":"sefi-agents","root":"%s","marketplaceSource":{"sourceType":"git","source":"https://github.com/xsefirosus/sefi-agents.git"}}]}\n' "$marketplace_native"
     else
       printf '%s\n' '{"marketplaces":[]}'
     fi
@@ -1817,7 +1823,7 @@ case "$*" in
   'plugin marketplace add xsefirosus/sefi-agents') ensure_marketplace ;;
   'plugin marketplace upgrade sefi-agents') : ;;
   'plugin add sefi-core@sefi-agents') : ;;
-  'plugin list --json') printf '{"installed":[{"pluginId":"sefi-core@sefi-agents","marketplaceName":"sefi-agents","source":{"source":"local","path":"%s/plugins/sefi-core"},"marketplaceSource":{"sourceType":"git","source":"https://github.com/xsefirosus/sefi-agents.git"}}]}\n' "$marketplace" ;;
+  'plugin list --json') printf '{"installed":[{"pluginId":"sefi-core@sefi-agents","marketplaceName":"sefi-agents","source":{"source":"local","path":"%s/plugins/sefi-core"},"marketplaceSource":{"sourceType":"git","source":"https://github.com/xsefirosus/sefi-agents.git"}}]}\n' "$marketplace_native" ;;
   *) echo "unexpected fake codex invocation: $*" >&2; exit 64 ;;
 esac
 FAKECODEX
@@ -3360,6 +3366,12 @@ cat > "$CODEX_OVERRIDE_BIN/codex" <<'FAKECODEXOVERRIDE'
 set -eu
 state="${CODEX_OVERRIDE_STATE:?}"
 marketplace="$state/marketplace"
+# Report the marketplace root in NATIVE form. The real Codex CLI is a native
+# Windows program and prints C:/...; this stub is a bash script, so an unconverted
+# "$marketplace" hands install-codex.sh an MSYS path (/c/...) that its identity check
+# cannot stat. Verified against the unmodified installer: a native root passes this
+# check, only the MSYS form fails -- so this is a stub artifact, not a product bug.
+marketplace_native="$(cygpath -m "$marketplace" 2>/dev/null || printf '%s' "$marketplace")"
 ensure_marketplace() {
   mkdir -p "$marketplace/plugins/sefi-core"
   cp -R "${CODEX_FIXTURE_ROOT:?}/plugins/sefi-core/." "$marketplace/plugins/sefi-core/"
@@ -3368,14 +3380,14 @@ ensure_marketplace() {
 case "$*" in
   'plugin marketplace list --json')
     if [ -f "$state/added" ]; then
-      printf '{"marketplaces":[{"name":"sefi-agents","root":"%s","marketplaceSource":{"sourceType":"git","source":"https://github.com/xsefirosus/sefi-agents.git"}}]}\n' "$marketplace"
+      printf '{"marketplaces":[{"name":"sefi-agents","root":"%s","marketplaceSource":{"sourceType":"git","source":"https://github.com/xsefirosus/sefi-agents.git"}}]}\n' "$marketplace_native"
     else
       printf '%s\n' '{"marketplaces":[]}'
     fi
     ;;
   'plugin marketplace add xsefirosus/sefi-agents') ensure_marketplace ;;
   'plugin marketplace upgrade sefi-agents'|'plugin add sefi-core@sefi-agents') : ;;
-  'plugin list --json') printf '{"installed":[{"pluginId":"sefi-core@sefi-agents","marketplaceName":"sefi-agents","source":{"source":"local","path":"%s/plugins/sefi-core"},"marketplaceSource":{"sourceType":"git","source":"https://github.com/xsefirosus/sefi-agents.git"}}]}\n' "$marketplace" ;;
+  'plugin list --json') printf '{"installed":[{"pluginId":"sefi-core@sefi-agents","marketplaceName":"sefi-agents","source":{"source":"local","path":"%s/plugins/sefi-core"},"marketplaceSource":{"sourceType":"git","source":"https://github.com/xsefirosus/sefi-agents.git"}}]}\n' "$marketplace_native" ;;
   *) exit 64 ;;
 esac
 FAKECODEXOVERRIDE
