@@ -17,7 +17,21 @@
 #   reads:   <upstream output path(s) this dispatch consumes, comma-separated>
 #   writes:  <ABSOLUTE path the dispatched agent must write into>
 #   budget:  <scope or usd figure checked before dispatch>
+#   output_schema: <OPTIONAL; path to a JSON Schema the returned labels must satisfy>
 #   context: <inlined context; must stand alone>
+#
+# output_schema (optional, Stage 2) closes the gap where `writes:` names a directory
+# but nothing states what the agent must put in it. A dispatch that promises a
+# VERDICT: line and gets prose back satisfies every other check here and is still
+# unusable to the reviewer. When the field is present the agent's own
+# `## Output contract` declares the labels it emits; this gate checks that schema is
+# readable, is real JSON, and names at least one required label -- then the
+# dispatched reply is validated against it by check-reply.sh at return time.
+#
+# Deliberately NOT enforced here: that the reply matches. That is a return-time
+# check, and check-handoff.sh runs BEFORE the agent exists. Enforcing it here would
+# reject every dispatch. This gate only refuses to accept a schema it cannot read,
+# which would otherwise fail silently at return time.
 #
 # Exit 0 when the envelope is well-formed; 1 when it is not; 2 on a usage error.
 set -uo pipefail
@@ -107,6 +121,42 @@ if [ -d "$AGENT_DIR" ]; then
     || err "'agent: $AGENT' does not resolve to $AGENT_DIR/$AGENT.md"
 else
   err "agent directory unavailable: $AGENT_DIR"
+fi
+
+# 5. output_schema (optional). A declared-but-unreadable schema is worse than none:
+# it reads as "structured output is checked" and then fails open at return time when
+# nobody can read it. So presence is checked, and readability is checked, but the
+# reply-vs-schema comparison is NOT -- that happens after the agent runs.
+OSCHEMA="$(field output_schema)"
+if [ -n "$OSCHEMA" ]; then
+  schema_count="$(printf '%s\n' "$PREAMBLE" | grep -cE '^output_schema:')"
+  [ "$schema_count" -eq 1 ] || err "'output_schema:' must appear at most once"
+  case "$OSCHEMA" in
+    /*|[A-Za-z]:[\\/]*) : ;;
+    *) err "'output_schema: $OSCHEMA' is not absolute -- a relative schema path resolves against the dispatched agent's inherited working directory, not yours" ;;
+  esac
+  if [ ! -f "$OSCHEMA" ]; then
+    err "'output_schema: $OSCHEMA' does not exist -- a schema that cannot be read fails open at return time, which is the case this check exists to prevent"
+  elif ! command -v jq >/dev/null 2>&1; then
+    # Fail closed on a missing dependency rather than skipping: a skipped check here
+    # reads identically to a passed one.
+    err "jq is required to validate 'output_schema:' but was not found"
+  else
+    # sefi-native-tool, not bare jq: on MSYS a native jq cannot open an MSYS path
+    # (verified: `jq: error: Could not open file /c/...`), which would report every
+    # schema as invalid JSON. The helper is a plain exec off MSYS, so this is
+    # correct on POSIX CI too.
+    JQ() { "$HERE/sefi-native-tool" jq "$@"; }
+    if ! JQ -e . "$OSCHEMA" >/dev/null 2>&1; then
+      err "'output_schema: $OSCHEMA' is not valid JSON"
+    else
+      # A schema with no required label constrains nothing, which is the silent-pass
+      # this whole field exists to remove.
+      required_n="$(JQ -r 'if (.required | type) == "array" then (.required | length) else 0 end' "$OSCHEMA" 2>/dev/null)"
+      [ "${required_n:-0}" -gt 0 ] 2>/dev/null \
+        || err "'output_schema: $OSCHEMA' declares no 'required' labels -- it constrains nothing, so the dispatch reads as structured while enforcing nothing"
+    fi
+  fi
 fi
 
 if [ "$errors" -ne 0 ]; then
