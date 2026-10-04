@@ -50,11 +50,11 @@ for file in docs/DESIGN-COUNCIL.md docs/MIGRATION-v0.9.0.md docs/RELEASE-v0.9.0.
 done
 
 for manifest in plugins/sefi-core/.claude-plugin/plugin.json plugins/sefi-core/.codex-plugin/plugin.json; do
-  require_text "$manifest" '"version": "0.9.6"'
+  require_text "$manifest" '"version": "0.9.7"'
 done
-require_text .claude-plugin/marketplace.json '"version": "0.9.6"'
-if [ "$(grep -Foc '"version": "0.9.6"' .claude-plugin/marketplace.json || true)" -ne 2 ]; then
-  echo "FAIL: marketplace must carry v0.9.6 twice" >&2
+require_text .claude-plugin/marketplace.json '"version": "0.9.7"'
+if [ "$(grep -Foc '"version": "0.9.7"' .claude-plugin/marketplace.json || true)" -ne 2 ]; then
+  echo "FAIL: marketplace must carry v0.9.7 twice" >&2
   fail=1
 fi
 
@@ -67,6 +67,7 @@ require_once README.md '/sefi:audit'
 require_text plugins/sefi-core/README.md '/sefi:audit'
 require_text Install.md 'v0.9.2'
 require_text Install.md 'billing_mode'
+require_text CHANGELOG.md '## [0.9.7] - 2026-10-04'
 require_text CHANGELOG.md '## [0.9.6] - 2026-10-03'
 require_text CHANGELOG.md '## [0.9.5] - 2026-09-28'
 require_text CHANGELOG.md '## [0.9.0] - 2026-09-20'
@@ -77,6 +78,9 @@ require_text docs/RELEASE-v0.9.5.md '# v0.9.5 Release Notes'
 require_file docs/RELEASE-v0.9.6.md
 require_text docs/RELEASE-v0.9.6.md 'billing_mode'
 require_text docs/RELEASE-v0.9.6.md '# v0.9.6 Release Notes'
+require_file docs/RELEASE-v0.9.7.md
+require_text docs/RELEASE-v0.9.7.md 'billing_mode'
+require_text docs/RELEASE-v0.9.7.md '# v0.9.7 Release Notes'
 require_text plugins/sefi-core/skills/sefi-orchestration/references/harness-actions.md 'Claude project file (see coordinator profile)'
 require_text plugins/sefi-core/skills/sefi-orchestration/references/harness-actions.md 'OpenCode project file (see coordinator profile)'
 require_text plugins/sefi-core/skills/sefi-orchestration/references/harness-actions.md 'Codex project file (see coordinator profile)'

@@ -5,6 +5,17 @@ Changelog; this project adheres to Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.9.7] - 2026-10-04
+
+### Added
+- v0.9.5 native-legs install evidence recorded under
+  `state/acceptance-v095-2026-10-01/installations/`: the 20261002 round
+  (`claude`, `codex`, `hermes`, and `opencode` native install logs, per-leg
+  status notes, environment probes, `INCIDENT-native-20261002.md`) and the
+  20261003 round (`codex`, `hermes`, and `opencode` native logs with per-leg
+  notes, a budget-flat fixture, and a metrics-ledger line recording the
+  billing-harness-defaults merge QA PASS). Evidence only; no behavior change.
+
 ### Changed
 - Per-harness billing defaults for a config with no `billing_mode` key:
   `budget-check.sh` resolves `opencode` and `hermes` to `free`, and `codex` and
@@ -34,7 +45,7 @@ Changelog; this project adheres to Semantic Versioning.
   missing key defaults to metered" described v0.9.6 behavior and no longer
   describe this tree: the missing-key default is now per-harness (`opencode` and
   `hermes` free, `codex` and `claude-code` flat, no signal metered), as the
-  Unreleased section above and `docs/BUDGET.md` state. Those two sentences are
+  `## [0.9.7]` section above and `docs/BUDGET.md` state. Those two sentences are
   superseded for current trees; nothing else in the v0.9.6 entry changes.
 
 ## [0.9.6] - 2026-10-03
