@@ -1,0 +1,46 @@
+=== codex app bin dir ===
+34ab3e1324cc55b5
+5b9024f90663758b
+8aaf1547b825b104
+f1e5e36960c35938
+=== opencode providers list ===
+[0m
+[90m┌[39m  Credentials [90m~\.local\share\opencode\auth.json
+[90m│[39m
+[34m●[39m  Google [90mapi
+[90m│[39m
+[34m●[39m  OpenCode Zen [90mapi
+[90m│[39m
+[34m●[39m  MiniMax (minimax.io) [90mapi
+[90m│[39m
+[34m●[39m  OpenCode Go [90mapi
+[90m│[39m
+[90m└[39m  4 credentials
+
+exit=0
+=== hermes skills (local discovery) ===
+usage: hermes skills [-h]
+                     {browse,search,install,inspect,list,check,update,audit,uninstall,reset,list-modified,diff,opt-out,opt-in,repair-official,publish,snapshot,tap,config}
+                     ...
+
+Search, install, inspect, audit, configure, and manage skills from skills.sh,
+well-known agent skill endpoints, GitHub, ClawHub, and other registries.
+
+positional arguments:
+  {browse,search,install,inspect,list,check,update,audit,uninstall,reset,list-modified,diff,opt-out,opt-in,repair-official,publish,snapshot,tap,config}
+    browse              Browse all available skills (paginated)
+    search              Search skill registries
+    install             Install a skill
+    inspect             Preview a skill without installing
+    list                List installed skills
+    check               Check installed hub skills for updates
+    update              Update installed hub skills
+    audit               Re-scan installed hub skills
+    uninstall           Remove a hub-installed skill
+    reset               Reset a bundled skill — clears 'user-modified'
+                        tracking so updates work again
+    list-modified       List bundled skills you've edited (which `hermes
+                        update` keeps)
+    diff                Show how your copy of a bundled skill differs from the
+                        stock version
+    opt-out             Stop bundled skills from being seeded into this

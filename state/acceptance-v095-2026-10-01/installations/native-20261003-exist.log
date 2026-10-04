@@ -1,0 +1,51 @@
+=== codex app runtimes/bin depth 2 (names only) ===
+--- C:\Users\Mary Rose\AppData\Local/OpenAI/Codex/bin/34ab3e1324cc55b5/
+node_repl.exe
+--- C:\Users\Mary Rose\AppData\Local/OpenAI/Codex/bin/5b9024f90663758b/
+node.exe
+--- C:\Users\Mary Rose\AppData\Local/OpenAI/Codex/bin/8aaf1547b825b104/
+codex-code-mode-host.exe
+codex-command-runner.exe
+codex-windows-sandbox-setup.exe
+codex.exe
+--- C:\Users\Mary Rose\AppData\Local/OpenAI/Codex/bin/f1e5e36960c35938/
+rg.exe
+=== codex auth material existence only ===
+/c/Users/Mary Rose/.codex/auth.json
+auth.json
+mcp-oauth-locks
+=== hermes skills list (installed, local) ===
+                               Installed Skills                                
+┌─────────────────────┬─────────────────────┬───────────┬───────────┬─────────┐
+│ Name                │ Category            │ Source    │ Trust     │ Status  │
+├─────────────────────┼─────────────────────┼───────────┼───────────┼─────────┤
+│ anti-hallucination  │                     │ skills.sh │ community │ enabled │
+│ backend-design      │                     │ skills.sh │ community │ enabled │
+│ computer-use        │                     │ builtin   │ builtin   │ enabled │
+│ dogfood             │                     │ builtin   │ builtin   │ enabled │
+│ focus               │                     │ skills.sh │ community │ enabled │
+│ frontend-design     │                     │ skills.sh │ community │ enabled │
+│ loop-engineering    │                     │ skills.sh │ community │ enabled │
+│ memory-protocol     │                     │ skills.sh │ community │ enabled │
+│ n8n-workflow-design │                     │ skills.sh │ community │ enabled │
+│ premortem           │                     │ skills.sh │ community │ enabled │
+│ retro-improve       │                     │ skills.sh │ community │ enabled │
+│ security-review     │                     │ local     │ local     │ enabled │
+│ sefi-orchestration  │                     │ local     │ local     │ enabled │
+│ technical-writing   │                     │ skills.sh │ community │ enabled │
+│ terse-mode          │                     │ skills.sh │ community │ enabled │
+│ upscale-image       │                     │ local     │ local     │ enabled │
+│ yuanbao             │                     │ builtin   │ builtin   │ enabled │
+│ claude-code         │ autonomous-ai-agen… │ builtin   │ builtin   │ enabled │
+│ codex               │ autonomous-ai-agen… │ builtin   │ builtin   │ enabled │
+│ delegation-patterns │ autonomous-ai-agen… │ local     │ local     │ enabled │
+│ hermes-agent        │ autonomous-ai-agen… │ builtin   │ builtin   │ enabled │
+│ opencode            │ autonomous-ai-agen… │ builtin   │ builtin   │ enabled │
+│ architecture-diagr… │ creative            │ builtin   │ builtin   │ enabled │
+│ ascii-art           │ creative            │ builtin   │ builtin   │ enabled │
+│ ascii-video         │ creative            │ builtin   │ builtin   │ enabled │
+│ baoyu-infographic   │ creative            │ builtin   │ builtin   │ enabled │
+exit=0
+=== install-opencode.sh help (no writes) ===
+usage: plugins/sefi-core/scripts/install-opencode.sh [--force] [--model-map <path>] [--auto-update]
+exit=0

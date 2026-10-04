@@ -1,0 +1,47 @@
+=== candidate commit present locally? ===
+commit
+=== released commit present locally? ===
+commit
+=== install-codex.sh: codex CLI invocations (model/network risk) ===
+=== install-codex.sh CODEX_HOME gate ===
+53:  # public-source guard unchanged and requires an isolated CODEX_HOME selected by the caller.
+54:  [ -n "${CODEX_HOME:-}" ] || { echo "install-codex.sh: --candidate-marketplace requires an explicit isolated CODEX_HOME" >&2; exit 2; }
+436:    echo "install-codex.sh: refusing CODEX_HOME that is not a POSIX path: $CODEX_ROOT" >&2
+441:    echo "install-codex.sh: refusing CODEX_HOME with no physical location: $CODEX_ROOT" >&2
+444:  CODEX_HOME_PHYS="$(sefi_canonical_path "$HOME")" || CODEX_HOME_PHYS=""
+445:  if [ "$CODEX_ROOT_PHYS" != "$CODEX_ROOT" ] && ! sefi_inside_or_equal "$CODEX_ROOT_PHYS" "$CODEX_HOME_PHYS"; then
+446:    echo "install-codex.sh: refusing CODEX_HOME escaping its expected root: $CODEX_ROOT resolves to $CODEX_ROOT_PHYS" >&2
+472:CODEX_ROOT="${CODEX_HOME:-$HOME/.codex}"
+477:  echo "install-codex.sh: refusing non-directory CODEX_HOME root $CODEX_ROOT" >&2
+=== install-opencode.sh OPENCODE_HOME handling ===
+
+# Fail fast if a required source dir is missing.
+for d in "$AGENTS_SRC" "$SKILLS_SRC" "$COMMANDS_SRC" "$SCRIPTS_SRC"; do
+  [ -d "$d" ] || { echo "install-opencode.sh: missing required source dir $d" >&2; exit 1; }
+done
+[ -z "$MODEL_MAP" ] || [ -f "$MODEL_MAP" ] || { echo "install-opencode.sh: model map not found at $MODEL_MAP" >&2; exit 2; }
+
+# Resolve every agent before creating a destination. A malformed caller map must never
+# degrade into an apparently successful install that silently inherits one session model.
+for src in "$AGENTS_SRC"/*.md; do
+  [ -f "$src" ] || continue
+  agent_model "$src" >/dev/null || { echo "install-opencode.sh: cannot resolve model for $(basename "$src")" >&2; exit 1; }
+  agent_reasoning "$src" >/dev/null || { echo "install-opencode.sh: cannot resolve reasoning for $(basename "$src")" >&2; exit 1; }
+done
+
+# Pick the destination base (mirrors install.sh's opencode target).
+DEST="${OPENCODE_HOME:-$HOME/.config/opencode}"
+# On Cygwin/MSYS, normalize a Windows-style HOME to a POSIX path.
+if command -v cygpath >/dev/null 2>&1; then
+  DEST="$(cygpath -u "$DEST")"
+fi
+
+sefi_normalize_path() {
+  # sefi_normalize_path <path> -- absolutize <path> and lexically collapse
+  # duplicate slashes, dot components, and dot-dot components (clamped at the
+  # root), stripping trailing slashes, so a spelled path can be compared byte
+  # for byte against its physical location below. Returns non-zero and prints
+  # nothing for input no POSIX layer can interpret: a backslash anywhere, or a
+  # drive-letter prefix.
+  #
+  # That refusal is deliberate fail-closed portability, not an oversight. Every

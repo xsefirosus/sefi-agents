@@ -1,0 +1,58 @@
+=== opencode transforms (disposable ohome) ===
+--- raw tools: lines in installed agents (expect none) ---
+grep-exit=0 (1 means none found)
+--- permission lines ---
+/tmp/tmp.7OptuuAHqT/ohome/agents/devops-engineer.md:1
+/tmp/tmp.7OptuuAHqT/ohome/agents/memory-journalist.md:1
+/tmp/tmp.7OptuuAHqT/ohome/agents/motion-designer.md:1
+/tmp/tmp.7OptuuAHqT/ohome/agents/product-manager.md:1
+/tmp/tmp.7OptuuAHqT/ohome/agents/prompt-engineer.md:1
+/tmp/tmp.7OptuuAHqT/ohome/agents/qa-engineer.md:1
+/tmp/tmp.7OptuuAHqT/ohome/agents/research-adoption-scout.md:1
+/tmp/tmp.7OptuuAHqT/ohome/agents/research-analyst.md:1
+/tmp/tmp.7OptuuAHqT/ohome/agents/research-codebase-cartographer.md:1
+/tmp/tmp.7OptuuAHqT/ohome/agents/security-engineer.md:1
+/tmp/tmp.7OptuuAHqT/ohome/agents/sefi-agents.md:1
+/tmp/tmp.7OptuuAHqT/ohome/agents/software-engineer.md:1
+/tmp/tmp.7OptuuAHqT/ohome/agents/solutions-architect.md:1
+/tmp/tmp.7OptuuAHqT/ohome/agents/support-engineer.md:1
+/tmp/tmp.7OptuuAHqT/ohome/agents/systems-auditor.md:1
+/tmp/tmp.7OptuuAHqT/ohome/agents/technical-writer.md:1
+/tmp/tmp.7OptuuAHqT/ohome/agents/ui-ux-designer.md:1
+--- systems-auditor mode ---
+mode: subagent
+--- systems-audit skill + audit command present ---
+/tmp/tmp.7OptuuAHqT/ohome/commands/audit.md
+/tmp/tmp.7OptuuAHqT/ohome/skills/systems-audit
+--- manifest ---
+/tmp/tmp.7OptuuAHqT/ohome/scripts/.sefi-agents-manifest.json
+=== codex discovery (disposable chome) ===
+0.9.5
+README.md
+agents
+commands
+config
+hooks
+scripts
+skills
+templates
+/tmp/tmp.USbUbkXC89/chome/plugins/cache/sefi-agents/sefi-core/0.9.5/skills/systems-audit
+grep: /tmp/tmp.USbUbkXC89/chome/agents/systems-auditor.md: No such file or directory
+no agents dir copy (installer applied model policy instead)
+devops-engineer.toml
+memory-journalist.toml
+motion-designer.toml
+product-manager.toml
+prompt-engineer.toml
+qa-engineer.toml
+research-adoption-scout.toml
+research-analyst.toml
+research-codebase-cartographer.toml
+security-engineer.toml
+sefi-agents.toml
+software-engineer.toml
+solutions-architect.toml
+support-engineer.toml
+systems-auditor.toml
+technical-writer.toml
+ui-ux-designer.toml

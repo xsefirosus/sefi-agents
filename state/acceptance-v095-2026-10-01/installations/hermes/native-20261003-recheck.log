@@ -1,0 +1,148 @@
+=== utc ===
+2026-10-03T10:14:07Z
+=== commit ===
+ca2506f5ed8bb0b02fe8f62692f87dab1469ad8a
+=== hermes version ===
+Hermes Agent v0.21.5+6241.gc8301ea (2026.9.24) · upstream c8301ea6
+Install directory: C:\Users\Mary Rose\AppData\Local\hermes\hermes-agent
+Install method: git
+Python: 3.11.15
+OpenAI SDK: 2.24.0
+Up to date
+=== hermes status --full (credential gate, read-only) ===
+
+┌─────────────────────────────────────────────────────────┐
+│                 ☤ Hermes Agent Status                  │
+└─────────────────────────────────────────────────────────┘
+
+◆ Environment
+  Project:      C:\Users\Mary Rose\AppData\Local\hermes\hermes-agent
+  Python:       3.14.7
+  .env file:    ✓ exists
+  Model:        deepseek-v4-flash-free
+  Provider:     OpenCode Zen
+
+◆ API Keys
+  OpenRouter    ✗ (not set)
+  OpenAI        ✗ (not set)
+  Google / Gemini  ✗ (not set)
+  DeepSeek      ✗ (not set)
+  xAI / Grok    ✗ (not set)
+  NVIDIA NIM    ✗ (not set)
+  Z.AI / GLM    ✗ (not set)
+  Kimi          ✗ (not set)
+  StepFun Step Plan  ✗ (not set)
+  MiniMax       ✗ (not set)
+  MiniMax-CN    ✗ (not set)
+  DeepInfra     ✗ (not set)
+  Firecrawl     ✗ (not set)
+  Tavily        ✗ (not set)
+  Perplexity    ✗ (not set)
+  Keenable      ✗ (not set)
+  Browser Use   ✗ (not set)
+  Browserbase   ✗ (not set)
+  FAL           ✗ (not set)
+  ElevenLabs    ✗ (not set)
+  GitHub        ✗ (not set)
+  Anthropic     ✗ (not set)
+
+◆ Auth Providers
+  Nous Portal   ✗ not logged in (run: hermes portal)
+  OpenAI Codex  ✗ not logged in (run: hermes model)
+    Auth file:  C:\Users\Mary Rose\AppData\Local\hermes\auth.json
+    Error:      No Codex credentials stored. Run `hermes auth add openai-codex --type oauth` to authenticate.
+  Qwen OAuth    ✗ not logged in (run: qwen auth qwen-oauth)
+    Auth file:  C:\Users\Mary Rose\.qwen\oauth_creds.json
+    Error:      Qwen CLI credentials not found. Run 'qwen auth qwen-oauth' first.
+  MiniMax OAuth  ✗ not logged in (run: hermes auth add minimax-oauth)
+  xAI OAuth     ✗ not logged in (run: hermes auth add xai-oauth)
+    Auth file:  C:\Users\Mary Rose\AppData\Local\hermes\auth.json
+    Error:      No xAI OAuth credentials stored. Select xAI Grok OAuth (SuperGrok / Premium+) in `hermes model`.
+
+◆ API-Key Providers
+  Z.AI / GLM       ✗ not configured (run: hermes model)
+  Kimi / Moonshot  ✗ not configured (run: hermes model)
+  StepFun Step Plan ✗ not configured (run: hermes model)
+  MiniMax          ✗ not configured (run: hermes model)
+  MiniMax (China)  ✗ not configured (run: hermes model)
+  DeepInfra        ✗ not configured (run: hermes model)
+
+◆ Terminal Backend
+  Backend:      local
+  Sudo:         ✗ disabled
+
+◆ Messaging Platforms
+  A2A           ✗ not configured
+  BlueBubbles   ✗ not configured
+  Buzz          ✗ not configured
+  DingTalk      ✗ not configured
+  Discord       ✗ not configured
+  Email         ✗ not configured
+  Feishu / Lark  ✗ not configured
+  Google Chat   ✗ not configured
+  Home Assistant  ✗ not configured
+  iMessage via Photon  ✗ not configured
+  IRC           ✗ not configured
+  LINE          ✗ not configured
+  Matrix        ✗ not configured
+  Mattermost    ✗ not configured
+  Microsoft Teams  ✗ not configured
+  ntfy          ✗ not configured
+  QQBot         ✗ not configured
+  Raft          ✗ not configured
+  Signal        ✗ not configured
+  SimpleX Chat  ✗ not configured
+  Slack         ✗ not configured
+  SMS (Twilio)  ✗ not configured
+  Telegram      ✗ not configured
+  WeCom (Enterprise WeChat)  ✗ not configured
+  WeCom Callback (self-built apps)  ✗ not configured
+  Weixin        ✗ not configured
+  WhatsApp      ✗ not configured
+  Yuanbao       ✗ not configured
+
+◆ Gateway Service
+  Status:       ✗ stopped
+  Manager:      manual process
+
+◆ Scheduled Jobs
+  Jobs:         0 active, 0 total
+
+◆ Sessions
+  Active:       0
+
+────────────────────────────────────────────────────────────
+  Run 'hermes doctor' for detailed diagnostics
+  Run 'hermes setup' to configure
+
+HERMES_STATUS_EXIT=0
+=== repo status ===
+?? inbox/approval-systems-audit-v0.9.5-2026-09-28.md
+?? state/acceptance-v095-2026-10-01/installations/budget-flat-20261003.yml
+?? state/acceptance-v095-2026-10-01/installations/codex/native-20261003-exec.log
+?? state/acceptance-v095-2026-10-01/installations/codex/native-20261003-install.log
+?? state/acceptance-v095-2026-10-01/installations/codex/native-20261003-leakcheck.log
+?? state/acceptance-v095-2026-10-01/installations/codex/native-20261003.md
+?? state/acceptance-v095-2026-10-01/installations/commands-20261003.jsonl
+?? state/acceptance-v095-2026-10-01/installations/hermes/native-20261003-recheck.log
+?? state/acceptance-v095-2026-10-01/installations/hermes/native-20261003.md
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-codex.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-codexinst.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-codexlogin.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-exist.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-final.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-flatmode.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-install.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-inventory.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-login.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-preflight.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-probe.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-reinstall.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-status.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-verify.log
+?? state/acceptance-v095-2026-10-01/installations/opencode/native-20261003-diag.log
+?? state/acceptance-v095-2026-10-01/installations/opencode/native-20261003-homeform.log
+?? state/acceptance-v095-2026-10-01/installations/opencode/native-20261003-run.log
+?? state/acceptance-v095-2026-10-01/installations/opencode/native-20261003.md
+=== utc end ===
+2026-10-03T10:14:23Z

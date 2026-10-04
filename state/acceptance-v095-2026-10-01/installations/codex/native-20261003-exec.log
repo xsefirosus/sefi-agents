@@ -1,0 +1,113 @@
+=== utc ===
+2026-10-03T10:07:40Z
+=== commit ===
+ca2506f5ed8bb0b02fe8f62692f87dab1469ad8a
+=== stage ===
+/tmp/tmp.bHnr3YMWd8
+=== codex version ===
+codex-cli 0.160.0
+=== flat gate (machine-local flat config; authorizes model spend) ===
+budget-check: skip scope=daily billing_mode=flat -- dollar caps do not apply under flat billing; non-dollar discipline stays always on
+FLAT_GATE_EXIT=0 (expect 0 skip billing_mode=flat)
+=== real-home baseline (AGENTS.md + config.toml identity before leg) ===
+2413281bfbc4ae5d1e936ab0bd09791c2bd80bead78e64d998aed63ed0f60ea8 */c/Users/Mary Rose/.codex/AGENTS.md
+ad2b6738f949b85a293ff25d55758cec2e712543f66618519bc7d183f108f190 */c/Users/Mary Rose/.codex/config.toml
+=== isolated-home auth check (read-only; real creds never copied) ===
+Not logged in
+ISOLATED_LOGIN_EXIT=1 (0 means isolated home carries credentials)
+=== candidate install from current main into isolated CODEX_HOME ===
+Added marketplace `sefi-agents` from \\?\D:\Projects\Sefi-Agents.
+Installed marketplace root: D:\Projects\Sefi-Agents
+Added plugin `sefi-core` from marketplace `sefi-agents`.
+Installed plugin root: C:\Users\Mary Rose\AppData\Local\Temp\tmp.bHnr3YMWd8\chome\plugins\cache\sefi-agents\sefi-core\0.9.5
+install-codex.sh: installed sefi-core@sefi-agents and updated /tmp/tmp.bHnr3YMWd8/chome/AGENTS.md
+install-codex.sh: applied the approved Sefi specialist model policy in /tmp/tmp.bHnr3YMWd8/chome/agents
+install-codex.sh: start a new Codex session and accept its one-time Sefi hook trust prompt when shown.
+sefi-agents: installation succeeded.
+sefi-agents: run /sefi:init once from each project root before the first routed request.
+sefi-agents: auto-init is unsafe because installation is user-wide and cannot safely choose or modify a project.
+sefi-agents: cross-project memory is optional, local/private, and off by default; /sefi:init asks interactively and keeps it off when unattended.
+CODEX_INSTALL_EXIT=0
+=== discovery: installed systems-audit skill ===
+SKILL.md
+references
+SKILL_LS_EXIT=0
+/tmp/tmp.bHnr3YMWd8/chome/agents/systems-auditor.toml
+=== exec leg: new-session systems-audit invocation (model-backed) ===
+--- command: CODEX_HOME=<isolated> codex exec --skip-git-repo-check -C <proj> -s workspace-write 'Use $systems-audit for the build scope.' stdin=/dev/null ---
+Reading additional input from stdin...
+OpenAI Codex v0.160.0
+--------
+workdir: C:\Users\MARYRO~1\AppData\Local\Temp\tmp.bHnr3YMWd8\proj
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: none
+reasoning summaries: none
+session id: 01a1013c-c36d-7d03-ae6e-2b02fa339c62
+--------
+user
+Use $systems-audit for the build scope.
+2026-10-03T10:08:42.527656Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
+2026-10-03T10:08:42.892041Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
+2026-10-03T10:08:43.167948Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
+ERROR: Reconnecting... 2/5
+2026-10-03T10:08:43.606453Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
+ERROR: Reconnecting... 3/5
+2026-10-03T10:08:44.713524Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
+ERROR: Reconnecting... 4/5
+2026-10-03T10:08:46.787389Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
+ERROR: Reconnecting... 5/5
+2026-10-03T10:08:49.988917Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
+warning: Falling back from WebSockets to HTTPS transport. unexpected status 401 Unauthorized: Missing bearer or basic authentication in header, url: wss://api.openai.com/v1/responses, cf-ray: a44b25d6f9fc3415-DXB
+ERROR: Reconnecting... 1/5
+ERROR: Reconnecting... 2/5
+ERROR: Reconnecting... 3/5
+ERROR: Reconnecting... 4/5
+ERROR: Reconnecting... 5/5
+ERROR: unexpected status 401 Unauthorized: Missing bearer or basic authentication in header, url: https://api.openai.com/v1/responses, cf-ray: a44b26146f28c369-DXB, request id: req_dc600c272d234e1986f126eb6f8aeb34
+ERROR: unexpected status 401 Unauthorized: Missing bearer or basic authentication in header, url: https://api.openai.com/v1/responses, cf-ray: a44b26146f28c369-DXB, request id: req_dc600c272d234e1986f126eb6f8aeb34
+CODEX_EXEC_EXIT=1
+=== disposable project result ===
+/tmp/tmp.bHnr3YMWd8/proj:
+total 0
+drwxr-xr-x 1 Mary Rose 197121 0 Oct  3 14:07 .
+drwxr-xr-x 1 Mary Rose 197121 0 Oct  3 14:07 ..
+drwxr-xr-x 1 Mary Rose 197121 0 Oct  3 14:07 audits
+
+/tmp/tmp.bHnr3YMWd8/proj/audits:
+total 0
+drwxr-xr-x 1 Mary Rose 197121 0 Oct  3 14:07 .
+drwxr-xr-x 1 Mary Rose 197121 0 Oct  3 14:07 ..
+=== real-home after (must equal baseline: no real-home writes) ===
+2413281bfbc4ae5d1e936ab0bd09791c2bd80bead78e64d998aed63ed0f60ea8 */c/Users/Mary Rose/.codex/AGENTS.md
+ad2b6738f949b85a293ff25d55758cec2e712543f66618519bc7d183f108f190 */c/Users/Mary Rose/.codex/config.toml
+=== repo status (only expected untracked evidence files) ===
+?? inbox/approval-systems-audit-v0.9.5-2026-09-28.md
+?? state/acceptance-v095-2026-10-01/installations/budget-flat-20261003.yml
+?? state/acceptance-v095-2026-10-01/installations/codex/native-20261003-exec.log
+?? state/acceptance-v095-2026-10-01/installations/codex/native-20261003-install.log
+?? state/acceptance-v095-2026-10-01/installations/codex/native-20261003-leakcheck.log
+?? state/acceptance-v095-2026-10-01/installations/codex/native-20261003.md
+?? state/acceptance-v095-2026-10-01/installations/commands-20261003.jsonl
+?? state/acceptance-v095-2026-10-01/installations/hermes/native-20261003.md
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-codex.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-codexinst.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-codexlogin.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-exist.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-final.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-flatmode.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-install.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-inventory.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-login.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-preflight.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-probe.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-reinstall.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-status.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-verify.log
+?? state/acceptance-v095-2026-10-01/installations/opencode/native-20261003.md
+=== utc end ===
+2026-10-03T10:09:01Z
+=== stage kept at ===
+/tmp/tmp.bHnr3YMWd8

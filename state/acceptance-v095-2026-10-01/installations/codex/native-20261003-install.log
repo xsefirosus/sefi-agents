@@ -1,0 +1,36 @@
+=== codex bin ===
+/c/Users/Mary Rose/AppData/Local/OpenAI/Codex/bin/8aaf1547b825b104
+/c/Users/Mary Rose/AppData/Local/OpenAI/Codex/bin/8aaf1547b825b104/codex.exe
+/c/Users/Mary Rose/AppData/Local/OpenAI/Codex/bin/8aaf1547b825b104/codex
+codex-cli 0.160.0
+=== export pristine candidate tree ===
+archive-exit=0
+=== codex candidate install, isolated CODEX_HOME ===
+Added marketplace `sefi-agents` from \\?\C:\Users\Mary Rose\AppData\Local\Temp\tmp.USbUbkXC89\cand.
+Installed marketplace root: C:\Users\Mary Rose\AppData\Local\Temp\tmp.USbUbkXC89\cand
+Added plugin `sefi-core` from marketplace `sefi-agents`.
+Installed plugin root: C:\Users\Mary Rose\AppData\Local\Temp\tmp.USbUbkXC89\chome\plugins\cache\sefi-agents\sefi-core\0.9.5
+install-codex.sh: installed sefi-core@sefi-agents and updated /tmp/tmp.USbUbkXC89/chome/AGENTS.md
+install-codex.sh: applied the approved Sefi specialist model policy in /tmp/tmp.USbUbkXC89/chome/agents
+install-codex.sh: start a new Codex session and accept its one-time Sefi hook trust prompt when shown.
+sefi-agents: installation succeeded.
+sefi-agents: run /sefi:init once from each project root before the first routed request.
+sefi-agents: auto-init is unsafe because installation is user-wide and cannot safely choose or modify a project.
+sefi-agents: cross-project memory is optional, local/private, and off by default; /sefi:init asks interactively and keeps it off when unattended.
+codex-install-exit=0
+=== isolated CODEX_HOME contents (names only) ===
+total 14
+drwxr-xr-x 1 Mary Rose 197121   0 Oct  3 13:31 .
+drwxr-xr-x 1 Mary Rose 197121   0 Oct  3 13:30 ..
+drwxr-xr-x 1 Mary Rose 197121   0 Oct  3 13:30 .tmp
+-rw-r--r-- 1 Mary Rose 197121 474 Oct  3 13:30 AGENTS.md
+drwxr-xr-x 1 Mary Rose 197121   0 Oct  3 13:31 agents
+-rw-r--r-- 1 Mary Rose 197121 172 Oct  3 13:30 config.toml
+drwxr-xr-x 1 Mary Rose 197121   0 Oct  3 13:30 plugins
+drwxr-xr-x 1 Mary Rose 197121   0 Oct  3 13:30 tmp
+=== real HOME/.codex untouched check ===
+-rw-r--r-- 1 Mary Rose 197121 188599 Oct  3 13:20 /c/Users/Mary Rose/.codex/.codex-global-state.json
+code-review-plugin
+plugins
+=== stage kept at ===
+/tmp/tmp.USbUbkXC89

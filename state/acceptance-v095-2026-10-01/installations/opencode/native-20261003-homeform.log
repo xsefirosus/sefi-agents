@@ -1,0 +1,58 @@
+=== utc ===
+2026-10-03T10:13:48Z
+=== commit ===
+ca2506f5ed8bb0b02fe8f62692f87dab1469ad8a
+=== OHOME posix form ===
+/tmp/tmp.NUIj6uly7G/ohome
+=== OHOME windows form ===
+C:\Users\MARYRO~1\AppData\Local\Temp\tmp.NUIj6uly7G\ohome
+=== debug paths with POSIX-form OPENCODE_HOME (s4 form) ===
+home       C:\Users\Mary Rose
+data       C:\Users\Mary Rose\.local\share\opencode
+bin        C:\Users\Mary Rose\.cache\opencode\bin
+log        C:\Users\Mary Rose\.local\share\opencode\log
+repos      C:\Users\Mary Rose\.local\share\opencode\repos
+cache      C:\Users\Mary Rose\.cache\opencode
+config     C:\Users\Mary Rose\.config\opencode
+state      C:\Users\Mary Rose\.local\state\opencode
+tmp        C:\Users\MARYRO~1\AppData\Local\Temp\opencode
+=== debug paths with Windows-form OPENCODE_HOME ===
+home       C:\Users\Mary Rose
+data       C:\Users\Mary Rose\.local\share\opencode
+bin        C:\Users\Mary Rose\.cache\opencode\bin
+log        C:\Users\Mary Rose\.local\share\opencode\log
+repos      C:\Users\Mary Rose\.local\share\opencode\repos
+cache      C:\Users\Mary Rose\.cache\opencode
+config     C:\Users\Mary Rose\.config\opencode
+state      C:\Users\Mary Rose\.local\state\opencode
+tmp        C:\Users\MARYRO~1\AppData\Local\Temp\opencode
+windows-form-exit=0
+=== repo status ===
+?? inbox/approval-systems-audit-v0.9.5-2026-09-28.md
+?? state/acceptance-v095-2026-10-01/installations/budget-flat-20261003.yml
+?? state/acceptance-v095-2026-10-01/installations/codex/native-20261003-exec.log
+?? state/acceptance-v095-2026-10-01/installations/codex/native-20261003-install.log
+?? state/acceptance-v095-2026-10-01/installations/codex/native-20261003-leakcheck.log
+?? state/acceptance-v095-2026-10-01/installations/codex/native-20261003.md
+?? state/acceptance-v095-2026-10-01/installations/commands-20261003.jsonl
+?? state/acceptance-v095-2026-10-01/installations/hermes/native-20261003.md
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-codex.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-codexinst.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-codexlogin.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-exist.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-final.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-flatmode.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-install.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-inventory.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-login.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-preflight.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-probe.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-reinstall.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-status.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-verify.log
+?? state/acceptance-v095-2026-10-01/installations/opencode/native-20261003-diag.log
+?? state/acceptance-v095-2026-10-01/installations/opencode/native-20261003-homeform.log
+?? state/acceptance-v095-2026-10-01/installations/opencode/native-20261003-run.log
+?? state/acceptance-v095-2026-10-01/installations/opencode/native-20261003.md
+=== utc end ===
+2026-10-03T10:13:51Z

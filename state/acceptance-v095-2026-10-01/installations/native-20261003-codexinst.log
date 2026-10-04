@@ -1,0 +1,31 @@
+=== codex-CLI and network invocations in install-codex.sh ===
+72:command -v codex >/dev/null 2>&1 || {
+137:marketplaces="$(codex plugin marketplace list --json)" || {
+146:  codex plugin marketplace add "$MARKETPLACE_ADD_SOURCE"
+147:  marketplaces="$(codex plugin marketplace list --json)" || {
+162:  codex plugin marketplace upgrade "$MARKETPLACE"
+163:  marketplaces="$(codex plugin marketplace list --json)" || {
+173:codex plugin add "$PLUGIN"
+175:installed_plugins="$(codex plugin list --json)" || {
+668:  agent_effort="$(bash "$MODEL_FOR" --agent "$source_agent" codex --reasoning "${resolver_args[@]}")" || exit 1
+=== candidate-marketplace handling ===
+7:MARKETPLACE="sefi-agents"
+8:MARKETPLACE_SOURCE="https://github.com/xsefirosus/sefi-agents.git"
+9:MARKETPLACE_ADD_SOURCE="xsefirosus/sefi-agents"
+17:CANDIDATE_MARKETPLACE=""
+43:    --candidate-marketplace) CANDIDATE_MARKETPLACE="${2:-}"; shift 2 ;;
+51:if [ -n "$CANDIDATE_MARKETPLACE" ]; then
+55:  CANDIDATE_MARKETPLACE="$(cd "$CANDIDATE_MARKETPLACE" && pwd -P)" || {
+60:  [ "$CANDIDATE_MARKETPLACE" = "$SCRIPT_ROOT" ] || {
+64:  [ -f "$CANDIDATE_MARKETPLACE/plugins/sefi-core/.codex-plugin/plugin.json" ] || {
+68:  MARKETPLACE_SOURCE="$CANDIDATE_MARKETPLACE"
+69:  MARKETPLACE_ADD_SOURCE="$CANDIDATE_MARKETPLACE"
+134:' "$MARKETPLACE" "$MARKETPLACE_SOURCE" "$CANDIDATE_MARKETPLACE"
+141:MARKETPLACE_ROOT="$(printf '%s' "$marketplaces" | marketplace_root_from_json)" || {
+142:  echo "install-codex.sh: configured marketplace '$MARKETPLACE' failed source identity verification" >&2
+145:if [ "$MARKETPLACE_ROOT" = "MISSING" ]; then
+146:  codex plugin marketplace add "$MARKETPLACE_ADD_SOURCE"
+151:  MARKETPLACE_ROOT="$(printf '%s' "$marketplaces" | marketplace_root_from_json)" || {
+152:    echo "install-codex.sh: newly added marketplace '$MARKETPLACE' failed source identity verification" >&2
+155:  [ "$MARKETPLACE_ROOT" != "MISSING" ] || {
+156:    echo "install-codex.sh: marketplace '$MARKETPLACE' was not registered" >&2

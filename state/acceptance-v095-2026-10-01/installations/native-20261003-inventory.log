@@ -1,0 +1,251 @@
+=== host ===
+MINGW64_NT-10.0-26200 LAPTOP-F5LS80H7 3.6.7-fb42d713.x86_64 2026-03-29 11:44 UTC x86_64 Msys
+=== PATH ===
+/mingw64/bin:/usr/bin:/c/Users/Mary Rose/bin:/c/Windows/system32:/c/Windows:/c/Windows/System32/Wbem:/c/Windows/System32/WindowsPowerShell/v1.0:/c/Windows/System32/OpenSSH:/c/Program Files (x86)/NVIDIA Corporation/PhysX/Common:/c/Program Files/dotnet:/c/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR:/c/WINDOWS/system32:/c/WINDOWS:/c/WINDOWS/System32/Wbem:/c/WINDOWS/System32/WindowsPowerShell/v1.0:/c/WINDOWS/System32/OpenSSH:/c/Program Files/nodejs:/cmd:/c/Program Files/Docker/Docker/resources/bin:/c/Program Files (x86)/cloudflared:/c/Program Files/Tailscale:/c/Program Files/GitHub CLI:/c/Users/Mary Rose/.cargo/bin:/c/Users/Mary Rose/AppData/Local/hermes/hermes-agent/venv/Scripts:/c/Users/Mary Rose/AppData/Local/hermes/bin:/c/Users/Mary Rose/AppData/Local/Programs/Python/Python314/Scripts:/c/Users/Mary Rose/AppData/Local/Programs/Python/Python314:/c/Users/Mary Rose/AppData/Local/Programs/Python/Launcher:/c/Users/Mary Rose/.local/bin:/c/Users/Mary Rose/AppData/Local/Microsoft/WindowsApps:/c/Users/Mary Rose/AppData/Local/Programs/Microsoft VS Code/bin:/c/Users/Mary Rose/AppData/Roaming/npm:/c/Users/Mary Rose/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-8.1.1-full_build/bin:/c/Users/Mary Rose/AppData/Local/Microsoft/WinGet/Packages/tsl0922.ttyd_Microsoft.Winget.Source_8wekyb3d8bbwe:/c/Users/Mary Rose/AppData/Local/Microsoft/WinGet/Packages/BurntSushi.ripgrep.MSVC_Microsoft.Winget.Source_8wekyb3d8bbwe/ripgrep-15.1.0-x86_64-pc-windows-msvc:/c/Users/Mary Rose/AppData/Local/Microsoft/WinGet/Packages/jqlang.jq_Microsoft.Winget.Source_8wekyb3d8bbwe:/c/Users/Mary Rose/AppData/Local/Microsoft/WinGet/Packages/NSSM.NSSM_Microsoft.Winget.Source_8wekyb3d8bbwe/nssm-2.24-101-g897c7ad/win64
+=== where codex ===
+INFO: Could not find files for the given pattern(s).
+exit=1
+=== where opencode ===
+C:\Users\Mary Rose\AppData\Roaming\npm\opencode
+C:\Users\Mary Rose\AppData\Roaming\npm\opencode.cmd
+exit=0
+=== where hermes ===
+C:\Users\Mary Rose\AppData\Local\hermes\hermes-agent\venv\Scripts\hermes.exe
+exit=0
+=== where claude ===
+C:\Users\Mary Rose\AppData\Roaming\npm\claude
+C:\Users\Mary Rose\AppData\Roaming\npm\claude.cmd
+exit=0
+=== codex CLI ===
+codex CLI absent on PATH
+=== opencode CLI ===
+1.18.34
+exit=0
+=== hermes CLI ===
+Hermes Agent v0.17.0 (2026.6.19) · upstream 81f481b2 · local 929dd9c0 (+1 carried commit)
+Project: C:\Users\Mary Rose\AppData\Local\hermes\hermes-agent
+Python: 3.11.15
+OpenAI SDK: 2.24.0
+exit=0
+=== app dirs (names only) ===
+--- C:\Users\Mary Rose\AppData\Local ---
+@opencode-aidesktop-updater
+@opencodedesktop-updater
+AMD
+ASUS
+AcSdkInsLog
+Activision
+Adobe
+Agora
+AniEraser
+Application Data
+Backup
+BitTorrentHelper
+Bytedance
+CEF
+CamScanner
+Canon_INC
+CapCut
+CapCut Drafts
+Claude
+Claude-3p
+Claude-Data
+Comms
+ConnectedDevicesPlatform
+CrashDumps
+D3DSCache
+DBG
+Diagnostics
+Discord
+Docker
+Downloaded Installations
+ElevatedDiagnostics
+FortiClient
+GitHub CLI
+Google
+History
+HitPaw Software
+IconCache.db
+McAfee
+Microsoft
+Mozilla
+NVIDIA
+NVIDIA Corporation
+OneDrive
+OpenAI
+Package Cache
+Packages
+PlaceholderTileLogoFolder
+Programs
+Publishers
+Ragnarok
+Riot Games
+Solarland
+Solid State Networks
+SolidDocuments
+SquirrelTemp
+Steam
+Tailscale
+TeamViewer
+Temp
+Temporary Internet Files
+--- /c/Program Files ---
+7-Zip
+AMD
+ASUS
+Adobe
+Application Verifier
+Axie Classic
+CPUID
+Common Files
+Docker
+Fortinet
+Git
+GitHub CLI
+Google
+Grass
+HWiNFO64
+Internet Explorer
+MSBuild
+Malwarebytes
+McAfee
+Microsoft
+Microsoft Office
+Microsoft Office 15
+Microsoft OneDrive
+Microsoft Update Health Tools
+MiniTool Partition Wizard 12
+ModifiableWindowsApps
+Mozilla Firefox
+NVIDIA Corporation
+Reference Assemblies
+Streamlabs OBS
+Tailscale
+Tari Universe
+TeamViewer
+TikTok LIVE Studio
+Uninstall Information
+VideoLAN
+WSL
+WinRAR
+Windows Defender
+Windows Mail
+Windows Media Player
+Windows NT
+Windows Photo Viewer
+Windows Sidebar
+WindowsApps
+WindowsPowerShell
+Wondershare
+desktop.ini
+dotnet
+nodejs
+obs-studio
+--- /c/Program Files (x86) ---
+ASUS
+Application Verifier
+Canon
+Common Files
+EasyAntiCheat_EOS
+Google
+HitPaw
+InstallShield Installation Information
+Internet Explorer
+LightingService
+MSBuild
+Microsoft
+Microsoft SDKs
+Microsoft Visual Studio
+Microsoft.NET
+Mozilla Maintenance Service
+NVIDIA Corporation
+Reference Assemblies
+SDA
+Steam
+TurboVPN
+Windows Defender
+Windows Kits
+Windows Mail
+Windows Media Player
+Windows NT
+Windows Photo Viewer
+Windows Sidebar
+WindowsPowerShell
+cloudflared
+desktop.ini
+=== config dirs (names only, no contents) ===
+--- /c/Users/Mary Rose/.codex ---
+total 285305
+drwxr-xr-x 1 Mary Rose 197121         0 Oct  3 13:20 .
+drwxr-xr-x 1 Mary Rose 197121         0 Oct  3 13:05 ..
+-rw-r--r-- 1 Mary Rose 197121    396792 Sep 11 01:05 ..codex-global-state.json.bak.tmp-1789074339141-038feaf7-3e76-4139-bdb2-b569cb00b432
+-rw-r--r-- 1 Mary Rose 197121         0 Sep 13 12:25 ..codex-global-state.json.tmp-1789287904552-ff8d2bbe-043b-4a2f-b79a-3d1e206af52d
+-rw-r--r-- 1 Mary Rose 197121    330468 Sep 22 23:52 ..codex-global-state.json.tmp-1790106759335-a89f0540-7049-4264-8ac1-730c84dd399f
+-rw-r--r-- 1 Mary Rose 197121    524288 Sep 26 13:18 ..codex-global-state.json.tmp-1790414332251-d39d2856-2fec-4717-b6bd-779ad71153f5
+-rw-r--r-- 1 Mary Rose 197121         0 Jul 12 08:53 .app-server-state-reconciled-v1
+-rw-r--r-- 1 Mary Rose 197121    188599 Oct  3 13:20 .codex-global-state.json
+-rw-r--r-- 1 Mary Rose 197121    188599 Oct  3 13:20 .codex-global-state.json.bak
+-rw-r--r-- 1 Mary Rose 197121         0 Oct  3 11:33 .codex-provisioning-067e5e477db97977.guard
+-rw-r--r-- 1 Mary Rose 197121         3 May 16 13:55 .personality_migration
+drwxr-xr-x 1 Mary Rose 197121         0 Oct  2 20:47 .sandbox
+drwxr-xr-x 1 Mary Rose 197121         0 Oct  1 15:55 .sandbox-bin
+drwxr-xr-x 1 Mary Rose 197121         0 May 16 21:35 .sandbox-secrets
+-rw-r--r-- 1 Mary Rose 197121         3 Aug  9 18:21 .sandbox_migration
+-rw-r--r-- 1 Mary Rose 197121         0 Oct  3 11:34 .sqlite-maintenance.lock
+drwxr-xr-x 1 Mary Rose 197121         0 Oct  3 11:34 .tmp
+-rw-r--r-- 1 Mary Rose 197121       474 Sep 11 16:47 AGENTS.md
+drwxr-xr-x 1 Mary Rose 197121         0 Sep 11 16:48 agents
+--- /c/Users/Mary Rose/.config/opencode ---
+total 68
+drwxr-xr-x 1 Mary Rose 197121     0 Sep 20 08:14 .
+drwxr-xr-x 1 Mary Rose 197121     0 Aug 18 22:00 ..
+-rw-r--r-- 1 Mary Rose 197121    63 Apr 21 23:15 .gitignore
+drwxr-xr-x 1 Mary Rose 197121     0 Sep 23 12:40 agents
+drwxr-xr-x 1 Mary Rose 197121     0 Sep 23 12:41 commands
+drwxr-xr-x 1 Mary Rose 197121     0 Sep 23 00:28 node_modules
+-rw-r--r-- 1 Mary Rose 197121   314 May 15 23:51 opencode.json
+-rw-r--r-- 1 Mary Rose 197121 13972 Sep 23 00:28 package-lock.json
+-rw-r--r-- 1 Mary Rose 197121   111 May 11 23:11 package.json
+drwxr-xr-x 1 Mary Rose 197121     0 Sep 23 12:41 scripts
+-rw-r--r-- 1 Mary Rose 197121    64 Sep 20 08:14 service.json
+drwxr-xr-x 1 Mary Rose 197121     0 Sep 23 12:40 skills
+--- C:\Users\Mary Rose/.config/opencode ---
+total 68
+drwxr-xr-x 1 Mary Rose 197121     0 Sep 20 08:14 .
+drwxr-xr-x 1 Mary Rose 197121     0 Aug 18 22:00 ..
+-rw-r--r-- 1 Mary Rose 197121    63 Apr 21 23:15 .gitignore
+drwxr-xr-x 1 Mary Rose 197121     0 Sep 23 12:40 agents
+drwxr-xr-x 1 Mary Rose 197121     0 Sep 23 12:41 commands
+drwxr-xr-x 1 Mary Rose 197121     0 Sep 23 00:28 node_modules
+-rw-r--r-- 1 Mary Rose 197121   314 May 15 23:51 opencode.json
+-rw-r--r-- 1 Mary Rose 197121 13972 Sep 23 00:28 package-lock.json
+-rw-r--r-- 1 Mary Rose 197121   111 May 11 23:11 package.json
+drwxr-xr-x 1 Mary Rose 197121     0 Sep 23 12:41 scripts
+-rw-r--r-- 1 Mary Rose 197121    64 Sep 20 08:14 service.json
+drwxr-xr-x 1 Mary Rose 197121     0 Sep 23 12:40 skills
+=== processes matching codex|opencode|hermes|chatgpt (image names only) ===
+opencode.exe                  7980 Services                   0    304,900 K
+OpenCode.exe                 17592 Console                    1     34,432 K
+opencode-cli.exe             28380 Console                    1    573,916 K
+codex-windows-sandbox-ser    21416 Services                   0     13,148 K
+ChatGPT.exe                  19136 Console                    1    236,808 K
+ChatGPT.exe                  28032 Console                    1      8,732 K
+ChatGPT.exe                  11916 Console                    1    111,648 K
+ChatGPT.exe                   3108 Console                    1     46,648 K
+ChatGPT.exe                  30220 Console                    1     19,776 K
+ChatGPT.exe                   9596 Console                    1    383,968 K
+ChatGPT.exe                   7592 Console                    1     58,828 K
+codex.exe                    21784 Console                    1    120,736 K
+ChatGPT.exe                   7784 Console                    1    230,952 K
+codex-computer-use-swift.    15120 Console                    1     47,412 K
+ChatGPT.exe                  30272 Console                    1     58,288 K
+ChatGPT.exe                  23344 Console                    1    128,652 K
+ChatGPT.exe                  10380 Console                    1     26,180 K
+codex.exe                    25080 Console                    1     51,596 K
+ChatGPT.exe                  13876 Console                    1     68,432 K
+OpenCode.exe                 25696 Console                    1    198,944 K
+OpenCode.exe                 24268 Console                    1    163,500 K
+OpenCode.exe                  7400 Console                    1     65,676 K
+OpenCode.exe                 15528 Console                    1    283,628 K
+OpenCode.exe                 31056 Console                    1     71,940 K
+OpenCode.exe                  8028 Console                    1    107,540 K

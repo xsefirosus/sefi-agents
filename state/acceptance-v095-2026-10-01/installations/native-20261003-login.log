@@ -1,0 +1,67 @@
+=== codex binary candidates ===
+bin
+chrome-native-hosts-v2.json
+runtimes
+--- codex via shim dir on PATH? ---
+codex-chrome-native-host.exe
+codex-core-command-runner.exe
+=== codex version via Codex app dir ===
+=== codex help (status/auth discovery, first 40 lines) ===
+no executable codex CLI found; CLI login state PENDING
+=== opencode providers (login state) ===
+opencode providers
+
+manage AI providers and credentials
+
+Commands:
+  opencode providers list               list providers and credentials                 [aliases: ls]
+  opencode providers login [url]        log in to a provider
+  opencode providers logout [provider]  log out from a configured provider
+
+Options:
+  -h, --help        show help                                                              [boolean]
+  -v, --version     show version number                                                    [boolean]
+      --print-logs  print logs to stderr                                                   [boolean]
+      --log-level   log level                   [string] [choices: "DEBUG", "INFO", "WARN", "ERROR"]
+      --pure        run without external plugins                                           [boolean]=== hermes status ===
+
+┌─────────────────────────────────────────────────────────┐
+│                 ⚕ Hermes Agent Status                  │
+└─────────────────────────────────────────────────────────┘
+
+◆ Environment
+  Project:      C:\Users\Mary Rose\AppData\Local\hermes\hermes-agent
+  Python:       3.11.15
+  .env file:    ✓ exists
+  Model:        deepseek-v4-flash-free
+  Provider:     OpenCode Zen
+
+◆ API Keys
+  OpenRouter    ✗ (not set)
+  OpenAI        ✗ (not set)
+  Google / Gemini  ✗ (not set)
+  DeepSeek      ✗ (not set)
+  xAI / Grok    ✗ (not set)
+  NVIDIA NIM    ✗ (not set)
+  Z.AI / GLM    ✗ (not set)
+  Kimi          ✗ (not set)
+  StepFun Step Plan  ✗ (not set)
+  MiniMax       ✗ (not set)
+  MiniMax-CN    ✗ (not set)
+  Firecrawl     ✗ (not set)
+  Tavily        ✗ (not set)
+  Browser Use   ✗ (not set)
+  Browserbase   ✗ (not set)
+  FAL           ✗ (not set)
+  ElevenLabs    ✗ (not set)
+  GitHub        ✗ (not set)
+  Anthropic     ✗ (not set)
+
+◆ Auth Providers
+  Nous Portal   ✗ not logged in (run: hermes portal)
+  OpenAI Codex  ✗ not logged in (run: hermes model)
+    Auth file:  C:\Users\Mary Rose\AppData\Local\hermes\auth.json
+    Error:      No Codex credentials stored. Run `hermes auth` to authenticate.
+  Qwen OAuth    ✗ not logged in (run: qwen auth qwen-oauth)
+    Auth file:  C:\Users\Mary Rose\.qwen\oauth_creds.json
+exit=0

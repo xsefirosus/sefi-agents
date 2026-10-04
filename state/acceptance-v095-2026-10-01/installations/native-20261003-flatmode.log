@@ -1,0 +1,59 @@
+=== utc ===
+2026-10-03T10:03:14Z
+=== commit ===
+ca2506f5ed8bb0b02fe8f62692f87dab1469ad8a
+=== discovery: override mechanisms in budget-check.sh ===
+--- CONFIG default and --config flag (only override) ---
+23:CONFIG="config/budget.yml"
+--- env-var reads in budget-check.sh (expect none billing-related) ---
+66:BILLING_MODE="$(get_cap billing_mode)"
+67:[ -z "$BILLING_MODE" ] && BILLING_MODE="metered"
+71:case "$BILLING_MODE" in
+74:    echo "budget-check: skip scope=$SCOPE billing_mode=$BILLING_MODE -- dollar caps do not apply under $BILLING_MODE billing; non-dollar discipline stays always on" >&2
+76:  *) echo "budget-check: billing_mode '$BILLING_MODE' is invalid in $CONFIG (expected metered, flat, or free)" >&2; exit 2 ;;
+env-grep-exit=0 (1 means no match: no env override, no user-level path)
+=== repo default before (must stay metered) ===
+1:billing_mode: metered   # metered enforces the dollar caps below; flat and free skip
+1:billing_mode: metered   # metered enforces the dollar caps below; flat and free skip
+=== derive machine-local flat config (single-key change) ===
+1c1
+< billing_mode: metered   # metered enforces the dollar caps below; flat and free skip
+---
+> billing_mode: flat   # MACHINE-LOCAL flat activation 2026-10-03: this copy only; repo default stays metered
+diff-exit=1 (1 means exactly the billing_mode line differs, expected)
+=== flat config head ===
+1:billing_mode: flat   # MACHINE-LOCAL flat activation 2026-10-03: this copy only; repo default stays metered
+=== repo default after (must still be metered; no repo writes) ===
+1:billing_mode: metered   # metered enforces the dollar caps below; flat and free skip
+?? inbox/approval-systems-audit-v0.9.5-2026-09-28.md
+?? state/acceptance-v095-2026-10-01/installations/budget-flat-20261003.yml
+?? state/acceptance-v095-2026-10-01/installations/codex/native-20261003-install.log
+?? state/acceptance-v095-2026-10-01/installations/codex/native-20261003-leakcheck.log
+?? state/acceptance-v095-2026-10-01/installations/codex/native-20261003.md
+?? state/acceptance-v095-2026-10-01/installations/hermes/native-20261003.md
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-codex.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-codexinst.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-codexlogin.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-exist.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-final.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-flatmode.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-install.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-inventory.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-login.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-preflight.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-reinstall.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-status.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-verify.log
+?? state/acceptance-v095-2026-10-01/installations/opencode/native-20261003.md
+=== verification: dollar scopes skip under flat (no --spent: no source needed) ===
+budget-check: skip scope=daily billing_mode=flat -- dollar caps do not apply under flat billing; non-dollar discipline stays always on
+FLAT_DAILY_EXIT=0 (expect 0 with recorded flat skip reason)
+budget-check: skip scope=dispatch billing_mode=flat -- dollar caps do not apply under flat billing; non-dollar discipline stays always on
+FLAT_DISPATCH_EXIT=0 (expect 0 with recorded flat skip reason)
+budget-check: skip scope=run billing_mode=flat -- dollar caps do not apply under flat billing; non-dollar discipline stays always on
+FLAT_RUN_EXIT=0 (expect 0 with recorded flat skip reason)
+=== control: repo default still enforces (metered + real ccusage spend) ===
+budget-check: EXCEEDED scope=daily spent=43.13752380000002 pending=0 projected=43.1375 cap=2.00 source=ccusage
+METERED_DAILY_EXIT=1 (expect 1 EXCEEDED: daily spent over 2.00 cap)
+=== utc end ===
+2026-10-03T10:04:47Z

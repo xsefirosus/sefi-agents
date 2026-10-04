@@ -1,0 +1,306 @@
+=== utc ===
+2026-10-03T10:00:06Z
+=== tool versions ===
+git version 2.54.0.windows.1
+GNU bash, version 5.3.9(1)-release (x86_64-pc-cygwin)
+Copyright (C) 2025 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+
+This is free software; you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+=== commit ===
+ca2506f5ed8bb0b02fe8f62692f87dab1469ad8a
+=== expected manifest identity (describe_source rule) ===
+fatal: no tag exactly matches 'ca2506f5ed8bb0b02fe8f62692f87dab1469ad8a'
+describe-exit=128 (1 means untagged, expect unreleased-plus-<commit>)
+=== worktree detect (loop-engineering: detect first; no worktree needed, main untouched) ===
+D:/Projects/Sefi-Agents                                         ca2506f [main]
+C:/Users/Mary Rose/.codex/worktrees/systems-auditor/Sefi-Agents 5858557 [codex/audit-readme-docs]
+D:/Projects/Sefi-Agents/.worktrees/billing-mode                 ca2506f (detached HEAD)
+D:/Projects/Sefi-Agents/.worktrees/release-0-9-6                2e60ae9 (detached HEAD)
+D:/Projects/Sefi-Agents/.worktrees/systems-audit-v095           8743e0b [codex/audit-v095-hermes-scan]
+D:/Projects/Sefi-Agents/.worktrees/v0-8-memory-journalist       ae9347c [codex/v0-8-memory-journalist]
+D:/Projects/Sefi-Agents/.worktrees/v0-9-1-evidence-intelligence 07f13a4 [codex/v0-9-1-evidence-intelligence]
+D:/Projects/Sefi-Agents/.worktrees/v0-9-unified-design-council  50169ee [codex/v0-9-unified-design-council]
+=== repo status before ===
+?? inbox/approval-systems-audit-v0.9.5-2026-09-28.md
+?? state/acceptance-v095-2026-10-01/installations/codex/native-20261003-install.log
+?? state/acceptance-v095-2026-10-01/installations/codex/native-20261003-leakcheck.log
+?? state/acceptance-v095-2026-10-01/installations/codex/native-20261003.md
+?? state/acceptance-v095-2026-10-01/installations/hermes/native-20261003.md
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-codex.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-codexinst.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-codexlogin.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-exist.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-final.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-install.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-inventory.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-login.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-preflight.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-reinstall.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-status.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-verify.log
+?? state/acceptance-v095-2026-10-01/installations/opencode/native-20261003.md
+=== OPENCODE_HOME (must be empty: real-home reinstall, no disposable override) ===
+printenv-exit=1 (1 means unset, expected)
+=== pre manifest (installed tree predates billing slice) ===
+{
+  "format": "sefi-package-manifest/v1",
+  "generated_at": "2026-09-23T08:41:01Z",
+  "managed_files": {
+    "__pycache__/sefi-runtime.cpython-311.pyc": "f5e97e0154836abf4c674fa79a862ce5534a0f3498232206494a1e6d6a510a0f",
+    "adapter-manifest.sh": "1da1bb987146e756fdd205231f4788dc8012fc830ce469a3b3a1cfec2de2d9d5",
+    "apply-model-map.sh": "beda4860ec6afd1bcbc8beed0b036c8a5932efb7c8ef111301308927802de2ab",
+    "budget-check.sh": "1a0a612864d3512df6b41528ba0c62bc5e1cb95f0857cbc1cde0e36dff62a500",
+    "cartographer-runtime.py": "ee29aef389fad33bf32be2718631a85486c142965e906c82adab3bc57484fc34",
+    "check-bar.sh": "d90f9ebe357ef9da37ff6ee698c4df0d1cfe58f4db6b8c4d256ddf8100709d37",
+    "check-bash-write.sh": "c31d485c99d091cf08023eebede1f5935d4da05be4aa22d259767314c4ee014b",
+    "check-citation.sh": "5c159cc8aca3fe826b93d0f335af65f9330b00c7a682c62097ed983dac462fdd",
+    "check-handoff.sh": "234737b806e91e45f2f6a2971315cd431dfe14e41eecd2aabad7ac538b3c5574",
+    "check-reply.sh": "fb7b0c016d663c29a2196103fe67f75e86d3f3d98b1cc77a1de5edb377e3772d",
+    "check-route.py": "989427e542b4d5f2163121d7a81cc9a8d8b07dc3739821dcf67971d207ce1364",
+    "check-route.sh": "80860972621b730f50121b8d1c4b6f7b8287fc916ee316a09be33f859a1d236e",
+    "check-state-sync.sh": "cfd55cfbf978b7c9ac1443e924a26c0fc08898bcf8ec75b68b9d81c13c69e40b",
+    "check-structure-diff.sh": "959ed24ec040d6f6da741234172eababf90ab46ecf8019e28dfb420b50535bb7",
+    "ci/check-unicode-safety.sh": "03afa9ac2262831460cfe9b8684f6f5c706f9157910ffaf60c19112903d86632",
+    "ci/fixtures/agent-capabilities-v08/expected-agent-sources.txt": "54bba9f2fd85792db99e90d8a1fa41c087de87c5a725b5261e85566075cd2bfb",
+    "ci/fixtures/agent-capabilities-v08/required-lines.txt": "5b3fdaa43090fbdb027ffdcbdc677a7670245f165967e7a3560aef53d72b1d7b",
+    "ci/fixtures/check-route/decoy-nested-after-real/rollout.jsonl": "a041556ff4c5370d83f3dc8019abebebf2eb27b860c2adca008816def712a2cd",
+    "ci/fixtures/check-route/decoy-nested-model-string/rollout.jsonl": "c471276490719a806cdf03772f9bc878f8b2df2ddf7bf4a64e405f7b68ebb2fb",
+    "ci/fixtures/check-route/decoy-nested-turn-context-obj/rollout.jsonl": "83a293ca3c9a497821ce737dcbbd0917eaa7d7cecb0c99eedb2b8ae1f0948b6b",
+    "ci/fixtures/check-route/decoy-only-nested/rollout.jsonl": "2d17c17f58d3e638a8fdfa2b08b76aec5e2f40cea05705437d81c99d4a856278",
+    "ci/fixtures/check-route/decoy-realshape-nested-after-real/rollout.jsonl": "bc46acb4d094967248d68bac3ec8e2c2e13b9c0789cddb56328200ddc3e59f10",
+    "ci/fixtures/check-route/decoy-realshape-only-nested/rollout.jsonl": "7eefead9c7a8a5fcaa283ffe68b8cb78266b4025f4ea50111355a67f4e1965af",
+    "ci/fixtures/check-route/invalid-no-turn-context/rollout.jsonl": "2186992fee4d33dd087e4ae38b53cbd460a7dcc8b080781df6d82778230492cc",
+    "ci/fixtures/check-route/invalid-not-json/rollout.jsonl": "10fb5689590cb69a9e7c04d2b4fa6f3d861ed925544d5eb64d1c12d00e352190",
+    "ci/fixtures/check-route/invalid-two-turn-context/rollout.jsonl": "97234141c97932657f523b3ad89b6571b2baa6df9cba58b54fcb1e52ba28fd8f",
+    "ci/fixtures/check-route/malformed-map/model-map.yml": "27c2098f9ad59c64eab5b2cbb25e7d510db2b37a336583529ce47229d0cd8799",
+    "ci/fixtures/check-route/match/rollout.jsonl": "868b737be8ee2998a1795427685de9eff7067af3207b1496bce53fb4bfc32f72",
+    "ci/fixtures/check-route/mismatch/rollout.jsonl": "d50cf15ed74c9e26a43a12ec3b2c1079b2a942fcbb4b590f325ee7aa18b759cd",
+    "ci/fixtures/manifest-version/legacy/.sefi-agents-manifest.json": "c5e5e51b350ba90645fee761bc8807fd595368651a6c179be41061147f5d87c5",
+    "ci/fixtures/manifest-version/legacy/file.txt": "a43fbc2abfcc0a15b653fe05d876185e171d035a625ca864215c51c4a9972212",
+    "ci/fixtures/memory-journalist/casual.txt": "6ab6c054a2b63059bfa7993d8ca5fe08a6327deb1e3252ec804039a86e0d4e40",
+    "ci/fixtures/memory-journalist/substantive.txt": "5671c97f76a1cbf68969a98f38365dca96b2850ebcc78dd9bd8f49b91830a17f",
+    "ci/fixtures/release-ledger/contradiction/ledger.md": "87082a85dbdfa4486cbb5606493da89fdf5b48db5a700e9a1f77e11f95c33e40",
+    "ci/fixtures/release-ledger/incomplete/ledger.md": "61e66c10b80a226b6c04ca0121a6783ee2f745d5cf1a6ebd50ddf2ae6b36cb06",
+    "ci/fixtures/release-ledger/ok/ledger.md": "1791c43cbd76f5b8aca776d6d3fc48ba0776ac93109015bc2d1e057bfea03163",
+    "ci/fixtures/routing-cases.txt": "4445e865463cbec8e5f95cf062205b68b35fde215364a7c0a932a1ee7ef346ac",
+    "ci/fixtures/rule-presence/fail/rule-presence.manifest": "a3b299c0204c002c8ba3d90954c0bfed3227a9e9b621393abf2e6c986d1c12fc",
+    "ci/fixtures/rule-presence/fail/sample.md": "b29649886e50d2a0a1d7ab3c06de4b90f65760cdb643fbec2c2622fda12876a7",
+    "ci/fixtures/rule-presence/missing-target/rule-presence.manifest": "84a9629cfc96e22633659be0f2d9cb7f37371507f809be978bdf76233e472277",
+    "ci/fixtures/rule-presence/paragraph-split/rule-presence.manifest": "9c6d98f481915c9c5fe842b9fb7d1ca5a1eb0232817f065b3efd89eb6563928a",
+    "ci/fixtures/rule-presence/paragraph-split/sample.md": "4b82e178b91d61e93302ac88783a00f8dbb28f758dd045ea7b65b99923a2abe5",
+    "ci/fixtures/rule-presence/pass/rule-presence.manifest": "d59370339a65f59ba941fd9fa1bc2e721f39fae9ebe5edd54aa4169b7a449245",
+    "ci/fixtures/rule-presence/pass/sample.md": "4dc9512582eb1b47f71a6f8367f77bc10a304fe399eb60f5556cd3e8a9c11e9c",
+    "ci/fixtures/rule-presence/whitespace-split-space/rule-presence.manifest": "cdce403dc8e72a1b8a55886324ea99239bed0acb6f5b7d9bf2bdf469e9b440d2",
+    "ci/fixtures/rule-presence/whitespace-split-space/sample.md": "f93934811ccbedffb7cdaa3261092b95cb81e4fc85118063a4cbb5c0009e82e2",
+    "ci/fixtures/rule-presence/whitespace-split-tab/rule-presence.manifest": "894f10443a3f3ebd04e4c8a0568519de83d89ac6dc6f29296d7707a7bbd26f68",
+    "ci/fixtures/rule-presence/whitespace-split-tab/sample.md": "f17d867603cd1fdf1e43891f26fbf7d40d805cc4f1803e94c4e8c25755563c7a",
+    "ci/rule-presence.manifest": "ecd66c17bb8d9a57dd1a6ebe13e9f986d3149a61742e4bb70f9408077aef046c",
+    "ci/run-all.sh": "4468d22da77faab10af341443a3f6c0cf45fdc03fac3d99d530f2d0e47998a06",
+    "ci/test-agent-capabilities-v08.sh": "917a81789cf4b39798f4fc744e404105f85efa21a2f62d20da056bf7d5191ef5",
+    "ci/test-benchmark-oracles.sh": "3dd6cf71e50cd9589f0e89890c95f331902c0a6b5b6bb783e4e978bcad9d7dba",
+    "ci/test-cartographer-runtime-v091.sh": "15dd2765bd0bdeba6f200fb834cfffa4daa9fb9ff7c8fc9c171cb378054ca4d8",
+    "ci/test-cartographer-v091.sh": "f511cca864e292e57b307550c78202f12ef2a435a189a9e304776cfe4b8cadb1",
+    "ci/test-ci-coverage.sh": "476bf2c4baf3da4375052c75c07dd05972c6b50701abbcf65fc34d58a4748056",
+    "ci/test-design-council-routing.sh": "81e4e0f94136c01035abe9e09ac9a704ddeee506fe060779a9d31928d03c4674",
+    "ci/test-design-council.sh": "b56ac65066132da2f16151ad25fa9bd9ba49958e71d065ffbaa8ec825637f6b8",
+    "ci/test-documentation-grounding-v091.sh": "24722b97fcd8e79302b85f54ee0605ba9201d686cb4e8e12389238973c9c9e90",
+    "ci/test-integration.sh": "19911f5bc5fe1f1850f59f438a5fe83222f36a3fa8ae0f30bf2b288735490a13",
+    "ci/test-manifest-version.sh": "8812f3864447606e1d405848ca2e1d742c2cae81dd758241602866f493e32cfb",
+    "ci/test-memory-journalist.sh": "1909293ab58f6c502e6ab9bc841d537386eac8913b3f6350a6cb9086197bd3dd",
+    "ci/test-onboarding-v08.sh": "4b5852598e22d4cd09449b16f35b9d42fdf0059e161b3f20ffc7279bce621924",
+    "ci/test-opencode-schedule-ownership.sh": "80d22b4cd0b77b29bc7c958a8a64cea0cfd68f1a64b3221c3a8def088de5be5a",
+    "ci/test-release-strict.sh": "fa2fdd04fb703232f2ec2147a00423f054cc23ec288cbca00b84eafe611c28b7",
+    "ci/test-runtime-contracts.sh": "0a7466e441d9ff8109601a4dbef52b7640920f9d48a7e5ed1801f42d8d978d6f",
+    "ci/test-scripts.sh": "3ce9c1b390efe5960f9f035c2a0a95207b41384808c03b03aa0745ace2eef190",
+    "ci/test-shared-memory-safety.sh": "e495d566a1f7f60f2b5696cff91674188df79e985e592fa6945cf847c962bda6",
+    "ci/test-v08-conformance.sh": "baf6cb15830c2f9c29c8c45f018e3f30ce868af68b1e69ab4ae87100dac6e163",
+    "ci/test-v08-durability.sh": "c54b82d51d1ec305bce6b5cd2b45fc8ba24b216784eedddf8b89126b6d1eb68e",
+    "ci/test-v09-documentation.sh": "378fbfef5c892be89ccf2be8b2c4e26044777048740ecc7b28e3667f75e8ad22",
+    "ci/test-workflow-safety.sh": "c524d8d6b2ad550d54561f73217c1fd9aaace000595054a886bb14aecc388782",
+    "ci/validate-adapters.sh": "297f1c36316344f3f495ed83a231eade35c7681618141f5b90e3d6560084979c",
+    "ci/validate-agents.sh": "b6c339ebac08905efb941f4b3b96fa8867de3043bc857735294c0ad3a884bb13",
+    "ci/validate-budget.sh": "ae42bfc7be4e2aa47c839f777ce10e05204beacac184c40e200406d7eb2e3021",
+    "ci/validate-comment-safety.sh": "8fdc72c31b19943a80198725b89dadac8458b3819858e2f959844b7fd17d48c2",
+    "ci/validate-config-wired.sh": "2fefd117afb35b1237489230e2e5b365e75fb849ccce549f17eb11bd4519394c",
+    "ci/validate-doc-counts.sh": "a0fb31fc1c3c15b4ef37467fa23db3c366eb85333dcc761d316240b98e021af3",
+    "ci/validate-links.sh": "0070216e809ae377546357bda3830a5a638175c86fb7f88aab2c92757a256194",
+    "ci/validate-loops.sh": "7cf79bea74be2dc72e642f40703ac35ae0876e3033e71e60d3e400f10a02a5dd",
+    "ci/validate-model-map.sh": "395b5ec245bf3df4e1d08e6d055a49523d70a96cc7c73b22afd177d5cc541b14",
+    "ci/validate-no-orphans.sh": "e76208ea49a483f5020c9155db21858e338c353961e66678217728cf7ed1fdde",
+    "ci/validate-no-personal-paths.sh": "028dd8c1e35aba4195634bec9690cd0a984c235fcfe36154c8c29f42cb567f2e",
+    "ci/validate-release-ledger.sh": "7f67f8e2afd9ad8aa788ea0a27794c03f36ec8df6edb56d44a21add96f3bf0dc",
+    "ci/validate-routing.sh": "6d9916ead5e6e3130431e724df359f8a4bdca534a93d3b45496ae030fb6c5421",
+    "ci/validate-rule-presence.sh": "257629fe2347bf877e99354c122eae20a6f4e215144dd58d48f450ed41fd386e",
+    "ci/validate-script-refs.sh": "8f001d44ed844716859464fb512de119f6b81e977dca9ea7e0fe88c34c9a3ede",
+    "ci/validate-skills.sh": "5fa37fdee0909b6f24bd45e25f81992f6900c318e17e8cc8d25dcc6e181c2116",
+    "ci/validate-token-budget.sh": "5dd7e69fa2bcafb0e3d0b3c0fc4c1fecbad4b9a9faaece0e186d161a454a96b0",
+    "compress-output.sh": "200f0406dcd78140ae239ee36aac38e72dfe920b8e844df72f0ba03522794027",
+    "docs-grounding.py": "ff305d0cff26622895f3c2c96b99222fbc0dacf7a88da5553886d48ac6af1c02",
+    "gate.sh": "093b6703f64c4eb242aee2db2767c067abac42f53991f3dd957d6adf5c0f6325",
+    "gen-router.sh": "37ad3feb304f2cd919f812e0313a2cced3c04d8ada5cec9be7a07fd8de4acc3d",
+    "inject-memory.sh": "cb3278c0d6d0012955860ab70ff37093693e77102c7e4dc017d15f41b91d20d4",
+    "inject-orchestrator-role.sh": "281c7d4c7adafa6b5211e655cb98ef2ea98a01e105db5efc7d7de0835e81f45a",
+    "install-hermes.sh": "c08e920dbde69d91e2258228910f3fb4f3609cc219e1a33d53c24e88e6f843c9",
+    "install-opencode.sh": "e02c04f34f58b44927692d5f6a7055a65426943ebc4b94650be467024d61d729",
+    "loop-readiness.sh": "18a82db78b9ad12adaeed9175c9b0762b3fc413d1f38797dd70c64d2fa3df8d7",
+    "memory-cross-memory.sh": "dcd1aee686aac4d71b28a593089a4d96a0e314742e81ae14c7938348ff70a6e4",
+    "memory-filter.sh": "9c644cd88af722dbb7960ee49e117b90d68331cde14adb7ae0b5ad3f52c63b62",
+    "memory-index.sh": "88761993b62b8e8ffa1fdcea7e0236a4abd38a221774113e049d81074190be9c",
+    "memory-journal.sh": "c858a93dca1cb92bbc18827bf3ee3c3655a899728d771b8de2f0a185b5f084f6",
+    "memory-search.sh": "118c795425c5f1324c5bfd03d5e3465fb44e95d4c6f1402a069e1f4b0c87dfd2",
+    "model-for.sh": "290018edb31266526e586a3754db168cfda615bdb94f5fc234476771b7e26618",
+    "package-manifest.sh": "75c8e995dd80594a4d8a8958101385c1a2fe255ab880574fa88ffdb5a20e8dad",
+    "probe-tools.sh": "14c3c0deb7a48481dd9a4875ec1059fc59f2b77019614119cb86162b00f37fb7",
+    "ready-steps.sh": "dec088eb4654b30a2b42fb81bfc2be2d786535296cc21fc69654a984d64d397c",
+    "record-continuation.sh": "6670c358ccf8007b24c62c321bdf13538c183d61b30155edcb7ab474591c1a37",
+    "record-run-receipt.sh": "e5218e0e04703235c6d09fce1ac22d1111ad26c6e8ba08e483c494cd3faee26b",
+    "resolve-shared-memory-path.sh": "3cf0e691d7e486ba0c494bfd3df2884f4cdae3f2ed724712c07f0272095106e5",
+    "scan-placeholders.sh": "eac188c523f943bcd00ca9a1c55a2bf99fe32dd7acd748f78ccb4021233b865f",
+    "sefi-runtime.py": "62b3be9cd75e9f01271e16131b7952297cf40c1325678a3cef9805450884c56e",
+    "validate-plan-structure.sh": "9051f663f27e0638dee779eafd8dc2afdd415dce8ea268d6f2e8cf7eab2b771e",
+    "write-shared-memory-mirror.sh": "2fede0d52f4c22b81f04871b8d65079274415004a4a0fcd256ef6f10055fba7d"
+  },
+  "source_commit": "430344c660774813591813ce837e4c0ed7bdc0d9",
+  "source_name": "scripts",
+  "source_version": "v0.9.2"
+}
+=== pre identity ===
+  "generated_at": "2026-09-23T08:41:01Z",
+  "source_commit": "430344c660774813591813ce837e4c0ed7bdc0d9",
+  "source_version": "v0.9.2"
+=== installer ===
+install-opencode.sh: --auto-update package-manifest-diff: stale (installed version v0.9.2 commit 430344c660774813591813ce837e4c0ed7bdc0d9; source version unreleased-plus-ca2506f5ed8bb0b02fe8f62692f87dab1469ad8a commit ca2506f5ed8bb0b02fe8f62692f87dab1469ad8a); updating
+transformed agent: devops-engineer.md -> /c/Users/Mary Rose/.config/opencode/agents/devops-engineer.md
+transformed agent: memory-journalist.md -> /c/Users/Mary Rose/.config/opencode/agents/memory-journalist.md
+transformed agent: motion-designer.md -> /c/Users/Mary Rose/.config/opencode/agents/motion-designer.md
+transformed agent: product-manager.md -> /c/Users/Mary Rose/.config/opencode/agents/product-manager.md
+transformed agent: prompt-engineer.md -> /c/Users/Mary Rose/.config/opencode/agents/prompt-engineer.md
+transformed agent: qa-engineer.md -> /c/Users/Mary Rose/.config/opencode/agents/qa-engineer.md
+transformed agent: research-adoption-scout.md -> /c/Users/Mary Rose/.config/opencode/agents/research-adoption-scout.md
+transformed agent: research-analyst.md -> /c/Users/Mary Rose/.config/opencode/agents/research-analyst.md
+transformed agent: research-codebase-cartographer.md -> /c/Users/Mary Rose/.config/opencode/agents/research-codebase-cartographer.md
+transformed agent: security-engineer.md -> /c/Users/Mary Rose/.config/opencode/agents/security-engineer.md
+transformed agent: sefi-agents.md -> /c/Users/Mary Rose/.config/opencode/agents/sefi-agents.md
+transformed agent: software-engineer.md -> /c/Users/Mary Rose/.config/opencode/agents/software-engineer.md
+transformed agent: solutions-architect.md -> /c/Users/Mary Rose/.config/opencode/agents/solutions-architect.md
+transformed agent: support-engineer.md -> /c/Users/Mary Rose/.config/opencode/agents/support-engineer.md
+transformed agent: systems-auditor.md -> /c/Users/Mary Rose/.config/opencode/agents/systems-auditor.md
+transformed agent: technical-writer.md -> /c/Users/Mary Rose/.config/opencode/agents/technical-writer.md
+transformed agent: ui-ux-designer.md -> /c/Users/Mary Rose/.config/opencode/agents/ui-ux-designer.md
+copied skill: anti-hallucination -> /c/Users/Mary Rose/.config/opencode/skills/anti-hallucination
+copied skill: backend-design -> /c/Users/Mary Rose/.config/opencode/skills/backend-design
+copied skill: design-style-profiles -> /c/Users/Mary Rose/.config/opencode/skills/design-style-profiles
+copied skill: expo-native-design -> /c/Users/Mary Rose/.config/opencode/skills/expo-native-design
+copied skill: focus -> /c/Users/Mary Rose/.config/opencode/skills/focus
+copied skill: frontend-design -> /c/Users/Mary Rose/.config/opencode/skills/frontend-design
+copied skill: loop-engineering -> /c/Users/Mary Rose/.config/opencode/skills/loop-engineering
+copied skill: memory-protocol -> /c/Users/Mary Rose/.config/opencode/skills/memory-protocol
+copied skill: motion-design -> /c/Users/Mary Rose/.config/opencode/skills/motion-design
+copied skill: n8n-workflow-design -> /c/Users/Mary Rose/.config/opencode/skills/n8n-workflow-design
+copied skill: premortem -> /c/Users/Mary Rose/.config/opencode/skills/premortem
+copied skill: release-tracking -> /c/Users/Mary Rose/.config/opencode/skills/release-tracking
+copied skill: retro-improve -> /c/Users/Mary Rose/.config/opencode/skills/retro-improve
+copied skill: run-sefi-benchmark -> /c/Users/Mary Rose/.config/opencode/skills/run-sefi-benchmark
+copied skill: security-review -> /c/Users/Mary Rose/.config/opencode/skills/security-review
+copied skill: sefi-orchestration -> /c/Users/Mary Rose/.config/opencode/skills/sefi-orchestration
+copied skill: swiftui-design -> /c/Users/Mary Rose/.config/opencode/skills/swiftui-design
+copied skill: systems-audit -> /c/Users/Mary Rose/.config/opencode/skills/systems-audit
+copied skill: technical-writing -> /c/Users/Mary Rose/.config/opencode/skills/technical-writing
+copied skill: terse-mode -> /c/Users/Mary Rose/.config/opencode/skills/terse-mode
+copied command: audit.md -> /c/Users/Mary Rose/.config/opencode/commands/audit.md
+copied command: close-session.md -> /c/Users/Mary Rose/.config/opencode/commands/close-session.md
+copied command: cross-memory.md -> /c/Users/Mary Rose/.config/opencode/commands/cross-memory.md
+copied command: init.md -> /c/Users/Mary Rose/.config/opencode/commands/init.md
+copied command: loop-new.md -> /c/Users/Mary Rose/.config/opencode/commands/loop-new.md
+copied command: map-codebase.md -> /c/Users/Mary Rose/.config/opencode/commands/map-codebase.md
+copied command: memory-index.md -> /c/Users/Mary Rose/.config/opencode/commands/memory-index.md
+copied command: memory-search.md -> /c/Users/Mary Rose/.config/opencode/commands/memory-search.md
+copied command: retro.md -> /c/Users/Mary Rose/.config/opencode/commands/retro.md
+copied command: route.md -> /c/Users/Mary Rose/.config/opencode/commands/route.md
+copied command: scout.md -> /c/Users/Mary Rose/.config/opencode/commands/scout.md
+copied command: status.md -> /c/Users/Mary Rose/.config/opencode/commands/status.md
+copied command: triage.md -> /c/Users/Mary Rose/.config/opencode/commands/triage.md
+copied script: __pycache__ -> /c/Users/Mary Rose/.config/opencode/scripts/__pycache__
+copied script: adapter-manifest.sh -> /c/Users/Mary Rose/.config/opencode/scripts/adapter-manifest.sh
+copied script: apply-model-map.sh -> /c/Users/Mary Rose/.config/opencode/scripts/apply-model-map.sh
+copied script: budget-check.sh -> /c/Users/Mary Rose/.config/opencode/scripts/budget-check.sh
+copied script: cartographer-runtime.py -> /c/Users/Mary Rose/.config/opencode/scripts/cartographer-runtime.py
+copied script: check-bar.sh -> /c/Users/Mary Rose/.config/opencode/scripts/check-bar.sh
+copied script: check-bash-write.sh -> /c/Users/Mary Rose/.config/opencode/scripts/check-bash-write.sh
+copied script: check-citation.sh -> /c/Users/Mary Rose/.config/opencode/scripts/check-citation.sh
+copied script: check-handoff.sh -> /c/Users/Mary Rose/.config/opencode/scripts/check-handoff.sh
+copied script: check-reply.sh -> /c/Users/Mary Rose/.config/opencode/scripts/check-reply.sh
+copied script: check-route.py -> /c/Users/Mary Rose/.config/opencode/scripts/check-route.py
+copied script: check-route.sh -> /c/Users/Mary Rose/.config/opencode/scripts/check-route.sh
+copied script: check-state-sync.sh -> /c/Users/Mary Rose/.config/opencode/scripts/check-state-sync.sh
+copied script: check-structure-diff.sh -> /c/Users/Mary Rose/.config/opencode/scripts/check-structure-diff.sh
+copied script: ci -> /c/Users/Mary Rose/.config/opencode/scripts/ci
+copied script: compress-output.sh -> /c/Users/Mary Rose/.config/opencode/scripts/compress-output.sh
+copied script: docs-grounding.py -> /c/Users/Mary Rose/.config/opencode/scripts/docs-grounding.py
+copied script: gate.sh -> /c/Users/Mary Rose/.config/opencode/scripts/gate.sh
+copied script: gen-router.sh -> /c/Users/Mary Rose/.config/opencode/scripts/gen-router.sh
+copied script: inject-memory.sh -> /c/Users/Mary Rose/.config/opencode/scripts/inject-memory.sh
+copied script: inject-orchestrator-role.sh -> /c/Users/Mary Rose/.config/opencode/scripts/inject-orchestrator-role.sh
+copied script: install-hermes.sh -> /c/Users/Mary Rose/.config/opencode/scripts/install-hermes.sh
+copied script: install-opencode.sh -> /c/Users/Mary Rose/.config/opencode/scripts/install-opencode.sh
+copied script: loop-readiness.sh -> /c/Users/Mary Rose/.config/opencode/scripts/loop-readiness.sh
+copied script: memory-cross-memory.sh -> /c/Users/Mary Rose/.config/opencode/scripts/memory-cross-memory.sh
+copied script: memory-filter.sh -> /c/Users/Mary Rose/.config/opencode/scripts/memory-filter.sh
+copied script: memory-index.sh -> /c/Users/Mary Rose/.config/opencode/scripts/memory-index.sh
+copied script: memory-journal.sh -> /c/Users/Mary Rose/.config/opencode/scripts/memory-journal.sh
+copied script: memory-search.sh -> /c/Users/Mary Rose/.config/opencode/scripts/memory-search.sh
+copied script: model-for.sh -> /c/Users/Mary Rose/.config/opencode/scripts/model-for.sh
+copied script: package-manifest.sh -> /c/Users/Mary Rose/.config/opencode/scripts/package-manifest.sh
+copied script: probe-tools.sh -> /c/Users/Mary Rose/.config/opencode/scripts/probe-tools.sh
+copied script: ready-steps.sh -> /c/Users/Mary Rose/.config/opencode/scripts/ready-steps.sh
+copied script: record-continuation.sh -> /c/Users/Mary Rose/.config/opencode/scripts/record-continuation.sh
+copied script: record-run-receipt.sh -> /c/Users/Mary Rose/.config/opencode/scripts/record-run-receipt.sh
+copied script: resolve-shared-memory-path.sh -> /c/Users/Mary Rose/.config/opencode/scripts/resolve-shared-memory-path.sh
+copied script: scan-placeholders.sh -> /c/Users/Mary Rose/.config/opencode/scripts/scan-placeholders.sh
+copied script: sefi-runtime.py -> /c/Users/Mary Rose/.config/opencode/scripts/sefi-runtime.py
+copied script: validate-plan-structure.sh -> /c/Users/Mary Rose/.config/opencode/scripts/validate-plan-structure.sh
+copied script: write-shared-memory-mirror.sh -> /c/Users/Mary Rose/.config/opencode/scripts/write-shared-memory-mirror.sh
+install-opencode.sh: wrote package manifest at /c/Users/Mary Rose/.config/opencode/scripts/.sefi-agents-manifest.json
+install-opencode.sh: 17 agents transformed; dest=/c/Users/Mary Rose/.config/opencode
+sefi-agents: installation succeeded.
+sefi-agents: run /sefi:init once from each project root before the first routed request.
+sefi-agents: auto-init is unsafe because installation is user-wide and cannot safely choose or modify a project.
+sefi-agents: cross-project memory is optional, local/private, and off by default; /sefi:init asks interactively and keeps it off when unattended.
+INSTALL_EXIT=0
+=== post identity ===
+  "generated_at": "2026-10-03T10:02:51Z",
+  "source_commit": "ca2506f5ed8bb0b02fe8f62692f87dab1469ad8a",
+  "source_version": "unreleased-plus-ca2506f5ed8bb0b02fe8f62692f87dab1469ad8a"
+=== post: billing switch present in installed budget-check ===
+5
+=== post: installed agent transform check (devops-engineer.md) ===
+1
+0
+raw-tools-grep-exit=1 (1 means none found, expected)
+1
+=== post: placeholder resolved in installed skill ===
+0
+placeholder-grep-exit=1 (1 means none left, expected)
+=== repo status after (must equal before: installer writes only under HOME) ===
+?? inbox/approval-systems-audit-v0.9.5-2026-09-28.md
+?? state/acceptance-v095-2026-10-01/installations/codex/native-20261003-install.log
+?? state/acceptance-v095-2026-10-01/installations/codex/native-20261003-leakcheck.log
+?? state/acceptance-v095-2026-10-01/installations/codex/native-20261003.md
+?? state/acceptance-v095-2026-10-01/installations/hermes/native-20261003.md
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-codex.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-codexinst.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-codexlogin.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-exist.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-final.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-install.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-inventory.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-login.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-preflight.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-reinstall.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-status.log
+?? state/acceptance-v095-2026-10-01/installations/native-20261003-verify.log
+?? state/acceptance-v095-2026-10-01/installations/opencode/native-20261003.md
+=== utc end ===
+2026-10-03T10:02:52Z

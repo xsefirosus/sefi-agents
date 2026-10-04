@@ -1,0 +1,119 @@
+=== repo ===
+/d/Projects/Sefi-Agents
+=== stage ===
+/tmp/tmp.7OptuuAHqT
+=== export pristine candidate tree ===
+archive-exit=0
+/tmp/tmp.7OptuuAHqT/cand/install-codex.sh
+/tmp/tmp.7OptuuAHqT/cand/plugins/sefi-core/.codex-plugin/plugin.json
+=== codex on PATH for installer (command-local) ===
+=== codex candidate install, isolated CODEX_HOME ===
+install-codex.sh: Codex CLI not found on PATH
+codex-install-exit=1
+=== isolated CODEX_HOME contents (names only) ===
+total 0
+drwxr-xr-x 1 Mary Rose 197121 0 Oct  3 13:27 .
+drwxr-xr-x 1 Mary Rose 197121 0 Oct  3 13:27 ..
+=== real HOME/.codex untouched check ===
+-rw-r--r-- 1 Mary Rose 197121 188599 Oct  3 13:20 /c/Users/Mary Rose/.codex/.codex-global-state.json
+=== opencode candidate install, isolated OPENCODE_HOME ===
+transformed agent: devops-engineer.md -> /tmp/tmp.7OptuuAHqT/ohome/agents/devops-engineer.md
+transformed agent: memory-journalist.md -> /tmp/tmp.7OptuuAHqT/ohome/agents/memory-journalist.md
+transformed agent: motion-designer.md -> /tmp/tmp.7OptuuAHqT/ohome/agents/motion-designer.md
+transformed agent: product-manager.md -> /tmp/tmp.7OptuuAHqT/ohome/agents/product-manager.md
+transformed agent: prompt-engineer.md -> /tmp/tmp.7OptuuAHqT/ohome/agents/prompt-engineer.md
+transformed agent: qa-engineer.md -> /tmp/tmp.7OptuuAHqT/ohome/agents/qa-engineer.md
+transformed agent: research-adoption-scout.md -> /tmp/tmp.7OptuuAHqT/ohome/agents/research-adoption-scout.md
+transformed agent: research-analyst.md -> /tmp/tmp.7OptuuAHqT/ohome/agents/research-analyst.md
+transformed agent: research-codebase-cartographer.md -> /tmp/tmp.7OptuuAHqT/ohome/agents/research-codebase-cartographer.md
+transformed agent: security-engineer.md -> /tmp/tmp.7OptuuAHqT/ohome/agents/security-engineer.md
+transformed agent: sefi-agents.md -> /tmp/tmp.7OptuuAHqT/ohome/agents/sefi-agents.md
+transformed agent: software-engineer.md -> /tmp/tmp.7OptuuAHqT/ohome/agents/software-engineer.md
+transformed agent: solutions-architect.md -> /tmp/tmp.7OptuuAHqT/ohome/agents/solutions-architect.md
+transformed agent: support-engineer.md -> /tmp/tmp.7OptuuAHqT/ohome/agents/support-engineer.md
+transformed agent: systems-auditor.md -> /tmp/tmp.7OptuuAHqT/ohome/agents/systems-auditor.md
+transformed agent: technical-writer.md -> /tmp/tmp.7OptuuAHqT/ohome/agents/technical-writer.md
+transformed agent: ui-ux-designer.md -> /tmp/tmp.7OptuuAHqT/ohome/agents/ui-ux-designer.md
+copied skill: anti-hallucination -> /tmp/tmp.7OptuuAHqT/ohome/skills/anti-hallucination
+copied skill: backend-design -> /tmp/tmp.7OptuuAHqT/ohome/skills/backend-design
+copied skill: design-style-profiles -> /tmp/tmp.7OptuuAHqT/ohome/skills/design-style-profiles
+copied skill: expo-native-design -> /tmp/tmp.7OptuuAHqT/ohome/skills/expo-native-design
+copied skill: focus -> /tmp/tmp.7OptuuAHqT/ohome/skills/focus
+copied skill: frontend-design -> /tmp/tmp.7OptuuAHqT/ohome/skills/frontend-design
+copied skill: loop-engineering -> /tmp/tmp.7OptuuAHqT/ohome/skills/loop-engineering
+copied skill: memory-protocol -> /tmp/tmp.7OptuuAHqT/ohome/skills/memory-protocol
+copied skill: motion-design -> /tmp/tmp.7OptuuAHqT/ohome/skills/motion-design
+copied skill: n8n-workflow-design -> /tmp/tmp.7OptuuAHqT/ohome/skills/n8n-workflow-design
+copied skill: premortem -> /tmp/tmp.7OptuuAHqT/ohome/skills/premortem
+copied skill: release-tracking -> /tmp/tmp.7OptuuAHqT/ohome/skills/release-tracking
+copied skill: retro-improve -> /tmp/tmp.7OptuuAHqT/ohome/skills/retro-improve
+copied skill: run-sefi-benchmark -> /tmp/tmp.7OptuuAHqT/ohome/skills/run-sefi-benchmark
+copied skill: security-review -> /tmp/tmp.7OptuuAHqT/ohome/skills/security-review
+copied skill: sefi-orchestration -> /tmp/tmp.7OptuuAHqT/ohome/skills/sefi-orchestration
+copied skill: swiftui-design -> /tmp/tmp.7OptuuAHqT/ohome/skills/swiftui-design
+copied skill: systems-audit -> /tmp/tmp.7OptuuAHqT/ohome/skills/systems-audit
+copied skill: technical-writing -> /tmp/tmp.7OptuuAHqT/ohome/skills/technical-writing
+copied skill: terse-mode -> /tmp/tmp.7OptuuAHqT/ohome/skills/terse-mode
+copied command: audit.md -> /tmp/tmp.7OptuuAHqT/ohome/commands/audit.md
+copied command: close-session.md -> /tmp/tmp.7OptuuAHqT/ohome/commands/close-session.md
+copied command: cross-memory.md -> /tmp/tmp.7OptuuAHqT/ohome/commands/cross-memory.md
+copied command: init.md -> /tmp/tmp.7OptuuAHqT/ohome/commands/init.md
+copied command: loop-new.md -> /tmp/tmp.7OptuuAHqT/ohome/commands/loop-new.md
+copied command: map-codebase.md -> /tmp/tmp.7OptuuAHqT/ohome/commands/map-codebase.md
+copied command: memory-index.md -> /tmp/tmp.7OptuuAHqT/ohome/commands/memory-index.md
+copied command: memory-search.md -> /tmp/tmp.7OptuuAHqT/ohome/commands/memory-search.md
+copied command: retro.md -> /tmp/tmp.7OptuuAHqT/ohome/commands/retro.md
+copied command: route.md -> /tmp/tmp.7OptuuAHqT/ohome/commands/route.md
+copied command: scout.md -> /tmp/tmp.7OptuuAHqT/ohome/commands/scout.md
+copied command: status.md -> /tmp/tmp.7OptuuAHqT/ohome/commands/status.md
+copied command: triage.md -> /tmp/tmp.7OptuuAHqT/ohome/commands/triage.md
+copied script: adapter-manifest.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/adapter-manifest.sh
+copied script: apply-model-map.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/apply-model-map.sh
+copied script: budget-check.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/budget-check.sh
+copied script: cartographer-runtime.py -> /tmp/tmp.7OptuuAHqT/ohome/scripts/cartographer-runtime.py
+copied script: check-bar.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/check-bar.sh
+copied script: check-bash-write.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/check-bash-write.sh
+copied script: check-citation.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/check-citation.sh
+copied script: check-handoff.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/check-handoff.sh
+copied script: check-reply.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/check-reply.sh
+copied script: check-route.py -> /tmp/tmp.7OptuuAHqT/ohome/scripts/check-route.py
+copied script: check-route.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/check-route.sh
+copied script: check-state-sync.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/check-state-sync.sh
+copied script: check-structure-diff.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/check-structure-diff.sh
+copied script: ci -> /tmp/tmp.7OptuuAHqT/ohome/scripts/ci
+copied script: compress-output.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/compress-output.sh
+copied script: docs-grounding.py -> /tmp/tmp.7OptuuAHqT/ohome/scripts/docs-grounding.py
+copied script: gate.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/gate.sh
+copied script: gen-router.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/gen-router.sh
+copied script: inject-memory.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/inject-memory.sh
+copied script: inject-orchestrator-role.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/inject-orchestrator-role.sh
+copied script: install-hermes.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/install-hermes.sh
+copied script: install-opencode.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/install-opencode.sh
+copied script: loop-readiness.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/loop-readiness.sh
+copied script: memory-cross-memory.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/memory-cross-memory.sh
+copied script: memory-filter.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/memory-filter.sh
+copied script: memory-index.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/memory-index.sh
+copied script: memory-journal.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/memory-journal.sh
+copied script: memory-search.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/memory-search.sh
+copied script: model-for.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/model-for.sh
+copied script: package-manifest.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/package-manifest.sh
+copied script: probe-tools.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/probe-tools.sh
+copied script: ready-steps.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/ready-steps.sh
+copied script: record-continuation.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/record-continuation.sh
+copied script: record-run-receipt.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/record-run-receipt.sh
+copied script: resolve-shared-memory-path.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/resolve-shared-memory-path.sh
+copied script: scan-placeholders.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/scan-placeholders.sh
+copied script: sefi-runtime.py -> /tmp/tmp.7OptuuAHqT/ohome/scripts/sefi-runtime.py
+copied script: validate-plan-structure.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/validate-plan-structure.sh
+copied script: write-shared-memory-mirror.sh -> /tmp/tmp.7OptuuAHqT/ohome/scripts/write-shared-memory-mirror.sh
+install-opencode.sh: wrote package manifest at /tmp/tmp.7OptuuAHqT/ohome/scripts/.sefi-agents-manifest.json
+install-opencode.sh: 17 agents transformed; dest=/tmp/tmp.7OptuuAHqT/ohome
+sefi-agents: installation succeeded.
+sefi-agents: run /sefi:init once from each project root before the first routed request.
+sefi-agents: auto-init is unsafe because installation is user-wide and cannot safely choose or modify a project.
+sefi-agents: cross-project memory is optional, local/private, and off by default; /sefi:init asks interactively and keeps it off when unattended.
+opencode-install-exit=0
+=== isolated OPENCODE_HOME contents (names only) ===
+ls: cannot access '/tmp/tmp.7OptuuAHqT/ohome/.config/opencode': No such file or directory
+=== stage kept at ===
+/tmp/tmp.7OptuuAHqT
