@@ -32,6 +32,7 @@ validate-comment-safety.sh
 validate-token-budget.sh
 test-scripts.sh
 test-check-handoff.sh
+test-sefi-archive.sh
 test-integration.sh
 test-opencode-schedule-ownership.sh
 test-workflow-safety.sh

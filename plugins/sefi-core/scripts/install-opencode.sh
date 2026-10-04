@@ -221,6 +221,8 @@ sefi_inside_or_equal() {
   return 0
 }
 
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/sefi-archive.sh"
+
 sefi_assert_write_target() {
   # sefi_assert_write_target <target> <root> <label> -- re-verify at the write site
   # itself that <target> still resolves inside <root>.
@@ -486,6 +488,13 @@ check_target() {
       echo "install-opencode.sh: refusing to overwrite $target (use --force)" >&2
       return 1
     fi
+    # Archive before the delete, not after. --force means "replace what is
+    # there", and what is there may be a file the user hand-edited; a hard rm
+    # made that unrecoverable. sefi_archive_put copies first and returns
+    # non-zero if the copy failed, so a target we cannot archive is one we do
+    # not touch -- the delete is the reclaim, the copy is the safety net.
+    sefi_archive_put "$target" --label "opencode-$(basename "$target")" \
+      || return 1
     rm -rf "$target"
   fi
   return 0
@@ -653,6 +662,11 @@ transform_agent() {
   ' "$src" > "$dst"
 }
 
+# One archive for the whole run. This must sit before the first call that can
+# delete anything: the agent loop below calls check_target, which archives and
+# then rm -rf's, and sefi_archive_put refuses to run without an archive root.
+sefi_archive_init "opencode-install" || exit 1
+
 agent_count=0
 for src in "$AGENTS_SRC"/*.md; do
   [ -f "$src" ] || continue
@@ -742,9 +756,9 @@ copy_dir() {
   return 0
 }
 
-copy_dir "$SKILLS_SRC" "$DEST/skills" "skill"
-copy_dir "$COMMANDS_SRC" "$DEST/commands" "command"
-copy_dir "$SCRIPTS_SRC" "$DEST/scripts" "script"
+copy_dir "$SKILLS_SRC" "$DEST/skills" "skill" || { sefi_archive_restore; exit 1; }
+copy_dir "$COMMANDS_SRC" "$DEST/commands" "command" || { sefi_archive_restore; exit 1; }
+copy_dir "$SCRIPTS_SRC" "$DEST/scripts" "script" || { sefi_archive_restore; exit 1; }
 
 # Same placeholder resolution as the agent transform above, applied to copied skills and
 # commands (scripts/ itself never contains the placeholder -- it is what it resolves to).
@@ -759,4 +773,8 @@ done
 
 write_scripts_manifest
 echo "install-opencode.sh: $agent_count agents transformed; dest=$DEST" >&2
+# Everything landed, so the archive has no further job. Purge failure is not
+# fatal: the install itself succeeded, and leaving a temp archive behind is a
+# far smaller problem than reporting a failed install that actually worked.
+sefi_archive_purge >/dev/null 2>&1 || true
 print_onboarding
