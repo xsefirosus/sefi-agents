@@ -39,7 +39,8 @@ Three real defects, all found while porting:
   command to the model requires `PluginContext.inject_message`; a plain return
   value never reaches it.
 - **Rollback left dangling registry entries.** Rollback removes skill
-  directories, but Hermes' `skills/.hub/lock.json` is not part of that snapshot,
+  directories, but Hermes' skill registry (the `lock.json` under its `skills/.hub`
+  directory) is not part of that snapshot,
   so it kept entries whose directories were gone and the next run reported every
   rolled-back skill as already installed from a path that no longer existed.
   `prune-stale-skill-entries.sh` now prunes them: dry-run by default, `--apply`

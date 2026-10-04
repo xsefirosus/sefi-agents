@@ -211,8 +211,9 @@ boundary, using the helpers rather than ad-hoc rewriting:
 Do not rewrite arguments globally: `HEAD^{commit}`-style refspecs and `jq` filters
 must pass through untouched.
 
-**Stale registry entries.** Hermes records installed skills in
-`skills/.hub/lock.json`. If an install is interrupted or rolled back after the
+**Stale registry entries.** Hermes records installed skills in a `lock.json`
+under its `skills/.hub` directory inside the Hermes home. If an install is
+interrupted or rolled back after the
 directories are removed, those entries survive and the next run reports skills as
 already installed when their directories are gone.
 `scripts/prune-stale-skill-entries.sh` clears them; it is dry-run by default, needs
