@@ -149,6 +149,32 @@ registration.
   `core.autocrlf` made it hash differently from itself, so the diff reported drift in a
   file the fixture asserts is byte-identical to itself. The note now says why the
   original reasoning was wrong instead of just replacing it.
+- `Install.md` headed its `billing_mode` section "v0.9.6" while the body already
+  described the per-harness defaults the released 0.9.7 actually ships
+  (`opencode`/`hermes` resolve `free`, `codex`/`claude-code` resolve `flat`,
+  `metered` opt-in). The heading now says v0.9.7 and the body drops the stale
+  version claim.
+- `adapters/HERMES.md` gains a "Windows and MSYS (git-bash)" section. The file had no
+  Windows coverage at all despite Hermes being verified there. It records what is
+  actually verified: the `TMPDIR`/`COLUMNS`/`TERM` settings and why `/tmp` is wrong,
+  why the interpreter must come from `sefi_python_bin` rather than a bare `python`,
+  which helper converts a path at which native-tool boundary (`sefi_native_path` for
+  `git`, `sefi-native-tool` for `jq`, `sefi-python` for native Python), the stale
+  `lock.json` recovery script, the CRLF pinning that keeps byte-compared fixtures
+  honest, and why a green `FAIL COUNT: 0` is not sufficient evidence on its own.
+  `README.md` gains a matching Windows line with links to that section and to
+  `docs/CI-WINDOWS-BASELINE.md`.
+- Two findings are documented in `docs/RELEASE-v0.9.8.md` rather than fixed, because
+  fixing either would be the wrong trade at this release. (1) `validate-no-personal-paths`
+  is red on `origin/main`, not on this branch: a v0.9.5 Hermes install-evidence file
+  committed in `fe22a31` quotes a real install log path containing a literal username,
+  and this branch has zero commits in that directory. The evidence stays as recorded.
+  (2) 11 of 17 agents have no machine-checkable output contract, so `check-reply.sh`
+  exits 3 (`CANNOT-CHECK`) for them and runs only its word-count and foreign-deliverable
+  checks. All 17 agents run; a 3 is an explicit "unverifiable" verdict, not a rejection.
+  This is test coverage in a verification script, not a defect in the agents, and
+  normalizing agent contracts would change what agents emit -- a behavioral change
+  that does not belong in a Windows/MSYS release.
 ## [0.9.6] - 2026-10-03
 
 ### Added
