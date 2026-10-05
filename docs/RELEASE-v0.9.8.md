@@ -170,16 +170,20 @@ documentation fix, and is out of scope for a Windows/MSYS release.
 
 ## Release status
 
-**Tag published; GitHub release cut pending (2026-10-05).** Annotated tag
-`v0.9.8` was created on the PR 21 merge commit `719f66b` and pushed to origin
-(`git ls-remote --tags origin` shows `195f847f` `refs/tags/v0.9.8` peeling to
-`719f66b`); pre-publication 0.9.8 rows are recorded in
-`state/release-ledger.md`. The GitHub release publication was explicitly
-authorized for handover task T7 and is cut next in the same task. Boundary,
-stated plainly: no `0.9.8` manifest bump landed in this release --
-`plugin.json` (both manifests), `marketplace.json` (both occurrences), and the
-top `CHANGELOG.md` heading still read `0.9.7` -- so the six-surface strict gate
-cannot be fully green until a `0.9.8` bump lands.
+**Published 2026-10-05.** Annotated tag `v0.9.8` on the PR 21 merge commit
+`719f66b`, pushed to origin (`195f847f` `refs/tags/v0.9.8` peeling to
+`719f66b`); GitHub release `v0.9.8` published (not a draft, not a prerelease)
+2026-10-05T11:23:06Z:
+https://github.com/xsefirosus/sefi-agents/releases/tag/v0.9.8.
+Post-publication ledger evidence for all six surfaces is recorded in
+`state/release-ledger.md` (0.9.8 rows, observed 2026-10-05T11:23:15Z).
+Boundary, stated plainly: no `0.9.8` manifest bump landed in this release --
+`plugin.json` (both manifests), `marketplace.json` (both occurrences), the top
+`CHANGELOG.md` heading, and therefore the public marketplace index still read
+`0.9.7` -- so per the release-tracking strict gate this release is only
+partially complete at the six-surface level until a `0.9.8` bump lands. The
+tag and the published release are real and verified above; neither `v0.9.7`
+nor any other tag was moved.
 
 ## Stage 2 -- structured dispatch and recoverable destructive edits
 
