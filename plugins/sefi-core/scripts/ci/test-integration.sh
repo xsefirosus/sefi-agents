@@ -22,6 +22,11 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
 CORE="$ROOT/plugins/sefi-core"
+# Native git on Windows cannot resolve an MSYS path: `git worktree add` against
+# /c/... exits 0 and silently creates nothing. Translate only the path handed to
+# git; $WT itself stays in MSYS form so the `[ -d "$WT" ]` checks below keep working.
+# shellcheck source=../sefi-native-path.sh
+. "$CORE/scripts/sefi-native-path.sh"
 
 fail=0
 pass=0
@@ -29,6 +34,17 @@ ok()  { pass=$((pass + 1)); echo "  PASS: $1"; }
 bad() { fail=$((fail + 1)); echo "  FAIL: $1"; }
 
 WS="$(mktemp -d)"
+
+# budget-check.sh reads ccusage BEFORE --spent, so on a developer machine with ccusage
+# installed these assertions measure real spend instead of the fixture. Verified here:
+# --spent 0 --pending 0.05 reported `source=ccusage` at 20.38 projected and failed the
+# "in-budget" case. The stub exits 0 while yielding NO usable figure -- the same
+# "present but unreadable telemetry" shape, so budget-check.sh falls back to --spent.
+EMPTYBIN="$(mktemp -d)"
+printf '#!/bin/sh\nexit 0\n' > "$EMPTYBIN/ccusage"
+chmod +x "$EMPTYBIN/ccusage"
+without_ccusage() { env PATH="$EMPTYBIN:$PATH" "$@"; }
+
 cleanup() {
   # Worktrees hold locks; prune before removing or the temp dir survives as a stale ref.
   ( cd "$WS/proj" 2>/dev/null && git worktree prune >/dev/null 2>&1 ) || true
@@ -154,13 +170,13 @@ fi
 echo
 echo "=== stage 5: budget preflight before the dispatch (budget-check.sh --pending) ==="
 # The EM checks the projected cost BEFORE dispatching, not after the spend lands.
-if bash "$CORE/scripts/budget-check.sh" --scope dispatch --spent 0 --pending 0.05 \
+if without_ccusage bash "$CORE/scripts/budget-check.sh" --scope dispatch --spent 0 --pending 0.05 \
      --config config/budget.yml >/dev/null 2>&1; then
   ok "a 0.05 projected dispatch clears the 0.15 per-dispatch cap"
 else
   bad "an in-budget dispatch was blocked"
 fi
-if bash "$CORE/scripts/budget-check.sh" --scope dispatch --spent 0 --pending 0.30 \
+if without_ccusage bash "$CORE/scripts/budget-check.sh" --scope dispatch --spent 0 --pending 0.30 \
      --config config/budget.yml >/dev/null 2>&1; then
   bad "a 0.30 projected dispatch was allowed past the 0.15 cap"
 else
@@ -169,7 +185,7 @@ fi
 
 echo
 echo "=== stage 6: worktree handoff, real git worktree at the pinned path ==="
-git worktree add -q -b feat-version "$WT" >/dev/null 2>&1
+git worktree add -q -b feat-version "$(sefi_native_path "$WT")" >/dev/null 2>&1
 if [ -d "$WT" ] && [ -f "$WT/index.js" ]; then
   ok "the worktree exists at the exact absolute path the envelope pinned"
 else

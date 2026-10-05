@@ -23,6 +23,7 @@ import subprocess
 import tempfile
 from collections.abc import Iterator
 from pathlib import Path
+from urllib.parse import quote
 
 from benchmarks.runner._fsutil import _rmtree
 
@@ -166,11 +167,29 @@ def sandbox(origin_repo: str | os.PathLike[str], pinned_ref: str) -> Iterator[Pa
     """
     git = resolve_git()
     origin_abs = Path(origin_repo).resolve(strict=True)
-    # A proper ``file://`` URI (three-slash, percent-encoded) is what git accepts on both
-    # Windows (``file:///D:/repo``) and POSIX (``file:///home/u/repo``); combined with
-    # ``--no-local`` it forces real transport, so the clone gets its own object store and
-    # writes no ``objects/info/alternates``.
-    origin_uri = origin_abs.as_uri()
+    # Build the ``file://`` URI by hand rather than via ``Path.as_uri()``.
+    #
+    # ``as_uri()`` emits the three-slash form (``file:///C:/repo``). On Windows that is
+    # NOT a valid git remote: git resolves the extra slash as a rooted POSIX path and
+    # reports ``'/C:/repo' does not appear to be a git repository``, exit 128. Measured
+    # against this repo, holding every other flag constant:
+    #
+    #   file:///C:/<user>/...   (as_uri)          -> exit 128
+    #   file://C:/<user>/...    (two slashes)     -> exit 0
+    #   C:/<user>/...           (plain path)      -> exit 0
+    #
+    # The space in the path is NOT the cause -- the plain and two-slash forms both clone
+    # successfully from a space-containing repo path with %20 encoded, and
+    # ``--no-local``/``--no-hardlinks`` are irrelevant (dropping either changes nothing).
+    # Two slashes is also correct for POSIX, where ``file:///home/u/repo`` and
+    # ``file://home/u/repo`` both resolve; so this one form serves both platforms.
+    #
+    # ``--no-local`` is still required: it forces real transport so the clone gets its
+    # own object store and writes no ``objects/info/alternates``.
+    # safe="/" leaves the drive colon alone: quoting it to %3A happens to be tolerated by
+    # git but is not a correct URI authority, and would break a POSIX path containing a
+    # character that must stay literal in the authority component.
+    origin_uri = "file://" + quote(origin_abs.as_posix(), safe="/:")
 
     scratch = Path(tempfile.mkdtemp(prefix="sefi-bench-"))
     try:

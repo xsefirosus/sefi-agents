@@ -33,13 +33,46 @@
 #   release-ledger/**    the ledger's awk pass trims [[:space:]] off every cell.
 #   check-route/**       Python json.loads treats CR as whitespace; the malformed
 #                        model-map trust boundary still exits 2 with no JSON line.
-#   manifest-version/**  Python json on the legacy manifest, no byte comparison on
-#                        that path.
 #   memory-journalist/** read as an opaque text blob, matched by substring.
 # A NEW fixture consumed by an IFS-split reader or a byte-comparison guard belongs
 # in the list below -- add it here rather than letting the next Windows-only red
 # build teach someone to ignore a real failure.
+#
+# CORRECTION 2026-10-03 -- manifest-version/** was listed here as safe on the
+# grounds that "Python json on the legacy manifest, no byte comparison on that
+# path." That is wrong, and it cost a Windows-only red build. In
+# test-manifest-version.sh fixture 5 the file legacy/file.txt is copied into BOTH
+# roles: once as $R5/src/file.txt (the source tree package-manifest hashes) and
+# once as $D5/.sefi-agents-manifest.json. package-manifest.sh compares installed
+# bytes against the recorded hash, so the CR that core.autocrlf adds to the
+# working-tree copy changes the hash and the diff reports
+# "drift in installed files: file.txt" -- asserting the fixture is byte-identical
+# to itself. Verified on Windows: the committed blob is LF, the checkout is CRLF.
 .gitattributes text eol=lf
 plugins/sefi-core/scripts/ci/fixtures/routing-cases.txt text eol=lf
 plugins/sefi-core/scripts/ci/fixtures/agent-capabilities-v08/expected-agent-sources.txt text eol=lf
 plugins/sefi-core/scripts/ci/fixtures/agent-capabilities-v08/required-lines.txt text eol=lf
+plugins/sefi-core/scripts/ci/fixtures/manifest-version/legacy/file.txt text eol=lf
+
+# benchmarks/sandbox/deploy.sh is byte-compared, not read as prose.
+# check_sh-strict-mode.sh `cmp`s the trial's copy (LF: sandbox.py forces
+# core.autocrlf=false and the arm writes explicit LF joins) against its OWN repo
+# copy with the strict line stripped. Under core.autocrlf=true that baseline sits in
+# the working tree as CRLF, so cmp disagrees on a byte the test never meant to compare
+# and the case fails as "content changed beyond the strict-mode insertion" -- the one
+# benchmark failure that reproduces on a pristine checkout. Same class as the fixture
+# pins above: hold the working tree at LF so a Windows red build stops being a red build.
+benchmarks/sandbox/deploy.sh text eol=lf
+
+# The benchmark oracle fingerprints pin the CONTENT of each case's prompt and check
+# script, and cases.json records a hash computed over their LF bytes. Under
+# core.autocrlf=true the working tree served CRLF, so test-benchmark-oracles.sh hashed
+# different bytes than the fingerprint was recorded from and reported "stale fingerprint"
+# for the case -- a fixture conversion, not stale content. Measured: for all three cases
+# the LF-normalized hash equals the recorded value exactly, while the working-tree hash
+# matches none of them.
+#
+# Pin the whole benchmark tree rather than three named files: the hash contract is a
+# property of every case, not of the three that failed first, and a per-file list would
+# leave the next added case exposed to the same red.
+benchmarks/** text eol=lf

@@ -11,7 +11,7 @@ describes the package layout.
   ui-ux-designer, motion-designer, software-engineer, qa-engineer, security-engineer, devops-engineer,
   support-engineer, memory-journalist, technical-writer, solutions-architect, systems-auditor. Each carries a `tools`/`disallowedTools` contract, a
   harness-neutral model tier, and the anti-hallucination pointer (CI-enforced).
-- `skills/` -- 20 skills: sefi-orchestration (the always-loaded router),
+- `skills/` -- 20 skills: sefi-orchestration (the model-invoked router -- deterministic via /sefi:route, spelled sefi-route on Hermes),
   anti-hallucination (the canonical no-invention rule), memory-protocol,
   loop-engineering, retro-improve, terse-mode, frontend-design, backend-design,
   security-review, technical-writing, n8n-workflow-design, premortem, focus,

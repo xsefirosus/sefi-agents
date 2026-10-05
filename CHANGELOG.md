@@ -48,6 +48,147 @@ Changelog; this project adheres to Semantic Versioning.
   `## [0.9.7]` section above and `docs/BUDGET.md` state. Those two sentences are
   superseded for current trees; nothing else in the v0.9.6 entry changes.
 
+## [0.9.8] - 2026-10-04
+
+Windows/MSYS install support, and the two real product defects it surfaced. This is
+the 0.9.8 entry: the work landed on a branch that diverged from `main` at `983a2f4`,
+so the released `v0.9.7` contains none of it. The command spells `/sefi-init` --
+Hermes slugifies the colon out of command names, so `/sefi:init` does not survive
+registration.
+
+### Added
+
+- Windows/MSYS path translation for native tools. Under `plugins/sefi-core/scripts/`,
+  five new helpers convert bash's `/c/...` paths before native Windows programs see
+  them: `sefi-native-path.sh` (sourceable `sefi_native_path`) for `git -C`;
+  `sefi-python.sh` (sourceable `sefi_python_bin`, the shared 3.11+ interpreter
+  resolver) plus the `sefi-python` wrapper it returns on MSYS hosts, which rewrites
+  path arguments for native Python; and `sefi-native-tool`, which runs a native
+  program with a leading `/<single letter>/` argument translated and jq programs, git
+  refspecs like `HEAD^{commit}`, and ordinary POSIX paths passed through untouched.
+  On POSIX hosts each helper returns its input unchanged. All five carry a shebang
+  and are committed `100755`: `sefi-python` and `sefi-native-tool` are exec'd as
+  commands, not `bash <path>`, so without the exec bit they fail on any POSIX host
+  with `Permission denied`.
+- Hermes install hardening. `install-hermes.sh` now stages the `sefi-commands` plugin
+  from `plugins/sefi-core/hermes/` and enables it -- a user plugin is disabled by
+  default, so copying the directory is not enough -- records `CLAUDE_PLUGIN_ROOT` in
+  the Hermes `.env` rather than asking for a hand edit, and prunes stale registry
+  entries during rollback via the new `prune-stale-skill-entries.sh`: dry-run by
+  default, `--apply` to mutate, a timestamped `lock.json.bak-<stamp>` written first,
+  and a live skill directory never touched.
+- Two new suites for the Windows/MSYS helpers: `ci/test-sefi-python.sh` (6/6 passing, exit 0) and
+  `ci/test-prune-stale-skill-entries.sh` (11/11 passing, exit 0).
+- Stage 2 -- structured dispatch validation and recoverable destructive edits, in
+  three pieces with three new suites (green on Linux CI run 37229227815, exit 0
+  under git-bash): an optional `output_schema` field on dispatch envelopes --
+  `check-handoff.sh` refuses a relative, missing, invalid, or constraint-free
+  schema, while reply matching stays a return-time `check-reply.sh` check --
+  verified by `ci/test-check-handoff.sh` (11 assertions); archive-before-delete
+  (`scripts/sefi-archive.sh`, wired into the `install-opencode.sh --force` path,
+  symlink targets refused) verified by `ci/test-sefi-archive.sh` (13 assertions)
+  and by a live interrupted `--force` run that preserved a hand-edited agent in
+  the surviving archive (15 entries); and named, persistent, never-auto-purged
+  recovery points (`scripts/sefi-recovery-point.sh`, no caller yet) verified by
+  `ci/test-sefi-recovery-point.sh` (18 assertions). The recovery-point name is
+  deliberate: "checkpoint" already means the human PR boundary, so a second thing
+  called a checkpoint would collide in prose and log lines.
+- `docs/CI-WINDOWS-BASELINE.md` -- the Windows failure inventory, the fixture
+  isolation rules (`ccusage` stub, `TMPDIR`, `COLUMNS`), and the procedure for
+  telling a real defect from a fixture handing a native program an unreadable
+  path.
+
+### Fixed
+
+- **The `sefi-commands` plugin was never installed, so `/sefi-init` did not exist** even
+  though the installer's own success message named it. The 13 packaged `commands/*.md`
+  files ship inside the managed runtime and Hermes never reads them on its own. Plugin
+  command handlers' return values are only printed to the terminal, so the staged
+  handler delivers each command body through `inject_message` instead of returning
+  it. Verified on a live run: 20/20 skills installed with verified source bytes and
+  13/13 commands registered.
+- **Rollback left dangling registry entries.** Rollback removes skill directories, but
+  Hermes' own `skills/.hub/lock.json` is not part of that snapshot, so it kept entries
+  whose directories were gone and the next run reported every rolled-back skill as
+  already installed from a path that no longer existed.
+- **jq failures were silent and got misread as malformed fixtures.** Native jq on
+  Windows cannot open an MSYS path; it returned nothing rather than erroring, so a
+  caller checking for emptiness concluded the file was empty or malformed instead of
+  unreadable and reported a fixture failure. `install.sh` merged `hooks/hooks.json`
+  through a bare `jq`, so `install.sh --target claude` exited 1 with hooks unwired and
+  no `CLAUDE_PLUGIN_ROOT` in env; that path-taking call now routes through
+  `sefi-native-tool` and exits 0 with `check-bash-write.sh` and `inject-memory.sh`
+  wired and `env.CLAUDE_PLUGIN_ROOT` populated. The stdin-fed `jq '.hooks'` still
+  reads a pipe and needs no wrapper.
+- **Installer verification read truncated skill names until `COLUMNS` was set.**
+  `hermes skills list` truncates at roughly 15 characters, so verification reported 10
+  of 20 installed skills as missing; the installer now sets `COLUMNS`.
+- **`check-route.sh` resolved its interpreter to an unusable path.** `command -v
+  python3` under git-bash returns an MSYS path that the native interpreter cannot use
+  for a script argument, so 9 assertions across the claude-code, opencode, hermes and
+  codex cases reported the *verdict* as wrong (`did not report mismatch`) instead of
+  the file as unreadable. It now sources `sefi-python.sh` and prefers `sefi_python_bin`,
+  keeping the existing `usable()` probe and the explicit exit 3 when no interpreter
+  qualifies, so the too-old-interpreter and none-found paths are unchanged and POSIX
+  hosts are unaffected.
+
+### Changed
+
+- **The Codex fake-CLI test stub now reports its marketplace root in native form -- a
+  stub artifact, not a shipped-code change, and the identity check it satisfies was
+  deliberately left intact.** `install-codex.sh` aborted with `root is not a physical
+  directory`. That check verifies marketplace identity and it was correct: the real
+  Codex CLI is a native Windows program printing `C:/...` paths, while the bash test
+  stub echoed back the MSYS `/c/...` form bash handed it, which a native interpreter
+  cannot stat. Established by running the *unmodified* installer against both root
+  styles -- a native root passes the identity check and proceeds to a later,
+  unrelated assertion, while only the MSYS form fails this one -- so loosening the
+  shipped check to satisfy a fake CLI would have weakened a real security property to
+  accommodate a test. The stub converts the root with `cygpath -m` (a no-op fallback
+  off MSYS) in both copies of the fake `codex`, for both the marketplace listing and
+  the plugin list path.
+- MSYS-safe interpreter adoption on the remaining committed call sites:
+  `ci/run-all.sh` for the benchmark suite, and `package-manifest.sh` -- the one script
+  that execs Python outright, where under git-bash every recorded
+  `source_version`/`source_commit` came back `UNKNOWN` and both installers reported
+  their runtime as unclassifiable. The prune-stale suite also called raw `python3` with
+  an MSYS path argument and piped `2>/dev/null` into a raw Python fallback, discarding
+  both errors so the suite exited 1 with nothing but a traceback on stderr as evidence;
+  both calls now route through `sefi_python_bin` with the masking redirect dropped, and
+  the suite's exit 0 is its own rather than `tail`'s.
+- `.gitattributes` pins `text eol=lf` for the `manifest-version/legacy/` fixture. That
+  tree was previously listed as safe on the grounds that there was "no byte comparison
+  on that path" -- which is wrong, and that reasoning is what hid the bug. Fixture 5
+  copies `legacy/file.txt` into both roles, source tree and recorded manifest, and
+  `core.autocrlf` made it hash differently from itself, so the diff reported drift in a
+  file the fixture asserts is byte-identical to itself. The note now says why the
+  original reasoning was wrong instead of just replacing it.
+- `Install.md` headed its `billing_mode` section "v0.9.6" while the body already
+  described the per-harness defaults the released 0.9.7 actually ships
+  (`opencode`/`hermes` resolve `free`, `codex`/`claude-code` resolve `flat`,
+  `metered` opt-in). The heading now says v0.9.7 and the body drops the stale
+  version claim.
+- `adapters/HERMES.md` gains a "Windows and MSYS (git-bash)" section. The file had no
+  Windows coverage at all despite Hermes being verified there. It records what is
+  actually verified: the `TMPDIR`/`COLUMNS`/`TERM` settings and why `/tmp` is wrong,
+  why the interpreter must come from `sefi_python_bin` rather than a bare `python`,
+  which helper converts a path at which native-tool boundary (`sefi_native_path` for
+  `git`, `sefi-native-tool` for `jq`, `sefi-python` for native Python), the stale
+  `lock.json` recovery script, the CRLF pinning that keeps byte-compared fixtures
+  honest, and why a green `FAIL COUNT: 0` is not sufficient evidence on its own.
+  `README.md` gains a matching Windows line with links to that section and to
+  `docs/CI-WINDOWS-BASELINE.md`.
+- Two findings are documented in `docs/RELEASE-v0.9.8.md` rather than fixed, because
+  fixing either would be the wrong trade at this release. (1) `validate-no-personal-paths`
+  is red on `origin/main`, not on this branch: a v0.9.5 Hermes install-evidence file
+  committed in `fe22a31` quotes a real install log path containing a literal username,
+  and this branch has zero commits in that directory. The evidence stays as recorded.
+  (2) 11 of 17 agents have no machine-checkable output contract, so `check-reply.sh`
+  exits 3 (`CANNOT-CHECK`) for them and runs only its word-count and foreign-deliverable
+  checks. All 17 agents run; a 3 is an explicit "unverifiable" verdict, not a rejection.
+  This is test coverage in a verification script, not a defect in the agents, and
+  normalizing agent contracts would change what agents emit -- a behavioral change
+  that does not belong in a Windows/MSYS release.
 ## [0.9.6] - 2026-10-03
 
 ### Added

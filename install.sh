@@ -508,7 +508,15 @@ wire_claude_settings() {
     echo "install.sh: refusing symlinked settings file $settings" >&2
     exit 1
   }
-  jq --argjson new "$(printf '%s' "$resolved" | jq '.hooks')" \
+  # Native jq cannot read bash's /c/... paths on Windows/git-bash, and it fails LOUDLY
+  # here ("Could not open file") so the merge aborts with "cannot merge hooks into
+  # <dest>/settings.json" and a --target claude install exits 1 having written nothing
+  # useful. Route the path-taking jq through the translating wrapper; the stdin-fed
+  # `jq '.hooks'` needs no wrapper since it reads a pipe, not a path. On POSIX the
+  # wrapper is a plain exec of jq.
+  NTOOL="$CORE/scripts/sefi-native-tool"
+  jq_path() { "$NTOOL" jq "$@"; }
+  jq_path --argjson new "$(printf '%s' "$resolved" | jq '.hooks')" \
      --arg plugin_root "$DEST" '
     .hooks = (
       (.hooks // {}) as $existing |

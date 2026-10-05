@@ -221,6 +221,8 @@ sefi_inside_or_equal() {
   return 0
 }
 
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/sefi-archive.sh"
+
 sefi_assert_write_target() {
   # sefi_assert_write_target <target> <root> <label> -- re-verify at the write site
   # itself that <target> still resolves inside <root>.
@@ -486,6 +488,22 @@ check_target() {
       echo "install-opencode.sh: refusing to overwrite $target (use --force)" >&2
       return 1
     fi
+    # Archive before the delete, not after. --force means "replace what is
+    # there", and what is there may be a file the user hand-edited; a hard rm
+    # made that unrecoverable. sefi_archive_put copies first and returns
+    # non-zero if the copy failed, so a target we cannot archive is one we do
+    # not touch -- the delete is the reclaim, the copy is the safety net.
+    #
+    # The rm below does not follow the link either way: `rm -rf` on a symlink
+    # removes the link, never its target. So when the target is a symlink there
+    # is nothing to archive -- sefi_archive_put refuses symlinks precisely so it
+    # cannot copy through one -- and forcing a failure here would replace the
+    # link with a real file, which is the documented --force behavior and what
+    # the "never follows the swapped symlink" assertion requires.
+    if [ ! -L "$target" ]; then
+      sefi_archive_put "$target" --label "opencode-$(basename "$target")" \
+        || return 1
+    fi
     rm -rf "$target"
   fi
   return 0
@@ -653,6 +671,11 @@ transform_agent() {
   ' "$src" > "$dst"
 }
 
+# One archive for the whole run. This must sit before the first call that can
+# delete anything: the agent loop below calls check_target, which archives and
+# then rm -rf's, and sefi_archive_put refuses to run without an archive root.
+sefi_archive_init "opencode-install" || exit 1
+
 agent_count=0
 for src in "$AGENTS_SRC"/*.md; do
   [ -f "$src" ] || continue
@@ -662,7 +685,20 @@ for src in "$AGENTS_SRC"/*.md; do
     echo "install-opencode.sh: skipped user-owned legacy knowledge-manager profile" >&2
     continue
   fi
-  if ! check_target "$dst"; then continue; fi
+  # FAILURE SEMANTICS (fail-closed): any check_target failure -- a containment
+  # refusal, an overwrite refusal, or above all an archive-put copy failure --
+  # aborts the whole install with a non-zero exit after attempting an archive
+  # restore. It must NEVER degrade to skipping the agent and reporting success:
+  # an archive-put failure followed by `continue` would yield an exit-0 install
+  # with silently missing agents, which reads as success while destroying the
+  # operator's ability to notice what did not land. The knowledge-manager skip
+  # above is the only sanctioned `continue`: preserving a user-owned file by
+  # request, explicitly logged, not a failure at all.
+  if ! check_target "$dst"; then
+    echo "install-opencode.sh: cannot protect $dst -- refusing to continue with a missing agent (snapshot failure fails closed, nothing was deleted for this target)" >&2
+    sefi_archive_restore || true
+    exit 1
+  fi
   # Render through a staging file moved into place, so a symlink swapped in
   # after the target check cannot divert the transformed write into another
   # file: the write lands on a file this install owns, and mv replaces (never
@@ -729,7 +765,14 @@ copy_dir() {
     [ -e "$entry" ] || continue
     local base="$(basename "$entry")"
     local target="$dst_dir/$base"
-    if ! check_target "$target"; then continue; fi
+    # Same failure semantics as the agent loop above: a check_target failure
+    # (including an archive-put failure) returns 1 so the caller restores the
+    # archive and exits non-zero -- never a silent skip that reports success
+    # with silently missing files.
+    if ! check_target "$target"; then
+      echo "install-opencode.sh: cannot protect $target -- refusing to continue with a missing $label (snapshot failure fails closed, nothing was deleted for this target)" >&2
+      return 1
+    fi
     # Re-verify after check_target's rm -rf and immediately before the copy: that
     # removal is the window a directory swap would target.
     refuse_escaped_dest || return 1
@@ -742,9 +785,9 @@ copy_dir() {
   return 0
 }
 
-copy_dir "$SKILLS_SRC" "$DEST/skills" "skill"
-copy_dir "$COMMANDS_SRC" "$DEST/commands" "command"
-copy_dir "$SCRIPTS_SRC" "$DEST/scripts" "script"
+copy_dir "$SKILLS_SRC" "$DEST/skills" "skill" || { sefi_archive_restore; exit 1; }
+copy_dir "$COMMANDS_SRC" "$DEST/commands" "command" || { sefi_archive_restore; exit 1; }
+copy_dir "$SCRIPTS_SRC" "$DEST/scripts" "script" || { sefi_archive_restore; exit 1; }
 
 # Same placeholder resolution as the agent transform above, applied to copied skills and
 # commands (scripts/ itself never contains the placeholder -- it is what it resolves to).
@@ -759,4 +802,8 @@ done
 
 write_scripts_manifest
 echo "install-opencode.sh: $agent_count agents transformed; dest=$DEST" >&2
+# Everything landed, so the archive has no further job. Purge failure is not
+# fatal: the install itself succeeded, and leaving a temp archive behind is a
+# far smaller problem than reporting a failed install that actually worked.
+sefi_archive_purge >/dev/null 2>&1 || true
 print_onboarding

@@ -175,6 +175,63 @@ When the installer reports a missing skill or mismatched bytes, it leaves the ma
 unchanged. Resolve the fetch issue and rerun the installer so the native skill and canonical
 runtime remain a matched set.
 
+## Windows and MSYS (git-bash)
+
+Windows support is verified on Windows 11 under git-bash/MSYS. The installer and
+the CI suite both run there, so this section records what actually differs rather
+than guessing.
+
+**Run the same command.** `install-hermes.sh` needs no Windows-specific invocation.
+Three environment variables matter, because git-bash exports POSIX paths that native
+Windows programs cannot resolve:
+
+```bash
+export TMPDIR="$HOME/AppData/Local/Temp"   # not /tmp -- native tools read it as C:\tmp
+export COLUMNS=200                          # prevents Hermes truncating skill names
+export TERM=dumb                            # stable output for the installer logs
+```
+
+**Interpreter choice.** A stock Windows install has several Pythons, and the Hermes
+dependency interpreter (the one with `ruamel` and the rest of Hermes's deps) is not
+the same as the default `python`. The repo ships `scripts/sefi-python.sh`, which
+resolves a Python 3.11+ interpreter and is sourced by the installer, the record
+scripts, and the CI suites. Prefer `sefi_python_bin` over a bare `python`/`python3`
+in any script that passes a path to Python.
+
+**Paths.** git-bash builds `/c/Users/<user>/...`; native Windows programs read that
+as `\c\Users\<user>\...`, which does not exist. Convert only at the native-tool
+boundary, using the helpers rather than ad-hoc rewriting:
+
+- `sefi_native_path` (source `scripts/sefi-native-path.sh`) for a path argument to
+  native `git`.
+- `sefi-native-tool` for arbitrary native programs such as `jq`, which rewrites
+  leading MSYS drive paths and leaves filters, refspecs, and URLs alone.
+- `sefi-python` for path arguments passed into native Python.
+
+Do not rewrite arguments globally: `HEAD^{commit}`-style refspecs and `jq` filters
+must pass through untouched.
+
+**Stale registry entries.** Hermes records installed skills in a `lock.json`
+under its `skills/.hub` directory inside the Hermes home. If an install is
+interrupted or rolled back after the
+directories are removed, those entries survive and the next run reports skills as
+already installed when their directories are gone.
+`scripts/prune-stale-skill-entries.sh` clears them; it is dry-run by default, needs
+`--apply` to change anything, and writes a timestamped backup of the registry first.
+The installer's rollback path runs it after restoring skills.
+
+**Line endings.** `core.autocrlf=true` rewrites LF files to CRLF in the working
+tree. Fixtures that are byte-compared (manifest fingerprints, benchmark oracles) are
+pinned to LF in `.gitattributes`; do not "fix" a byte mismatch by rewriting the
+recorded hash.
+
+**Known limits.** Hermes's own `skills list` truncates long names to the terminal
+width, which is why the installer sets `COLUMNS=200`. CI suites no longer suppress
+Python error output, because two suites once reported PASS while the interpreter had
+died on a bad path. A green `FAIL COUNT: 0` is therefore not sufficient evidence --
+check the exit code and the `error(s)` lines too. `docs/CI-WINDOWS-BASELINE.md` has
+the full triage table.
+
 ## Troubleshooting
 
 - `hermes doctor --fix` ("Diagnose issues with Hermes Agent setup", with an

@@ -4,6 +4,10 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
 CORE="$ROOT/plugins/sefi-core"
+# MSYS path helper: native Windows git aborts on `git -C /c/...` with
+# "cannot change to", so the fixture repo below would never be created.
+# See scripts/sefi-native-path.sh.
+. "$CORE/scripts/sefi-native-path.sh"
 
 fail=0
 pending_count=0
@@ -38,8 +42,8 @@ YAML
 printf '%s\n' 'durable session note' > "$WORK/memory/sessions/2026/09/session.md"
 printf '%s\n' 'durable audit finding' > "$WORK/audits/audit-report-build-2026-09-25-1200-session-001.md"
 printf '%s\n' 'durable non-report' > "$WORK/audits/notes.md"
-git -C "$WORK" init -q
-git -C "$WORK" remote add origin 'https://github.com/acme/audit-project.git'
+git -C "$(sefi_native_path "$WORK")" init -q
+git -C "$(sefi_native_path "$WORK")" remote add origin 'https://github.com/acme/audit-project.git'
 
 if (
   # One leg must never silence the rest: errexit stays on outside this subshell,

@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# sefi-native-tool -- run a native Windows program with MSYS paths translated.
+#
+# WHY THIS EXISTS (live-confirmed 2026-10-03, Windows/git-bash)
+# bash reports paths as /c/Users/<user>/...; native Windows programs read that as
+# \c\Users\... and fail. It is not only Python. Live-confirmed victims in this
+# suite, each failing with a different message:
+#
+#   python  FileNotFoundError on every path          -> scripts/sefi-python
+#   git     fatal: cannot change to '/c/...'
+#   jq      error: Could not open file /c/...
+#
+# The jq case is the nastiest because it is SILENT: `jq -r ... hooks.json`
+# returns nothing, so a caller checking for emptiness concludes the file was
+# empty or malformed rather than unreadable, and reports a fixture failure.
+#
+# Usage:
+#   sefi-native-tool jq -r '.key' "$FILE"
+#   sefi-native-tool git ls-files -s "$REL"
+#
+# Only a leading /<single letter>/ argument is translated, so jq programs, git
+# refspecs like HEAD^{commit}, and ordinary POSIX paths pass through untouched.
+# On a POSIX host this is an extra exec with no translation, which is why the
+# scripts call it unconditionally for clarity.
+set -eu
+
+if [ "$#" -lt 1 ]; then
+  echo "sefi-native-tool: no command given" >&2
+  exit 2
+fi
+
+command_name="$1"
+shift
+
+args=()
+for arg in "$@"; do
+  case "$arg" in
+    /[a-zA-Z]/*)
+      converted="$(cygpath -m "$arg" 2>/dev/null)" || converted=""
+      if [ -n "$converted" ]; then
+        args+=("$converted")
+        continue
+      fi
+      ;;
+  esac
+  args+=("$arg")
+done
+
+exec "$command_name" "${args[@]}"

@@ -5,11 +5,10 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 CONFIG="config/sefi.config.yml"
 
-python_bin=""
-for candidate in python python3; do
-  if command -v "$candidate" >/dev/null 2>&1 && "$candidate" -c 'import sys' >/dev/null 2>&1; then python_bin="$candidate"; break; fi
-done
-[ -n "$python_bin" ] || { echo 'memory-journal: Python is required' >&2; exit 1; }
+# MSYS-safe interpreter: the wrapper translates /c/... paths a native Windows
+# Python cannot resolve. Plain python/python3 elsewhere.
+. "$HERE/sefi-python.sh"
+python_bin="$(sefi_python_bin)" || { echo 'memory-journal: Python 3.11+ is required' >&2; exit 1; }
 
 fail() { echo "memory-journal: $*" >&2; return 1; }
 

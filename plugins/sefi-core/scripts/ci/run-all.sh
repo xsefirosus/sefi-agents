@@ -31,6 +31,10 @@ check-unicode-safety.sh
 validate-comment-safety.sh
 validate-token-budget.sh
 test-scripts.sh
+test-check-handoff.sh
+test-sefi-archive.sh
+test-sefi-recovery-point.sh
+test-install-hermes-recovery-point.sh
 test-integration.sh
 test-opencode-schedule-ownership.sh
 test-workflow-safety.sh
@@ -69,20 +73,16 @@ for v in $validators; do
   echo
 done
 
-python_bin=""
-for candidate in python3 python; do
-  if command -v "$candidate" >/dev/null 2>&1 \
-    && "$candidate" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)' >/dev/null 2>&1; then
-    python_bin="$candidate"
-    break
-  fi
-done
-if [ -z "$python_bin" ]; then
+# MSYS-safe interpreter for the benchmark suite (see scripts/sefi-python.sh).
+. "$HERE/../sefi-python.sh"
+python_bin="$(sefi_python_bin)" || {
   echo "CI: Python 3.11+ is required for benchmark tests" >&2
   fail=1
-elif ! "$python_bin" -m unittest discover -s benchmarks -p 'test_*.py'; then
+}
+if [ -n "$python_bin" ] && ! "$python_bin" -m unittest discover -s benchmarks -p 'test_*.py'; then
   fail=1
 fi
+
 
 while IFS= read -r script; do
   if ! bash -n "$script"; then

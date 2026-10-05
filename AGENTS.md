@@ -10,3 +10,13 @@
   taking an irreversible external action not already requested.
 - If you find an unrelated risk, defect, or improvement, briefly explain it and recommend
   a next step. Do not let it block the requested work unless it makes that work unsafe.
+
+# Sefi routing
+
+Route every request through the `sefi-orchestration` skill before acting: follow
+its Stage 0 and routing table, use the required skills and budgets, and dispatch
+the specialists its route requires. A genuinely trivial request may use that
+skill's documented exception. Explicit user instructions override this block.
+`sefi-orchestration` is model-invoked, not automatic -- when its auto-trigger
+does not fire, invoke it deterministically via the route command (`/sefi:route`,
+spelled `sefi-route` on Hermes).

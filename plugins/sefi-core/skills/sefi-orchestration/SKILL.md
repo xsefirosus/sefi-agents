@@ -1,12 +1,12 @@
 ---
 name: sefi-orchestration
-description: Use when routing a request to the right agent, handing off between agents, or dispatching a subagent. The always-loaded routing brain covering roster, handoff rules, the parse ladder for structured output, model routing, and pointers to the harness map and never-auto-merge rule.
+description: Use when routing a request to the right agent, handing off between agents, or dispatching a subagent. The model-invoked routing brain covering roster, handoff rules, the parse ladder for structured output, model routing, and pointers to the harness map and never-auto-merge rule -- when its auto-trigger does not fire, invoke it deterministically via /sefi:route (spelled sefi-route on Hermes).
 managed-by: sefi-agents
 ---
 
 # Orchestration
 
-The routing brain, loaded every turn. Keep this body a thin router; per-agent detail, the
+The routing brain, model-invoked on description match -- never resident and never assumed present. When the auto-trigger misses, /sefi:route (spelled sefi-route on Hermes) loads it deterministically. Keep this body a thin router; per-agent detail, the
 harness map, and the routing table live in `references/` and are read on demand.
 
 User instructions always override this skill.

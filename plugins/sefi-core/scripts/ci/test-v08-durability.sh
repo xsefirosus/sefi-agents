@@ -4,6 +4,11 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
 S="$ROOT/plugins/sefi-core/scripts"
+# Native git cannot resolve an MSYS -C path: `git -C /c/...` fails outright with
+# "cannot change to", which made the ignore-rule assertions below report the wrong
+# verdict. No-op on POSIX.
+# shellcheck source=../sefi-native-path.sh
+. "$S/sefi-native-path.sh"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 pass=0 fail=0
@@ -11,12 +16,12 @@ pass=0 fail=0
 ok() { pass=$((pass + 1)); printf 'PASS: %s\n' "$1"; }
 bad() { fail=$((fail + 1)); printf 'FAIL: %s\n' "$1" >&2; }
 
-if git -C "$ROOT" check-ignore -q memory/sessions/example.md; then
+if git -C "$(sefi_native_path "$ROOT")" check-ignore -q memory/sessions/example.md; then
   ok 'runtime memory paths are ignored at repository root'
 else
   bad 'runtime memory paths are not ignored at repository root'
 fi
-if git -C "$ROOT" ls-files --error-unmatch memory/index.md >/dev/null 2>&1; then
+if git -C "$(sefi_native_path "$ROOT")" ls-files --error-unmatch memory/index.md >/dev/null 2>&1; then
   bad 'repository root still tracks runtime memory'
 else
   ok 'repository root does not track runtime memory'

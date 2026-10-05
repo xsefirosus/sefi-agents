@@ -27,18 +27,21 @@ expect_code() {
   if [ "$got" -eq "$want" ]; then ok "$label (exit $got)"; else bad "$label (expected exit $want, got $got)"; fi
 }
 
-PYBIN=""
-for candidate in python3 python; do
-  if command -v "$candidate" >/dev/null 2>&1 \
-    && "$candidate" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)' >/dev/null 2>&1; then
-    PYBIN="$candidate"
-    break
-  fi
-done
-if [ -z "$PYBIN" ]; then
+# RESOLVE PYTHON THROUGH THE SHARED HELPER. The bare python3/python loop fails
+# under git-bash on Windows: bash hands native Python a /c/... path it reads as
+# \c\..., so every manifest operation exits 2. sefi_python_bin returns the
+# path-translating wrapper on MSYS hosts and the plain interpreter elsewhere.
+. "$CORE/scripts/sefi-python.sh"
+. "$CORE/scripts/sefi-native-path.sh"
+# sefi_native_path must be sourced BEFORE the first use: ROOT_NATIVE is needed by
+# every native git call below, and calling it earlier failed with
+# "sefi_native_path: command not found" while the suite still reported PASS.
+ROOT_NATIVE="$(sefi_native_path "$ROOT")"
+PYBIN="$(sefi_python_bin)" || {
   echo "SKIP: test-manifest-version (Python 3.11+ unavailable; CI always has it)"
   exit 0
-fi
+}
+
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
@@ -52,16 +55,23 @@ json_field() {
 
 git_repo() {
   # git_repo <dir> -- init a repo with src/file.txt committed; echoes HEAD.
-  mkdir -p "$1/src"
-  printf 'version fixture one\n' > "$1/src/file.txt"
-  git -C "$1" -c init.defaultBranch=main init -q >&2
-  git -C "$1" -c user.email=fixture@test -c user.name=fixture add src/file.txt >&2
-  git -C "$1" -c user.email=fixture@test -c user.name=fixture commit -qm fixture >&2
-  git -C "$1" rev-parse HEAD
+  #
+  # -C gets a cygpath-translated path on MSYS hosts. Native Windows git reads
+  # /c/Users/<user>/... as \c\Users\<user>\... and aborts with "cannot change to", which left
+  # the fixture with no commit at all -- every version field then correctly read
+  # UNKNOWN, which looks like a manifest bug but is a path-translation bug.
+  local dir="$1" native
+  native="$(sefi_native_path "$dir")"
+  mkdir -p "$dir/src"
+  printf 'version fixture one\n' > "$dir/src/file.txt"
+  git -C "$native" -c init.defaultBranch=main init -q >&2
+  git -C "$native" -c user.email=fixture@test -c user.name=fixture add src/file.txt >&2
+  git -C "$native" -c user.email=fixture@test -c user.name=fixture commit -qm fixture >&2
+  git -C "$native" rev-parse HEAD
 }
 
 echo "=== fixture 1: create records source_version/source_commit ==="
-R1="$TMP/r1"
+R1="$(sefi_native_path "$TMP/r1")"
 HEAD1="$(git_repo "$R1")"
 git -C "$R1" tag v9.9.9-fixture >&2
 D1="$TMP/d1"
@@ -107,7 +117,7 @@ esac
 
 echo
 echo "=== fixture 4: diff-drift (names user-modified installed files; check unchanged) ==="
-R4="$TMP/r4"
+R4="$(sefi_native_path "$TMP/r4")"
 git_repo "$R4" > /dev/null
 D4="$TMP/d4"
 mkdir -p "$D4"
@@ -140,7 +150,7 @@ cp "$FIX/legacy/file.txt" "$FIX/legacy/.sefi-agents-manifest.json" "$D5/"
 [ "$(json_field "$D5/.sefi-agents-manifest.json" source_version)" = "" ] \
   && ok "legacy fixture really carries no source_version" \
   || bad "legacy fixture unexpectedly carries source_version"
-R5="$TMP/r5"
+R5="$(sefi_native_path "$TMP/r5")"
 mkdir -p "$R5/src"
 cp "$FIX/legacy/file.txt" "$R5/src/file.txt"
 git -C "$R5" -c init.defaultBranch=main init -q >&2
@@ -161,7 +171,7 @@ esac
 
 echo
 echo "=== fixture 6: untagged source records unreleased-plus-commit ==="
-R6="$TMP/r6"
+R6="$(sefi_native_path "$TMP/r6")"
 HEAD6="$(git_repo "$R6")"
 D6="$TMP/d6"
 mkdir -p "$D6"
@@ -178,7 +188,7 @@ out="$(rt diff --root "$TMP" --source "$R6/src" --destination "$D6" 2>&1)"; rc=$
 
 echo
 echo "=== fixture 7: outside a git checkout both values are UNKNOWN ==="
-if git -C "$TMP" rev-parse HEAD >/dev/null 2>&1; then
+if git -C "$(sefi_native_path "$TMP")" rev-parse HEAD >/dev/null 2>&1; then
   echo "  SKIP: scratch dir unexpectedly lives inside a git checkout"
 else
   S7="$TMP/plain7/src"
@@ -205,7 +215,7 @@ expect_code 0 "fresh --auto-update install exits 0" env OPENCODE_HOME="$OC" bash
   && ok "fresh install writes a scripts manifest" \
   || bad "fresh install wrote no scripts manifest"
 oc_commit="$(json_field "$OC/scripts/.sefi-agents-manifest.json" source_commit)"
-[ "$oc_commit" = "$(git -C "$ROOT" rev-parse HEAD)" ] \
+[ "$oc_commit" = "$(git -C "$ROOT_NATIVE" rev-parse HEAD)" ] \
   && ok "installer manifest derives the commit from the checkout" \
   || bad "installer manifest commit is $oc_commit"
 [ -n "$(json_field "$OC/scripts/.sefi-agents-manifest.json" source_version)" ] \
@@ -292,7 +302,7 @@ expect_code 0 "stubbed normal install exits 0" env PATH="$STUB:$PATH" bash "$COR
 [ -f "$HRUNTIME/.sefi-agents-manifest.json" ] \
   && ok "successful install records the canonical runtime manifest" \
   || bad "successful install recorded no runtime manifest"
-[ "$(json_field "$HRUNTIME/.sefi-agents-manifest.json" source_commit)" = "$(git -C "$ROOT" rev-parse HEAD)" ] \
+[ "$(json_field "$HRUNTIME/.sefi-agents-manifest.json" source_commit)" = "$(git -C "$ROOT_NATIVE" rev-parse HEAD)" ] \
   && ok "hermes runtime manifest derives the commit from the checkout" \
   || bad "hermes runtime manifest commit is $(json_field "$HRUNTIME/.sefi-agents-manifest.json" source_commit)"
 [ -f "$HDEST/anti-hallucination/SKILL.md" ] \
