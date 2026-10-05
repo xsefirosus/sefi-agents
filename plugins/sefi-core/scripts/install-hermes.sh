@@ -52,6 +52,9 @@ CORE="$(cd "$HERE/.." && pwd)"
 SKILLS_SRC="$CORE/skills"
 PACKAGE_MANIFEST="$HERE/package-manifest.sh"
 PRUNE_STALE="$HERE/prune-stale-skill-entries.sh"
+RECOVERY_POINT="$HERE/sefi-recovery-point.sh"
+# shellcheck source=sefi-recovery-point.sh
+. "$RECOVERY_POINT"
 
 find_python() {
   # find_python -- print a Python 3.11+ launcher, or nothing. sefi-runtime.py
@@ -95,6 +98,21 @@ install_commands_plugin() {
       exit 1
     }
   }
+  # Snapshot the plugin directory before the delete below, so a failed run stays
+  # recoverable from a separate process. Skipped when the destination is a symlink
+  # for the same reason install-opencode.sh skips its archive there: `rm -rf` on
+  # a link removes the link, never its target, so there is no content at the link
+  # path to lose, and forcing a failure here would change documented behavior.
+  # FAILURE SEMANTICS (fail-closed, same class as install-opencode.sh check_target):
+  # a snapshot failure returns 1 BEFORE the rm -rf below, so nothing is deleted
+  # for this target, and the caller aborts the whole install non-zero instead of
+  # reporting success with a silently missing plugin directory.
+  if [ ! -L "$dest" ]; then
+    rp_protect "$dest" "$HERMES_RECOVERY_ID" || {
+      echo "install-hermes.sh: cannot snapshot $dest -- refusing to continue with an unprotected delete (snapshot failure fails closed, nothing was deleted)" >&2
+      return 1
+    }
+  fi
   rm -rf "$dest"
   mkdir -p "$dest"
   cp -R "$src/." "$dest/"
@@ -165,6 +183,7 @@ SKILL_BACKUPS=""
 SKILL_BACKUPS_ROOT=""
 SKILL_BACKUPS_PARENT=""
 HERMES_SKILLS_ROOT=""
+HERMES_RECOVERY_ID=""
 INSTALL_SUCCEEDED=0
 
 prepare_skill_backups() {
@@ -248,6 +267,14 @@ cleanup_skill_backups() {
           bash "$PRUNE_STALE" --skills-root "$HERMES_SKILLS" --apply \
             || echo "install-hermes.sh: could not prune stale Hermes skill registry entries" >&2
         fi
+    # The plugin directory was snapshotted before its delete; attempt the restore
+    # so a failed run leaves the previous tree restorable. Best-effort only, and
+    # the point itself is left in place either way: recovery points are never
+    # auto-purged, discarding one is an explicit rp_discard by a human.
+    if [ -n "$HERMES_RECOVERY_ID" ]; then
+      rp_restore "$HERMES_RECOVERY_ID" \
+        || echo "install-hermes.sh: could not restore the plugin recovery point $HERMES_RECOVERY_ID" >&2
+    fi
       fi
   local parent=""
   parent="$(cd -P "$(dirname "$SKILL_BACKUPS_ROOT")" && pwd -P)" || return 1
@@ -466,6 +493,11 @@ resolve_systems_audit_runtime() {
   resolve_audit_contract "$contract"
 }
 
+# One recovery point for the whole run. This must sit before the first call that
+# can delete anything: install_commands_plugin snapshots and then rm -rf's the
+# plugin directory, and rp_protect refuses to run without a point. The point is
+# never auto-purged; discarding one is an explicit rp_discard by a human.
+HERMES_RECOVERY_ID="$(rp_create "hermes-install")" || exit 1
 check_runtime
 prepare_skill_backups
 trap cleanup_skill_backups EXIT
@@ -563,7 +595,12 @@ if [ -n "$content_mismatch" ]; then
 fi
 install_runtime
 resolve_systems_audit_runtime
-install_commands_plugin
+# Fail-closed like the archive call sites: install_commands_plugin returns 1 when
+# its pre-delete snapshot fails, and that must abort the install before anything
+# is deleted -- never an exit-0 run with a silently missing plugin directory.
+# (Bare `install_commands_plugin` would rely on `set -e` to notice; spell it out
+# so the failure semantics survive any future refactor of this line.)
+install_commands_plugin || exit 1
 install_plugin_root_env
 INSTALL_SUCCEEDED=1
 if [ "$RUNTIME_STATE" = "current" ]; then

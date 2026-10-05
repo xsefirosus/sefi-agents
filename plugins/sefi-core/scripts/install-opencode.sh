@@ -685,7 +685,20 @@ for src in "$AGENTS_SRC"/*.md; do
     echo "install-opencode.sh: skipped user-owned legacy knowledge-manager profile" >&2
     continue
   fi
-  if ! check_target "$dst"; then continue; fi
+  # FAILURE SEMANTICS (fail-closed): any check_target failure -- a containment
+  # refusal, an overwrite refusal, or above all an archive-put copy failure --
+  # aborts the whole install with a non-zero exit after attempting an archive
+  # restore. It must NEVER degrade to skipping the agent and reporting success:
+  # an archive-put failure followed by `continue` would yield an exit-0 install
+  # with silently missing agents, which reads as success while destroying the
+  # operator's ability to notice what did not land. The knowledge-manager skip
+  # above is the only sanctioned `continue`: preserving a user-owned file by
+  # request, explicitly logged, not a failure at all.
+  if ! check_target "$dst"; then
+    echo "install-opencode.sh: cannot protect $dst -- refusing to continue with a missing agent (snapshot failure fails closed, nothing was deleted for this target)" >&2
+    sefi_archive_restore || true
+    exit 1
+  fi
   # Render through a staging file moved into place, so a symlink swapped in
   # after the target check cannot divert the transformed write into another
   # file: the write lands on a file this install owns, and mv replaces (never
@@ -752,7 +765,14 @@ copy_dir() {
     [ -e "$entry" ] || continue
     local base="$(basename "$entry")"
     local target="$dst_dir/$base"
-    if ! check_target "$target"; then continue; fi
+    # Same failure semantics as the agent loop above: a check_target failure
+    # (including an archive-put failure) returns 1 so the caller restores the
+    # archive and exits non-zero -- never a silent skip that reports success
+    # with silently missing files.
+    if ! check_target "$target"; then
+      echo "install-opencode.sh: cannot protect $target -- refusing to continue with a missing $label (snapshot failure fails closed, nothing was deleted for this target)" >&2
+      return 1
+    fi
     # Re-verify after check_target's rm -rf and immediately before the copy: that
     # removal is the window a directory swap would target.
     refuse_escaped_dest || return 1

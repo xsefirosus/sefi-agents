@@ -149,6 +149,72 @@ else
 fi
 sefi_archive_purge 2>/dev/null
 
+# --- 7. The install-opencode.sh --force wiring fails closed on an archive-put
+#        failure. Root cause of the finding: both write loops used
+#        `if ! check_target ...; then continue; fi`, so a failed snapshot became
+#        a skipped agent and the run still exited 0 with silently missing agents.
+#        The chosen semantics, recorded in the installer itself: any check_target
+#        failure aborts non-zero after attempting a restore -- never a skip.
+echo "=== install-opencode.sh archive-failure wiring (fail-closed, never skip) ==="
+INSTALL="$CORE/scripts/install-opencode.sh"
+if grep -q 'check_target.*then continue' "$INSTALL"; then
+  bad "install-opencode.sh still skips on check_target failure (silent missing agents)"
+else
+  ok "no check_target call site degrades to a silent skip"
+fi
+if grep -q 'cannot protect' "$INSTALL" && grep -q 'fails closed' "$INSTALL"; then
+  ok "the abort path names the unprotected target and records fail-closed semantics"
+else
+  bad "the abort path does not record its failure semantics explicitly"
+fi
+if grep -A4 'if ! check_target' "$INSTALL" | grep -q 'sefi_archive_restore'; then
+  ok "the agent-loop abort attempts an archive restore before exiting"
+else
+  bad "the agent-loop abort does not attempt an archive restore"
+fi
+
+# --- 8. Live proof: an archive-put copy failure aborts the install non-zero
+#        with the pre-existing file byte-identical -- never an exit-0 install
+#        with a silently replaced-or-missing agent. The failure is injected
+#        portably (a cp stub failing only archive writes, identified by the
+#        archive-root marker), since a mode-000 file is served happily by this
+#        host's filesystem and proves nothing here.
+WORKI="$TMP/installer-failclosed"; mkdir -p "$WORKI/home" "$WORKI/stubbin"
+CP_REAL="$(command -v cp)"
+cat > "$WORKI/stubbin/cp" <<STUBEOF
+#!/bin/sh
+for a in "\$@"; do
+  case "\$a" in *sefi-opencode-install-archive*) exit 1 ;; esac
+done
+exec "$CP_REAL" "\$@"
+STUBEOF
+chmod +x "$WORKI/stubbin/cp"
+mkdir -p "$WORKI/home/agents"
+printf 'hand-edited by the operator -- must survive a failed install\n' > "$WORKI/home/agents/devops-engineer.md"
+rc=0
+OPENCODE_HOME="$WORKI/home" PATH="$WORKI/stubbin:$PATH" bash "$INSTALL" --force \
+  >"$TMP/install-fail.out" 2>&1 || rc=$?
+if [ "$rc" -ne 0 ]; then
+  ok "an archive-put failure aborts the install (exit $rc, never 0)"
+else
+  bad "an archive-put failure still exits 0 -- the fail-open is back"
+fi
+if grep -q 'fails closed' "$TMP/install-fail.out"; then
+  ok "the abort names its fail-closed semantics"
+else
+  bad "the abort recorded no fail-closed diagnostic"
+fi
+if [ "$(cat "$WORKI/home/agents/devops-engineer.md" 2>/dev/null)" = "hand-edited by the operator -- must survive a failed install" ]; then
+  ok "the un-archived target was never deleted or replaced (bytes intact)"
+else
+  bad "the failed run destroyed or replaced the target it could not archive"
+fi
+if grep -q 'installation succeeded' "$TMP/install-fail.out"; then
+  bad "the failed run still printed the success onboarding"
+else
+  ok "the failed run printed no success onboarding"
+fi
+
 echo
 echo "  ($pass passed, $fail failed)"
 [ "$fail" -eq 0 ] || exit 1

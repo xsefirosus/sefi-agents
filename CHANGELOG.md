@@ -77,8 +77,22 @@ registration.
   entries during rollback via the new `prune-stale-skill-entries.sh`: dry-run by
   default, `--apply` to mutate, a timestamped `lock.json.bak-<stamp>` written first,
   and a live skill directory never touched.
-- Two new suites: `ci/test-sefi-python.sh` (6/6 passing, exit 0) and
+- Two new suites for the Windows/MSYS helpers: `ci/test-sefi-python.sh` (6/6 passing, exit 0) and
   `ci/test-prune-stale-skill-entries.sh` (11/11 passing, exit 0).
+- Stage 2 -- structured dispatch validation and recoverable destructive edits, in
+  three pieces with three new suites (green on Linux CI run 37229227815, exit 0
+  under git-bash): an optional `output_schema` field on dispatch envelopes --
+  `check-handoff.sh` refuses a relative, missing, invalid, or constraint-free
+  schema, while reply matching stays a return-time `check-reply.sh` check --
+  verified by `ci/test-check-handoff.sh` (11 assertions); archive-before-delete
+  (`scripts/sefi-archive.sh`, wired into the `install-opencode.sh --force` path,
+  symlink targets refused) verified by `ci/test-sefi-archive.sh` (13 assertions)
+  and by a live interrupted `--force` run that preserved a hand-edited agent in
+  the surviving archive (15 entries); and named, persistent, never-auto-purged
+  recovery points (`scripts/sefi-recovery-point.sh`, no caller yet) verified by
+  `ci/test-sefi-recovery-point.sh` (18 assertions). The recovery-point name is
+  deliberate: "checkpoint" already means the human PR boundary, so a second thing
+  called a checkpoint would collide in prose and log lines.
 - `docs/CI-WINDOWS-BASELINE.md` -- the Windows failure inventory, the fixture
   isolation rules (`ccusage` stub, `TMPDIR`, `COLUMNS`), and the procedure for
   telling a real defect from a fixture handing a native program an unreadable

@@ -1,6 +1,6 @@
 # Roster -- full per-agent detail
 
-Read on demand by sefi-orchestration; not inlined into the always-loaded body. Each Agent
+Read on demand by sefi-orchestration; not inlined into the model-invoked skill body, which loads only on description match (or deterministically via /sefi:route -- sefi-route on Hermes). Each Agent
 value is a basename resolved to `agents/<basename>.md`. Every agent additionally follows the anti-hallucination skill
 (UNKNOWN/PENDING, verify-before-cite); it is not repeated per row.
 
@@ -34,7 +34,7 @@ checking it is listed here.
 ## Scaling: roster.json sidecar pattern (future, at 20+ agents)
 As the roster grows well past this table's comfortable size, consider adopting a
 machine-readable `roster.json` sidecar read on-demand instead of hand-maintaining this
-markdown table. The sidecar keeps sefi-orchestration/SKILL.md's always-loaded body flat
+markdown table. The sidecar keeps sefi-orchestration/SKILL.md's model-invoked body flat
 while a script queries agents/skills programmatically. Schema (one entry per agent):
 `name`, `description`, `model`, `tools` (array), `skills` (array of skill names),
 `agentic_signals` (boolean for each of goal_intake / refusal_gate / verification /

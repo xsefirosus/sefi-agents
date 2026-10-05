@@ -1144,6 +1144,44 @@ EOF
 expect_code 1 "a reply carrying 3+ correlated plan headings is still rejected as a leaked plan" \
   check_reply "$AG/prompt-engineer.md" "$RTMP/leaked_plan.txt"
 
+# Return-time output_schema enforcement (closes the check-handoff.sh dispatch
+# promise: "the dispatched reply is validated against it by check-reply.sh at
+# return time"). Without --schema every case above is unchanged; with it the
+# reply must carry every required label the schema names.
+printf '{"required":["VERDICT:","FINDINGS:"]}\n' > "$RTMP/schema.json"
+printf '{"type":"object"}\n' > "$RTMP/schema-noreq.json"
+printf 'VERDICT: PASS\nFINDINGS: green, see evidence\n' > "$RTMP/schema-good.txt"
+printf 'Thoughtful prose with no VERDICT section at all.\n' > "$RTMP/schema-prose.txt"
+expect_code 0 "a schema-conformant reply passes with --schema" \
+  check_reply --schema "$RTMP/schema.json" "$AG/qa-engineer.md" "$RTMP/schema-good.txt"
+expect_code 1 "a promised-VERDICT reply carrying only prose fails with --schema" \
+  check_reply --schema "$RTMP/schema.json" "$AG/qa-engineer.md" "$RTMP/schema-prose.txt"
+schema_prose_out="$(check_reply --schema "$RTMP/schema.json" "$AG/qa-engineer.md" "$RTMP/schema-prose.txt" 2>/dev/null)"
+# Captured stdout (not stderr): err() reports contract violations on stdout, while
+# the target-NOTE advisory the neighboring assertions capture lives on stderr.
+case "$schema_prose_out" in
+  *"missing required label 'VERDICT:'"*) ok "the schema rejection names the missing promised label (VERDICT:)" ;;
+  *) bad "the schema rejection did not name VERDICT:: $schema_prose_out" ;;
+esac
+# The split this closes: software-engineer's contract declares no ALL-CAPS labels,
+# so prose without VERDICT is CANNOT-CHECK (exit 3) on the contract alone -- the
+# dispatch schema is the only thing that can refuse it, and it must refuse LOUDLY.
+expect_code 3 "prose against a labelless contract alone is CANNOT-CHECK (exit 3), not a pass" \
+  check_reply "$AG/software-engineer.md" "$RTMP/schema-prose.txt"
+expect_code 1 "the same prose fails closed (exit 1) once the dispatch schema promises VERDICT:" \
+  check_reply --schema "$RTMP/schema.json" "$AG/software-engineer.md" "$RTMP/schema-prose.txt"
+# Every unreadable-schema shape fails closed, never a silent pass.
+expect_code 1 "a schema path that does not exist fails closed at return time" \
+  check_reply --schema "$RTMP/nope.json" "$AG/qa-engineer.md" "$RTMP/schema-good.txt"
+expect_code 1 "a relative schema path is rejected at return time" \
+  check_reply --schema "relative.json" "$AG/qa-engineer.md" "$RTMP/schema-good.txt"
+expect_code 1 "a schema declaring no required labels is rejected at return time" \
+  check_reply --schema "$RTMP/schema-noreq.json" "$AG/qa-engineer.md" "$RTMP/schema-good.txt"
+expect_code 2 "--schema with no value is a usage error" \
+  check_reply --schema
+expect_code 0 "the --output-schema alias enforces identically" \
+  check_reply --output-schema "$RTMP/schema.json" "$AG/qa-engineer.md" "$RTMP/schema-good.txt"
+
 rm -rf "$RTMP"
 
 echo

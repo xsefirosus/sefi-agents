@@ -100,15 +100,44 @@ Measured on Windows 11 / git-bash, not estimated:
 | `ci/test-manifest-version.sh` | exit 0 — 0 failing, 54 passing |
 | `ci/test-prune-stale-skill-entries.sh` | 11/11, exit 0 |
 | `ci/test-sefi-python.sh` | 6/6, exit 0 |
+| `ci/test-check-handoff.sh` | 11/11, exit 0 |
+| `ci/test-sefi-archive.sh` | 13/13, exit 0 |
+| `ci/test-sefi-recovery-point.sh` | 18/18, exit 0 |
 | `install-hermes.sh` (live) | exit 0 — 20/20 skills with verified source bytes, 13/13 commands registered |
 | `install.sh --target claude` | exit 0 — hooks wired, `CLAUDE_PLUGIN_ROOT` set |
-| **`run-all.sh` aggregate (post-rebase)** | **493 passing, 0 failing, 0 tracebacks, 128 sections** |
-| **`benchmarks` unittest discovery** | **`Ran 104 tests` — `OK (skipped=2)`** |
+| **`run-all.sh` aggregate (final tree, T4)** | **exit 1 — 3 FAIL, 0 tracebacks** (log `C:\Windows\Temp\opencode\run-all-win-098-T4.log`) |
+| **`benchmarks` unittest discovery** | **`Ran 104 tests in 521.359s` — `OK` (bare, no skipped count)** |
 
-The aggregate exits 1 solely because `validate-no-personal-paths` rejects one
-pre-existing evidence file (see below). No suite contributed a failure: the
-`FAIL` line count is 0, no suite reported a Python traceback, and every focused
-suite above exited 0 on its own.
+Exit-code derivation (sentinel absent, stated explicitly): the carrier
+background task died after the terminal line and never wrote the `.exitcode`
+file, so no recorded exit code exists. Exit 1 is accepted on verified
+code-path evidence only: `plugins/sefi-core/scripts/ci/run-all.sh` lines
+94–96 print `CI: FAILED -- one or more validators reported errors` if and
+only if `$fail -ne 0`, immediately followed by `exit 1`; the sole other exit
+is `exit 0` after `CI: all validators passed`. The log's terminal line is the
+`CI: FAILED` line, so the run exited 1.
+
+The 3 `FAIL` lines are all live `install-hermes.sh` in-runtime-symlink
+assertions from `test-systems-audit-installers.sh` ("rejects an in-runtime
+symlink after normal fetch validation", "names the post-copy runtime symlink
+refusal exactly", "post-copy refusal restores the pre-install skill
+sentinel"). Proven environmental, not slice-implicated: on this host `ln -s`
+exits 0 but materializes a regular byte-identical copy (`[ -L ]` false, shown
+by direct probe), so the unguarded fixture's link never existed and the
+verifier passed a regular file, making the install succeed against
+`expect_failure`. The guarded sibling case correctly reported PENDING, and the
+T3 `install-hermes.sh` footprint (`rp_protect`/`rp_restore` wiring) cannot
+produce installer success. Nothing was changed for these.
+
+`ERROR` matches total 32: 30 inside PASS usage-error assertions, plus the
+`docs-grounding.py finalize: error: ... required: --task, --manifest` line
+(expected negative-path stderr inside `test-documentation-grounding-v091.sh`,
+suite verdict PASS) and the terminal `CI: FAILED` aggregate line. `error(s)`
+lines: 0. Real Python tracebacks (`Traceback (most recent call last)`): 0 —
+bare `Traceback` hits are `no traceback` PASS assertions. Contrary to the
+earlier expectation recorded here, `validate-no-personal-paths` is green on
+this tree (`OK (no personal paths in shipped files)`); the pre-existing red
+did not fire.
 
 ## Known findings not fixed in this release
 
@@ -146,6 +175,51 @@ written, but there is **no `v0.9.8` tag, no GitHub release, and no marketplace
 index entry**. The full `run-all.sh` aggregate must be green before a tag is
 created, and publication requires separate, explicit release authorization.
 
-Stage 2 — structured dispatch validation via `output_schema`, recoverable
-checkpoints before destructive self-edits, and archive-instead-of-delete — is
-**not implemented and not part of this release**.
+## Stage 2 -- structured dispatch and recoverable destructive edits
+
+Stage 2 shipped in three pieces, on top of the Windows/MSYS work above:
+
+- **Optional `output_schema` on dispatch envelopes**
+  (`plugins/sefi-core/scripts/check-handoff.sh`). `check-handoff.sh` already gated
+  agent/reads/writes/budget/context, but nothing stated what the dispatched agent
+  must put in the directory `writes:` names. The new optional field names a JSON
+  Schema the returned labels must satisfy; an envelope without it behaves exactly
+  as before. The gate refuses a relative schema path, a schema path that does not
+  exist (an unreadable schema fails open at return time, so the dispatch would
+  read as checked while nothing is checked), invalid JSON, and valid JSON with no
+  `required` labels. Whether a reply matches the schema is a return-time check and
+  stays with `check-reply.sh`. New suite
+  `plugins/sefi-core/scripts/ci/test-check-handoff.sh` (11 assertions, exit 0).
+- **Archive before delete** (`plugins/sefi-core/scripts/sefi-archive.sh`, wired
+  into the `install-opencode.sh` `--force` path). `install-hermes.sh` already
+  quarantined skills before rollback; `install-opencode.sh` reached the same
+  `rm -rf` with no copy at all, so a mistaken `--force` destroyed hand-edited
+  files with no way back. The shared helper archives first
+  (`sefi_archive_init` / `sefi_archive_put` / `sefi_archive_restore` /
+  `sefi_archive_purge`), refuses symlinked targets, and records absent paths so
+  rollback is exact. Verified live, not only by unit test: a `--force` install
+  into a temp home, a hand-edit appended to an installed agent, then an
+  interrupted second `--force` run left the surviving archive holding the
+  hand-edited content (15 entries recorded); a clean `--force` install returns 0
+  with 17 agents and no leftover archive. New suite
+  `plugins/sefi-core/scripts/ci/test-sefi-archive.sh` (13 assertions, exit 0).
+  Linux CI run 37227459297 caught one regression from this piece (the
+  unconditional archive refusal broke the swapped-symlink replace path); the fix
+  guards the archive call on a non-symlink target, since `rm -rf` on a link
+  removes the link without dereferencing it.
+- **Named recovery points** (`plugins/sefi-core/scripts/sefi-recovery-point.sh`).
+  The archive is anonymous and run-scoped: init, put, restore, purge, all in one
+  process, gone when it ends. A recovery point is named and persists across
+  processes, so a rollback can happen minutes or days later, and it is never
+  auto-purged -- discarding is explicit (`rp_create` / `rp_protect` / `rp_list` /
+  `rp_restore` / `rp_discard`). Not wired into any caller yet: it is the
+  mechanism, and the call site is a separate decision. The name is deliberate:
+  "checkpoint" already means the human PR boundary
+  (`skills/sefi-orchestration/references/human-checkpoint.md`), so a second thing
+  called a checkpoint would collide in prose and in anyone's reading of a log
+  line. New suite
+  `plugins/sefi-core/scripts/ci/test-sefi-recovery-point.sh` (18 assertions,
+  exit 0).
+
+All three Stage 2 suites are green on Linux CI (run 37229227815) and exit 0
+under this host's git-bash.

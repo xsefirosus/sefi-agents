@@ -12,7 +12,7 @@ once and cost real diagnosis time.
   reference (e.g. the never-auto-merge rule in `human-checkpoint.md`) and link it. N copies
   of a rule become N slightly-different rules.
 - Don't inline a reference longer than ~100 lines into a SKILL body. Extract to
-  `references/`; progressive disclosure keeps the always-loaded weight flat.
+  `references/`; progressive disclosure keeps the model-invoked skill's load weight flat.
 - Don't simulate tool enforcement with a hook that exits 0. That is enforcement theater;
   rely on the harness's real capability limits where they exist, and a soft contract
   elsewhere.

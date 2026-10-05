@@ -102,6 +102,26 @@ OUT="$(bash "$CH" 2>&1)"; RC=$?
 [ "$RC" -eq 2 ] && ok "no argument still exits 2 (usage error)" \
                 || bad "no argument exited $RC, wanted 2: $OUT"
 
+# 9. The dispatch promise is kept at return time: the schema accepted above is
+#    enforced by check-reply.sh --schema, so a promised-VERDICT reply carrying
+#    only prose fails there. Without this section the dispatch gate's "validated
+#    against it by check-reply.sh at return time" would be an unenforced promise
+#    (the fail-open this closes). Uses this suite's own good.json fixture so the
+#    dispatch and return halves pin the same required labels.
+CR="$CORE/scripts/check-reply.sh"
+BUDGET_TPL_FIX="$CORE/templates/config/budget.yml"
+printf 'VERDICT: PASS\nFINDINGS: green, see evidence\n' > "$TMP/r-good.txt"
+printf 'Some thoughtful prose with no VERDICT section at all.\n' > "$TMP/r-prose.txt"
+OUT="$(bash "$CR" --config "$BUDGET_TPL_FIX" --schema "$TN/good.json" "$CORE/agents/qa-engineer.md" "$TMP/r-good.txt" 2>&1)"; RC=$?
+[ "$RC" -eq 0 ] && ok "a schema-conformant reply passes return-time validation (exit 0)" \
+                || bad "a schema-conformant reply was rejected at return time (exit $RC): $OUT"
+OUT="$(bash "$CR" --config "$BUDGET_TPL_FIX" --schema "$TN/good.json" "$CORE/agents/qa-engineer.md" "$TMP/r-prose.txt" 2>&1)"; RC=$?
+if [ "$RC" -eq 1 ] && grep -q "missing required label 'VERDICT:'" <<<"$OUT"; then
+  ok "a promised-VERDICT reply carrying only prose fails return-time validation (exit 1, names VERDICT:)"
+else
+  bad "a promised-VERDICT prose reply did not fail closed (exit $RC): $OUT"
+fi
+
 echo
 echo "  ($pass passed, $fail failed)"
 [ "$fail" -eq 0 ] || exit 1
