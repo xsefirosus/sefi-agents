@@ -170,10 +170,16 @@ documentation fix, and is out of scope for a Windows/MSYS release.
 
 ## Release status
 
-**Pending.** The in-repo surfaces for 0.9.8 (changelog, this document) are
-written, but there is **no `v0.9.8` tag, no GitHub release, and no marketplace
-index entry**. The full `run-all.sh` aggregate must be green before a tag is
-created, and publication requires separate, explicit release authorization.
+**Tag published; GitHub release cut pending (2026-10-05).** Annotated tag
+`v0.9.8` was created on the PR 21 merge commit `719f66b` and pushed to origin
+(`git ls-remote --tags origin` shows `195f847f` `refs/tags/v0.9.8` peeling to
+`719f66b`); pre-publication 0.9.8 rows are recorded in
+`state/release-ledger.md`. The GitHub release publication was explicitly
+authorized for handover task T7 and is cut next in the same task. Boundary,
+stated plainly: no `0.9.8` manifest bump landed in this release --
+`plugin.json` (both manifests), `marketplace.json` (both occurrences), and the
+top `CHANGELOG.md` heading still read `0.9.7` -- so the six-surface strict gate
+cannot be fully green until a `0.9.8` bump lands.
 
 ## Stage 2 -- structured dispatch and recoverable destructive edits
 
