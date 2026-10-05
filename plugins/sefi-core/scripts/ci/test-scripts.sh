@@ -2505,6 +2505,58 @@ else
 fi
 rm -rf "$C2_MP_ROOT"
 
+# APPEND-ONLY SUPERSESSION (validator scoping defect) -- the on-disk cross-check must read
+# the newest observation PER SURFACE (latest_surface_rows), not every row of the latest
+# version group (latest_rows). Fixture A: a truthful prepublication lag row for a
+# disk-checked surface, followed by the appended observation that supersedes it. The lag
+# row records what the surface genuinely read at the time; the disk has since been bumped
+# to the expected version, so re-checking the SUPERSEDED lag row against disk hard-fails
+# permanently and no append-only ledger can ever pass. Must exit 0.
+APP_ROOT="$(mktemp -d)"
+mkdir -p "$APP_ROOT/plugins/sefi-core/.claude-plugin" "$APP_ROOT/.claude-plugin"
+printf '{\n  "version": "0.6.0"\n}\n' > "$APP_ROOT/plugins/sefi-core/.claude-plugin/plugin.json"
+printf '{ "metadata": { "version": "0.6.0" }, "plugins": [ { "version": "0.6.0" } ] }\n' > "$APP_ROOT/.claude-plugin/marketplace.json"
+printf '# Changelog\n\n## [0.6.0] - 2026-09-01\n' > "$APP_ROOT/CHANGELOG.md"
+cat > "$APP_ROOT/superseded.md" <<'LEDGER'
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.6.0 | plugin.json | 0.6.0 | 0.5.0 | lag | read before the bump landed | a prepublication read quoted as current | 2026-09-01T00:00:00Z |
+| 0.6.0 | marketplace.json | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | changelog | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | git-tag | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-release | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-marketplace-index | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | plugin.json | 0.6.0 | 0.6.0 | match | append-only supersedes the lag row above | a prepublication read quoted as current | 2026-09-02T00:00:00Z |
+LEDGER
+app_out="$(bash "$RL" --ledger "$APP_ROOT/superseded.md" --root "$APP_ROOT" 2>&1)"
+app_rc=$?
+if [ "$app_rc" -eq 0 ] && ! printf '%s' "$app_out" | grep -q "observed 0.5.0"; then
+  ok "append-only supersession: a superseded disk-checked lag row does NOT hard-fail against the newer on-disk value (exit 0)"
+else
+  bad "append-only supersession: expected exit 0 with the superseded lag row ignored, got rc=$app_rc out=$app_out"
+fi
+# The same fixture WITHOUT the superseding row is the negative half: the lag row is now
+# the newest observation for plugin.json, so it must still hard-fail naming it. Without
+# this, a vacuous fix that disabled the cross-check entirely would pass the case above.
+cat > "$APP_ROOT/unsuperseded.md" <<'LEDGER'
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.6.0 | plugin.json | 0.6.0 | 0.5.0 | lag | read before the bump landed, never superseded | a prepublication read quoted as current | 2026-09-01T00:00:00Z |
+| 0.6.0 | marketplace.json | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | changelog | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | git-tag | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-release | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-marketplace-index | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+LEDGER
+appn_out="$(bash "$RL" --ledger "$APP_ROOT/unsuperseded.md" --root "$APP_ROOT" 2>&1)"
+appn_rc=$?
+if [ "$appn_rc" -eq 1 ] && printf '%s' "$appn_out" | grep -q "plugin.json observed 0.5.0"; then
+  ok "append-only supersession negative half: with no superseding row the lag row IS the newest observation and still hard-fails"
+else
+  bad "append-only supersession negative half: expected exit 1 naming plugin.json observed 0.5.0, got rc=$appn_rc out=$appn_out"
+fi
+rm -rf "$APP_ROOT"
+
 # marketplace.json self-disagreement: metadata.version and plugins[0].version differ FROM
 # EACH OTHER on disk. Must hard-fail regardless of what the ledger row observed -- here the
 # ledger row observes 0.6.0, which matches ONE of the two occurrences, so the old

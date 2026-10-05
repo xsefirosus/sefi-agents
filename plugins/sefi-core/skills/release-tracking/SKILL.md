@@ -60,8 +60,9 @@ a release: it is drift, and it is reported, not reconciled by editing the ledger
    append-only ledger accumulates historical version claims -- `match` and `mismatch`
    observations do not contradict. A `lag` row is valid only when its observed semantic
    version is older than its expected target.
-2. A latest-version row's `observed` value contradicts the on-disk source it names
-   (`plugin.json`, `marketplace.json`, or the `CHANGELOG.md` first versioned heading).
+2. The newest observation per surface for the latest version has an `observed` value
+   that contradicts the on-disk source it names (`plugin.json`, `marketplace.json`,
+   or the `CHANGELOG.md` first versioned heading).
 3. `marketplace.json`'s two version occurrences (`metadata.version` and
    `plugins[0].version`) disagree with each other on disk -- independent of what any
    ledger row observed.
