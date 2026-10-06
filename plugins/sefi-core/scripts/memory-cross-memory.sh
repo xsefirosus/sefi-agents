@@ -2,7 +2,7 @@
 # memory-cross-memory.sh -- explicit, local-only cross-project memory controls and mirror.
 set -euo pipefail
 
-HERE="$(cd "$(dirname "$0")" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 CONFIG='config/sefi.config.yml'
 
 # MSYS-safe interpreter: the wrapper translates /c/... paths a native Windows
