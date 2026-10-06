@@ -270,3 +270,21 @@ longer hard-fails forever. Accepted consequence, not a behavior change: a newer
 `unobserved` row for a surface masks any superseded positive claim for that
 surface, so a contradicting `match` row stops failing once superseded (default
 exits 0 with warnings, `--strict` still exits 1). Nothing above is edited.
+
+## Correction -- 2026-10-06 (post-merge re-observe: released)
+
+Append-only; everything above is left as published history, including the
+2026-10-05 correction that read the public marketplace index at 0.9.7.
+
+PR 22 merged as ccad8f0a8b27bfdbae2a99e3d9bad4163acf0d86, carrying the 0.9.8
+manifest bump to origin/main. Re-read this session via the GitHub contents
+API at ref main (base64 content decoded, blob sha
+7ae1762b59113cab0d187c26ada447fd3017a053, observed 2026-10-06T02:48:40Z):
+metadata.version 0.9.8, plugins[0].version 0.9.8. The superseding match row
+is appended in state/release-ledger.md; the 2026-10-05T11:23:15Z lag row is
+history, not edited.
+
+All six 0.9.8 surfaces now carry match observations, so per the
+release-tracking gate this release reads released, not partially released.
+The tag v0.9.8 and the published GitHub release are unchanged: no tag was
+moved, nothing was retagged, and nothing was republished.
