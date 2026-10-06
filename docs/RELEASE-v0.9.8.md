@@ -233,3 +233,40 @@ Stage 2 shipped in three pieces, on top of the Windows/MSYS work above:
 
 All three Stage 2 suites are green on Linux CI (run 37229227815) and exit 0
 under this host's git-bash.
+
+## Correction -- 2026-10-05 (append-only; everything above left as published history)
+
+The "Release status" section above states at lines 180-186 that no `0.9.8`
+manifest bump landed, that `plugin.json` (both manifests), `marketplace.json`
+(both occurrences), the top `CHANGELOG.md` heading and therefore the public
+marketplace index still read `0.9.7`, and that the release is accordingly only
+partially complete at the six-surface level until a `0.9.8` bump lands.
+
+Those lines remain true of the **published** release: the tag `v0.9.8` was cut
+on `719f66b`, and that tree carries no `0.9.8` manifest bump, which is exactly
+what the published GitHub release body says. They are **stale about this tree**.
+The `0.9.8` manifest bump landed afterwards, on the `release-0-9-8-bump`
+worktree, and is recorded append-only in `state/release-ledger.md` as
+superseding observations observed 2026-10-05T12:01:14Z. On the current tree:
+
+- `plugins/sefi-core/.claude-plugin/plugin.json` and
+  `plugins/sefi-core/.codex-plugin/plugin.json`: `0.9.8`
+- `.claude-plugin/marketplace.json`, both `metadata.version` and
+  `plugins[0].version`: `0.9.8`
+- `CHANGELOG.md` first versioned heading: `## [0.9.8] - 2026-10-05`
+- the public marketplace index still reads `0.9.7` at the time of writing, so
+  `github-marketplace-index` is the one surface where a `0.9.8` bump has not
+  reached the public surface; `git-tag` and `github-release` carry `0.9.8`
+  matches (see the ledger rows for both).
+
+Consequence for the strict gate: the six-surface completion state changed after
+publication, and the text above is superseded for current trees. Nothing above
+is edited: the tag, the release, and the ledger's earlier rows are history.
+
+Hard-fail 2 semantics (recorded 2026-10-06, append-only): the on-disk cross-check
+now reads the newest observation per surface for the latest version instead of
+every latest-version row, so a superseded row against a since-bumped surface no
+longer hard-fails forever. Accepted consequence, not a behavior change: a newer
+`unobserved` row for a surface masks any superseded positive claim for that
+surface, so a contradicting `match` row stops failing once superseded (default
+exits 0 with warnings, `--strict` still exits 1). Nothing above is edited.

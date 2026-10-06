@@ -12,8 +12,9 @@
 #   1. within ANY single version group in the ledger (not just the latest), match and
 #      mismatch observations do not contradict; a lag observation is permitted only when
 #      it is older than that row's expected version;
-#   2. a latest-version row's observed value contradicts the on-disk source it names --
-#      plugin.json, marketplace.json, or the CHANGELOG.md first versioned heading;
+#   2. the newest observation per surface for the latest version contradicts the on-disk
+#      source it names -- plugin.json, marketplace.json, or the CHANGELOG.md first
+#      versioned heading;
 #   3. marketplace.json's two version occurrences (metadata.version, plugins[0].version)
 #      disagree with EACH OTHER on disk, regardless of what the ledger observed.
 # Also exit 1 on: missing ledger, empty ledger, a missing --ledger/--root value, an
@@ -189,7 +190,11 @@ for grp in $all_groups; do
   fi
 done
 
-# --- hard-fail 2: a latest-version row contradicts the on-disk source it names ---
+# --- hard-fail 2: the newest observation per surface for the latest version contradicts
+#     the on-disk source it names. The append-only ledger keeps superseded rows, so this
+#     reads latest_surface_rows (the newest-per-surface selection at line 176), never the
+#     whole latest group: cross-checking a superseded row against a surface that has since
+#     been bumped would hard-fail forever. ---
 disk_plugin=""; disk_changelog=""; disk_marketplace=""
 PJ="$ROOT/plugins/sefi-core/.claude-plugin/plugin.json"
 MP="$ROOT/.claude-plugin/marketplace.json"
@@ -229,7 +234,7 @@ while IFS="$(printf '\t')" read -r version surface expected observed status nver
       fi ;;
   esac
 done <<EOF
-$latest_rows
+$latest_surface_rows
 EOF
 
 if [ "$errors" -ne 0 ]; then
