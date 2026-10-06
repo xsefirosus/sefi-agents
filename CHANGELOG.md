@@ -5,7 +5,32 @@ Changelog; this project adheres to Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.9.9] - 2026-10-06
+
 ### Fixed
+
+- `install-hermes.sh --auto-update` can now actually refresh an installed skill.
+  `hermes skills install` SKIPS a skill that is already installed ("Warning: 'x' is
+  already installed ... Use --force to reinstall"), so a refresh run re-fetched nothing
+  and the installer's own byte-comparison then reported the pre-existing content as a
+  mismatch. Live failure, Windows/git-bash 2026-10-06: `--auto-update` correctly
+  refreshed the managed runtime but left 2 of 20 skills stale and exited 1 with
+  `fetched skill content differs from the expected source: release-tracking`, leaving an
+  installed `sefi-orchestration` still claiming it is "always-loaded" after the source
+  had been corrected to "model-invoked".
+
+  `in_force` now also returns true for every skill when `--auto-update` is set, so a
+  refresh re-fetches the full set. `--force` has two distinct reasons: the existing
+  scanner-substring override for `sefi-orchestration` and `security-review`, and this
+  new refresh path. A plain first-time install is unchanged and still does not
+  blanket-force, so the community-skill scanner is not bypassed for all 20 skills on a
+  fresh install.
+
+  Adds `ci/test-install-hermes-refresh.sh` (12 assertions) pinning both directions: every
+  skill force-refreshed under `--auto-update`, and nothing force-installed without it.
+  It also asserts against the shipped installer text rather than only an extracted copy,
+  so deleting the `AUTO_UPDATE` check or bypassing `in_force` in the fetch loop fails the
+  suite. Mutation-checked: reverting the fix gives 11/1, bypassing `in_force` gives 11/1.
 
 - `validate-release-ledger.sh` hard-fail 2 now cross-checks the newest observation per
   surface for the latest version instead of every latest-version row, so a superseded
