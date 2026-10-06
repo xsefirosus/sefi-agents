@@ -5,6 +5,12 @@ Changelog; this project adheres to Semantic Versioning.
 
 ## [Unreleased]
 
+### Fixed
+
+- `validate-release-ledger.sh` hard-fail 2 now cross-checks the newest observation per
+  surface for the latest version instead of every latest-version row, so a superseded
+  row against a since-bumped surface no longer hard-fails forever.
+
 ## [0.9.8] - 2026-10-05
 
 Windows/MSYS install support, and the two real product defects it surfaced. This is

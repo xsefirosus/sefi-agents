@@ -262,3 +262,11 @@ superseding observations observed 2026-10-05T12:01:14Z. On the current tree:
 Consequence for the strict gate: the six-surface completion state changed after
 publication, and the text above is superseded for current trees. Nothing above
 is edited: the tag, the release, and the ledger's earlier rows are history.
+
+Hard-fail 2 semantics (recorded 2026-10-06, append-only): the on-disk cross-check
+now reads the newest observation per surface for the latest version instead of
+every latest-version row, so a superseded row against a since-bumped surface no
+longer hard-fails forever. Accepted consequence, not a behavior change: a newer
+`unobserved` row for a surface masks any superseded positive claim for that
+surface, so a contradicting `match` row stops failing once superseded (default
+exits 0 with warnings, `--strict` still exits 1). Nothing above is edited.

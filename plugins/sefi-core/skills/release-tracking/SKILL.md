@@ -62,7 +62,8 @@ a release: it is drift, and it is reported, not reconciled by editing the ledger
    version is older than its expected target.
 2. The newest observation per surface for the latest version has an `observed` value
    that contradicts the on-disk source it names (`plugin.json`, `marketplace.json`,
-   or the `CHANGELOG.md` first versioned heading).
+   or the `CHANGELOG.md` first versioned heading). A newer `unobserved` observation
+   for a surface masks any superseded positive claim for that surface in this cross-check.
 3. `marketplace.json`'s two version occurrences (`metadata.version` and
    `plugins[0].version`) disagree with each other on disk -- independent of what any
    ledger row observed.

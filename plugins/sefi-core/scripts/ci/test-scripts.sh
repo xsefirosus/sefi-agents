@@ -2557,6 +2557,44 @@ else
 fi
 rm -rf "$APP_ROOT"
 
+# UNOBSERVED-MASKING (newest-per-surface scoping, accepted consequence -- NOT a behavior
+# change): a `match` row contradicting disk, superseded by a newer `unobserved` row for
+# the same surface, is masked from the hard-fail 2 cross-check (line 237 reads
+# latest_surface_rows and skips `unobserved`). Default exits 0 with warnings and 0/6
+# surfaces observed; --strict still exits 1. Pins the accepted state, not a fix.
+UNOBS_ROOT="$(mktemp -d)"
+mkdir -p "$UNOBS_ROOT/plugins/sefi-core/.claude-plugin" "$UNOBS_ROOT/.claude-plugin"
+printf '{\n  "version": "0.6.0"\n}\n' > "$UNOBS_ROOT/plugins/sefi-core/.claude-plugin/plugin.json"
+printf '{ "metadata": { "version": "0.6.0" }, "plugins": [ { "version": "0.6.0" } ] }\n' > "$UNOBS_ROOT/.claude-plugin/marketplace.json"
+printf '# Changelog\n\n## [0.6.0] - 2026-09-01\n' > "$UNOBS_ROOT/CHANGELOG.md"
+cat > "$UNOBS_ROOT/ledger.md" <<'LEDGER'
+| version | surface | expected | observed | status | evidence | common-false-proof | observed-at |
+|---------|---------|----------|----------|--------|----------|--------------------|------------|
+| 0.6.0 | plugin.json | 0.6.0 | 0.4.0 | match | stale row superseded by an unobserved re-check | a superseded read quoted as current | 2026-09-01T00:00:00Z |
+| 0.6.0 | plugin.json | 0.6.0 | unobserved | unobserved | re-check never ran | x | 2026-09-02T00:00:00Z |
+| 0.6.0 | marketplace.json | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | changelog | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | git-tag | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-release | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+| 0.6.0 | github-marketplace-index | 0.6.0 | unobserved | unobserved | not checked | x | 2026-09-01T00:00:00Z |
+LEDGER
+unobs_out="$(bash "$RL" --ledger "$UNOBS_ROOT/ledger.md" --root "$UNOBS_ROOT" 2>&1)"
+unobs_rc=$?
+if [ "$unobs_rc" -eq 0 ] && printf '%s' "$unobs_out" | grep -q "0/6 surfaces observed" \
+   && ! printf '%s' "$unobs_out" | grep -q "observed 0.4.0"; then
+  ok "unobserved-masking: a contradicting match row superseded by unobserved is masked (default exit 0, 0/6 observed)"
+else
+  bad "unobserved-masking: expected default exit 0 with 0/6 observed and no 0.4.0 error, got rc=$unobs_rc out=$unobs_out"
+fi
+unobs_strict_out="$(bash "$RL" --ledger "$UNOBS_ROOT/ledger.md" --root "$UNOBS_ROOT" --strict 2>&1)"
+unobs_strict_rc=$?
+if [ "$unobs_strict_rc" -eq 1 ]; then
+  ok "unobserved-masking strict half: the same ledger still exits 1 under --strict"
+else
+  bad "unobserved-masking strict half: expected --strict exit 1, got rc=$unobs_strict_rc out=$unobs_strict_out"
+fi
+rm -rf "$UNOBS_ROOT"
+
 # marketplace.json self-disagreement: metadata.version and plugins[0].version differ FROM
 # EACH OTHER on disk. Must hard-fail regardless of what the ledger row observed -- here the
 # ledger row observes 0.6.0, which matches ONE of the two occurrences, so the old
