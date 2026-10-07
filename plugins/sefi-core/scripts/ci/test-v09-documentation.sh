@@ -49,13 +49,30 @@ for file in docs/DESIGN-COUNCIL.md docs/MIGRATION-v0.9.0.md docs/RELEASE-v0.9.0.
   require_file "$file"
 done
 
-for manifest in plugins/sefi-core/.claude-plugin/plugin.json plugins/sefi-core/.codex-plugin/plugin.json; do
-  require_text "$manifest" '"version": "0.9.8"'
-done
-require_text .claude-plugin/marketplace.json '"version": "0.9.8"'
-if [ "$(grep -Foc '"version": "0.9.8"' .claude-plugin/marketplace.json || true)" -ne 2 ]; then
-  echo "FAIL: marketplace must carry v0.9.8 twice" >&2
+# The CURRENT version is derived, not hardcoded. Hardcoding it meant every release
+# bump broke this gate until someone edited 23 literals here -- which is how the
+# 0.9.9 bump produced 4 FAILs while the suite still exited 0. Historical CHANGELOG
+# headings below stay pinned on purpose: those assert release history, not the
+# present version.
+CURRENT_VERSION="$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([0-9][0-9.]*\)".*/\1/p' \
+  plugins/sefi-core/.claude-plugin/plugin.json | head -1)"
+if [ -z "$CURRENT_VERSION" ]; then
+  echo "FAIL: could not derive the current version from plugin.json" >&2
   fail=1
+else
+  for manifest in plugins/sefi-core/.claude-plugin/plugin.json plugins/sefi-core/.codex-plugin/plugin.json; do
+    require_text "$manifest" "\"version\": \"$CURRENT_VERSION\""
+  done
+  require_text .claude-plugin/marketplace.json "\"version\": \"$CURRENT_VERSION\""
+  if [ "$(grep -Foc "\"version\": \"$CURRENT_VERSION\"" .claude-plugin/marketplace.json || true)" -ne 2 ]; then
+    echo "FAIL: marketplace must carry v$CURRENT_VERSION twice" >&2
+    fail=1
+  fi
+  # Every manifest must agree, or the installed plugin reports a version the
+  # marketplace does not offer.
+  for manifest in plugins/sefi-core/.codex-plugin/plugin.json .claude-plugin/marketplace.json; do
+    require_text "$manifest" "\"version\": \"$CURRENT_VERSION\""
+  done
 fi
 
 require_text README.md '17 AI agents'
