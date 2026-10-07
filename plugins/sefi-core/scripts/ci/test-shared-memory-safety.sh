@@ -76,7 +76,7 @@ dest2="$(cd "$WORKSPACE" && "${clean_env[@]}" bash "$WRITE" 'topic' note.md)"
 [ "$(cat "$dest1")" = 'safe note' ] || { echo 'first mirror write was overwritten' >&2; exit 1; }
 [ "$(cat "$dest2")" = 'safe note' ] || { echo 'second mirror write lost content' >&2; exit 1; }
 
-# Native git cannot resolve an MSYS path: `git -C /c/Users/...` fails with
+# Native git cannot resolve an MSYS path: a `git -C` on a /c-drive MSYS path fails with
 # "fatal: cannot change to", which aborts the suite with exit 128 and no FAIL
 # line -- so the aggregate reported "validators reported errors" with nothing to
 # read. Observed live on Windows/git-bash, 2026-10-06, during the 0.9.9 full run.
