@@ -157,6 +157,26 @@ rm -rf "$METERED_FIX"
 echo
 echo "=== budget-check.sh billing_mode (metered-vs-flat spend-mode switching) ==="
 
+# ISOLATION (2026-10-08): every assertion in this section passes --spent 999.00 and
+# expects metered enforcement, but ran against the developer's real PATH.
+# budget-check.sh reads ccusage FIRST and only falls back to --spent when ccusage
+# yields no usable figure, so these cases silently measured real local spend instead
+# of the fixture's number. Symptom on a host with ccusage installed (ccusage
+# 20.0.26): six metered-enforcement assertions expected exit 1 and got 0 whenever real
+# telemetry sat under the 2.00 cap, so whether the section passed depended on how much
+# the developer had spent that day. CI has no ccusage and never saw it.
+#
+# The four cases fixed on 2026-10-03 were wrapped individually; the rest of the section
+# was left exposed. Rather than wrap ~45 call sites, the section now runs with an
+# empty ccusage stub first on PATH for its whole duration.
+#
+# Deliberately unaffected, because they are about ccusage itself and manage their own
+# PATH already: the "no ccusage + no --spent" case (line 81, above this block, needs
+# ccusage genuinely absent), the RDSTUB cases, and the FAKEBIN cases.
+_BILLING_PATH_SAVED="$PATH"
+PATH="$EMPTYBIN:$PATH"
+export PATH
+
 # Dollar-denominated scopes enforce only when billing is metered. On flat or free
 # plans there is no per-dollar spend to bound -- and ccusage-imputed dollars on free
 # usage must never block work -- so the dollar check is skipped with an explicit
@@ -441,6 +461,13 @@ expect_code 2 "an unknown scope is still rejected when billing_mode=flat" \
 rm -rf "$MODETMP" "$NOSIGTMP" "$MARKTMP"
 
 echo
+
+# End of the hermetic billing section: restore the caller's PATH so later suites see
+# the real one (a stub-fronted PATH leaking forward would silently change unrelated
+# command resolution).
+PATH="$_BILLING_PATH_SAVED"
+export PATH
+unset _BILLING_PATH_SAVED
 echo "=== gate.sh (2026-08-11 audit: no timeout, wrong npm flag, top-level-only shellcheck) ==="
 
 GW="$(mktemp -d)"
