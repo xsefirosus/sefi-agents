@@ -1,6 +1,6 @@
 ---
 name: sefi-orchestration
-description: Use when routing a request to the right agent, handing off between agents, or dispatching a subagent. The routing brain covering roster, handoff rules, the parse ladder for structured output, model routing, and pointers to the harness map and never-auto-merge rule. Session-loaded on Claude Code, OpenCode, and Codex; on Hermes, which has no session-start hook, invoke /sefi-route to load it deterministically.
+description: Use when routing a request to the right agent, handing off between agents, or dispatching a subagent. The routing brain covering roster, handoff rules, the parse ladder for structured output, model routing, and pointers to the harness map and never-auto-merge rule. Session-loaded on Claude Code, OpenCode, and Codex; on Hermes, which has no session-start hook, invoke /sefi-route.
 managed-by: sefi-agents
 ---
 
