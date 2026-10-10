@@ -14,6 +14,12 @@ trap 'rm -rf "$TMP"' EXIT
 BIN="$TMP/bin"
 HOME_ROOT="$TMP/home"
 WORKSPACE="$TMP/workspace"
+# Sourced before WORKSPACE_NATIVE is computed: sefi_native_path must already exist
+# when it is called, and calling it first failed with "command not found" while the
+# suite still reported PASS (same use-before-source bug fixed in
+# test-manifest-version.sh).
+. "$CORE/sefi-native-path.sh"   # $CORE is scripts/ in this suite, not the plugin root
+WORKSPACE_NATIVE="$(sefi_native_path "$WORKSPACE")"
 mkdir -p "$BIN" "$HOME_ROOT" "$WORKSPACE/.sefi"
 
 cat > "$BIN/uname" <<'EOF'
@@ -70,8 +76,14 @@ dest2="$(cd "$WORKSPACE" && "${clean_env[@]}" bash "$WRITE" 'topic' note.md)"
 [ "$(cat "$dest1")" = 'safe note' ] || { echo 'first mirror write was overwritten' >&2; exit 1; }
 [ "$(cat "$dest2")" = 'safe note' ] || { echo 'second mirror write lost content' >&2; exit 1; }
 
-git -C "$WORKSPACE" init -q
-git -C "$WORKSPACE" remote add origin 'https://ghp_EXAMPLESECRET@github.com/acme/repo.git'
+# Native git cannot resolve an MSYS path: a `git -C` on a /c-drive MSYS path fails with
+# "fatal: cannot change to", which aborts the suite with exit 128 and no FAIL
+# line -- so the aggregate reported "validators reported errors" with nothing to
+# read. Observed live on Windows/git-bash, 2026-10-06, during the 0.9.9 full run.
+# sefi_native_path returns the input unchanged off MSYS, so this is correct on
+# POSIX CI too.
+git -C "$WORKSPACE_NATIVE" init -q
+git -C "$WORKSPACE_NATIVE" remote add origin 'https://***@github.com/acme/repo.git'
 credential_dest="$(cd "$WORKSPACE" && "${clean_env[@]}" bash "$WRITE" 'credential-check' note.md)"
 case "$credential_dest" in
   *ghp*|*EXAMPLESECRET*) echo 'credential-bearing remote leaked into mirror path' >&2; exit 1 ;;

@@ -3,6 +3,6 @@ name: sefi-commands
 # git tag, GitHub release, GitHub marketplace index), so this version is NOT reconciled by
 # state/release-ledger.md and is not read by validate-release-ledger.sh. Bumped to 0.9.8
 # here only to keep the Hermes manifest from advertising a stale release.
-version: 0.9.8
+version: 0.9.9
 description: "Exposes the Sefi command set as Hermes slash commands (/sefi-init, /sefi-route, ...) by injecting each packaged command body as a model-facing instruction turn."
 author: "sefi-agents"

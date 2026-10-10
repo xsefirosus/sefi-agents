@@ -502,11 +502,26 @@ check_runtime
 prepare_skill_backups
 trap cleanup_skill_backups EXIT
 
-# in_force <name> -- exit 0 if <name> is in FORCE_SKILLS.
+# in_force <name> -- exit 0 if <name> needs --force to actually be re-fetched.
+#
+# `hermes skills install` SKIPS an already-installed skill ("Warning: 'x' is already
+# installed ... Use --force to reinstall"), so a plain run against an existing install
+# re-fetches nothing and the byte-comparison then reports the pre-existing content as a
+# mismatch. Observed live 2026-10-06 on Windows/git-bash: `--auto-update` correctly
+# refreshed the managed runtime but left 2 of 20 skills stale, then exited 1 with
+# "fetched skill content differs from the expected source".
+#
+# So --force is required for TWO distinct reasons:
+#   1. sefi-orchestration / security-review -- the community-skill scanner can flag
+#      their content on substring match (unchanged reason)
+#   2. every skill, when refreshing an existing install
+# Without (2) there is no way to update an installed skill at all.
 in_force() {
   for f in $FORCE_SKILLS; do
     [ "$f" = "$1" ] && return 0
   done
+  # A refresh run must re-fetch every skill, or it verifies stale bytes.
+  [ "$AUTO_UPDATE" -eq 1 ] && return 0
   return 1
 }
 

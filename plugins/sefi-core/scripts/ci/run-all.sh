@@ -35,6 +35,7 @@ test-check-handoff.sh
 test-sefi-archive.sh
 test-sefi-recovery-point.sh
 test-install-hermes-recovery-point.sh
+test-install-hermes-refresh.sh
 test-integration.sh
 test-opencode-schedule-ownership.sh
 test-workflow-safety.sh
