@@ -20,6 +20,7 @@ validate-no-personal-paths.sh
 validate-no-orphans.sh
 test-no-orphans.sh
 validate-links.sh
+test-validate-links.sh
 validate-script-refs.sh
 validate-release-ledger.sh
 validate-routing.sh

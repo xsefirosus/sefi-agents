@@ -100,7 +100,11 @@ while IFS= read -r f; do
   while IFS= read -r name; do
     [ -z "$name" ] && continue
     # Resolve anywhere in the tree: docs legitimately name a script without its path.
-    if ! find . -name "$name" -not -path './.git/*' -print -quit 2>/dev/null | grep -q .; then
+    # The verdict is the match output, not the pipeline exit: under pipefail an
+    # unreadable unrelated directory makes find exit 1 even when it printed a match
+    # (PIPESTATUS 1 0), flipping resolving names to errors. A missing name still
+    # prints nothing and errors below.
+    if [ -z "$(find . -name "$name" -not -path './.git/*' -print -quit 2>/dev/null)" ]; then
       echo "ERROR: $f - names '$name', which is not a file anywhere in this repo"
       bare_errors=$((bare_errors + 1))
     fi
