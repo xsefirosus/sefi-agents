@@ -79,6 +79,38 @@ Hermes-specific: a sandbox that disallows writes outside the project directory m
 mirror fail closed by design, same as a detected ephemeral environment -- the project-local
 vault write is never affected either way.
 
+## 3a. How `sefi-orchestration` loads (and why it differs here)
+
+On Claude Code, OpenCode, and Codex, `sefi-orchestration` is **session-loaded**: a
+session-start hook puts it in front of every session, so it is present from the first
+turn without anyone doing anything.
+
+**Hermes cannot do that.** Hermes shell hooks fire only on `pre_tool_call` and
+`post_tool_call` -- verified in the Hermes source, `agent/shell_hooks.py`:
+
+```python
+_BLOCKING_EVENTS = frozenset({"pre_tool_call"})
+_TOOL_EVENTS = frozenset({"pre_tool_call", "post_tool_call"})
+```
+
+There is no session-start event, so there is no hook to copy across. The session-start
+row in `skills/sefi-orchestration/references/harness-actions.md` records Hermes as
+`UNKNOWN` for exactly this reason.
+
+What that means in practice on Hermes:
+
+- The skill is installed and enabled, and loads when your request matches its
+  description.
+- That match is a model judgment, and it has been observed to miss on work that plainly
+  needed routing.
+- **To remove the guess, invoke `/sefi-route`.** It loads the skill unconditionally and
+  dispatches. This is the same reason `/sefi:route` exists on the other harnesses
+  (`commands/route.md`), so it is not Hermes-specific advice.
+
+The repo's `AGENTS.md` also carries the routing rule, because Hermes reads project
+context files into the system prompt on every session. That is a prompt-level
+instruction, not a load, so `/sefi-route` remains the deterministic path.
+
 ## 4. Roster
 The roster maps to Hermes subagent delegation. `model:` and `disallowedTools:` are advisory
 on Hermes, so treat the whitelist as a soft contract; the gates are the hard enforcement.
