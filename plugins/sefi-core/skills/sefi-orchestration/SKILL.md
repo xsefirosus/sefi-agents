@@ -1,12 +1,18 @@
 ---
 name: sefi-orchestration
-description: Use when routing a request to the right agent, handing off between agents, or dispatching a subagent. The model-invoked routing brain covering roster, handoff rules, the parse ladder for structured output, model routing, and pointers to the harness map and never-auto-merge rule -- when its auto-trigger does not fire, invoke it deterministically via /sefi:route (spelled sefi-route on Hermes).
+description: Use when routing a request to the right agent, handing off between agents, or dispatching a subagent. The routing brain covering roster, handoff rules, the parse ladder for structured output, model routing, and pointers to the harness map and never-auto-merge rule. Session-loaded on Claude Code, OpenCode, and Codex; on Hermes, which has no session-start hook, invoke /sefi-route to load it deterministically.
 managed-by: sefi-agents
 ---
 
 # Orchestration
 
-The routing brain, model-invoked on description match -- never resident and never assumed present. When the auto-trigger misses, /sefi:route (spelled sefi-route on Hermes) loads it deterministically. Keep this body a thin router; per-agent detail, the
+The routing brain. On Claude Code, OpenCode, and Codex a session-start hook or
+equivalent puts it in front of every session, so it is resident from the first turn and no
+manual step is needed. Hermes has no session-start hook -- its shell hooks fire only on
+`pre_tool_call` and `post_tool_call` (verified in Hermes `agent/shell_hooks.py`) -- so
+there the skill loads when the request matches this description, and `/sefi-route`
+(spelled `sefi-route` on Hermes) loads it deterministically when you do not want to
+depend on that judgment. Keep this body a thin router; per-agent detail, the
 harness map, and the routing table live in `references/` and are read on demand.
 
 User instructions always override this skill.

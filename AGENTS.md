@@ -1,5 +1,19 @@
 # Collaboration Instructions
 
+## Sefi routing
+
+This project runs the sefi-agents chain. Before starting work, invoke the
+`sefi-orchestration` skill and resolve the request against its routing table rather
+than implementing it directly.
+
+Hermes has no session-start hook, so this file is what puts the routing rule in front
+of you: it is read into the system prompt on every session. On Claude Code, OpenCode,
+and Codex a session-start hook already does this, and the rule here is consistent with
+it rather than additional to it.
+
+To load the skill deterministically instead of relying on description matching, invoke
+`/sefi:route` (`/sefi-route` on Hermes).
+
 - Treat a user's request as authorization for the directly related work needed to finish it
   well. This includes consistency fixes, documentation updates, tests, validation, and
   release bookkeeping that accurately reflect the requested change.
