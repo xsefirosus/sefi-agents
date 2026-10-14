@@ -38,10 +38,10 @@ The installed package declares how dollars are treated
 (`per_run_usd_cap`, `daily_usd_cap`, `per_dispatch_usd_cap`); `flat` and `free`
 skip the dollar-cap checks (`budget-check.sh` exits 0 with a recorded skip
 reason). An explicit `billing_mode` always wins; when the key is absent a
-per-harness default applies -- `opencode` and `hermes` resolve `free`, `codex`
-and `claude-code` resolve `flat` (from `--harness`, `$SEFI_HARNESS`, or the
-`.sefi/harness` marker; the four canonical harness names are `opencode`,
-`hermes`, `codex`, and `claude-code`, and `claude` is accepted everywhere as an
+per-harness default applies -- `opencode` and `hermes` resolve `free`, `codex`,
+`claude-code`, and `cline` resolve `flat` (from `--harness`, `$SEFI_HARNESS`, or the
+`.sefi/harness` marker; the five canonical harness names are `opencode`,
+`hermes`, `codex`, `claude-code`, and `cline`, and `claude` is accepted everywhere as an
 alias of `claude-code`) -- and `metered` is opt-in. A `billing_mode` key present
 with no value is a usage error, not a request for the default. Everything that is not a dollar
 cap -- retry caps, reply caps, worktree caps, the minimization ladder, and the
@@ -69,7 +69,7 @@ token-discipline stack -- stays always on regardless of mode. See
 - [ ] Nothing existing was overwritten.
 
 ## Steps (detect the environment, then branch)
-1. Harness detection: is this Claude Code, Hermes, OpenCode, or Codex?
+1. Harness detection: is this Claude Code, Hermes, OpenCode, Codex, or Cline?
    - Claude Code: `/plugin marketplace add xsefirosus/sefi-agents` then
      `/plugin install sefi-core@sefi-agents`. The filesystem fallback is
      `./install.sh --target claude`.
@@ -80,6 +80,11 @@ token-discipline stack -- stays always on regardless of mode. See
      session and accept Codex's one-time Sefi hook-trust prompt. This is a one-time
      installation action, not a command required for each prompt. See `adapters/CODEX.md`.
      If the required CLI is missing, stop and report.
+    - Cline (CLI or Desktop): use `./install.sh --target cline --copy`
+      (always `--copy`; the rules bridge and scripts must be real bytes, not symlinks). The
+      installed router lands in `~/.cline/rules/`. Subagent `spawn_agent` dispatch is a Cline
+      CLI/Desktop feature, not the VS Code/JetBrains extensions. See `adapters/CLINE.md`.
+
    - A private or new harness may use `./install.sh --adapter path/to/adapter.yml` only
      with a complete local custom manifest. It is not a shipped or verified adapter until
      its adapter checks are added and pass.
@@ -102,7 +107,8 @@ The installed invocation depends on the harness:
 
 - Claude Code and OpenCode: `/sefi:audit build`
 - Codex: `Use $systems-audit for the build scope`
-- Hermes: `Run the systems-audit skill for the build scope.`
+- Hermes and Cline: `Run the systems-audit skill for the build scope.`
+
 
 The audit accepts one of eight scopes: `complete`, `research`, `product`, `design`, `build`,
 `quality`, `docs`, or `delivery`. The top-level orchestrator owns dispatch. The

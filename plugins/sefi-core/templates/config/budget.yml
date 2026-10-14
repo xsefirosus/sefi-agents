@@ -1,5 +1,5 @@
 # billing_mode is OPTIONAL. When absent, budget-check.sh resolves a per-harness
-# default: opencode and hermes resolve free, codex and claude-code resolve flat
+# default: opencode and hermes resolve free, codex, claude-code, and cline resolve flat
 # (claude is accepted as an alias of claude-code), resolved from --harness,
 # $SEFI_HARNESS, or the machine-local .sefi/harness marker written by /sefi:init;
 # an unknown harness stays metered, fail-closed. An explicit value always wins. A

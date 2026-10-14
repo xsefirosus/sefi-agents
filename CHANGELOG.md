@@ -5,6 +5,33 @@ Changelog; this project adheres to Semantic Versioning.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-13
+
+### Added
+
+- **Cline adapter** (`adapters/manifests/cline.yml`, `adapters/CLINE.md`) -- a fifth
+  shipped harness. Cline runs every tier on its configured model (`model_strategy:
+  flexible`), dispatches via the `spawn_agent` tool, and gets its always-on router from the
+  `~/.cline/rules/` global-rules auto-load rather than a session-start hook
+  (`hook_strategy: none`). Verified on Cline Desktop/CLI; subagent dispatch is a CLI/Desktop
+  feature, not the VS Code/JetBrains extensions. Install with `install.sh --target cline`.
+
+- `model-map.yml` gains a `cline:` block mapping every tier to the `flexible` sentinel
+  (`reasoning: none`), so route evidence is `not-applicable` rather than a pinned id.
+
+- `harness-actions.md` gains a Cline column across the action, tool, and hook-event tables
+  (dispatch = `spawn_agent`; hook events UNKNOWN by design; headless UNKNOWN).
+
+- `budget-check.sh` accepts `--harness cline` (plus `$SEFI_HARNESS` and the `.sefi/harness`
+  marker), resolving a `flat` billing default; `check-route.py` recognizes `cline` as a
+  fifth harness; `validate-adapters.sh` now validates the cline manifest against the
+  `verified:shipped` contract.
+
+### Changed
+
+- README, Install.md, ADAPTERS.md, BUDGET.md, and the packaged `templates/config/budget.yml`
+  now describe five harnesses; the README badge lists Cline.
+
 ## [0.9.9] - 2026-10-06
 
 ### Fixed

@@ -112,3 +112,25 @@ hermes:
   high_reasoning: none
   mid_reasoning: none
   low_reasoning: none
+
+cline:
+  # Same single-model situation as hermes above, and the same fix: "flexible"
+  # instead of a pinned id. Cline takes its model from whatever the human has
+  # configured in Cline (adapters/CLINE.md) and every dispatch inherits it, so
+  # the map's job here is just to stop `scripts/model-for.sh cline <tier>`
+  # from handing back a model id that might already be dead by the time it is
+  # read. No `orchestrator:` key: validate-model-map.sh requires it only for
+  # claude-code and codex, and model-for.sh falls back to the agent tier.
+  #
+  # This costs generator/evaluator separation on this harness (the qa-engineer
+  # and the software-engineer both inherit the one configured model) -- expect
+  # validate-model-map.sh WARN "maps high and mid to the same model
+  # ('flexible')": instructions-only separation, not an error. Naming two
+  # DIFFERENT real ids on high/mid restores a real adversary, still a
+  # single-line edit here.
+  high: flexible
+  mid: flexible
+  low: flexible
+  high_reasoning: none
+  mid_reasoning: none
+  low_reasoning: none

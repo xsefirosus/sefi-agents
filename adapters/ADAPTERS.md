@@ -12,6 +12,7 @@ install, permission, hook, delegation, model, and verification details.
 | Codex | `manifests/codex.yml` | mapped custom-agent profiles | `install-codex.sh` or `install.sh --target codex` |
 | OpenCode | `manifests/opencode.yml` | flexible by default; optional explicit map | `install-opencode.sh` or `install.sh --target opencode` |
 | Hermes | `manifests/hermes.yml` | flexible global model | `plugins/sefi-core/scripts/install-hermes.sh` |
+| Cline | `manifests/cline.yml` | flexible (user-configured model) | `install.sh --target cline` (filesystem copy) |
 
 `bash install.sh --target <adapter-id>` loads the corresponding manifest and refuses an
 unknown or incomplete contract. `--model-map path/to/model-map.yml` replaces the shipped
@@ -31,7 +32,9 @@ and enabled only after an interactive yes; unattended initialization leaves it o
 
 The reminder is intentionally installer output, not a fabricated hook. The documented
 Claude Code and Codex hook is session start, and OpenCode's documented event is
-`session.created`; none reports a first routed request. Hermes has no confirmed hook event.
+`session.created`; none reports a first routed request. Hermes and Cline have no confirmed
+hook event -- Cline's always-on router is the `~/.cline/rules/` global-rules auto-load, not
+a hook (`adapters/CLINE.md` section 3).
 Those events may provide session-start context, but must not be described as a one-time
 first-routed-request callback.
 
