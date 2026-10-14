@@ -3,7 +3,7 @@
 # per-dispatch cap, max-retries, max-parallel-worktrees, and per-agent return-token
 # cap; fail if any is missing or unbounded (non-numeric). billing_mode is optional:
 # when absent, budget-check.sh resolves a per-harness default (opencode and hermes
-# free, codex and claude-code flat, unknown harness metered); when present it must
+# free, codex, claude-code, and cline flat, unknown harness metered); when present it must
 # carry one of metered, flat, free -- declared with no value it is an error, not a
 # request for the default -- and the explicit value always wins.
 set -uo pipefail

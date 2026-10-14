@@ -1,0 +1,14 @@
+schema: sefi-adapter/v1
+id: cline
+verification: verified
+support: shipped
+install_method: filesystem
+agent_format: markdown-frontmatter
+permission_transform: none
+hook_strategy: none
+delegation: subagent
+headless: unknown
+model_strategy: flexible
+route_evidence: not-applicable
+driver: filesystem
+destination: ${HOME}/.cline

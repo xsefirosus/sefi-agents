@@ -182,7 +182,7 @@ export PATH
 # usage must never block work -- so the dollar check is skipped with an explicit
 # recorded reason. An explicit billing_mode in the config always wins; a config
 # without the key resolves a per-harness default (opencode/hermes free,
-# codex/claude-code flat, no signal metered fail-closed) from --harness, then
+# codex/claude-code/cline flat, no signal metered fail-closed) from --harness, then
 # $SEFI_HARNESS, then the machine-local .sefi/harness marker (claude is accepted as an
 # alias of claude-code). A key that is present but empty is a usage error on both sides
 # (budget-check.sh and validate-budget.sh), never a silent request for that default.
@@ -231,14 +231,14 @@ case "$free_skip" in
 esac
 
 # Per-harness defaults for a config without the key: opencode and hermes resolve
-# free, codex and claude-code resolve flat. Hermetic by construction: an explicit
-# --harness flag, so no ambient marker or env on the machine running this suite
-# can flip them.
+# free, codex, claude-code, and cline resolve flat. Hermetic by construction: an
+# explicit --harness flag, so no ambient marker or env on the machine running this
+# suite can flip them.
 for free_harness in opencode hermes; do
   expect_code 0 "a config without billing_mode on $free_harness defaults to free (never blocks)" \
     env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" --harness "$free_harness" --scope daily --spent 999.00 --config "$MODETMP/nomode.yml"
 done
-for flat_harness in codex claude-code; do
+for flat_harness in codex claude-code cline; do
   expect_code 0 "a config without billing_mode on $flat_harness defaults to flat (never blocks)" \
     env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" --harness "$flat_harness" --scope daily --spent 999.00 --config "$MODETMP/nomode.yml"
 done

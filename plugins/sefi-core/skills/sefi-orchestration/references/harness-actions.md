@@ -6,13 +6,13 @@ Everything not listed here is identical enough across runtimes to need no mappin
 the one place the harness mapping lives; adapters point here and never duplicate it.
 
 ## Ambiguous actions
-| Abstract action | Claude Code | Hermes | OpenCode | Codex |
-|---|---|---|---|---|
-| Dispatch a subagent | Task / subagent | `delegate_task(...)` (prompt-instructed) | subagent run | needs `multi_agent = true`; else sequential |
-| Task tracking | TodoWrite | agent state | task list | agent config |
-| Project instructions | Claude project file (see coordinator profile) | MEMORY.md | OpenCode project file (see coordinator profile) | Codex project file (see coordinator profile) |
-| Attach a rule for matching files | hook / skill | skill | rule | config |
-| Invoke the harness headless | see row below | HTTP gateway | `opencode run` | `codex exec` |
+| Abstract action | Claude Code | Hermes | OpenCode | Codex | Cline |
+|---|---|---|---|---|---|
+| Dispatch a subagent | Task / subagent | `delegate_task(...)` (prompt-instructed) | subagent run | needs `multi_agent = true`; else sequential | `spawn_agent` |
+| Task tracking | TodoWrite | agent state | task list | agent config | UNKNOWN |
+| Project instructions | Claude project file (see coordinator profile) | MEMORY.md | OpenCode project file (see coordinator profile) | Codex project file (see coordinator profile) | `~/.cline/rules/` global rules |
+| Attach a rule for matching files | hook / skill | skill | rule | config | `paths:` frontmatter |
+| Invoke the harness headless | see row below | HTTP gateway | `opencode run` | `codex exec` | UNKNOWN |
 
 Fallback: a harness with no subagent tool executes the roster sequentially in one context;
 state that explicitly rather than pretending parallelism exists.
@@ -27,24 +27,26 @@ OpenCode's EM keeps real top-level authority. Hermes and Codex: UNKNOWN -- not y
 against `adapters/HERMES.md` / `adapters/CODEX.md`, per this file's own rule above.
 
 ## Tool-name map
-| Abstract | Claude Code | Gemini-style |
-|---|---|---|
-| Read | Read | read_file |
-| Search | Grep | search_file_content |
-| Shell | Bash | run_shell_command |
-| Write | Write | write_file |
+| Abstract | Claude Code | Gemini-style | Cline |
+|---|---|---|---|
+| Read | Read | read_file | read_file |
+| Search | Grep | search_file_content | search_codebase |
+| Shell | Bash | run_shell_command | run_commands |
+| Write | Write | write_file | editor |
 
 ## Hook-event map
-| Event | Claude Code | OpenCode | Hermes | Codex |
-|---|---|---|---|---|
-| Before a tool runs | PreToolUse | tool.execute.before | UNKNOWN | UNKNOWN |
-| After a tool runs | PostToolUse | UNKNOWN | UNKNOWN | UNKNOWN |
-| Session goes idle | Stop | session.idle | UNKNOWN | UNKNOWN |
-| Session starts | SessionStart | session.created | UNKNOWN | UNKNOWN |
+| Event | Claude Code | OpenCode | Hermes | Codex | Cline |
+|---|---|---|---|---|---|
+| Before a tool runs | PreToolUse | tool.execute.before | UNKNOWN | UNKNOWN | UNKNOWN |
+| After a tool runs | PostToolUse | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN |
+| Session goes idle | Stop | session.idle | UNKNOWN | UNKNOWN | UNKNOWN |
+| Session starts | SessionStart | session.created | UNKNOWN | UNKNOWN | UNKNOWN |
 
 UNKNOWN cells are not yet documented in that harness's own adapter file
-(`adapters/HERMES.md`, `adapters/CODEX.md`) -- fill in only once confirmed there, never
-by porting another harness's event name as a guess.
+(`adapters/HERMES.md`, `adapters/CODEX.md`, `adapters/CLINE.md`) -- fill in only once
+confirmed there, never by porting another harness's event name as a guess. Cline has no
+confirmed hook event for any row; its always-on router is the `~/.cline/rules/` global
+rules auto-load, not a hook (`adapters/CLINE.md` section 3).
 
 ## Reserved fields per harness (do not reuse for custom semantics)
 Every harness reserves certain field/parameter names for its own protocol. Collisions
@@ -76,6 +78,8 @@ confirm against their adapter docs before assuming more overlap than the table s
 - Codex: `codex exec`.
 - Hermes: HTTP to its local gateway; its OpenAI-compatible responses carry a real `usage`
   block -- record it.
+- Cline: UNKNOWN -- no headless invocation is confirmed from the cited docs or the repo
+  (`adapters/CLINE.md`); not the HTTP-gateway form Hermes uses.
 
 ## Requested vs observed route (post-dispatch route-evidence assertion)
 
@@ -87,7 +91,7 @@ states below. This is the one place that per-harness mapping lives; adapters poi
 `check-route.sh` is a thin interpreter-resolving shim over `check-route.py`, a stdlib
 Python 3.11+ parser (real `json.loads` per rollout line, top-level dict access only).
 
-**`match` / `mismatch` / `invalid` are LIVE for Codex, reserved for the other three.**
+**`match` / `mismatch` / `invalid` are LIVE for Codex, reserved for the other four.**
 For a Codex dispatch the third argument is the `CODEX_THREAD_ID` (a lowercase UUID) or `-`
 when none is available; the parser reads the last top-level `turn_context` record's
 `model` / `effort` from
@@ -95,7 +99,7 @@ when none is available; the parser reads the last top-level `turn_context` recor
 reads rollout *filenames* and those two fields only -- never rollout free text. An earlier
 POSIX-sh revision was reduced for five fail-open shapes (a decoy record could make a
 downgraded run report `match`); `json.loads` + top-level-only dict access structurally
-cannot have them. claude-code exposes no per-agent route readback; opencode / hermes
+cannot have them. claude-code exposes no per-agent route readback; opencode / hermes / cline
 resolve every tier to `flexible` -- those are limitations of those harnesses, not of the
 check, and their cells stay `unavailable` / `not-applicable`.
 
@@ -109,17 +113,17 @@ Six states are the documented vocabulary:
   Exit 0.
 - `mismatch` -- a real requested route, but the rollout shows a different one; the
   orchestrator STOPS and reports to `inbox/` rather than accepting a downgraded run.
-  **LIVE for Codex** (reserved for the other three). Exit non-zero.
+  **LIVE for Codex** (reserved for the other four). Exit non-zero.
 - `invalid` -- a session rollout is present but off its documented schema (not JSON, no
   `turn_context`, a malformed last `turn_context`, an ambiguous thread id); fail noisily,
-  a field is never guessed. **LIVE for Codex** (reserved for the other three). Exit
+  a field is never guessed. **LIVE for Codex** (reserved for the other four). Exit
   non-zero.
 - `unavailable` -- the harness exposes no route readback this repo can trust (claude-code
   always; Codex when no thread id / no rollout is available).
 - `not-applicable` -- the requested tier resolves to the `flexible` sentinel
-  (`config/model-map.yml:87-89` opencode, `:106-108` hermes): there is no requested
-  model id, so a comparison is undefined. Without this state a naive comparator would
-  false-alarm on every OpenCode/Hermes dispatch.
+  (`config/model-map.yml:87-89` opencode, `:106-108` hermes, `:131-133` cline):
+  there is no requested model id, so a comparison is undefined. Without this state
+  a naive comparator would false-alarm on every OpenCode/Hermes/Cline dispatch.
 - `skipped` -- `check-route.sh` exited 3: no `python3` / `python` 3.11+ interpreter is
   available, so the check never ran. Record `route` as `skipped` and move on -- it is
   **not** a `mismatch` and does **not** block or STOP the dispatch. The only "the check
@@ -136,10 +140,11 @@ as `skipped` and treats it as "the check did not run" (never as `mismatch`).
 | Codex | the session rollout `rollout-*-<thread-id>.jsonl` under `${CODEX_HOME:-~/.codex}/sessions`, format documented in `adapters/CODEX.md` `## Session rollout` (technique adapted from astral-orchestrator `check-primary.py:82-101`, MIT: match rollout *filenames* only, read only `model` / `effort` from the last top-level `turn_context`, never rollout free text) | **LIVE: `match` / `mismatch` / `invalid`** per the state of the run (`unavailable` when no `CODEX_THREAD_ID` / rollout is available) | `${CLAUDE_PLUGIN_ROOT}/scripts/check-route.sh` (the `check-route.py` parser) reads the rollout and compares observed model + effort against the tier map. Fields not confirmable from the two cited MIT sources are marked UNKNOWN in `adapters/CODEX.md`; an off-schema rollout is `invalid`, never a guessed `match`. |
 | OpenCode | a session record -- location and format | `not-applicable` | `adapters/OPENCODE.md` documents no session-record location/format, so that cell stays UNKNOWN; and every OpenCode tier resolves to `flexible` (`config/model-map.yml:87-89`), so `check-route.sh` short-circuits to `not-applicable` regardless. A limitation of the harness, not of the check. |
 | Hermes | the OpenAI-compatible `usage` block carries tokens (Headless invocation note above), but not a model readback | `not-applicable` (`unavailable` if a tier is ever pinned to a real id) | model readback is UNKNOWN in `adapters/HERMES.md`; and every Hermes tier resolves to `flexible` (`config/model-map.yml:106-108`), so `check-route.sh` returns `not-applicable` today. A limitation of the harness, not of the check. |
+| Cline | no confirmed session-record location/format | `not-applicable` | every Cline tier resolves to `flexible` (`config/model-map.yml:131-133`), so `check-route.sh` short-circuits to `not-applicable` without needing a readable route. A limitation of the harness, not of the check. |
 
 Net result: live requested-vs-observed route comparison now exists on **Codex** -- a real
 `json.loads` parser over the session rollout, `match` / `mismatch` / `invalid` per the
-state of the run. claude-code stays `unavailable` and opencode / hermes stay
+state of the run. claude-code stays `unavailable` and opencode / hermes / cline stay
 `not-applicable` by those harnesses' own limits (no route readback; every tier resolves to
 `flexible`), not by any limitation of the check. `match` / `mismatch` / `invalid` remain
-reserved for those three until their adapter docs document a readable route.
+reserved for those five until their adapter docs document a readable route.

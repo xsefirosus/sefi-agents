@@ -24,7 +24,7 @@ errors=0
 [ -f "$MANIFEST_HELPER" ] || { echo "ERROR: adapter manifest driver is missing: $MANIFEST_HELPER"; exit 1; }
 # shellcheck source=plugins/sefi-core/scripts/adapter-manifest.sh
 source "$MANIFEST_HELPER"
-for id in claude-code codex opencode hermes; do
+for id in claude-code codex opencode hermes cline; do
   manifest="$MANIFEST_DIR/$id.yml"
   if ! adapter_manifest_load "$manifest"; then
     echo "ERROR: invalid shipped adapter manifest: $manifest"

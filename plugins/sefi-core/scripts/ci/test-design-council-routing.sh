@@ -54,7 +54,7 @@ has_all "$CORE/.claude-plugin/plugin.json" 'Claude package exposes the canonical
 has_all "$CORE/.codex-plugin/plugin.json" 'Codex package exposes the canonical skill tree' \
   '"skills": "./skills/"'
 
-for adapter in claude-code codex opencode hermes; do
+for adapter in claude-code codex opencode hermes cline; do
   has_all "$ROOT/adapters/manifests/$adapter.yml" "$adapter adapter manifest remains shipped" \
     'schema: sefi-adapter/v1' "id: $adapter" 'verification: verified' 'support: shipped'
 done

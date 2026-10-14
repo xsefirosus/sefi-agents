@@ -54,8 +54,8 @@ while [ "$#" -gt 0 ]; do
     --harness)
       need_value "$1" "${2:-}" || exit 2
       case "$2" in
-        opencode|hermes|codex|claude-code|claude) HARNESS_ARG="$2" ;;
-        *) echo "budget-check: unknown harness '$2' (expected opencode, hermes, codex, claude-code, or claude)" >&2; exit 2 ;;
+        opencode|hermes|codex|claude-code|claude|cline) HARNESS_ARG="$2" ;;
+        *) echo "budget-check: unknown harness '$2' (expected opencode, hermes, codex, claude-code, claude, or cline)" >&2; exit 2 ;;
       esac
       shift 2 ;;
     *) echo "budget-check: unknown arg $1" >&2; exit 2 ;;
@@ -83,13 +83,13 @@ esac
 # and ccusage-imputed dollars on free usage must never block work -- so the dollar
 # check is skipped with an explicit recorded reason. An explicit billing_mode in the
 # config always wins. When the key is absent, a per-harness default applies:
-# opencode and hermes resolve free, codex and claude-code resolve flat; no (or an
-# unrecognized) harness signal resolves metered, fail-closed. A key that is present
-# but has no value is a usage error, not a request for that default. The harness
-# comes from --harness, then $SEFI_HARNESS, then the machine-local .sefi/harness
-# marker written by /sefi:init (claude is accepted as an alias of claude-code).
-# Non-dollar discipline (retry caps, reply caps, minimization, worktree caps) lives
-# outside this script and stays always on regardless of mode.
+# opencode and hermes resolve free, codex, claude-code, and cline resolve flat; no
+# (or an unrecognized) harness signal resolves metered, fail-closed. A key that is
+# present but has no value is a usage error, not a request for that default. The
+# harness comes from --harness, then $SEFI_HARNESS, then the machine-local
+# .sefi/harness marker written by /sefi:init (claude is accepted as an alias of
+# claude-code). Non-dollar discipline (retry caps, reply caps, minimization, worktree
+# caps) lives outside this script and stays always on regardless of mode.
 default_billing_mode() {
   # default_billing_mode -- print the billing_mode for a config without the key.
   # Never fails: ambient signals ($SEFI_HARNESS, the marker file) sanitize to
@@ -101,7 +101,7 @@ default_billing_mode() {
     h="$HARNESS_ARG"
   elif [ -n "${SEFI_HARNESS:-}" ]; then
     case "$SEFI_HARNESS" in
-      opencode|hermes|codex|claude-code|claude) h="$SEFI_HARNESS" ;;
+      opencode|hermes|codex|claude-code|claude|cline) h="$SEFI_HARNESS" ;;
     esac
   elif [ -f .sefi/harness ]; then
     # Guarded, because what the guard costs is one line and what skipping it costs is the
@@ -117,12 +117,12 @@ default_billing_mode() {
       echo "budget-check: .sefi/harness is present but unreadable; the per-harness default falls back to metered (fail-closed)" >&2
     fi
     case "$marker" in
-      opencode|hermes|codex|claude-code|claude) h="$marker" ;;
+      opencode|hermes|codex|claude-code|claude|cline) h="$marker" ;;
     esac
   fi
   case "$h" in
     opencode|hermes) printf 'free\n' ;;
-    codex|claude-code|claude) printf 'flat\n' ;;
+    codex|claude-code|claude|cline) printf 'flat\n' ;;
     *) printf 'metered\n' ;;
   esac
 }

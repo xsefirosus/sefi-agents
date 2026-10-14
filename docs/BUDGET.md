@@ -37,9 +37,10 @@ declare how dollars should be treated:
 
 - Resolution order: an explicit `billing_mode` in `config/budget.yml` always wins.
   When the key is absent, `budget-check.sh` resolves a per-harness default --
-  `opencode` and `hermes` resolve `free`, `codex` and `claude-code` resolve `flat`.
-  The four canonical harness names are `opencode`, `hermes`, `codex`, and
-  `claude-code`; `claude` is accepted everywhere as an alias of `claude-code`
+  `opencode` and `hermes` resolve `free`, `codex`, `claude-code`, and `cline` resolve
+  `flat`.
+  The five canonical harness names are `opencode`, `hermes`, `codex`,
+  `claude-code`, and `cline`; `claude` is accepted everywhere as an alias of `claude-code`
   (`--harness`, `$SEFI_HARNESS`, and the `.sefi/harness` marker all take either).
   The harness comes from the `--harness` flag, then `$SEFI_HARNESS`, then the
   machine-local `.sefi/harness` marker written by `/sefi:init`. No harness signal

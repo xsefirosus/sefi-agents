@@ -29,6 +29,10 @@ grep -Fq 'test-v08-conformance.sh' "$RUN_ALL" || {
   echo "FAIL: run-all.sh must execute v0.8 behavior conformance regressions" >&2
   exit 1
 }
+grep -Fq 'test-install-cline-adapter.sh' "$RUN_ALL" || {
+  echo "FAIL: run-all.sh must execute the cline adapter install test" >&2
+  exit 1
+}
 for v08_test in test-memory-journalist.sh test-onboarding-v08.sh test-agent-capabilities-v08.sh; do
   grep -Fq "$v08_test" "$RUN_ALL" || {
     echo "FAIL: run-all.sh must execute $v08_test" >&2

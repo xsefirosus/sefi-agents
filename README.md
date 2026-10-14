@@ -7,7 +7,7 @@
 <a href="https://github.com/xsefirosus/sefi-agents/actions/workflows/ci.yml"><img src="https://github.com/xsefirosus/sefi-agents/actions/workflows/ci.yml/badge.svg" alt="ci"></a>
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="license: MIT"></a>
 <a href="#faq"><img src="https://img.shields.io/badge/runtime%20deps-zero-brightgreen.svg" alt="runtime deps: zero"></a>
-<a href="#works-with-your-harness"><img src="https://img.shields.io/badge/runs%20on-Claude%20Code%20%7C%20Codex%20%7C%20OpenCode%20%7C%20Hermes-555.svg" alt="runs on"></a>
+<a href="#works-with-your-harness"><img src="https://img.shields.io/badge/runs%20on-Claude%20Code%20%7C%20Codex%20%7C%20OpenCode%20%7C%20Hermes%20%7C%20Cline-555.svg" alt="runs on"></a>
 </p>
 
 17 AI agents -- a planner, a builder, a reviewer, a security checker, a writer,
@@ -29,7 +29,7 @@ use.
 /sefi:init
 ```
 
-Using OpenCode, Hermes Agent, or Codex instead? The install steps are different for each
+Using OpenCode, Hermes Agent, Codex, or Cline instead? The install steps are different for each
 -- see [Where it runs](#works-with-your-harness) below, don't run the commands above.
 
 **Install for Codex:**
@@ -46,12 +46,14 @@ do not need a `/sefi:*` command for each request. Sefi subagents use the configu
 model policy: Astra for orchestration, Sol for QA/security, Terra for build/planning, and
 Luna for research and writing.
 
-**Other harnesses:** use `bash install.sh --target <claude|opencode|codex>`. For the
+**Other harnesses:** use `bash install.sh --target <claude|opencode|codex|cline>`. For the
 `claude` target that symlinks `agents/`, `skills/`, `commands/`, and `scripts/` into the
 harness config directory by default, with `--copy` for real file copies. The `opencode` and
 `codex` targets delegate to their own installers -- OpenCode always installs a real copy,
 and `install.sh` rejects `--copy` for the Codex bootstrap -- so read the matching page in
-[Where it runs](#works-with-your-harness) for those two. For Hermes, run
+[Where it runs](#works-with-your-harness) for those two. Cline installs through the same
+generic manifest path with `--target cline` (see [adapters/CLINE.md](adapters/CLINE.md)
+section 2 for the `--copy` requirement there). For Hermes, run
 `bash plugins/sefi-core/scripts/install-hermes.sh` so its native skills receive their
 managed runtime. A new or private harness can use a complete local manifest with
 `--adapter path/to/adapter.yml`; it is usable locally, not represented as a supported
@@ -282,10 +284,11 @@ Read [Memory Journalist](docs/MEMORY-JOURNALIST.md) for the note format and comm
 | Codex | [adapters/CODEX.md](adapters/CODEX.md) | verified native plugin plus one-time global bootstrap; ordinary prompts route automatically afterward |
 | OpenCode | [adapters/OPENCODE.md](adapters/OPENCODE.md) | verified adapter; user-selected model by default, with optional tier mappings; scheduled loops can run unattended |
 | Hermes Agent | [adapters/HERMES.md](adapters/HERMES.md) | verified adapter; user-global model selection; tool restrictions remain advisory |
+| Cline | [adapters/CLINE.md](adapters/CLINE.md) | verified adapter; Cline configured model for every tier; always-on routing via global rules (no session-start hook); `spawn_agent` dispatch on Cline CLI/Desktop |
 
 The common manifest contract is documented in [adapters/ADAPTERS.md](adapters/ADAPTERS.md).
 
-**Windows (git-bash):** All four harnesses install and the full CI suite runs on
+**Windows (git-bash):** All five harnesses install and the full CI suite runs on
 Windows 11 under git-bash/MSYS, verified rather than assumed. Set `TMPDIR` to a real
 Windows temp directory (not `/tmp`), and use the repo's `sefi-python.sh` /
 `sefi-native-path.sh` / `sefi-native-tool` helpers wherever a path crosses from
@@ -300,7 +303,8 @@ path if you want GitHub Actions self-improvement; cloning alone does not enable 
 in this upstream repository.
 
 **Choose your provider:** Sefi does not prescribe an LLM provider. OpenCode and Hermes
-inherit the model you configure; Claude Code and Codex use their mapped specialist policy.
+inherit the model you configure; Cline runs every tier on its configured model; Claude Code
+and Codex use their mapped specialist policy.
 The included hosted workflows are OpenCode Zen examples. To use them, add your own
 `OPENCODE_ZEN_API_KEY`, set GitHub Actions workflow permissions to **Read and write**, and
 enable **Allow GitHub Actions to create and approve pull requests**. To use another

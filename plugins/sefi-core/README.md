@@ -68,7 +68,7 @@ The audit accepts one of eight scopes: `complete`, `research`, `product`, `desig
 `systems-auditor` reviews only the selected department outputs, writes one report, and
 never dispatches subagents, modifies source, or fixes findings. Claude Code and OpenCode
 start it with `/sefi:audit build`; Codex explicitly invokes the installed skill with
-`Use $systems-audit for the build scope`; Hermes uses
+`Use $systems-audit for the build scope`; Hermes and Cline use
 `Run the systems-audit skill for the build scope.`
 
 The workflow is on demand only. `commands/audit.md` forbids a scheduled or CI trigger from

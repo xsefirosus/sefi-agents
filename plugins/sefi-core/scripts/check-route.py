@@ -56,7 +56,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 MODEL_FOR = SCRIPT_DIR / "model-for.sh"
 
-HARNESSES = ("claude-code", "codex", "opencode", "hermes")
+HARNESSES = ("claude-code", "codex", "opencode", "hermes", "cline")
 EFFORTS = frozenset(
     ("minimal", "low", "medium", "high", "xhigh", "none", "ultra")
 )
@@ -158,7 +158,7 @@ def resolve_model_for(reasoning, harness, tier):
     if proc.returncode != 0:
         field = "reasoning effort" if reasoning else "model"
         # Do not echo the raw requested-tier value (not allowlist-checked). `harness` is
-        # safe -- it is one of the 4 allowlisted literals by the time we get here.
+        # safe -- it is one of the allowlisted literals by the time we get here.
         usage(
             f"cannot resolve a {field} for the requested tier (harness='{harness}': "
             "unknown harness, unmapped tier, or unreadable model map)"
@@ -381,7 +381,7 @@ def main(argv):
     # must never flow unchecked into emit(). Constrain it to the shape emit() promises.
     # The offending value and the raw requested-tier are NOT echoed to stderr -- only the
     # argument's role and the fixed failure. `harness` is safe to name (allowlist-checked
-    # to 4 literals just above).
+    # just above).
     if expected_model != "flexible" and not MODEL_RE.match(expected_model):
         usage(
             "the model resolved for the requested tier failed the bare-identifier "
