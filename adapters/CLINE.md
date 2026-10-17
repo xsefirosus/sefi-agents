@@ -72,7 +72,7 @@ accepts only `local:custom` manifests (see `install.sh`).
 source checkout (see `install.sh` header). Cline has no confirmed equivalent
 of the `claude`-target `settings.json` `env` wiring this repo uses to close
 that gap without rewriting, so copy mode is how bundled prose references the
-installed scripts. The command lays `agents/`, `skills/`, `commands/`, `scripts/` under the
+installed scripts. The command lays `agents/`, `skills/`, `commands/`, `scripts/`, plus the shipped always-on router rule `rules/sefi-router.md` (source: `plugins/sefi-core/rules/sefi-router.md`, laid as `$DEST/rules/sefi-router.md` with the placeholder resolved in copy mode), under the
 manifest destination (`${HOME}/.cline`). It refuses to overwrite without
 `--force` and never auto-initializes a project: installation is user-wide and
 cannot safely choose or modify a repository. From each repository you later

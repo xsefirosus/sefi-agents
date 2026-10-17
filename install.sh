@@ -2,7 +2,8 @@
 # install.sh -- human fallback for non-plugin runtimes. Symlinks (or copies) agents/,
 # skills/, commands/, and scripts/ into the target harness's config directory. Refuses to
 # overwrite without --force. Resolves symlinks and handles Windows paths via cygpath.
-# Fails fast if a required file is missing.
+# Fails fast if a required file is missing. For the cline target only, it additionally
+# lays plugins/sefi-core/rules/sefi-router.md into $DEST/rules/sefi-router.md.
 #
 # scripts/ is included so agent/skill prose referencing a bundled script (e.g.
 # `${CLAUDE_PLUGIN_ROOT}/scripts/gate.sh`) has something to find at the destination. In
@@ -85,6 +86,7 @@ fi
 for d in agents skills commands scripts; do
   [ -d "$CORE/$d" ] || { echo "install.sh: missing required source dir $CORE/$d" >&2; exit 1; }
 done
+[ -f "$CORE/rules/sefi-router.md" ] || { echo "install.sh: missing cline router rule $CORE/rules/sefi-router.md" >&2; exit 1; }
 
 # Resolve the manifest's portable ${HOME}/... destination. Preserve the historic
 # environment overrides for the two fallback filesystem harnesses.
@@ -572,6 +574,8 @@ link_one() {
 preflight_filesystem_destinations() {
   # Check every subtree before replacing any. This prevents a late no-force conflict from
   # leaving an earlier agents/, skills/, or commands/ subtree as a partial installation.
+  # The cline-only rules/sefi-router.md file destination is preflighted separately by
+  # preflight_cline_router_destination, so it is never part of "$@" here.
   local sub target
   [ "$FORCE" -eq 1 ] && return 0
   for sub in "$@"; do
@@ -581,6 +585,53 @@ preflight_filesystem_destinations() {
       return 1
     fi
   done
+}
+
+preflight_cline_router_destination() {
+  # Preflight the cline-only rules/sefi-router.md file destination before any write.
+  # A no-force second run refuses here, matching link_one semantics for subtrees.
+  [ "$FORCE" -eq 1 ] && return 0
+  if [ -e "$DEST/rules/sefi-router.md" ] || [ -L "$DEST/rules/sefi-router.md" ]; then
+    echo "install.sh: refusing to overwrite $DEST/rules/sefi-router.md (use --force)" >&2
+    return 1
+  fi
+}
+
+install_cline_router_rule() {
+  # install_cline_router_rule -- cline target only. Lays the shipped always-on
+  # router rule (plugins/sefi-core/rules/sefi-router.md, no frontmatter by design)
+  # into $DEST/rules/sefi-router.md. Copy mode writes real bytes with the
+  # ${CLAUDE_PLUGIN_ROOT} placeholder resolved to $DEST; symlink mode links the
+  # file (placeholder left unresolved, matching agents/skills/commands behavior).
+  local from="$CORE/rules/sefi-router.md"
+  local to="$DEST/rules/sefi-router.md"
+  [ -f "$from" ] || { echo "install.sh: missing cline router rule $from" >&2; return 1; }
+  refuse_escaped_dest || return 1
+  sefi_assert_write_target "$to" "$DEST" "install.sh: refusing to write $to" || return 1
+  if [ -e "$to" ] || [ -L "$to" ]; then
+    if [ "$FORCE" -ne 1 ]; then
+      echo "install.sh: refusing to overwrite $to (use --force)" >&2
+      return 1
+    fi
+    rm -f -- "$to"
+  fi
+  # Second re-check, after the rm -f: that removal is exactly the window an attacker
+  # with write access to DEST can use to swap the path for a symlink, so the
+  # containment of the path about to receive bytes is resolved again here.
+  sefi_assert_write_target "$to" "$DEST" "install.sh: refusing to write $to" || return 1
+  mkdir -p -- "$DEST/rules" || return 1
+  refuse_escaped_dest || return 1
+  sefi_assert_write_target "$to" "$DEST" "install.sh: refusing to write $to" || return 1
+  if [ "$MODE" = "copy" ]; then
+    cp -- "$from" "$to" || return 1
+    sefi_assert_write_target "$to" "$DEST" \
+      "install.sh: refusing to resolve placeholders in $to" || return 1
+    sed -i "s#\${CLAUDE_PLUGIN_ROOT}#$ESCAPED_DEST#g" "$to" || return 1
+    echo "copied rules/sefi-router.md -> $to"
+  else
+    ln -s "$from" "$to" || return 1
+    echo "linked rules/sefi-router.md -> $to"
+  fi
 }
 
 materialize_mapped_agents() {
@@ -642,6 +693,7 @@ else
     subdirs=(agents skills commands scripts)
   fi
   preflight_filesystem_destinations "${subdirs[@]}" || exit 1
+  if [ "$TARGET" = "cline" ]; then preflight_cline_router_destination || exit 1; fi
   prepare_legacy_knowledge_manager
   if [ "$ADAPTER_MODEL_STRATEGY" = "mapped" ]; then
     materialize_mapped_agents || exit 1
@@ -650,6 +702,9 @@ else
   for sub in "${subdirs[@]}"; do
     link_one "$sub" || rc=1
   done
+  # The cline-only always-on router rule is independent of the subtree loop: a
+  # skills/ conflict refused without --force must not silently skip routing.
+  if [ "$TARGET" = "cline" ]; then install_cline_router_rule || rc=1; fi
   # Copy mode produces independent files (unlike a symlink, which still points back at
   # the source checkout), so it is safe to rewrite the placeholder here without touching
   # the source. Applied to agents/skills/commands only -- scripts/ itself never contains
