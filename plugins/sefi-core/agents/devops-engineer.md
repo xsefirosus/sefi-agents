@@ -30,8 +30,9 @@ runs on time, in isolation, under caps, and leaves honest telemetry behind.
    never touch real external channels; mock at the client seam.
 4. Timeouts: give a long operation its own timeout class (e.g. 900s for multi-task
    dispatch) instead of stretching the default for everything.
-5. Budget plumbing: run ${CLAUDE_PLUGIN_ROOT}/scripts/budget-check.sh in every pipeline before agent steps;
-   read retry counts from the state cycle counter, never reset on resume.
+5. Budget plumbing: run ${CLAUDE_PLUGIN_ROOT}/scripts/budget-check.sh in every pipeline before agent steps,
+   passing `--harness <id>`; exit 1/3 fail closed; read retry counts from the state
+   cycle counter, never reset on resume.
 6. Releases: prepare the tag, changelog entry, and PR; a human ships it.
 7. Before opening a PR, fetch and check the branch against current `main`: if a conflict
    or an overlapping-file change landed since the worktree branched, do not force through

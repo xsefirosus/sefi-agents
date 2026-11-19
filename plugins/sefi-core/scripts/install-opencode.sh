@@ -309,6 +309,66 @@ refuse_escaped_dest() {
   fi
 }
 
+write_install_context() {
+  # write_install_context -- ship the three files the INSTALLED scripts resolve against,
+  # relative to their own directory, so an install works from any working directory:
+  #
+  #   1. $DEST/.sefi/harness          -- the harness identity budget-check.sh reads when
+  #      neither --harness nor $SEFI_HARNESS is set. Without it a free or flat harness
+  #      falls back to the fail-closed metered default and enforces dollars it never spends.
+  #   2. $DEST/config/model-map.yml   -- model-for.sh reads $HERE/../config/model-map.yml.
+  #      No installer used to ship it, so the installed resolver exited 1 with
+  #      "model map not found" and model routing could not work in ANY live install.
+  #   3. $DEST/scripts/budget-defaults.yml -- budget-check.sh's bundled config fallback for
+  #      a check run outside a project root; without it that check reported "config/budget.yml
+  #      not found" and exited 2 instead of enforcing.
+  #
+  # Runs BEFORE run_auto_update_gate on purpose: that gate exits 0 early when the installed
+  # scripts are already current, and an existing install must still receive all three.
+  # All three are destination-only files (the package manifest is built from SOURCE files
+  # and never compares the other direction), so none of them becomes a new managed surface
+  # and an existing manifest keeps reporting "current".
+  local map_src="$CORE/config/model-map.yml"
+  local defaults_src="$CORE/templates/config/budget.yml"
+
+  # 1. The harness marker. The shared helper never fails the install: it warns once and
+  # returns 0 when the directory cannot be created or the file cannot be written.
+  refuse_escaped_dest || exit 1
+  sefi_assert_write_target "$DEST/.sefi" "$DEST" \
+    "install-opencode.sh: refusing to write the harness marker into $DEST/.sefi" || exit 1
+  bash "$HERE/sefi-harness-marker.sh" "$DEST" opencode \
+    || echo "install-opencode.sh: could not record the harness marker; the installed gate falls back to metered" >&2
+
+  # 2. The model map. Fail-closed: a map that did not land leaves the installed
+  # model-for.sh exiting 1, which breaks the model-routing contract for every agent.
+  [ -f "$map_src" ] || { echo "install-opencode.sh: missing model map $map_src" >&2; exit 1; }
+  refuse_escaped_dest || exit 1
+  sefi_assert_write_target "$DEST/config" "$DEST" \
+    "install-opencode.sh: refusing to write the model map into $DEST/config" || exit 1
+  mkdir -p "$DEST/config" || { echo "install-opencode.sh: cannot create $DEST/config" >&2; exit 1; }
+  refuse_escaped_dest || exit 1
+  sefi_assert_write_target "$DEST/config/model-map.yml" "$DEST" \
+    "install-opencode.sh: refusing to write $DEST/config/model-map.yml" || exit 1
+  cp "$map_src" "$DEST/config/model-map.yml" || {
+    echo "install-opencode.sh: cannot install the model map into $DEST/config" >&2
+    exit 1
+  }
+
+  # 3. The budget defaults, inside the copied scripts/ directory the installed
+  # budget-check.sh reads next to itself.
+  [ -f "$defaults_src" ] || { echo "install-opencode.sh: missing budget template $defaults_src" >&2; exit 1; }
+  refuse_escaped_dest || exit 1
+  sefi_assert_write_target "$DEST/scripts" "$DEST" \
+    "install-opencode.sh: refusing to write the budget defaults into $DEST/scripts" || exit 1
+  mkdir -p "$DEST/scripts" || { echo "install-opencode.sh: cannot create $DEST/scripts" >&2; exit 1; }
+  sefi_assert_write_target "$DEST/scripts/budget-defaults.yml" "$DEST" \
+    "install-opencode.sh: refusing to write $DEST/scripts/budget-defaults.yml" || exit 1
+  cp "$defaults_src" "$DEST/scripts/budget-defaults.yml" || {
+    echo "install-opencode.sh: cannot install the budget defaults into $DEST/scripts" >&2
+    exit 1
+  }
+}
+
 refuse_escaped_dest || exit 1
 mkdir -p "$DEST"
 [ -d "$DEST" ] || {
@@ -316,6 +376,7 @@ mkdir -p "$DEST"
   exit 1
 }
 refuse_escaped_dest || exit 1
+write_install_context
 
 PACKAGE_MANIFEST="$HERE/package-manifest.sh"
 LEGACY_KNOWLEDGE_MANAGER="$DEST/agents/knowledge-manager.md"

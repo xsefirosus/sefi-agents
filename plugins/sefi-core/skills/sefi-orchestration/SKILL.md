@@ -138,6 +138,11 @@ preserving user-owned files.
 - Output-contract enforcement: discard excess beyond a subagent's contract; a dispatched
   agent's returned digest stays within `per_agent_return_tokens` (config/budget.yml).
 - Model routing: name every `model:`; an omitted model inherits the most expensive tier.
+- Budget gate: run `${CLAUDE_PLUGIN_ROOT}/scripts/budget-check.sh` with the harness identity --
+  `--harness <opencode|hermes|codex|claude-code|cline>` or the installed `.sefi/harness` marker --
+  so a free/flat harness resolves its own billing mode instead of being judged by ccusage
+  dollars. Exit 1 is EXCEEDED; exit 3 is CANNOT MEASURE (the cap was never checked). Both
+  fail closed, but 3 is fixed at the spend source, never by passing `--spent 0`.
 - Route evidence: after each dispatch run `${CLAUDE_PLUGIN_ROOT}/scripts/check-route.sh <harness> <tier> <session-record-or-thread-id>` and record its status in the `state/metrics.md` `route` column. On Codex the comparison is LIVE (`match` / `mismatch` / `invalid` per the rollout); `unavailable` / `not-applicable` is expected on claude-code / opencode / hermes. On `mismatch` (Codex ran a different model/effort than the tier map asked for) STOP, park the item in `inbox/`, never accept the run. If the shim exits 3 (no `python3` / `python` 3.11+ interpreter), record `route` as `skipped` -- the check did not run; it does not block or STOP.
 - The orchestrator never edits files; unfinished work is written to `state/`, never
   carried in context.
@@ -161,7 +166,7 @@ preserving user-owned files.
 - `references/loop-discipline.md` -- the canonical loop_discipline behavior.
 - `references/cartographer-v091.md` -- conditional v0.9.1 code-map evidence, freshness,
   context-packet, privacy, connector, and viewer contract.
-- `docs/BUDGET.md` -- the token-discipline stack, biggest lever first; terse-mode (output
+- `repo:docs/BUDGET.md` -- the token-discipline stack, biggest lever first; terse-mode (output
   compression) is last and smallest on purpose -- check the bigger levers before reaching
   for it.
 

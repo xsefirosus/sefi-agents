@@ -2,6 +2,7 @@
 # validate-no-personal-paths.sh -- scan shipped files for /Users/<name> and
 # C:\Users\<name> home paths; angle-bracket placeholders and common placeholder words are
 # allowlisted. Planning docs under docs/ (master prompt, provenance, archive) are excluded.
+# Uses rg when present and grep -oE otherwise; a host with neither fails closed.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
@@ -28,6 +29,26 @@ targets() {
 pat_unix='/Users/[A-Za-z0-9._-]+'
 pat_win='[A-Za-z]:\\Users\\[A-Za-z0-9._ -]+'
 
+# A missing scanner is not "no personal path": prefer rg, fall back to grep -oE
+# (present on every POSIX host), and fail closed if neither exists.
+if command -v rg >/dev/null 2>&1; then
+  SCANNER=rg
+elif command -v grep >/dev/null 2>&1; then
+  SCANNER=grep
+else
+  echo "validate-no-personal-paths: neither rg nor grep is available" >&2
+  exit 2
+fi
+
+scan() {
+  # scan <extended-regex> <file> -- print matches only, one per line.
+  if [ "$SCANNER" = rg ]; then
+    rg -oN "$1" "$2" 2>/dev/null
+  else
+    grep -oE "$1" "$2" 2>/dev/null
+  fi
+}
+
 is_placeholder() {
   case "$1" in
     name|user|username|USERNAME|USER|you|YOU|YourName|yourname|home|Home) return 0 ;;
@@ -38,8 +59,8 @@ is_placeholder() {
 hits="$(
   while IFS= read -r f; do
     [ -f "$f" ] || continue
-    rg -oN "$pat_unix" "$f" 2>/dev/null | sed "s#^#${f}|#"
-    rg -oN "$pat_win"  "$f" 2>/dev/null | sed "s#^#${f}|#"
+    scan "$pat_unix" "$f" | sed "s#^#${f}|#"
+    scan "$pat_win"  "$f" | sed "s#^#${f}|#"
   done < <(targets)
 )"
 

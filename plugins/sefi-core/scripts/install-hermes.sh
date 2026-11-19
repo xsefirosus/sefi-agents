@@ -400,7 +400,7 @@ root = runtime.resolve()
 for path in sorted(source.rglob("*")):
     if path.is_symlink() or not path.is_file():
         continue
-    relative = path.relative_to(source)
+    relative = path.relative_to(source).as_posix()
     installed_path = root / relative
     if installed_path.is_symlink():
         raise SystemExit(f"installed runtime file is missing or symlinked: {relative}")
@@ -416,6 +416,66 @@ for path in sorted(source.rglob("*")):
 PYEOF
   bash "$PACKAGE_MANIFEST" create --root "$CONFIG_DIR" --source "$CORE" --destination "$RUNTIME"
   echo "install-hermes.sh: managed runtime installed at $RUNTIME" >&2
+}
+
+install_harness_context() {
+  # install_harness_context -- ship the files the INSTALLED scripts resolve against,
+  # relative to their own directory, so an installed Hermes works from any working
+  # directory:
+  #
+  #   1. $RUNTIME/.sefi/harness          -- the harness identity budget-check.sh reads
+  #      when neither --harness nor $SEFI_HARNESS is set. Without it a free or flat plan
+  #      falls back to the fail-closed metered default and enforces dollars it never spends.
+  #   2. $RUNTIME/config/model-map.yml   -- model-for.sh reads $HERE/../config/model-map.yml.
+  #      The managed runtime copy already carries it; writing it here keeps that shipping
+  #      an explicit, verified contract instead of an accident of `cp -R $CORE/.`.
+  #   3. $RUNTIME/scripts/budget-defaults.yml -- budget-check.sh's bundled config fallback
+  #      for a check run outside a project root. The runtime copy ships the TEMPLATE at
+  #      templates/config/budget.yml, which is one level too high for the installed
+  #      script, so it is copied into scripts/ here.
+  #
+  # Called after install_runtime whether that step copied or found the runtime current: an
+  # existing install must receive these on a plain refresh too. All three are files the
+  # package manifest never lists (it is built from SOURCE files), so writing them neither
+  # creates a new managed surface nor turns a later manifest diff into drift.
+  local map_src="$CORE/config/model-map.yml"
+  local defaults_src="$CORE/templates/config/budget.yml"
+  [ -d "$RUNTIME" ] && [ ! -L "$RUNTIME" ] || {
+    echo "install-hermes.sh: runtime $RUNTIME is not a physical directory" >&2
+    return 1
+  }
+
+  # 1. The harness marker. The shared helper never fails the install: it warns once and
+  # returns 0 when the directory cannot be created or the file cannot be written.
+  bash "$HERE/sefi-harness-marker.sh" "$RUNTIME" hermes \
+    || echo "install-hermes.sh: could not record the harness marker; the installed gate falls back to metered" >&2
+
+  # 2. The model map. Fail-closed: a map that did not land leaves the installed
+  # model-for.sh exiting 1, which breaks the model-routing contract for every agent.
+  [ -f "$map_src" ] || { echo "install-hermes.sh: missing model map $map_src" >&2; return 1; }
+  [ ! -L "$RUNTIME/config" ] || {
+    echo "install-hermes.sh: refusing symlinked runtime config directory $RUNTIME/config" >&2
+    return 1
+  }
+  mkdir -p "$RUNTIME/config" || { echo "install-hermes.sh: cannot create $RUNTIME/config" >&2; return 1; }
+  cp -- "$map_src" "$RUNTIME/config/model-map.yml" || {
+    echo "install-hermes.sh: cannot install the model map into $RUNTIME/config" >&2
+    return 1
+  }
+
+  # 3. The budget defaults, inside the runtime's scripts/ directory.
+  [ -f "$defaults_src" ] || { echo "install-hermes.sh: missing budget template $defaults_src" >&2; return 1; }
+  [ ! -L "$RUNTIME/scripts" ] || {
+    echo "install-hermes.sh: refusing symlinked runtime scripts directory $RUNTIME/scripts" >&2
+    return 1
+  }
+  mkdir -p "$RUNTIME/scripts" || { echo "install-hermes.sh: cannot create $RUNTIME/scripts" >&2; return 1; }
+  cp -- "$defaults_src" "$RUNTIME/scripts/budget-defaults.yml" || {
+    echo "install-hermes.sh: cannot install the budget defaults into $RUNTIME/scripts" >&2
+    return 1
+  }
+  echo "install-hermes.sh: shipped harness marker, model map, and budget defaults into $RUNTIME" >&2
+  return 0
 }
 
 resolve_audit_contract() {
@@ -609,6 +669,10 @@ if [ -n "$content_mismatch" ]; then
   exit 1
 fi
 install_runtime
+# After the runtime lands (or is found current), ship the files its scripts resolve
+# relative to themselves. Failure here is a broken install, not a warning: without the
+# model map the installed model-for.sh exits 1 for every agent.
+install_harness_context || exit 1
 resolve_systems_audit_runtime
 # Fail-closed like the archive call sites: install_commands_plugin returns 1 when
 # its pre-delete snapshot fails, and that must abort the install before anything

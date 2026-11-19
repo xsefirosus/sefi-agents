@@ -1476,11 +1476,13 @@ if [ -f "$runtime/.sefi-agents-manifest.json" ] \
   && [ -f "$runtime/skills/systems-audit/references/report-contract.md" ] \
   && [ -f "$runtime/scripts/ci/validate-audit-report.sh" ] \
   && [ -f "$runtime/config/model-map.yml" ] \
+  && [ -f "$runtime/scripts/budget-defaults.yml" ] \
+  && [ "$(cat "$runtime/.sefi/harness" 2>/dev/null)" = "hermes" ] \
   && [ -f "$runtime/commands/audit.md" ] \
   && [ -f "$runtime/templates/audits/.gitkeep" ]; then
-  ok "Hermes runtime contains canonical audit dependencies"
+  ok "Hermes runtime contains canonical audit dependencies and its install context"
 else
-  bad "Hermes runtime contains canonical audit dependencies"
+  bad "Hermes runtime contains canonical audit dependencies and its install context"
 fi
 if python - "$CORE" "$runtime" "$BASE_HEAD" "$BASE_TREE" "$CANDIDATE_TREE" "$CANDIDATE_PATCH_SHA256" "$EMPTY_PATCH_SHA256" "$CANDIDATE_IDENTITY" <<'PY'
 import hashlib
@@ -1635,18 +1637,32 @@ fi
 # completes, then only the runtime cp is wrapped to replace one copied file with a
 # source-byte-identical in-runtime symlink. The post-copy verifier must reject the link
 # directly and restore the live skill snapshot.
-hermes_runtime_copy_bin="$tmp/hermes-runtime-copy-bin"
-hermes_runtime_copy_config="$tmp/hermes-runtime-copy/config"
-hermes_runtime_copy_root="$(dirname "$hermes_runtime_copy_config/config.toml")"
-hermes_runtime_copy_runtime="$hermes_runtime_copy_root/sefi-core"
-hermes_runtime_copy_relative="scripts/ci/validate-audit-report.sh"
-hermes_runtime_copy_target="$hermes_runtime_copy_runtime/.runtime-copy-symlink-victim"
-hermes_runtime_copy_live_skill="$hermes_runtime_copy_root/skills/systems-audit/SKILL.md"
-mkdir -p "$hermes_runtime_copy_bin" "$(dirname "$hermes_runtime_copy_live_skill")" "$hermes_runtime_copy_config"
-printf 'pre-install systems-audit sentinel\n' >"$hermes_runtime_copy_live_skill"
-hermes_runtime_copy_live_before="$(sha256sum "$hermes_runtime_copy_live_skill" | awk '{print $1}')"
-hermes_runtime_copy_source_before="$(sha256sum "$CORE/$hermes_runtime_copy_relative" | awk '{print $1}')"
-cat >"$hermes_runtime_copy_bin/cp" <<'EOF'
+# This fixture plants its link with Python's os.symlink, not ln -s: on MSYS hosts
+# ln -s silently copies, while os.symlink creates a real link when the account holds
+# the symlink privilege. Probe the primitive actually used so a host that cannot
+# create one reports PENDING rather than failing for the wrong reason.
+python_symlink_probe="$tmp/python-symlink-capability"
+mkdir -p "$python_symlink_probe"
+printf 'probe\n' >"$python_symlink_probe/target"
+if (cd "$python_symlink_probe" && python -c 'import os; os.symlink("target", "link")' 2>/dev/null) \
+  && [ -L "$python_symlink_probe/link" ]; then
+  python_symlinks_supported=1
+else
+  python_symlinks_supported=0
+fi
+if [ "$python_symlinks_supported" -eq 1 ]; then
+  hermes_runtime_copy_bin="$tmp/hermes-runtime-copy-bin"
+  hermes_runtime_copy_config="$tmp/hermes-runtime-copy/config"
+  hermes_runtime_copy_root="$(dirname "$hermes_runtime_copy_config/config.toml")"
+  hermes_runtime_copy_runtime="$hermes_runtime_copy_root/sefi-core"
+  hermes_runtime_copy_relative="scripts/ci/validate-audit-report.sh"
+  hermes_runtime_copy_target="$hermes_runtime_copy_runtime/.runtime-copy-symlink-victim"
+  hermes_runtime_copy_live_skill="$hermes_runtime_copy_root/skills/systems-audit/SKILL.md"
+  mkdir -p "$hermes_runtime_copy_bin" "$(dirname "$hermes_runtime_copy_live_skill")" "$hermes_runtime_copy_config"
+  printf 'pre-install systems-audit sentinel\n' >"$hermes_runtime_copy_live_skill"
+  hermes_runtime_copy_live_before="$(sha256sum "$hermes_runtime_copy_live_skill" | awk '{print $1}')"
+  hermes_runtime_copy_source_before="$(sha256sum "$CORE/$hermes_runtime_copy_relative" | awk '{print $1}')"
+  cat >"$hermes_runtime_copy_bin/cp" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 /bin/cp "$@"
@@ -1658,33 +1674,47 @@ if [ "$#" -eq 3 ] && [ "$1" = "-R" ] \
   target_path="$HERMES_RUNTIME_COPY_DEST/.runtime-copy-symlink-victim"
   /bin/cp "$source_path" "$target_path"
   rm -f "$installed_path"
-  ln -s "../../.runtime-copy-symlink-victim" "$installed_path"
+  # On MSYS hosts `ln -s` cannot create a physical symlink: its file-target form
+  # silently copies bytes instead, so the installer would see an ordinary file and
+  # never exercise the post-copy guard this fixture exists to test. Plant the link
+  # with os.symlink -- the same primitive the verifier checks via Path.is_symlink().
+  # Translate the link path to native form for the Windows interpreter; on POSIX
+  # hosts (no cygpath) the path is already correct and passes through unchanged.
+  link_path="$installed_path"
+  if command -v cygpath >/dev/null 2>&1; then
+    link_path="$(cygpath -m "$installed_path" 2>/dev/null || printf '%s' "$installed_path")"
+  fi
+  python -c 'import os,sys; os.symlink(sys.argv[1], sys.argv[2])' \
+    "../../.runtime-copy-symlink-victim" "$link_path"
 fi
 EOF
-chmod +x "$hermes_runtime_copy_bin/cp"
-expect_failure "Hermes rejects an in-runtime symlink after normal fetch validation" \
-  env PATH="$hermes_runtime_copy_bin:$fake_bin:$PATH" \
-  HERMES_TEST_CONFIG="$hermes_runtime_copy_config" HERMES_TEST_SOURCE="$CORE" \
-  HERMES_RUNTIME_COPY_SOURCE="$CORE" HERMES_RUNTIME_COPY_DEST="$hermes_runtime_copy_runtime" \
-  HERMES_RUNTIME_COPY_RELATIVE="$hermes_runtime_copy_relative" \
-  bash "$HERMES_INSTALL"
-if grep -qxF "installed runtime file is missing or symlinked: $hermes_runtime_copy_relative" \
-  "$tmp/Hermes rejects an in-runtime symlink after normal fetch validation.out"; then
-  ok "Hermes names the post-copy runtime symlink refusal exactly"
+  chmod +x "$hermes_runtime_copy_bin/cp"
+  expect_failure "Hermes rejects an in-runtime symlink after normal fetch validation" \
+    env PATH="$hermes_runtime_copy_bin:$fake_bin:$PATH" \
+    HERMES_TEST_CONFIG="$hermes_runtime_copy_config" HERMES_TEST_SOURCE="$CORE" \
+    HERMES_RUNTIME_COPY_SOURCE="$CORE" HERMES_RUNTIME_COPY_DEST="$hermes_runtime_copy_runtime" \
+    HERMES_RUNTIME_COPY_RELATIVE="$hermes_runtime_copy_relative" \
+    bash "$HERMES_INSTALL"
+  if grep -qxF "installed runtime file is missing or symlinked: $hermes_runtime_copy_relative" \
+    "$tmp/Hermes rejects an in-runtime symlink after normal fetch validation.out"; then
+    ok "Hermes names the post-copy runtime symlink refusal exactly"
+  else
+    bad "Hermes names the post-copy runtime symlink refusal exactly"
+  fi
+  hermes_runtime_copy_target_after="$(sha256sum "$hermes_runtime_copy_target" | awk '{print $1}')"
+  if [ "$hermes_runtime_copy_source_before" = "$hermes_runtime_copy_target_after" ]; then
+    ok "Hermes runtime-copy symlink target retains source-identical bytes"
+  else
+    bad "Hermes runtime-copy symlink target retains source-identical bytes"
+  fi
+  hermes_runtime_copy_live_after="$(sha256sum "$hermes_runtime_copy_live_skill" | awk '{print $1}')"
+  if [ "$hermes_runtime_copy_live_before" = "$hermes_runtime_copy_live_after" ]; then
+    ok "Hermes post-copy refusal restores the pre-install skill sentinel"
+  else
+    bad "Hermes post-copy refusal restores the pre-install skill sentinel"
+  fi
 else
-  bad "Hermes names the post-copy runtime symlink refusal exactly"
-fi
-hermes_runtime_copy_target_after="$(sha256sum "$hermes_runtime_copy_target" | awk '{print $1}')"
-if [ "$hermes_runtime_copy_source_before" = "$hermes_runtime_copy_target_after" ]; then
-  ok "Hermes runtime-copy symlink target retains source-identical bytes"
-else
-  bad "Hermes runtime-copy symlink target retains source-identical bytes"
-fi
-hermes_runtime_copy_live_after="$(sha256sum "$hermes_runtime_copy_live_skill" | awk '{print $1}')"
-if [ "$hermes_runtime_copy_live_before" = "$hermes_runtime_copy_live_after" ]; then
-  ok "Hermes post-copy refusal restores the pre-install skill sentinel"
-else
-  bad "Hermes post-copy refusal restores the pre-install skill sentinel"
+  printf 'PENDING: Hermes post-copy runtime symlink check requires a Python-created symlink\n'
 fi
 
 # A skill-only v0.9.4-style installation has no runtime; auto-update must add one.

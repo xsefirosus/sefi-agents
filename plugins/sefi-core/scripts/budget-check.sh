@@ -1,12 +1,28 @@
 #!/usr/bin/env bash
 # budget-check.sh [--scope run|daily|dispatch] [--spent <usd>] [--pending <usd>] [--config <path>]
-#                 [--harness opencode|hermes|codex|claude-code|claude]
+#                 [--harness opencode|hermes|codex|claude-code|claude|cline]
 # Enforce caps from config/budget.yml. Uses ccusage for real local spend when available
 # (offline, no network); else the caller-supplied --spent. ccusage is optional -- the
 # fallback keeps the zero-dependency install intact. --pending adds a not-yet-spent
 # estimate (e.g. the next dispatch's projected cost) before comparing against the cap, so a
 # daily-scope check can catch an overrun BEFORE it happens instead of only after
 # ccusage/--spent reports it as already spent.
+#
+# The config is resolved, in order: an explicit --config argument; config/budget.yml
+# relative to the current working directory (the project-local config); budget-defaults.yml
+# next to this script (what the installers ship into the installed scripts directory); then
+# templates/config/budget.yml relative to the plugin root (a repo checkout). Only when none
+# of those exists is the config missing. The old cwd-only default made every check run
+# from outside a project root report "config/budget.yml not found" and exit 2 -- a gate
+# that could not run at all, from the installed harness home or any unrelated directory.
+#
+# The harness identity behind the per-harness billing default is resolved, in order: the
+# explicit --harness flag; $SEFI_HARNESS; the install marker (.sefi/harness next to the
+# installed scripts, found relative to THIS script's own directory); the project marker
+# (.sefi/harness in the working directory, then in the nearest parent directory that has
+# one); then the fail-closed metered default. Every ambient signal sanitizes to metered on
+# any surprise -- absent, unreadable, empty, or unrecognized -- so no signal can weaken a
+# gate into a skip by accident.
 #
 # Exit codes (a caller must be able to tell these apart -- collapsing them is the bug this
 # script has now been fixed for twice):
@@ -21,8 +37,16 @@ set -euo pipefail
 SPENT_ARG=""
 PENDING_ARG="0"
 SCOPE="daily"
-CONFIG="config/budget.yml"
+CONFIG=""
+CONFIG_GIVEN=0
 HARNESS_ARG=""
+# This script's own directory, resolved once. The install marker, the bundled defaults,
+# and the repo template are all located relative to it, so a check run from an unrelated
+# working directory still finds a config and a harness identity. `cd` + `pwd` (not
+# `pwd -P`) keeps the LOGICAL path: an install whose scripts/ is a symlink into the
+# source checkout must resolve the install marker next to the INSTALL, not next to the
+# checkout.
+HERE="$(cd "$(dirname "$0")" && pwd)"
 
 need_value() {
   # need_value <flag> <next-token> -- succeed only when the flag is followed by a real value.
@@ -50,7 +74,7 @@ while [ "$#" -gt 0 ]; do
       SCOPE="$2"; shift 2 ;;
     --config)
       need_value "$1" "${2:-}" || exit 2
-      CONFIG="$2"; shift 2 ;;
+      CONFIG="$2"; CONFIG_GIVEN=1; shift 2 ;;
     --harness)
       need_value "$1" "${2:-}" || exit 2
       case "$2" in
@@ -62,7 +86,27 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-[ -f "$CONFIG" ] || { echo "budget-check: $CONFIG not found" >&2; exit 2; }
+# Config discovery. An explicit --config is the caller's claim and is checked as given.
+# Without one, the chain is the fallback-chain precedent already in this codebase
+# (scripts/check-reply.sh:97): the project-local config first, then the bundled defaults
+# that the installers ship next to the installed script, then the repo template.
+#
+# The message for a missing config is unchanged ("config/budget.yml not found", exit 2):
+# what changed is that it is now reachable only when NO candidate exists, instead of
+# whenever the working directory happened not to be the project root.
+if [ "$CONFIG_GIVEN" -eq 1 ]; then
+  [ -f "$CONFIG" ] || { echo "budget-check: $CONFIG not found" >&2; exit 2; }
+else
+  CONFIG=""
+  candidate=""
+  for candidate in "config/budget.yml" "$HERE/budget-defaults.yml" "$HERE/../templates/config/budget.yml"; do
+    if [ -f "$candidate" ]; then
+      CONFIG="$candidate"
+      break
+    fi
+  done
+  [ -n "$CONFIG" ] || { echo "budget-check: config/budget.yml not found" >&2; exit 2; }
+fi
 
 get_cap() {
   awk -F: -v key="$1" '
@@ -86,45 +130,125 @@ esac
 # opencode and hermes resolve free, codex, claude-code, and cline resolve flat; no
 # (or an unrecognized) harness signal resolves metered, fail-closed. A key that is
 # present but has no value is a usage error, not a request for that default. The
-# harness comes from --harness, then $SEFI_HARNESS, then the machine-local
-# .sefi/harness marker written by /sefi:init (claude is accepted as an alias of
-# claude-code). Non-dollar discipline (retry caps, reply caps, minimization, worktree
-# caps) lives outside this script and stays always on regardless of mode.
+# harness comes from --harness, then $SEFI_HARNESS, then the install marker
+# (.sefi/harness next to the installed scripts), then the project marker
+# (.sefi/harness in the working directory or in the nearest parent directory that
+# carries one) -- the last two written by the installers and by /sefi:init
+# respectively; claude is accepted as an alias of claude-code. Non-dollar discipline
+# (retry caps, reply caps, minimization, worktree caps) lives outside this script and
+# stays always on regardless of mode.
 default_billing_mode() {
   # default_billing_mode -- print the billing_mode for a config without the key.
-  # Never fails: ambient signals ($SEFI_HARNESS, the marker file) sanitize to
+  # Never fails: ambient signals ($SEFI_HARNESS, the marker files) sanitize to
   # metered on any surprise, exactly like write-shared-memory-mirror.sh falls back
   # to unknown-harness. Only the explicit --harness flag is validated strictly
   # (at arg-parse time above), because it is an API claim, not an ambient signal.
-  local h="unknown" marker=""
+  #
+  # The order is: the explicit --harness flag, then $SEFI_HARNESS, then the INSTALL
+  # marker (the .sefi/harness file an installer writes next to the installed scripts,
+  # found relative to this script's own directory so it resolves from any working
+  # directory), then the PROJECT marker (.sefi/harness in the working directory, then
+  # in the nearest parent directory that carries one), then the fail-closed default.
+  #
+  # Every new signal states the same fact -- which harness is running -- so none of
+  # them can weaken a gate into a skip by surprise. A present-but-unusable signal
+  # (unreadable, empty, or unrecognized) sanitizes to metered and STOPS the search;
+  # an absent install marker falls through to the project marker, and an absent
+  # project marker falls to metered. An unrecognized $SEFI_HARNESS also stops the
+  # search (as it always did): a signal that is present but says nothing usable is
+  # not permission to look for a weaker one.
+  local h="unknown" resolved=""
   if [ -n "$HARNESS_ARG" ]; then
     h="$HARNESS_ARG"
   elif [ -n "${SEFI_HARNESS:-}" ]; then
     case "$SEFI_HARNESS" in
       opencode|hermes|codex|claude-code|claude|cline) h="$SEFI_HARNESS" ;;
     esac
-  elif [ -f .sefi/harness ]; then
-    # Guarded, because what the guard costs is one line and what skipping it costs is the
-    # exit code a caller acts on. An unguarded `marker="$(head ...)"` has two failure modes:
-    # where errexit applies to the assignment (the function called directly), the script dies
-    # with a bare exit 1 that no reader can tell from EXCEEDED; inside this script's actual
-    # call path -- `BILLING_MODE="$(default_billing_mode)"` -- errexit does not reach the
-    # substitution, so the failure is swallowed instead and the marker silently becomes empty.
-    # Either way nothing names the unreadable marker. Now it is named, and "no signal" is
-    # treated explicitly: sanitize to metered, say so, fail closed.
-    if ! marker="$(head -n1 .sefi/harness 2>/dev/null | tr -d '\r\n' | tr -d '[:space:]')"; then
-      marker=""
-      echo "budget-check: .sefi/harness is present but unreadable; the per-harness default falls back to metered (fail-closed)" >&2
-    fi
-    case "$marker" in
-      opencode|hermes|codex|claude-code|claude|cline) h="$marker" ;;
+  else
+    resolved="$(harness_from_marker "$HERE/../.sefi/harness")"
+    case "$resolved" in
+      '!invalid')
+        # The install marker is present but says nothing usable. That is a signal,
+        # not an absence: sanitize to metered and do NOT consult the project marker,
+        # because a bad higher-priority signal is not permission to look for a
+        # weaker one.
+        resolved="" ;;
+      '')
+        resolved="$(harness_from_project_marker)"
+        if [ "$resolved" = '!invalid' ]; then
+          resolved=""
+        fi ;;
     esac
+    if [ -n "$resolved" ]; then
+      h="$resolved"
+    fi
   fi
   case "$h" in
     opencode|hermes) printf 'free\n' ;;
     codex|claude-code|claude|cline) printf 'flat\n' ;;
     *) printf 'metered\n' ;;
   esac
+}
+
+harness_from_marker() {
+  # harness_from_marker <path> -- print the harness name the marker declares, the
+  # sentinel "!invalid" when the file is present but unreadable, empty, or names no
+  # known harness, or nothing when the file is absent. The caller MUST treat the
+  # sentinel as a present signal that sanitizes to metered, never as permission to
+  # consult a farther marker: returning empty for both "absent" and "bad" is the
+  # fail-open this function exists to prevent.
+  # Always exits 0: this function is called from inside a command substitution, where a
+  # non-zero status would be swallowed into an empty string anyway -- and an empty
+  # string is exactly the ambiguity this function exists to remove.
+  #
+  # The read is guarded, because what the guard costs is one line and what skipping it
+  # costs is the exit code a caller acts on. An unguarded `marker="$(head ...)"` has two
+  # failure modes: where errexit applies to the assignment (the function called
+  # directly), the script dies with a bare exit 1 that no reader can tell from
+  # EXCEEDED; inside this script's actual call path -- `BILLING_MODE="$(default_billing_mode)"`
+  # -- errexit does not reach the substitution, so the failure is swallowed instead and
+  # the marker silently becomes empty. Either way nothing names the unreadable marker.
+  # Now it is named, and "no signal" is treated explicitly: sanitize to metered, say
+  # so, fail closed.
+  local path="$1" marker=""
+  [ -f "$path" ] || return 0
+  if ! marker="$(head -n1 "$path" 2>/dev/null | tr -d '\r\n' | tr -d '[:space:]')"; then
+    echo "budget-check: $path is present but unreadable; the per-harness default falls back to metered (fail-closed)" >&2
+    printf '!invalid\n'
+    return 0
+  fi
+  case "$marker" in
+    opencode|hermes|codex|claude-code|claude|cline) printf '%s\n' "$marker" ;;
+    *)
+      echo "budget-check: $path names no known harness; the per-harness default falls back to metered (fail-closed)" >&2
+      printf '!invalid\n' ;;
+  esac
+  return 0
+}
+
+harness_from_project_marker() {
+  # harness_from_project_marker -- print the harness name the PROJECT marker declares,
+  # or print nothing when there is none. The marker is looked for in the working
+  # directory first and then in each parent directory, so a check run from a nested
+  # directory inside a project still sees that project's harness identity instead of
+  # falling back to metered for a reason that has nothing to do with the harness.
+  #
+  # The walk stops at the first marker it finds, parent or not: the nearest marker is
+  # the project's own, and a present-but-bad one is propagated as "!invalid" so the
+  # caller meters instead of skipping to a farther marker.
+  local dir="$PWD" resolved=""
+  while [ -n "$dir" ]; do
+    if [ -f "$dir/.sefi/harness" ]; then
+      resolved="$(harness_from_marker "$dir/.sefi/harness")"
+      printf '%s' "$resolved"
+      return 0
+    fi
+    if [ "$dir" = "/" ]; then
+      break
+    fi
+    dir="$(dirname "$dir")"
+  done
+  return 0
 }
 
 billing_declared="$(grep -c '^billing_mode:' "$CONFIG" || true)"

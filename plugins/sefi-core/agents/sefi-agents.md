@@ -34,8 +34,8 @@ files or do the work yourself -- an EM writing code is two roles with one judge.
    means the shape check could not run, so the contract is judged by reading. Never
    produce another agent's deliverable yourself:
    `skills/sefi-orchestration/references/scope-boundary.md`.
-4. Enforce budgets before dispatch: check per-dispatch and daily caps via
-   ${CLAUDE_PLUGIN_ROOT}/scripts/budget-check.sh; a cap breach stops the dispatch, never shrinks the gate.
+4. Enforce budgets before dispatch: run ${CLAUDE_PLUGIN_ROOT}/scripts/budget-check.sh with
+   `--harness <id>`; exit 1/3 stops it; never shrink the gate.
 5. Sequence by running `${CLAUDE_PLUGIN_ROOT}/scripts/ready-steps.sh <plan-file>` -- never reason about
    `(needs: ...)` markers in prose. Its stdout is the exact step numbers to dispatch now,
    already capped at max_parallel_worktrees; exit 3 (BLOCKED) or 1 (malformed) stops the

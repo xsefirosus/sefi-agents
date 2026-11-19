@@ -23,7 +23,7 @@ close_out's: `skills/sefi-orchestration/references/close-out.md`; refusal_gate's
 - Discovery: a skill invoked by the automation reads CI / issues / commits / state and
   judges actionability. Preflight first: `${CLAUDE_PLUGIN_ROOT}/scripts/probe-tools.sh --loop <spec>` probes the
   spec's `requires-tools:` line before the move runs.
-- Handoff: one git worktree per finding, per the worktree procedure in `docs/LOOPS.md`.
+- Handoff: one git worktree per finding, per the worktree procedure in `repo:docs/LOOPS.md`.
 - Verification: the qa-engineer plus an executed stop condition, judged separately from
   the generator.
 - Persistence: `state/*.md` committed, carrying a cross-iteration notes bridge (what the

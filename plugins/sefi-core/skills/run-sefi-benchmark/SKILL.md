@@ -20,7 +20,7 @@ Run this per release, or monthly, or when a human explicitly asks. It is manual 
 out-of-loop by construction. **Never more than one benchmark run per day, AND only with
 explicit per-invocation authorization** -- there is no standing pre-authorization, a day
 passing does not auto-approve a run, and a prior approval never carries to the next run.
-Same statement in `docs/BUDGET.md` and `docs/METRICS-PROVENANCE.md`. A `loops/*.loop.md`
+Same statement in `repo:docs/BUDGET.md` and `repo:docs/METRICS-PROVENANCE.md`. A `loops/*.loop.md`
 spec MUST NOT call this skill: a benchmark run spends real tokens and time well past
 `per_run_usd_cap`, and an unattended loop has no authority to approve that. If a loop
 needs benchmark evidence, it parks a request in `inbox/` for a human.
@@ -57,7 +57,7 @@ the `flexible` sentinel and the control arm then has no fixed model identity.
    directory. Producing the plan makes **zero model calls**.
 2. Get **explicit per-invocation authorization** of the token and time spend for that
    specific matrix. A benchmark run is exempt from `per_run_usd_cap` / `daily_usd_cap`
-   (`docs/BUDGET.md`) only by being manual and separately ceiling-ed -- it is not covered
+   (`repo:docs/BUDGET.md`) only by being manual and separately ceiling-ed -- it is not covered
    by `${CLAUDE_PLUGIN_ROOT}/scripts/budget-check.sh`. No authorization, no run.
 3. Never silently widen the matrix, add repetitions, or retry a costly failed run.
 
@@ -132,7 +132,7 @@ evidence captured out-of-process), wrapped in `try/except -> False`. Full detail
   artifacts are never committed.
 - **Refuse a non-empty output directory.** Evidence from separate runs must never be
   mixed in one directory.
-- On promotion (see `docs/METRICS-PROVENANCE.md`), copy ONLY the `scorecard.py` output out
+- On promotion (see `repo:docs/METRICS-PROVENANCE.md`), copy ONLY the `scorecard.py` output out
   of the run dir, committed as `benchmarks/published/<date>-<slug>.scorecard.txt`.
 - Do not change global harness configuration, push, publish, or touch production systems.
 
@@ -185,7 +185,7 @@ is absent or a non-working stub). The scorer:
   a clean win.
 - A result showing the chain **losing** on some task classes is an accepted outcome, not
   a harness failure. Report it plainly.
-- Benchmark numbers are cited from `docs/METRICS-PROVENANCE.md`, which records that the
+- Benchmark numbers are cited from `repo:docs/METRICS-PROVENANCE.md`, which records that the
   harness is out-of-loop and its spend is separately authorized.
 - Keep every missing measure as `null` / `n/a`. A small local case set is directional
   local evidence, not a product-wide claim.
