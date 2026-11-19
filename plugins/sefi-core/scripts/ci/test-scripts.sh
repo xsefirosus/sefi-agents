@@ -349,6 +349,161 @@ case "$flat_wins" in
   *) bad "the explicit win recorded the wrong mode: $flat_wins" ;;
 esac
 
+# The INSTALL marker: an installed bundle records its harness identity in .sefi/harness one
+# level above the installed scripts/, and budget-check.sh resolves it relative to ITS OWN
+# directory rather than the working directory -- so a check run from ANYWHERE reads it. The
+# layout is built for real (scripts/ beside .sefi/harness) because that relationship, not
+# the file's bytes, is the contract. Without it this same install has no harness identity
+# at all and must enforce, which is the counter-case immediately below.
+UNRELTMP="$(mktemp -d)"
+INSTROOT="$(mktemp -d)"
+mkdir -p "$INSTROOT/scripts" "$INSTROOT/.sefi"
+cp "$CORE/scripts/budget-check.sh" "$INSTROOT/scripts/budget-check.sh"
+printf 'hermes\n' > "$INSTROOT/.sefi/harness"
+expect_code 0 "an install marker resolves the harness from an unrelated cwd (hermes -> free)" \
+  bash -c "cd '$UNRELTMP' && env -u SEFI_HARNESS bash '$INSTROOT/scripts/budget-check.sh' --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'"
+inst_skip="$(bash -c "cd '$UNRELTMP' && env -u SEFI_HARNESS bash '$INSTROOT/scripts/budget-check.sh' --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'" 2>&1 >/dev/null)"
+case "$inst_skip" in
+  *"billing_mode=free"*) ok "the install marker resolved the harness, not the working directory" ;;
+  *) bad "the install marker did not resolve the harness: $inst_skip" ;;
+esac
+rm -f "$INSTROOT/.sefi/harness"
+expect_code 1 "the same install with no marker stays metered (fail-closed, enforces)" \
+  bash -c "cd '$UNRELTMP' && env -u SEFI_HARNESS bash '$INSTROOT/scripts/budget-check.sh' --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'"
+
+# The PROJECT marker is looked for in the working directory and then in each PARENT
+# directory, so a check run from a nested directory inside a project still sees that
+# project's harness identity instead of falling back to metered for a reason that has
+# nothing to do with the harness. The repo's own script is used here (its install marker
+# path holds no file), so only the upward walk can resolve this.
+PROJTMP="$(mktemp -d)"
+mkdir -p "$PROJTMP/.sefi" "$PROJTMP/a/b"
+printf 'hermes\n' > "$PROJTMP/.sefi/harness"
+expect_code 0 "a project marker in a parent directory resolves from a nested cwd (hermes -> free)" \
+  bash -c "cd '$PROJTMP/a/b' && env -u SEFI_HARNESS bash '$CORE/scripts/budget-check.sh' --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'"
+nested_skip="$(bash -c "cd '$PROJTMP/a/b' && env -u SEFI_HARNESS bash '$CORE/scripts/budget-check.sh' --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'" 2>&1 >/dev/null)"
+case "$nested_skip" in
+  *"billing_mode=free"*) ok "the upward walk found the parent marker (not the cwd-relative absence)" ;;
+  *) bad "the upward walk did not find the parent marker: $nested_skip" ;;
+esac
+
+# --harness still wins over EVERY ambient signal at once: installed marker (hermes -> free)
+# in the script's own tree and a project marker (hermes) in the working tree, with the flag
+# naming codex. A weaker gate must never beat an explicit claim.
+printf 'hermes\n' > "$INSTROOT/.sefi/harness"
+printf 'hermes\n' > "$PROJTMP/.sefi/harness"
+flag_wins="$(bash -c "cd '$PROJTMP/a/b' && env -u SEFI_HARNESS bash '$INSTROOT/scripts/budget-check.sh' --harness codex --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'" 2>&1 >/dev/null)"
+case "$flag_wins" in
+  *"billing_mode=flat"*) ok "--harness wins over the install marker and the project marker" ;;
+  *) bad "--harness did not win over both markers: $flag_wins" ;;
+esac
+env_wins="$(bash -c "cd '$PROJTMP/a/b' && env SEFI_HARNESS=codex bash '$INSTROOT/scripts/budget-check.sh' --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'" 2>&1 >/dev/null)"
+case "$env_wins" in
+  *"billing_mode=flat"*) ok "SEFI_HARNESS wins over the install marker and the project marker" ;;
+  *) bad "SEFI_HARNESS did not win over both markers: $env_wins" ;;
+esac
+rm -f "$INSTROOT/.sefi/harness"
+
+# A PRESENT-BUT-BAD install marker is a signal, not an absence: it must sanitize to
+# metered and stop the search. Falling through to a valid project marker would let a
+# bad install signal turn a real overrun into a free/flat skip -- the fail-open this
+# fixture exists to pin.
+printf 'hermes\n' > "$INSTROOT/.sefi/harness"
+printf 'codex\n' > "$PROJTMP/.sefi/harness"
+install_wins="$(bash -c "cd '$PROJTMP/a/b' && env -u SEFI_HARNESS bash '$INSTROOT/scripts/budget-check.sh' --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'" 2>&1 >/dev/null)"; rc=$?
+if [ "$rc" -eq 0 ]; then
+  case "$install_wins" in
+    *"billing_mode=free"*) ok "a valid install marker wins over a conflicting project marker" ;;
+    *) bad "the install marker did not win over a conflicting project marker: $install_wins" ;;
+  esac
+else
+  bad "a valid install marker should resolve free (exit $rc): $install_wins"
+fi
+
+printf 'hermes\n' > "$PROJTMP/.sefi/harness"
+printf 'definitely-not-a-harness\n' > "$INSTROOT/.sefi/harness"
+bad_install="$(bash -c "cd '$PROJTMP/a/b' && env -u SEFI_HARNESS bash '$INSTROOT/scripts/budget-check.sh' --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'" 2>&1 >/dev/null)"; rc=$?
+if [ "$rc" -eq 1 ]; then
+  ok "an unrecognized install marker sanitizes to metered, never the project marker"
+else
+  bad "an unrecognized install marker fell through to the project marker (exit $rc): $bad_install"
+fi
+case "$bad_install" in
+  *"names no known harness"*) ok "an unrecognized install marker names itself, not a silent fallback" ;;
+  *) bad "an unrecognized install marker produced no recorded reason: $bad_install" ;;
+esac
+
+: > "$INSTROOT/.sefi/harness"
+empty_install="$(bash -c "cd '$PROJTMP/a/b' && env -u SEFI_HARNESS bash '$INSTROOT/scripts/budget-check.sh' --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'" 2>&1 >/dev/null)"; rc=$?
+if [ "$rc" -eq 1 ]; then
+  ok "an empty install marker sanitizes to metered, never the project marker"
+else
+  bad "an empty install marker fell through to the project marker (exit $rc): $empty_install"
+fi
+
+# Force a read failure only for the install marker, while leaving the project marker
+# readable. A global failing head stub would fail both reads and pass for the wrong
+# reason; this one pins the install marker's emptiness to metered, not a fallthrough.
+printf 'opencode\n' > "$INSTROOT/.sefi/harness"
+REAL_HEAD="$(command -v head)"
+INSTSTUB="$(mktemp -d)"
+printf '#!/bin/sh\ncase "$*" in\n  *%s*) exit 1 ;;\nesac\nexec %s "$@"\n' "$INSTROOT" "$REAL_HEAD" > "$INSTSTUB/head"
+chmod +x "$INSTSTUB/head"
+unread_install="$(bash -c "cd '$PROJTMP/a/b' && env -u SEFI_HARNESS PATH='$INSTSTUB:$PATH' bash '$INSTROOT/scripts/budget-check.sh' --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'" 2>&1 >/dev/null)"; rc=$?
+if [ "$rc" -eq 1 ]; then
+  ok "an unreadable install marker sanitizes to metered, never the project marker"
+else
+  bad "an unreadable install marker fell through to the project marker (exit $rc): $unread_install"
+fi
+case "$unread_install" in
+  *unreadable*) ok "an unreadable install marker is reported explicitly, not swallowed" ;;
+  *) bad "an unreadable install marker produced no recorded reason: $unread_install" ;;
+esac
+rm -rf "$INSTSTUB"
+rm -f "$INSTROOT/.sefi/harness"
+
+# An explicit metered key keeps enforcing on EVERY harness: opting into metered must not be
+# silently converted into a skip by the harness it runs under.
+for metered_harness in opencode hermes codex claude-code cline; do
+  expect_code 1 "explicit metered still enforces on $metered_harness" \
+    env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" --harness "$metered_harness" --scope daily --spent 999.00 --config "$MODETMP/metered.yml"
+done
+
+# CONFIG DISCOVERY: a check run outside ANY project root must resolve the bundled defaults
+# instead of reporting "config/budget.yml not found" and exiting 2. Two layouts, because
+# they are two distinct installed shapes: the repo checkout (templates/config/budget.yml
+# under the plugin root) and an installed bundle (budget-defaults.yml next to the script).
+DEFROOT="$(mktemp -d)"
+mkdir -p "$DEFROOT/scripts"
+cp "$CORE/scripts/budget-check.sh" "$DEFROOT/scripts/budget-check.sh"
+cp "$BUDGET_TPL" "$DEFROOT/scripts/budget-defaults.yml"
+out="$(cd "$UNRELTMP" && env -u SEFI_HARNESS bash "$DEFROOT/scripts/budget-check.sh" --scope daily --spent 999.00 2>&1)"; rc=$?
+[ "$rc" -eq 1 ] && ok "an installed bundle resolves budget-defaults.yml next to its script (enforces)" \
+  || bad "an installed bundle did not resolve its bundled defaults (exit $rc): $out"
+case "$out" in
+  *"not found"*) bad "an installed bundle still reported the config missing: $out" ;;
+  *) ok "an installed bundle reports no missing config outside a project root" ;;
+esac
+out="$(cd "$UNRELTMP" && env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" --scope daily --spent 999.00 2>&1)"; rc=$?
+[ "$rc" -eq 1 ] && ok "a repo checkout resolves templates/config/budget.yml (enforces)" \
+  || bad "a repo checkout did not resolve its template (exit $rc): $out"
+case "$out" in
+  *"not found"*) bad "a repo checkout still reported the config missing: $out" ;;
+  *) ok "a repo checkout reports no missing config outside a project root" ;;
+esac
+# The chain still ends where it always did: with NOTHING to resolve, the message and exit
+# code are unchanged. Pinned so the fallback can never become a silent empty config.
+ONLYTMP="$(mktemp -d)"
+mkdir -p "$ONLYTMP/scripts"
+cp "$CORE/scripts/budget-check.sh" "$ONLYTMP/scripts/budget-check.sh"
+out="$(cd "$UNRELTMP" && env -u SEFI_HARNESS bash "$ONLYTMP/scripts/budget-check.sh" --scope daily --spent 0 2>&1)"; rc=$?
+[ "$rc" -eq 2 ] && ok "no candidate config at all still exits 2" \
+  || bad "no candidate config at all exited $rc instead of 2: $out"
+case "$out" in
+  *"config/budget.yml not found"*) ok "no candidate config at all reports the unchanged message" ;;
+  *) bad "the missing-config message changed: $out" ;;
+esac
+
 # An unknown --harness is a usage error, never a silent default: the flag is an
 # explicit API claim, so garbage in must fail loudly at the trust boundary.
 expect_code 2 "--harness gold is a usage error, not a silent default" \
@@ -375,9 +530,12 @@ esac
 # harness signal at all, still defaults to metered -- fail-closed, so the over-cap
 # spend enforces. A config predating the key ON a mapped harness resolves to that
 # harness's default instead; the per-harness cases above already cover those.
+# Run from an isolated cwd on purpose: the project-marker upward walk makes a check run
+# from inside a project resolve that project's harness, so "no signal" has to mean a
+# directory with no marker above it.
 expect_code 1 "an unmapped harness with no signal still defaults to metered (enforces)" \
-  without_ccusage env -u SEFI_HARNESS bash "$CORE/scripts/budget-check.sh" \
-    --scope daily --spent 999.00 --config "$MODETMP/nomode.yml"
+  bash -c "cd '$UNRELTMP' && env -u SEFI_HARNESS bash '$CORE/scripts/budget-check.sh' \
+    --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'"
 
 # Exit-3 semantics are unchanged for metered: no ccusage AND no --spent still means
 # CANNOT MEASURE. Skipped when ccusage is installed locally; CI has none, and CI is
@@ -458,7 +616,7 @@ rm -rf "$VB"
 # Scope handling is unchanged by mode: an unknown scope still fails even when flat.
 expect_code 2 "an unknown scope is still rejected when billing_mode=flat" \
   bash "$CORE/scripts/budget-check.sh" --scope unknown --spent 0 --config "$MODETMP/flat.yml"
-rm -rf "$MODETMP" "$NOSIGTMP" "$MARKTMP"
+rm -rf "$MODETMP" "$NOSIGTMP" "$MARKTMP" "$UNRELTMP" "$INSTROOT" "$PROJTMP" "$DEFROOT" "$ONLYTMP"
 
 echo
 

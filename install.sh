@@ -307,6 +307,84 @@ PACKAGE_MANIFEST="$CORE/scripts/package-manifest.sh"
 LEGACY_KNOWLEDGE_MANAGER="$DEST/agents/knowledge-manager.md"
 LEGACY_KNOWLEDGE_MANAGER_BACKUP=""
 
+install_harness_context() {
+  # install_harness_context -- ship the three files the INSTALLED scripts resolve
+  # against, so an installed harness is self-sufficient instead of depending on the
+  # working directory it happens to be run from:
+  #
+  #   1. the harness marker   -> <harness-home>/.sefi/harness. budget-check.sh reads
+  #      ../.sefi/harness relative to its own directory when neither --harness nor
+  #      $SEFI_HARNESS names the harness; without the marker the installed gate falls
+  #      back to the fail-closed metered default and enforces a dollar cap a free or
+  #      flat plan never incurs.
+  #   2. the model map       -> <harness-home>/config/model-map.yml. model-for.sh
+  #      reads $HERE/../config/model-map.yml relative to itself, so the map must sit
+  #      one level above the installed scripts/ directory.
+  #   3. the budget defaults -> <harness-home>/scripts/budget-defaults.yml.
+  #      budget-check.sh reads budget-defaults.yml next to itself when the working
+  #      directory holds no config/budget.yml.
+  #
+  # The package manifest is built from SOURCE files and only ever requires source files
+  # to be present in the destination, so a destination-only file such as these is
+  # neither recorded nor reported as drift: no new manifest surface is created, and an
+  # existing install's manifest check keeps returning "current".
+  # Each write is re-verified at its own write site, like every other write here.
+  local map_src="$CORE/config/model-map.yml"
+  local defaults_src="$CORE/templates/config/budget.yml"
+
+  # 1. The harness marker. The helper never fails the install: it warns once and
+  # returns 0 when the directory cannot be created or the file cannot be written.
+  refuse_escaped_dest || return 1
+  sefi_assert_write_target "$DEST/.sefi" "$DEST" \
+    "install.sh: refusing to write the harness marker into $DEST/.sefi" || return 1
+  bash "$CORE/scripts/sefi-harness-marker.sh" "$DEST" "$TARGET" \
+    || echo "install.sh: could not record the harness marker; the installed gate falls back to metered" >&2
+
+  # 2. The model map. Fail-closed: a model map that did not land makes the installed
+  # model-for.sh exit 1 with "model map not found", which breaks the model-routing
+  # contract for every agent in the install.
+  [ -f "$map_src" ] || { echo "install.sh: missing model map $map_src" >&2; return 1; }
+  refuse_escaped_dest || return 1
+  sefi_assert_write_target "$DEST/config" "$DEST" \
+    "install.sh: refusing to write the model map into $DEST/config" || return 1
+  mkdir -p "$DEST/config" || { echo "install.sh: cannot create $DEST/config" >&2; return 1; }
+  sefi_assert_write_target "$DEST/config/model-map.yml" "$DEST" \
+    "install.sh: refusing to write $DEST/config/model-map.yml" || return 1
+  cp "$map_src" "$DEST/config/model-map.yml" || {
+    echo "install.sh: cannot install the model map into $DEST/config" >&2
+    return 1
+  }
+
+  # 3. The budget defaults. budget-check.sh resolves them next to ITSELF
+  # (budget-defaults.yml) and then at ../templates/config/budget.yml, both relative to
+  # the LOGICAL path this install was laid down at. In copy mode scripts/ is a real
+  # installed directory, so the defaults land inside it. In symlink mode scripts/ IS the
+  # source checkout's scripts directory: writing there would mutate the checkout, and the
+  # checkout carries no such file at all (the template is the single source of truth), so
+  # the same template lands one level up instead, where the second candidate resolves it
+  # from the install path without following the link.
+  local defaults_dest="$DEST/scripts/budget-defaults.yml"
+  if [ -L "$DEST/scripts" ]; then
+    defaults_dest="$DEST/templates/config/budget.yml"
+  fi
+  [ -f "$defaults_src" ] || { echo "install.sh: missing budget template $defaults_src" >&2; return 1; }
+  refuse_escaped_dest || return 1
+  sefi_assert_write_target "$(dirname "$defaults_dest")" "$DEST" \
+    "install.sh: refusing to write the budget defaults into $(dirname "$defaults_dest")" || return 1
+  mkdir -p "$(dirname "$defaults_dest")" || {
+    echo "install.sh: cannot create $(dirname "$defaults_dest")" >&2
+    return 1
+  }
+  refuse_escaped_dest || return 1
+  sefi_assert_write_target "$defaults_dest" "$DEST" \
+    "install.sh: refusing to write $defaults_dest" || return 1
+  cp "$defaults_src" "$defaults_dest" || {
+    echo "install.sh: cannot install the budget defaults into $defaults_dest" >&2
+    return 1
+  }
+  return 0
+}
+
 is_sefi_managed_file() {
   # is_sefi_managed_file <path> -- a legacy profile is Sefi-owned only when its source
   # file says so. A same-named user profile must survive a forced package refresh.
@@ -705,6 +783,10 @@ else
   # The cline-only always-on router rule is independent of the subtree loop: a
   # skills/ conflict refused without --force must not silently skip routing.
   if [ "$TARGET" = "cline" ]; then install_cline_router_rule || rc=1; fi
+  # The installed scripts resolve their harness identity, model map, and bundled budget
+  # defaults relative to their own directory; ship all three so a check run from any
+  # working directory works instead of falling back to metered or to "config not found".
+  install_harness_context || rc=1
   # Copy mode produces independent files (unlike a symlink, which still points back at
   # the source checkout), so it is safe to rewrite the placeholder here without touching
   # the source. Applied to agents/skills/commands only -- scripts/ itself never contains

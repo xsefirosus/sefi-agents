@@ -116,6 +116,13 @@ cat > "$CODEX_BIN/codex" <<'CODEX'
 #!/usr/bin/env bash
 set -euo pipefail
 marketplace="$CODEX_HOME/marketplaces/sefi-agents"
+# The JSON below is consumed by the installer's native Python, which cannot
+# resolve an MSYS /tmp path (on Windows that spelling is a different drive).
+# Report the same native form a real Windows CLI would report; on POSIX hosts
+# cygpath is absent and the path passes through unchanged.
+winpath() {
+  if command -v cygpath >/dev/null 2>&1; then cygpath -m "$1"; else printf '%s' "$1"; fi
+}
 ensure_marketplace() {
   mkdir -p "$marketplace/plugins/sefi-core"
   cp -R "${ONBOARDING_CORE:?}/." "$marketplace/plugins/sefi-core/"
@@ -124,14 +131,14 @@ ensure_marketplace() {
 case "$*" in
   'plugin marketplace list --json')
     if [ -f "$CODEX_HOME/.sefi-marketplace-added" ]; then
-      printf '{"marketplaces":[{"name":"sefi-agents","root":"%s","marketplaceSource":{"sourceType":"git","source":"https://github.com/xsefirosus/sefi-agents.git"}}]}\n' "$marketplace"
+      printf '{"marketplaces":[{"name":"sefi-agents","root":"%s","marketplaceSource":{"sourceType":"git","source":"https://github.com/xsefirosus/sefi-agents.git"}}]}\n' "$(winpath "$marketplace")"
     else
       printf '%s\n' '{"marketplaces":[]}'
     fi
     ;;
   'plugin marketplace add xsefirosus/sefi-agents') ensure_marketplace ;;
   'plugin marketplace upgrade sefi-agents'|'plugin add sefi-core@sefi-agents') : ;;
-  'plugin list --json') printf '{"installed":[{"pluginId":"sefi-core@sefi-agents","marketplaceName":"sefi-agents","source":{"source":"local","path":"%s/plugins/sefi-core"},"marketplaceSource":{"sourceType":"git","source":"https://github.com/xsefirosus/sefi-agents.git"}}]}\n' "$marketplace" ;;
+  'plugin list --json') printf '{"installed":[{"pluginId":"sefi-core@sefi-agents","marketplaceName":"sefi-agents","source":{"source":"local","path":"%s/plugins/sefi-core"},"marketplaceSource":{"sourceType":"git","source":"https://github.com/xsefirosus/sefi-agents.git"}}]}\n' "$(winpath "$marketplace")" ;;
   *)
     printf 'unexpected fake codex invocation: %s\n' "$*" >&2
     exit 64

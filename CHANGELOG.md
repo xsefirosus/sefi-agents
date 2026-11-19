@@ -5,6 +5,36 @@ Changelog; this project adheres to Semantic Versioning.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-19
+
+### Added
+
+- `budget-check.sh` now resolves a config from an explicit `--config`, the project-local
+  `config/budget.yml`, the installed `scripts/budget-defaults.yml`, or the repo template,
+  so a check run outside a project root no longer fails with "config not found".
+- The Claude Code, OpenCode, and Hermes installers write a machine-local `.sefi/harness`
+  marker and ship `model-map.yml` plus the bundled budget defaults, so those installed
+  scripts resolve the harness identity and model map without a source checkout.
+- `validate-skill-doc-refs.sh` checks skill doc pointers, including `repo:`-prefixed
+  references that stay repo-only.
+
+### Changed
+
+- `config/budget.yml` no longer pins `billing_mode`. An absent value resolves per harness:
+  `opencode` and `hermes` are `free`, `codex`, `claude-code`, and `cline` are `flat`, and an
+  unknown or unreadable harness stays `metered` (fail-closed). An explicit value still wins.
+- `sefi-orchestration` now names the `--harness`/`.sefi/harness` resolution and
+  distinguishes exit 1 (EXCEEDED) from exit 3 (CANNOT MEASURE); the sefi-agents and
+  devops-engineer profiles pass `--harness` and treat both exits as dispatch-stopping.
+
+### Fixed
+
+- `validate-no-personal-paths.sh` falls back to `grep -oE` when `rg` is absent instead of
+  silently passing; a host with neither scanner now fails closed.
+- The Codex onboarding fixture reports native paths from its fake CLI, so native Windows
+  Python can resolve the marketplace root; the Hermes post-copy symlink fixture probes
+  Python's `os.symlink` and reports PENDING where the host cannot create one.
+
 ## [1.0.0] - 2026-10-13
 
 ### Added

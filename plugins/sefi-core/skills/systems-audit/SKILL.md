@@ -18,7 +18,7 @@ Accept only `complete`, `research`, `product`, `design`, `build`, `quality`, `do
 artifact was inspected.
 
 The Systems Auditor agent is authoritative for department criteria. The repository's
-`docs/AUDIT-DEPARTMENTS.md` may supplement reader context when available; installed audit
+`repo:docs/AUDIT-DEPARTMENTS.md` may supplement reader context when available; installed audit
 behavior does not depend on checkout-only documentation. Preserve department order,
 foundational Research/Product triage, four severities, five displayed findings per
 department, and exact overflow totals. Report once under `audits/`, refuse collisions, and
