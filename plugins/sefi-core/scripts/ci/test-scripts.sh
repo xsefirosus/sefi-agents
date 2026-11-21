@@ -462,6 +462,56 @@ esac
 rm -rf "$INSTSTUB"
 rm -f "$INSTROOT/.sefi/harness"
 
+# A set-but-empty $SEFI_HARNESS is present-but-unusable, not unset: it must meter
+# and stop the search. Treating it as unset let a free marker win and skip the cap.
+printf 'hermes\n' > "$INSTROOT/.sefi/harness"
+empty_env="$(bash -c "cd '$PROJTMP/a/b' && env SEFI_HARNESS= bash '$INSTROOT/scripts/budget-check.sh' --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'" 2>&1 >/dev/null)"; rc=$?
+if [ "$rc" -eq 1 ]; then
+  ok "a set-but-empty SEFI_HARNESS meters, never the install/project marker"
+else
+  bad "a set-but-empty SEFI_HARNESS fell through to a marker (exit $rc): $empty_env"
+fi
+case "$empty_env" in
+  *"SEFI_HARNESS is set but empty"*) ok "a set-but-empty SEFI_HARNESS is reported explicitly, not swallowed" ;;
+  *) bad "a set-but-empty SEFI_HARNESS produced no recorded reason: $empty_env" ;;
+esac
+rm -f "$INSTROOT/.sefi/harness"
+
+# A non-regular object at a marker path is PRESENT-but-invalid, not absent. A
+# directory here used to be [ -f ]-false, so the search skipped it and a farther
+# free marker won -- the same fail-open class as an unreadable marker file.
+mkdir -p "$INSTROOT/.sefi/harness"
+printf 'hermes\n' > "$PROJTMP/.sefi/harness"
+dir_install="$(bash -c "cd '$PROJTMP/a/b' && env -u SEFI_HARNESS bash '$INSTROOT/scripts/budget-check.sh' --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'" 2>&1 >/dev/null)"; rc=$?
+if [ "$rc" -eq 1 ]; then
+  ok "a directory at the install marker path meters, never the project marker"
+else
+  bad "a directory at the install marker path fell through to the project marker (exit $rc): $dir_install"
+fi
+case "$dir_install" in
+  *"not a readable regular file"*) ok "a non-regular install marker names itself, not a silent fallback" ;;
+  *) bad "a non-regular install marker produced no recorded reason: $dir_install" ;;
+esac
+rm -rf "$INSTROOT/.sefi/harness"
+rm -f "$PROJTMP/.sefi/harness"
+
+# The same presence rule applies to the nearest PROJECT marker: a directory must
+# stop the walk and meter, not be skipped in favour of a parent free marker.
+PROJDIR="$(mktemp -d)"
+mkdir -p "$PROJDIR/a/b/.sefi/harness" "$PROJDIR/.sefi"
+printf 'hermes\n' > "$PROJDIR/.sefi/harness"
+dir_project="$(bash -c "cd '$PROJDIR/a/b' && env -u SEFI_HARNESS bash '$CORE/scripts/budget-check.sh' --scope daily --spent 999.00 --config '$MODETMP/nomode.yml'" 2>&1 >/dev/null)"; rc=$?
+if [ "$rc" -eq 1 ]; then
+  ok "a directory at the nearest project marker meters, never a parent marker"
+else
+  bad "a directory at the nearest project marker fell through to a parent marker (exit $rc): $dir_project"
+fi
+case "$dir_project" in
+  *"not a readable regular file"*) ok "a non-regular project marker names itself, not a silent fallback" ;;
+  *) bad "a non-regular project marker produced no recorded reason: $dir_project" ;;
+esac
+rm -rf "$PROJDIR"
+
 # An explicit metered key keeps enforcing on EVERY harness: opting into metered must not be
 # silently converted into a skip by the harness it runs under.
 for metered_harness in opencode hermes codex claude-code cline; do

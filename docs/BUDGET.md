@@ -43,9 +43,12 @@ declare how dollars should be treated:
   `claude-code`, and `cline`; `claude` is accepted everywhere as an alias of `claude-code`
   (`--harness`, `$SEFI_HARNESS`, and the `.sefi/harness` marker all take either).
   The harness comes from the `--harness` flag, then `$SEFI_HARNESS`, then the
-  machine-local `.sefi/harness` marker written by `/sefi:init`. No harness signal
-  (or an unrecognized one) resolves `metered`: a gate that cannot tell must
-  enforce, not skip. A marker that cannot be read counts as no signal.
+  machine-local `.sefi/harness` marker written by `/sefi:init`. No harness signal,
+  or one that is present but unusable (unrecognized, empty, unreadable, or not a
+  regular file), resolves `metered`: a gate that cannot tell must enforce, not
+  skip. A present-but-unusable signal also stops the search rather than falling
+  through to a weaker one; only an absent install marker falls through to the
+  project marker, and an absent project marker falls to `metered`.
 - `metered` is opt-in: set `billing_mode: metered` explicitly. A config that
   predates the `billing_mode` key follows the per-harness rule above (previously it
   always behaved as `metered`). `validate-budget.sh` accepts a missing key,
