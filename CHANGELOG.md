@@ -5,6 +5,19 @@ Changelog; this project adheres to Semantic Versioning.
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-11-21
+
+### Fixed
+
+- `budget-check.sh` treats a set-but-empty `$SEFI_HARNESS` as a present-but-unusable
+  signal: it resolves `metered` and stops the search instead of falling through to a
+  free/flat marker and skipping the dollar cap.
+- A directory, broken symlink, or other non-regular object at an install or project
+  `.sefi/harness` marker path is a present-but-invalid signal: it resolves `metered`
+  and stops the search instead of counting as absent and accepting a weaker marker.
+- `docs/BUDGET.md` states the fail-closed marker behavior accurately: a
+  present-but-unusable signal meters and is not skipped in favour of a farther marker.
+
 ## [1.1.0] - 2026-11-19
 
 ### Added

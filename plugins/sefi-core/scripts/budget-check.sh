@@ -152,17 +152,26 @@ default_billing_mode() {
   #
   # Every new signal states the same fact -- which harness is running -- so none of
   # them can weaken a gate into a skip by surprise. A present-but-unusable signal
-  # (unreadable, empty, or unrecognized) sanitizes to metered and STOPS the search;
-  # an absent install marker falls through to the project marker, and an absent
-  # project marker falls to metered. An unrecognized $SEFI_HARNESS also stops the
-  # search (as it always did): a signal that is present but says nothing usable is
-  # not permission to look for a weaker one.
+  # (unreadable, empty, unrecognized, or not a regular file) sanitizes to metered
+  # and STOPS the search; an absent install marker falls through to the project
+  # marker, and an absent project marker falls to metered. A set-but-empty or
+  # unrecognized $SEFI_HARNESS also stops the search: a signal that is present but
+  # says nothing usable is not permission to look for a weaker one.
   local h="unknown" resolved=""
   if [ -n "$HARNESS_ARG" ]; then
     h="$HARNESS_ARG"
-  elif [ -n "${SEFI_HARNESS:-}" ]; then
+  elif [ "${SEFI_HARNESS+set}" = set ]; then
     case "$SEFI_HARNESS" in
       opencode|hermes|codex|claude-code|claude|cline) h="$SEFI_HARNESS" ;;
+      *)
+        # Set but unusable: empty names nothing, and an unknown name is no better.
+        # Leave h=unknown (metered) and never consult the markers, because a present
+        # signal that is unusable is not permission to look for a weaker one.
+        if [ -z "$SEFI_HARNESS" ]; then
+          echo "budget-check: SEFI_HARNESS is set but empty; the per-harness default falls back to metered (fail-closed)" >&2
+        else
+          echo "budget-check: SEFI_HARNESS names no known harness; the per-harness default falls back to metered (fail-closed)" >&2
+        fi ;;
     esac
   else
     resolved="$(harness_from_marker "$HERE/../.sefi/harness")"
@@ -211,7 +220,18 @@ harness_from_marker() {
   # Now it is named, and "no signal" is treated explicitly: sanitize to metered, say
   # so, fail closed.
   local path="$1" marker=""
-  [ -f "$path" ] || return 0
+  # Absent means no directory entry at all. -e is false for a broken symlink and
+  # -f is false for a directory, FIFO, or socket, so test both: a path that exists
+  # but is not a readable regular file is a PRESENT-but-invalid signal, not an
+  # absence -- otherwise it falls through to a weaker marker and can skip the cap.
+  if [ ! -e "$path" ] && [ ! -L "$path" ]; then
+    return 0
+  fi
+  if [ ! -f "$path" ]; then
+    echo "budget-check: $path is present but not a readable regular file; the per-harness default falls back to metered (fail-closed)" >&2
+    printf '!invalid\n'
+    return 0
+  fi
   if ! marker="$(head -n1 "$path" 2>/dev/null | tr -d '\r\n' | tr -d '[:space:]')"; then
     echo "budget-check: $path is present but unreadable; the per-harness default falls back to metered (fail-closed)" >&2
     printf '!invalid\n'
@@ -238,7 +258,7 @@ harness_from_project_marker() {
   # caller meters instead of skipping to a farther marker.
   local dir="$PWD" resolved=""
   while [ -n "$dir" ]; do
-    if [ -f "$dir/.sefi/harness" ]; then
+    if [ -e "$dir/.sefi/harness" ] || [ -L "$dir/.sefi/harness" ]; then
       resolved="$(harness_from_marker "$dir/.sefi/harness")"
       printf '%s' "$resolved"
       return 0
