@@ -52,7 +52,7 @@ done
 for workflow in "${free_workflows[@]}"; do
   name="$(basename "$workflow")"
   if grep -Fq 'uses: ./.github/actions/preflight-budget' "$workflow" || grep -Fq 'budget-check.sh --scope run' "$workflow"; then
-    echo "FAIL: $name must not require spend telemetry for its free OpenCode Zen model" >&2
+    echo "FAIL: $name must not require spend telemetry for its free OpenCode model" >&2
     fail=1
   fi
 done

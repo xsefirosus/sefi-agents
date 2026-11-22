@@ -43,7 +43,7 @@ contains "$CORE/commands/init.md" "audits/" "/sefi:init creates and ignores the 
 contains "$CORE/commands/init.md" "/sefi:audit <scope>" "/sefi:init names the on-demand audit command"
 contains "$CORE/commands/init.md" "on demand" "/sefi:init states that audits run on demand"
 contains "$CORE/commands/init.md" "ignored-local report" "/sefi:init keeps audit reports local"
-contains "$ROOT/adapters/OPENCODE.md" "opencode/muse-spark-1.3-contributor-free" "OpenCode scheduled examples use the contributor-free model"
+contains "$ROOT/adapters/OPENCODE.md" "opencode/deepseek-v4.1-flash-free" "OpenCode scheduled examples use the zero-cost model"
 absent "$ROOT/adapters/OPENCODE.md" "paid-model preflight" "OpenCode free workflow docs do not attach a paid-model preflight"
 
 echo "=== offline installer completion messages ==="

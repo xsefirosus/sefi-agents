@@ -5,6 +5,20 @@ Changelog; this project adheres to Semantic Versioning.
 
 ## [Unreleased]
 
+### Fixed
+
+- The scheduled OpenCode workflows (`triage-opencode`, `retro-opencode`,
+  `sync-opencode`) no longer fail their credential preflight. `opencode auth list`
+  prints `OpenCode api` in opencode-ai 1.19.6, not the retired label `OpenCode Zen`, so
+  the check now matches an actual credential row instead of a display name. It also no
+  longer accepts the auth-file path line, which merely contains "opencode".
+- Their default model is now `opencode/deepseek-v4.1-flash-free`, listed by
+  `opencode models` at zero input, output, and cache cost. The retired
+  `opencode/muse-spark-1.3-contributor-free` id is gone from the catalog (the remaining
+  `opencode/muse-spark-1.3` is paid). A preflight step now checks the selected id
+  against `opencode models` before any model call and prints the current free ids when
+  it is missing.
+
 ## [1.1.1] - 2026-11-21
 
 ### Fixed

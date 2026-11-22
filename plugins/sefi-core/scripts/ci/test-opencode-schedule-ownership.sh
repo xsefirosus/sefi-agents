@@ -67,12 +67,26 @@ for workflow in \
   "$ROOT/.github/workflows/retro-opencode.yml" \
   "$ROOT/.github/workflows/sync-opencode.yml"; do
   name="$(basename "$workflow")"
-  if grep -Fqx '        default: opencode/muse-spark-1.3-contributor-free' "$workflow" \
-    && grep -Fq 'MODEL="${MODEL:-opencode/muse-spark-1.3-contributor-free}"' "$workflow" \
-    && ! grep -Fq 'muse-spark-1.2-contributor-free' "$workflow"; then
-    ok "$name uses Muse Spark 1.3 Contributor Free by default and fallback"
+  if grep -Fqx '        default: opencode/deepseek-v4.1-flash-free' "$workflow" \
+    && grep -Fq 'MODEL="${MODEL:-opencode/deepseek-v4.1-flash-free}"' "$workflow" \
+    && ! grep -Fqx '        default: opencode/muse-spark-1.3-contributor-free' "$workflow" \
+    && ! grep -Fq 'MODEL="${MODEL:-opencode/muse-spark-1.3-contributor-free}"' "$workflow"; then
+    ok "$name uses the zero-cost DeepSeek V4.1 Flash Free default and fallback"
   else
-    bad "$name must use Muse Spark 1.3 Contributor Free by default and fallback"
+    bad "$name must use the zero-cost DeepSeek V4.1 Flash Free default and fallback"
+  fi
+
+  if grep -Fq "opencode auth list | grep -Eqi 'OpenCode[[:space:]].*(api|API key|stored)'" "$workflow" \
+    && ! grep -Fq 'opencode auth list | grep -qi "OpenCode Zen"' "$workflow"; then
+    ok "$name verifies a credential row, not the auth-file path or a stale display name"
+  else
+    bad "$name must verify a credential row, not the auth-file path or a stale display name"
+  fi
+
+  if grep -Fq 'opencode models | grep -Fxq "$MODEL"' "$workflow"; then
+    ok "$name preflights the selected model against the catalog"
+  else
+    bad "$name must preflight the selected model against the catalog"
   fi
 done
 
