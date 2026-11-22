@@ -5,14 +5,16 @@
 # loop and state files.
 #
 # DEFAULT MODEL -- overridable per dispatch via the model input; CI-only exception to
-# config/model-map.yml. The shipped default, opencode/muse-spark-1.3-contributor-free,
-# is listed as a free Zen model in the official OpenCode documentation (2026-09-15).
-# Auto-picking whatever-is-free is deliberately NOT done: the live catalog mixes
-# non-agent models (TTS/video/embeddings/music) into what `opencode models` lists, and an
-# unverified silent substitution is against this repo's discipline. model-map.yml itself
-# is deliberately untouched and stays flexible on every tier (Zen's free catalog rotates;
-# see that file's own header). If the default rotates out of Zen, pass another id at
-# dispatch time or update the default here.
+# config/model-map.yml. The shipped default, opencode/deepseek-v4.1-flash-free, is listed
+# by `opencode models` with zero input, output, and cache cost (verified 2026-11-21 on
+# opencode-ai 1.19.6). Its predecessor, opencode/muse-spark-1.3-contributor-free, rotated
+# out of the catalog. Auto-picking whatever-is-free is deliberately NOT done: the live
+# catalog mixes non-agent models (TTS/video/embeddings/music) into what `opencode models`
+# lists, and an unverified silent substitution is against this repo's discipline.
+# model-map.yml itself is deliberately untouched and stays flexible on every tier (the
+# free catalog rotates; see that file's own header). If the default rotates out, pass
+# another id at dispatch time or update the default here; a preflight step checks the id
+# against `opencode models` before any model call.
 #
 # PRIVACY CAVEAT (model chosen at dispatch): submitted data may train the upstream
 # provider's models depending on the chosen model's own terms. These workflows must only
@@ -28,9 +30,9 @@ on:
   workflow_dispatch:
     inputs:
       model:
-        description: "Any provider/model id listed by 'opencode models'. Default is the free Muse Spark 1.3 Contributor model."
+        description: "Any provider/model id listed by 'opencode models'. Default is the zero-cost DeepSeek V4.1 Flash Free model."
         type: string
-        default: opencode/muse-spark-1.3-contributor-free
+        default: opencode/deepseek-v4.1-flash-free
   schedule:
     - cron: "0 8 * * 1"
 
@@ -86,11 +88,32 @@ jobs:
           {"opencode":{"type":"api","key":"${OPENCODE_ZEN_API_KEY}"}}
           EOF
 
-      - name: Verify OpenCode sees the Zen credential
-        # Fail fast, before any model call, if the auth file did not land.
+      - name: Verify OpenCode sees the credential
+        # Fail fast, before any model call, if the auth file did not land. Match the
+        # provider label, not a version-specific display name: opencode-ai 1.19.6 prints
+        # "OpenCode", not the retired "OpenCode Zen".
         run: |
           set -euo pipefail
-          opencode auth list | grep -qi "OpenCode Zen"
+          if ! opencode auth list | grep -Eqi 'OpenCode[[:space:]].*(api|API key|stored)'; then
+            echo "OpenCode did not list a credential written to auth.json:" >&2
+            opencode auth list >&2 || true
+            exit 1
+          fi
+
+      - name: Verify the selected model is available
+        # The free catalog rotates. Fail here with the current free ids instead of
+        # letting the loop fail mid-run on an unknown model.
+        env:
+          MODEL: ${{ inputs.model }}
+        run: |
+          set -euo pipefail
+          MODEL="${MODEL:-opencode/deepseek-v4.1-flash-free}"
+          if ! opencode models | grep -Fxq "$MODEL"; then
+            echo "MODEL '$MODEL' is not listed by 'opencode models'." >&2
+            echo "Free OpenCode models currently listed:" >&2
+            opencode models | grep -E '^opencode/.*-free$' >&2 || true
+            exit 1
+          fi
 
       - name: Run the sync loop
         env:
@@ -110,7 +133,7 @@ jobs:
           if any -- skip that check rather than assume one, per the loop spec.
           EOF
           )"
-          MODEL="${MODEL:-opencode/muse-spark-1.3-contributor-free}"
+          MODEL="${MODEL:-opencode/deepseek-v4.1-flash-free}"
           case "$MODEL" in
             *[[:space:]]*|"") echo "MODEL must be a non-empty provider/model id (see opencode models)" >&2; exit 2 ;;
             */*) : ;;

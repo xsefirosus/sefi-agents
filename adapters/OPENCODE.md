@@ -226,23 +226,27 @@ Monday at 07:00 UTC through `retro-opencode.yml`; and sync runs Monday at 08:00 
 remain manual-only, so each loop has one scheduled provider. Each workflow's concurrency
 group prevents overlapping runs of that loop.
 
-They default to `opencode/muse-spark-1.3-contributor-free` (listed as free in the
-OpenCode Zen documentation on 2026-09-15). This is a CI-only exception to
+They default to `opencode/deepseek-v4.1-flash-free`, which `opencode models` listed with
+zero input, output, and cache cost on 2026-11-21 (opencode-ai 1.19.6). The previous
+default, `opencode/muse-spark-1.3-contributor-free`, rotated out of the catalog; the
+remaining `opencode/muse-spark-1.3` is a paid model. This is a CI-only exception to
 `config/model-map.yml`'s shipped `flexible` default: a headless run has no human present
-to pick a model interactively. Each
-workflow also accepts a `model` string input at dispatch time: any provider/model id
-that `opencode models` lists, validated as a non-empty provider/model value before use.
-There is no auto-selection fallback on purpose -- Zen's live catalog mixes in TTS,
-video, embedding, and music models that cannot run an agentic loop, so a silent
-substitution would trade an explicit error for a broken run. The map itself stays
-untouched and flexible on every tier; if the default rotates out of Zen's free lineup,
-dispatch a current id or edit these three files.
+to pick a model interactively. Each workflow also accepts a `model` string input at
+dispatch time: any provider/model id that `opencode models` lists, validated as a
+non-empty provider/model value before use. There is no auto-selection fallback on
+purpose -- the live catalog mixes in TTS, video, embedding, and music models that cannot
+run an agentic loop, so a silent substitution would trade an explicit error for a broken
+run. A preflight step checks the chosen id against `opencode models` before any model
+call and prints the current free ids when it is missing. The map itself stays untouched
+and flexible on every tier; if the default rotates out, dispatch a current id or edit
+these three files.
 
 Credential prerequisite: add an Actions secret named `OPENCODE_ZEN_API_KEY` under
 Settings > Secrets > Actions before the first dispatch (same name adapters/HERMES.md
 uses). No CLI env-var contract for the Zen API key could be verified from primary
 sources, so each workflow writes `$HOME/.local/share/opencode/auth.json` from that
-secret at runtime, then fails fast via `opencode auth list` before any model call.
+secret at runtime, then fails fast if `opencode auth list` does not show a credential
+row before any model call.
 
 Repository prerequisite: under Settings > Actions > General, set **Workflow permissions**
 to **Read and write permissions** and enable **Allow GitHub Actions to create and approve
